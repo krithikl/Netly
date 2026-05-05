@@ -1,18 +1,18 @@
 import { randomUUID } from "node:crypto";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
 import { createPkcePair, signAuthorizationRequest, signPrivateKeyJwt } from "@/lib/open-banking/jwt";
+import { buildPaymentTestRequest, encodePaymentTestCookie, type PaymentTestInput } from "@/lib/open-banking/payment-test";
 
 type DiscoveryDocument = {
-  issuer?: string;
   authorization_endpoint?: string;
   token_endpoint?: string;
 };
 
-const SANDBOX_TRANSACTION_FROM = "2018-01-01T00:00:00.000Z";
-
-export async function GET() {
+export async function POST(request: NextRequest) {
   try {
+    const input = (await request.json()) as PaymentTestInput;
+    const paymentTest = buildPaymentTestRequest(input);
     const client = createOpenBankingClientFromEnv();
     const config = client.getConfig();
     const discovery = (await client.discover()) as DiscoveryDocument;
@@ -28,20 +28,13 @@ export async function GET() {
     });
 
     const token = await client.getClientCredentialsToken(clientAssertion, tokenEndpointPath);
-    const now = Date.now();
-    const consent = await client.createAccountAccessConsent(
-      {
-        transactionFromDateTime: SANDBOX_TRANSACTION_FROM,
-        transactionToDateTime: new Date(now + 1000 * 60 * 60 * 24 * 365).toISOString(),
-        expirationDateTime: new Date(now + 1000 * 60 * 60 * 24 * 90).toISOString()
-      },
-      { accessToken: token.access_token }
-    );
-
+    const consent = await client.createDomesticPaymentConsent(paymentTest, {
+      accessToken: token.access_token
+    });
     const consentId = consent?.Data?.ConsentId;
 
     if (!consentId) {
-      return NextResponse.json({ error: "PNZ consent response did not include Data.ConsentId", consent }, { status: 502 });
+      return NextResponse.json({ error: "PNZ payment consent response did not include Data.ConsentId", consent }, { status: 502 });
     }
 
     const state = randomUUID();
@@ -78,7 +71,19 @@ export async function GET() {
     authorizeUrl.searchParams.set("client_id", config.clientId);
     authorizeUrl.searchParams.set("request_uri", pushedAuth.request_uri);
 
-    const response = NextResponse.redirect(authorizeUrl);
+    const response = NextResponse.json({
+      authorizationUrl: authorizeUrl.toString(),
+      consentId,
+      amount: paymentTest.initiation.InstructedAmount.Amount,
+      creditorName: paymentTest.initiation.CreditorAccount.Name
+    });
+
+    response.cookies.set("moneyfit_ob_flow", "payment_test", {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 10 * 60,
+      path: "/"
+    });
     response.cookies.set("moneyfit_ob_state", state, {
       httpOnly: true,
       sameSite: "lax",
@@ -97,13 +102,25 @@ export async function GET() {
       maxAge: 10 * 60,
       path: "/"
     });
+    response.cookies.set(
+      "moneyfit_payment_test",
+      encodePaymentTestCookie({
+        consentId,
+        ...paymentTest
+      }),
+      {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 10 * 60,
+        path: "/"
+      }
+    );
 
     return response;
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Unknown open banking start error",
-        hint: "If PNZ returns invalid_request for redirect_uri, update PNZ_REDIRECT_URI so it exactly matches a callback URI registered for this client in the PNZ sandbox portal."
+        error: error instanceof Error ? error.message : "Unknown payment test start error"
       },
       { status: 500 }
     );

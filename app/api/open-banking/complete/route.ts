@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
 import { signPrivateKeyJwt } from "@/lib/open-banking/jwt";
+import { decodePaymentTestCookie } from "@/lib/open-banking/payment-test";
 import { decodeJwtPayload } from "@/lib/open-banking/response-jwt";
+
+type DiscoveryDocument = {
+  token_endpoint?: string;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,6 +14,7 @@ export async function POST(request: NextRequest) {
     const responseJwt = body.response?.trim();
     const code = body.code?.trim() || (responseJwt ? getCodeFromResponseJwt(responseJwt) : "");
     const codeVerifier = request.cookies.get("moneyfit_ob_code_verifier")?.value;
+    const flow = request.cookies.get("moneyfit_ob_flow")?.value;
 
     if (!code) {
       return NextResponse.json({ error: "Missing authorization code or response JWT" }, { status: 400 });
@@ -25,11 +31,9 @@ export async function POST(request: NextRequest) {
 
     const client = createOpenBankingClientFromEnv();
     const config = client.getConfig();
-    const discovery = await client.discover();
-    const tokenEndpointUrl =
-      typeof discovery === "object" && discovery && "token_endpoint" in discovery
-        ? String(discovery.token_endpoint)
-        : `${config.baseUrl}/oauth/v2.0/token`;
+    const discovery = (await client.discover()) as DiscoveryDocument;
+    const tokenEndpointUrl = discovery.token_endpoint || `${config.baseUrl}/oauth/v2.0/token`;
+    const tokenEndpointPath = new URL(tokenEndpointUrl).pathname;
     const clientAssertion = signPrivateKeyJwt({
       audience: tokenEndpointUrl,
       clientId: config.clientId,
@@ -39,8 +43,31 @@ export async function POST(request: NextRequest) {
     const token = await client.exchangeAuthorizationCode({
       clientAssertion,
       code,
-      codeVerifier
+      codeVerifier,
+      tokenEndpoint: tokenEndpointPath
     });
+
+    if (flow === "payment_test") {
+      const cookie = request.cookies.get("moneyfit_payment_test")?.value;
+
+      if (!cookie) {
+        return NextResponse.json({ error: "Missing payment test cookie. Start the payment test again." }, { status: 400 });
+      }
+
+      const paymentTest = decodePaymentTestCookie(cookie);
+      const payment = await client.submitDomesticPayment(paymentTest, { accessToken: token.access_token });
+      const response = NextResponse.json({
+        status: "payment_submitted",
+        message: "Payment test submitted. Refreshing PNZ transactions and balances.",
+        paymentId: payment?.Data?.DomesticPaymentId,
+        paymentStatus: payment?.Data?.Status,
+        consentId: paymentTest.consentId
+      });
+
+      clearAuthorizationCookies(response);
+      response.cookies.delete("moneyfit_payment_test");
+      return response;
+    }
 
     const response = NextResponse.json({
       status: "connected",
@@ -64,6 +91,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    response.cookies.delete("moneyfit_ob_response");
+    clearAuthorizationCookies(response);
+
     return response;
   } catch (error) {
     return NextResponse.json(
@@ -81,4 +111,11 @@ function getCodeFromResponseJwt(responseJwt: string) {
   }
 
   throw new Error("Response JWT did not contain a code claim");
+}
+
+function clearAuthorizationCookies(response: NextResponse) {
+  response.cookies.delete("moneyfit_ob_state");
+  response.cookies.delete("moneyfit_ob_consent");
+  response.cookies.delete("moneyfit_ob_code_verifier");
+  response.cookies.delete("moneyfit_ob_flow");
 }

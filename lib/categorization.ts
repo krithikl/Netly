@@ -35,6 +35,7 @@ const rules: CategorizationRule[] = [
   { category: "Travel", merchant: "Auckland Airport Parking", patterns: [/airport.*parking/i] },
   { category: "Entertainment", merchant: "Hoyts", patterns: [/hoyts/i] },
   { category: "Transfers", merchant: "Transfer to Savings", patterns: [/transfer.*savings/i] },
+  { category: "Transfers", merchant: "Bank transfer", patterns: [/receivedcredittransfer.*domesticcredittransfer.*transfer/i] },
   { category: "Fees", merchant: "Wise FX Fee", patterns: [/wise.*fee/i, /fx fee/i] },
   { category: "Income", merchant: "Salary", patterns: [/salary/i, /payroll/i, /wages/i] }
 ];
@@ -53,7 +54,7 @@ export function categorizeTransaction(raw: RawBankTransaction): Transaction {
     amount: raw.amount,
     status: raw.status,
     confidence: match ? 0.92 : fallback.confidence,
-    needsReview: !match || fallback.confidence < 0.65,
+    needsReview: match ? false : fallback.confidence < 0.65,
     note: match ? "Matched by merchant rule" : "Low-confidence inference from bank description"
   };
 }
@@ -66,17 +67,21 @@ function inferFallback(description: string, amount: number) {
     .replace(/\d{2,}/g, "")
     .replace(/\s+/g, " ")
     .trim();
+  const displayName = cleaned
+    .split("|")
+    .map((part) => part.trim())
+    .find((part) => part && !/^further details about the transaction$/i.test(part));
 
   if (amount > 0) {
-    return { merchant: cleaned || "Unknown credit", category: "Income", confidence: 0.52 };
+    return { merchant: displayName || cleaned || "Unknown credit", category: "Income", confidence: 0.52 };
   }
 
   if (/fee|charge|surcharge/i.test(description)) {
-    return { merchant: cleaned || "Unknown fee", category: "Fees", confidence: 0.58 };
+    return { merchant: displayName || cleaned || "Unknown fee", category: "Fees", confidence: 0.58 };
   }
 
   return {
-    merchant: cleaned || "Unknown merchant",
+    merchant: displayName || cleaned || "Unknown merchant",
     category: "Needs review",
     confidence: 0.35
   };

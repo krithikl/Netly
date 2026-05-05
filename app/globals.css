@@ -231,8 +231,37 @@ h2 {
   font-weight: 750;
 }
 
+.status-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: -6px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(139, 80, 0, 0.22);
+  border-radius: 18px;
+  background: rgba(255, 244, 222, 0.9);
+  color: var(--warning);
+  font-size: 13px;
+}
+
+.status-banner span {
+  color: #5d4030;
+}
+
+.status-banner.neutral {
+  border-color: rgba(40, 94, 168, 0.22);
+  background: rgba(235, 242, 255, 0.9);
+  color: var(--info);
+}
+
+.status-banner.neutral span {
+  color: #334155;
+}
+
 .period-control,
-.filter-tabs {
+.filter-tabs,
+.source-switch {
   display: flex;
   gap: 6px;
   padding: 5px;
@@ -241,8 +270,15 @@ h2 {
   border: 1px solid var(--outline);
 }
 
+.topbar-controls {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
 .period,
-.filter-tabs button {
+.filter-tabs button,
+.source-switch button {
   border: 0;
   border-radius: 999px;
   padding: 9px 13px;
@@ -256,12 +292,14 @@ h2 {
 }
 
 .period:hover,
-.filter-tabs button:hover {
+.filter-tabs button:hover,
+.source-switch button:hover {
   transform: translateY(-1px);
 }
 
 .period.active,
-.filter-tabs button.active {
+.filter-tabs button.active,
+.source-switch button.active {
   background: var(--ink);
   color: white;
 }
@@ -474,6 +512,7 @@ h2 {
 }
 
 .donut-slice:hover,
+.donut-slice[data-hovered="true"],
 .donut-slice.selected {
   stroke-width: 34;
   transform: scale(1.025);
@@ -545,7 +584,6 @@ h2 {
 }
 
 .stable-list-panel {
-  min-height: 244px;
   max-height: 718px;
   overflow-y: auto;
   padding-right: 4px;
@@ -555,6 +593,11 @@ h2 {
 .stable-list-panel .stack-list {
   min-height: 100%;
   align-content: start;
+}
+
+.is-loading {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .legend-row {
@@ -713,6 +756,61 @@ h2 {
   color: var(--ink);
   font: inherit;
   text-transform: none;
+}
+
+.payment-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.payment-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.payment-form input {
+  min-width: 0;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: rgba(255, 251, 255, 0.9);
+  color: var(--ink);
+  font: inherit;
+  text-transform: none;
+}
+
+.payment-result {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+
+.payment-result div {
+  display: grid;
+  gap: 4px;
+  border-radius: 18px;
+  padding: 13px;
+  background: var(--surface-2);
+}
+
+.payment-result span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.payment-result strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .budget-grid {
@@ -959,7 +1057,7 @@ h2 {
   }
 
   .nav {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .nav-item {
@@ -989,6 +1087,8 @@ h2 {
   .metric-grid,
   .dashboard-grid,
   .chart-layout,
+  .payment-form,
+  .payment-result,
   .budget-grid {
     grid-template-columns: 1fr;
   }
@@ -1025,6 +1125,7 @@ h2 {
   }
 
   .period-control,
+  .source-switch,
   .filter-tabs,
   .hero-actions {
     overflow-x: auto;

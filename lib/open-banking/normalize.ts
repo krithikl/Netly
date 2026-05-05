@@ -1,7 +1,7 @@
 import { categorizeTransactions } from "@/lib/categorization";
 import type { RawBankTransaction, Transaction } from "@/lib/types";
 
-type PnzTransaction = {
+export type PnzTransaction = {
   AccountId?: string;
   Amount?: {
     Amount?: string;
@@ -9,9 +9,11 @@ type PnzTransaction = {
   };
   CreditDebitIndicator?: "Credit" | "Debit";
   BookingDateTime?: string;
+  ValueDateTime?: string;
   Status?: string;
   TransactionId?: string;
   TransactionInformation?: string;
+  StatementReference?: string[];
   TransactionReference?: {
     CreditorName?: string;
     DebtorName?: string;
@@ -34,11 +36,35 @@ type PnzTransaction = {
     Code?: string;
     Issuer?: string;
   };
+  MerchantDetails?: {
+    MerchantName?: string;
+    MerchantCategoryCode?: string;
+  };
+  CreditorAccount?: {
+    Name?: string;
+    Identification?: string;
+  };
+  DebtorAccount?: {
+    Name?: string;
+    Identification?: string;
+  };
 };
 
-type PnzTransactionsResponse = {
+export type PnzTransactionsResponse = {
   Data?: {
     Transaction?: PnzTransaction[];
+  };
+  Links?: {
+    Self?: string;
+    First?: string;
+    Prev?: string;
+    Next?: string;
+    Last?: string;
+  };
+  Meta?: {
+    TotalPages?: number;
+    FirstAvailableDateTime?: string;
+    LastAvailableDateTime?: string;
   };
 };
 
@@ -50,29 +76,55 @@ export function normalizePnzTransactions(response: PnzTransactionsResponse): Tra
 function toRawBankTransaction(txn: PnzTransaction): RawBankTransaction {
   const amount = Number(txn.Amount?.Amount || 0);
   const sign = txn.CreditDebitIndicator === "Credit" ? 1 : -1;
+  const counterparty = getCounterpartyName(txn);
   const description = [
+    counterparty,
     txn.TransactionInformation,
-    txn.TransactionReference?.CreditorName,
-    txn.TransactionReference?.DebtorName,
-    txn.TransactionReference?.CreditorReference?.Particulars,
-    txn.TransactionReference?.CreditorReference?.Code,
-    txn.TransactionReference?.CreditorReference?.Reference,
-    txn.TransactionReference?.DebtorReference?.Particulars,
-    txn.TransactionReference?.DebtorReference?.Code,
-    txn.TransactionReference?.DebtorReference?.Reference,
+    txn.MerchantDetails?.MerchantCategoryCode,
     txn.BankTransactionCode?.Code,
     txn.BankTransactionCode?.SubCode,
     txn.ProprietaryBankTransactionCode?.Code
   ]
-    .filter(Boolean)
-    .join(" ");
+    .filter(isUsefulText)
+    .join(" | ");
 
   return {
-    id: txn.TransactionId || `${txn.AccountId || "account"}-${txn.BookingDateTime || crypto.randomUUID()}`,
-    date: (txn.BookingDateTime || new Date().toISOString()).slice(0, 10),
+    id: txn.TransactionId || `${txn.AccountId || "account"}-${txn.BookingDateTime || txn.ValueDateTime || crypto.randomUUID()}`,
+    date: (txn.BookingDateTime || txn.ValueDateTime || new Date().toISOString()).slice(0, 10),
     description: description || "Unknown bank transaction",
     account: txn.AccountId || "PNZ account",
     amount: sign * Math.abs(amount),
     status: txn.Status === "Pending" ? "Pending" : "Booked"
   };
+}
+
+function getCounterpartyName(txn: PnzTransaction) {
+  const debitCounterparty = firstUsefulText([
+    txn.MerchantDetails?.MerchantName,
+    txn.TransactionReference?.CreditorName,
+    txn.CreditorAccount?.Name,
+    txn.TransactionReference?.CreditorReference?.Particulars,
+    txn.TransactionReference?.CreditorReference?.Reference
+  ]);
+  const creditCounterparty = firstUsefulText([
+    txn.TransactionReference?.DebtorName,
+    txn.DebtorAccount?.Name,
+    txn.TransactionReference?.DebtorReference?.Particulars,
+    txn.TransactionReference?.DebtorReference?.Reference,
+    txn.MerchantDetails?.MerchantName
+  ]);
+
+  return txn.CreditDebitIndicator === "Credit" ? creditCounterparty : debitCounterparty;
+}
+
+function firstUsefulText(values: Array<string | undefined>) {
+  return values.find(isUsefulText);
+}
+
+function isUsefulText(value: string | undefined): value is string {
+  if (!value) {
+    return false;
+  }
+
+  return !["string", "undefined", "null"].includes(value.trim().toLowerCase());
 }

@@ -1,11 +1,13 @@
 import type { PeriodOption, Transaction } from "./types";
 
-const referenceDate = new Date("2026-05-04T12:00:00+12:00");
+const fallbackReferenceDate = new Date("2026-05-04T12:00:00+12:00");
 
 export function filterTransactionsByPeriod(transactions: Transaction[], period: PeriodOption) {
   if (period === "All") {
     return transactions;
   }
+
+  const referenceDate = getReferenceDate(transactions);
 
   return transactions.filter((txn) => {
     if (txn.status === "Upcoming") {
@@ -24,4 +26,14 @@ export function filterTransactionsByPeriod(transactions: Transaction[], period: 
 
     return txnDate >= start && txnDate <= referenceDate;
   });
+}
+
+function getReferenceDate(transactions: Transaction[]) {
+  const latestTimestamp = transactions
+    .filter((txn) => txn.status !== "Upcoming")
+    .map((txn) => new Date(`${txn.date}T12:00:00+12:00`).getTime())
+    .filter(Number.isFinite)
+    .sort((a, b) => b - a)[0];
+
+  return latestTimestamp ? new Date(latestTimestamp) : fallbackReferenceDate;
 }

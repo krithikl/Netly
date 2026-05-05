@@ -19,6 +19,42 @@ type CreateConsentInput = {
   expirationDateTime: string;
 };
 
+export type DomesticPaymentInitiation = {
+  InstructedAmount: {
+    Amount: string;
+    Currency: "NZD";
+  };
+  InstructionIdentification: string;
+  RemittanceInformation: {
+    Reference: {
+      CreditorReference: {
+        Reference: string;
+        Particulars: string;
+        Code: string;
+      };
+      CreditorName: string;
+    };
+  };
+  CreditorAccount: {
+    Identification: string;
+    SchemeName: "BECSElectronicCredit";
+    SecondaryIdentification?: string;
+    Name: string;
+  };
+  DebtorAccountRelease: boolean;
+  EndToEndIdentification: string;
+};
+
+export type DomesticPaymentRisk = {
+  EndUserAppName: string;
+  EndUserAppVersion: string;
+  PaymentContextCode: string;
+  MerchantName: string;
+  MerchantNZBN: string;
+  MerchantCategoryCode: string;
+  MerchantCustomerIdentification: string;
+};
+
 const DEFAULT_PERMISSIONS = [
   "ReadAccountsDetail",
   "ReadBalances",
@@ -56,6 +92,52 @@ export class OpenBankingClient {
     );
   }
 
+  async createDomesticPaymentConsent(
+    input: {
+      initiation: DomesticPaymentInitiation;
+      risk: DomesticPaymentRisk;
+    },
+    token: PnzTokenSet
+  ) {
+    return this.postJson(
+      `/open-banking-nz/${this.config.apiVersion}/domestic-payment-consents`,
+      {
+        Data: {
+          Consent: input.initiation
+        },
+        Risk: input.risk
+      },
+      token,
+      {
+        "x-idempotency-key": crypto.randomUUID()
+      }
+    );
+  }
+
+  async submitDomesticPayment(
+    input: {
+      consentId: string;
+      initiation: DomesticPaymentInitiation;
+      risk: DomesticPaymentRisk;
+    },
+    token: PnzTokenSet
+  ) {
+    return this.postJson(
+      `/open-banking-nz/${this.config.apiVersion}/domestic-payments`,
+      {
+        Data: {
+          ConsentId: input.consentId,
+          Initiation: input.initiation
+        },
+        Risk: input.risk
+      },
+      token,
+      {
+        "x-idempotency-key": crypto.randomUUID()
+      }
+    );
+  }
+
   async getAccounts(token: PnzTokenSet) {
     return this.getJson(`/open-banking-nz/${this.config.apiVersion}/accounts`, token);
   }
@@ -72,6 +154,18 @@ export class OpenBankingClient {
 
     return this.getJson(
       `/open-banking-nz/${this.config.apiVersion}/transactions?${params.toString()}`,
+      token
+    );
+  }
+
+  async getAccountTransactions(token: PnzTokenSet, accountId: string, from: string, to: string) {
+    const params = new URLSearchParams({
+      fromBookingDateTime: from,
+      toBookingDateTime: to
+    });
+
+    return this.getJson(
+      `/open-banking-nz/${this.config.apiVersion}/accounts/${encodeURIComponent(accountId)}/transactions?${params.toString()}`,
       token
     );
   }
@@ -127,11 +221,13 @@ export class OpenBankingClient {
   async exchangeAuthorizationCode({
     clientAssertion,
     code,
-    codeVerifier
+    codeVerifier,
+    tokenEndpoint = "/oauth/v2.0/token"
   }: {
     clientAssertion: string;
     code: string;
     codeVerifier: string;
+    tokenEndpoint?: string;
   }) {
     const body = new URLSearchParams({
       grant_type: "authorization_code",
@@ -142,7 +238,7 @@ export class OpenBankingClient {
       client_assertion: clientAssertion
     });
 
-    const response = await fetch(`${this.config.baseUrl}/oauth/v2.0/token`, {
+    const response = await fetch(`${this.config.baseUrl}${tokenEndpoint}`, {
       method: "POST",
       headers: {
         accept: "application/json",
@@ -169,12 +265,13 @@ export class OpenBankingClient {
     return this.parseResponse(response);
   }
 
-  private async postJson(path: string, body: unknown, token?: PnzTokenSet) {
+  private async postJson(path: string, body: unknown, token?: PnzTokenSet, extraHeaders: Record<string, string> = {}) {
     const response = await fetch(`${this.config.baseUrl}${path}`, {
       method: "POST",
       headers: {
         ...this.headers(token),
-        "content-type": "application/json"
+        "content-type": "application/json",
+        ...extraHeaders
       },
       body: JSON.stringify(body)
     });

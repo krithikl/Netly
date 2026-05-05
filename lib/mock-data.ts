@@ -1,4 +1,5 @@
-import { categorizeTransactions } from "./categorization";
+import { normalizePnzTransactions, type PnzTransaction, type PnzTransactionsResponse } from "./open-banking/normalize";
+import { type PnzBalancesResponse } from "./open-banking/balances";
 import type { Budget, CardProduct, RawBankTransaction } from "./types";
 
 export const payday = "2026-05-15";
@@ -293,4 +294,104 @@ export const rawBankTransactions: RawBankTransaction[] = [
   { id: "txn_072", date: "2026-01-16", description: "Z ENERGY GREENLANE 6601", account: "Everyday", amount: -76.4, status: "Booked" }
 ];
 
-export const transactions = categorizeTransactions(rawBankTransactions);
+export const pnzMockTransactionsResponse: PnzTransactionsResponse = {
+  Data: {
+    Transaction: rawBankTransactions.map(toPnzTransaction)
+  },
+  Links: {
+    Self: "/open-banking-nz/v2.3/transactions"
+  },
+  Meta: {
+    TotalPages: 1,
+    FirstAvailableDateTime: `${rawBankTransactions.at(-1)?.date || "2026-01-16"}T00:00:00.000Z`,
+    LastAvailableDateTime: `${rawBankTransactions[0]?.date || "2026-05-04"}T23:59:59.000Z`
+  }
+};
+
+export const pnzMockBalancesResponse: PnzBalancesResponse = {
+  Data: {
+    Balance: [
+      {
+        AccountId: "OBA-DEMO-EVERYDAY-00",
+        Type: "ForwardAvailable",
+        Amount: {
+          Amount: "2268.42",
+          Currency: "NZD"
+        },
+        CreditDebitIndicator: "Credit",
+        DateTime: "2026-05-05T12:00:00.000Z"
+      },
+      {
+        AccountId: "OBA-DEMO-BILLS-00",
+        Type: "ForwardAvailable",
+        Amount: {
+          Amount: "1000.00",
+          Currency: "NZD"
+        },
+        CreditDebitIndicator: "Credit",
+        DateTime: "2026-05-05T12:00:00.000Z"
+      }
+    ]
+  },
+  Links: {
+    Self: "/open-banking-nz/v2.3/balances"
+  }
+};
+
+export const transactions = normalizePnzTransactions(pnzMockTransactionsResponse);
+
+function toPnzTransaction(txn: RawBankTransaction): PnzTransaction {
+  const isCredit = txn.amount > 0;
+  const dateTime = `${txn.date}T12:00:00.000Z`;
+
+  return {
+    AccountId: txn.account === "Bills" ? "OBA-DEMO-BILLS-00" : "OBA-DEMO-EVERYDAY-00",
+    TransactionId: txn.id,
+    TransactionReference: isCredit
+      ? {
+          DebtorName: getCounterparty(txn.description),
+          DebtorReference: {
+            Particulars: txn.description
+          }
+        }
+      : {
+          CreditorName: getCounterparty(txn.description),
+          CreditorReference: {
+            Particulars: txn.description
+          }
+        },
+    StatementReference: [],
+    Amount: {
+      Amount: Math.abs(txn.amount).toFixed(2),
+      Currency: "NZD"
+    },
+    CreditDebitIndicator: isCredit ? "Credit" : "Debit",
+    Status: txn.status === "Pending" || txn.status === "Upcoming" ? "Pending" : "Booked",
+    BookingDateTime: dateTime,
+    ValueDateTime: dateTime,
+    MerchantDetails: !isCredit
+      ? {
+          MerchantName: getCounterparty(txn.description)
+        }
+      : undefined,
+    TransactionInformation: txn.description,
+    BankTransactionCode: {
+      Code: isCredit ? "ReceivedCreditTransfer" : "DomesticCreditTransfer",
+      SubCode: txn.status === "Upcoming" ? "FutureDated" : "CardTransaction"
+    },
+    ProprietaryBankTransactionCode: {
+      Code: txn.status,
+      Issuer: "MoneyFit demo"
+    }
+  };
+}
+
+function getCounterparty(description: string) {
+  return description
+    .replace(/\bvisa debit\b/gi, "")
+    .replace(/\beftpos\b/gi, "")
+    .replace(/\bonline\b/gi, "")
+    .replace(/\d{2,}/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}

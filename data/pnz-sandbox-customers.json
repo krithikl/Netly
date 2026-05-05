@@ -1,0 +1,160 @@
+{
+  "message": "✅ Test customers retrieved successfully",
+  "customers": {
+    "Customers": [
+      {
+        "Username": "user02",
+        "Phone": "+64-383491409",
+        "CustomerId": "CustomerId-28286933-ed20-40bc-af40-f8a4331e6101-user02",
+        "Email": "userid-28286933-ed20-40bc-af40-f8a4331e6101-user02@example.com",
+        "UserId": "UserId-28286933-ed20-40bc-af40-f8a4331e6101-user02",
+        "Accounts": [
+          {
+            "AccountId": "OBA-99-2385-6710320-00",
+            "Account": {
+              "Identification": "99-2385-6710320-00",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-6710320-00"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-6710320-01",
+            "Account": {
+              "Identification": "99-2385-6710320-01",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-6710320-01"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-6710320-02",
+            "Account": {
+              "Identification": "99-2385-6710320-02",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-6710320-02"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-6710320-03",
+            "Account": {
+              "Identification": "99-2385-6710320-03",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-6710320-03"
+            }
+          }
+        ]
+      },
+      {
+        "Username": "user01",
+        "Phone": "+64-894426900",
+        "CustomerId": "CustomerId-28286933-ed20-40bc-af40-f8a4331e6101-user01",
+        "Email": "userid-28286933-ed20-40bc-af40-f8a4331e6101-user01@example.com",
+        "UserId": "UserId-28286933-ed20-40bc-af40-f8a4331e6101-user01",
+        "Accounts": [
+          {
+            "AccountId": "OBA-99-2385-1946803-00",
+            "Account": {
+              "Identification": "99-2385-1946803-00",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-1946803-00"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-1946803-01",
+            "Account": {
+              "Identification": "99-2385-1946803-01",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-1946803-01"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-1946803-02",
+            "Account": {
+              "Identification": "99-2385-1946803-02",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-1946803-02"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-1946803-03",
+            "Account": {
+              "Identification": "99-2385-1946803-03",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-1946803-03"
+            }
+          }
+        ]
+      },
+      {
+        "Username": "user06",
+        "Phone": "+64-783387058",
+        "CustomerId": "CustomerId-28286933-ed20-40bc-af40-f8a4331e6101-user06",
+        "Email": "userid-28286933-ed20-40bc-af40-f8a4331e6101-user06@example.com",
+        "UserId": "UserId-28286933-ed20-40bc-af40-f8a4331e6101-user06",
+        "Accounts": [
+          {
+            "AccountId": "OBA-99-2385-7394543-00",
+            "Account": {
+              "Identification": "99-2385-7394543-00",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-7394543-00"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-7394543-01",
+            "Account": {
+              "Identification": "99-2385-7394543-01",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-7394543-01"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-7394543-02",
+            "Account": {
+              "Identification": "99-2385-7394543-02",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-7394543-02"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-7394543-03",
+            "Account": {
+              "Identification": "99-2385-7394543-03",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-7394543-03"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-7394543-04",
+            "Account": {
+              "Identification": "99-2385-7394543-04",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-7394543-04"
+            }
+          },
+          {
+            "AccountId": "OBA-99-2385-7394543-05",
+            "Account": {
+              "Identification": "99-2385-7394543-05",
+              "SchemeName": "BECSElectronicCredit",
+              "Name": "CurrentAccount",
+              "SecondaryIdentification": "ID2-99-2385-7394543-05"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

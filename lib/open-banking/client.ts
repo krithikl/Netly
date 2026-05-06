@@ -146,26 +146,35 @@ export class OpenBankingClient {
     return this.getJson(`/open-banking-nz/${this.config.apiVersion}/balances`, token);
   }
 
-  async getTransactions(token: PnzTokenSet, from: string, to: string) {
-    const params = new URLSearchParams({
-      fromBookingDateTime: from,
-      toBookingDateTime: to
-    });
+  async getTransactions(token: PnzTokenSet, from?: string, to?: string) {
+    const params = this.transactionDateParams(from, to);
 
     return this.getJson(
-      `/open-banking-nz/${this.config.apiVersion}/transactions?${params.toString()}`,
+      `/open-banking-nz/${this.config.apiVersion}/transactions${params}`,
       token
     );
   }
 
-  async getAccountTransactions(token: PnzTokenSet, accountId: string, from: string, to: string) {
-    const params = new URLSearchParams({
-      fromBookingDateTime: from,
-      toBookingDateTime: to
-    });
+  async getAllTransactions(token: PnzTokenSet, from?: string, to?: string) {
+    const params = this.transactionDateParams(from, to);
+
+    return this.getAllPages(`/open-banking-nz/${this.config.apiVersion}/transactions${params}`, token);
+  }
+
+  async getAccountTransactions(token: PnzTokenSet, accountId: string, from?: string, to?: string) {
+    const params = this.transactionDateParams(from, to);
 
     return this.getJson(
-      `/open-banking-nz/${this.config.apiVersion}/accounts/${encodeURIComponent(accountId)}/transactions?${params.toString()}`,
+      `/open-banking-nz/${this.config.apiVersion}/accounts/${encodeURIComponent(accountId)}/transactions${params}`,
+      token
+    );
+  }
+
+  async getAllAccountTransactions(token: PnzTokenSet, accountId: string, from?: string, to?: string) {
+    const params = this.transactionDateParams(from, to);
+
+    return this.getAllPages(
+      `/open-banking-nz/${this.config.apiVersion}/accounts/${encodeURIComponent(accountId)}/transactions${params}`,
       token
     );
   }
@@ -265,6 +274,51 @@ export class OpenBankingClient {
     return this.parseResponse(response);
   }
 
+  private transactionDateParams(from?: string, to?: string) {
+    const params = new URLSearchParams();
+
+    if (from) {
+      params.set("fromBookingDateTime", from);
+    }
+
+    if (to) {
+      params.set("toBookingDateTime", to);
+    }
+
+    const query = params.toString();
+    return query ? `?${query}` : "";
+  }
+
+  private async getAllPages(path: string, token?: PnzTokenSet) {
+    const pages: unknown[] = [];
+    let nextPath: string | undefined = path;
+    let pageCount = 0;
+
+    while (nextPath && pageCount < 10) {
+      const page = await this.getJson(nextPath, token) as {
+        Data?: {
+          Transaction?: unknown[];
+        };
+        Links?: {
+          Next?: string;
+        };
+      };
+
+      pages.push(page);
+      pageCount += 1;
+      nextPath = page.Links?.Next ? this.toPath(page.Links.Next) : undefined;
+    }
+
+    return {
+      pages,
+      Data: {
+        Transaction: pages.flatMap((page) =>
+          (page as { Data?: { Transaction?: unknown[] } }).Data?.Transaction || []
+        )
+      }
+    };
+  }
+
   private async postJson(path: string, body: unknown, token?: PnzTokenSet, extraHeaders: Record<string, string> = {}) {
     const response = await fetch(`${this.config.baseUrl}${path}`, {
       method: "POST",
@@ -290,6 +344,15 @@ export class OpenBankingClient {
     }
 
     return headers;
+  }
+
+  private toPath(value: string) {
+    if (value.startsWith("http://") || value.startsWith("https://")) {
+      const url = new URL(value);
+      return `${url.pathname}${url.search}`;
+    }
+
+    return value;
   }
 
   private async parseResponse(response: Response) {

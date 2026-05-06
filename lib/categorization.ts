@@ -43,12 +43,15 @@ const rules: CategorizationRule[] = [
 export function categorizeTransaction(raw: RawBankTransaction): Transaction {
   const match = rules.find((rule) => rule.patterns.some((pattern) => pattern.test(raw.description)));
   const fallback = inferFallback(raw.description, raw.amount);
+  const merchant = match?.category === "Transfers"
+    ? fallback.merchant
+    : match?.merchant || fallback.merchant;
 
   return {
     id: raw.id,
     date: raw.date,
     rawDescription: raw.description,
-    merchant: match?.merchant || fallback.merchant,
+    merchant,
     category: match?.category || fallback.category,
     account: raw.account,
     amount: raw.amount,

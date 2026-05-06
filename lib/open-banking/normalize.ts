@@ -79,8 +79,9 @@ function toRawBankTransaction(txn: PnzTransaction): RawBankTransaction {
   const counterparty = getCounterpartyName(txn);
   const description = [
     counterparty,
+    getReferenceDescription(txn),
     txn.TransactionInformation,
-    txn.MerchantDetails?.MerchantCategoryCode,
+    counterparty !== txn.MerchantDetails?.MerchantName ? txn.MerchantDetails?.MerchantName : undefined,
     txn.BankTransactionCode?.Code,
     txn.BankTransactionCode?.SubCode,
     txn.ProprietaryBankTransactionCode?.Code
@@ -99,12 +100,23 @@ function toRawBankTransaction(txn: PnzTransaction): RawBankTransaction {
 }
 
 function getCounterpartyName(txn: PnzTransaction) {
+  const isTransfer = isTransferTransaction(txn);
   const debitCounterparty = firstUsefulText([
-    txn.MerchantDetails?.MerchantName,
-    txn.TransactionReference?.CreditorName,
-    txn.CreditorAccount?.Name,
-    txn.TransactionReference?.CreditorReference?.Particulars,
-    txn.TransactionReference?.CreditorReference?.Reference
+    ...(isTransfer
+      ? [
+          txn.TransactionReference?.CreditorName,
+          txn.CreditorAccount?.Name,
+          txn.MerchantDetails?.MerchantName,
+          txn.TransactionReference?.CreditorReference?.Particulars,
+          txn.TransactionReference?.CreditorReference?.Reference
+        ]
+      : [
+          txn.MerchantDetails?.MerchantName,
+          txn.TransactionReference?.CreditorName,
+          txn.CreditorAccount?.Name,
+          txn.TransactionReference?.CreditorReference?.Particulars,
+          txn.TransactionReference?.CreditorReference?.Reference
+        ])
   ]);
   const creditCounterparty = firstUsefulText([
     txn.TransactionReference?.DebtorName,
@@ -117,6 +129,29 @@ function getCounterpartyName(txn: PnzTransaction) {
   return txn.CreditDebitIndicator === "Credit" ? creditCounterparty : debitCounterparty;
 }
 
+function getReferenceDescription(txn: PnzTransaction) {
+  const reference =
+    txn.CreditDebitIndicator === "Credit"
+      ? txn.TransactionReference?.DebtorReference
+      : txn.TransactionReference?.CreditorReference;
+
+  return [
+    reference?.Particulars,
+    reference?.Code,
+    reference?.Reference
+  ]
+    .filter(isUsefulText)
+    .join(" ");
+}
+
+function isTransferTransaction(txn: PnzTransaction) {
+  return [
+    txn.BankTransactionCode?.Code,
+    txn.BankTransactionCode?.SubCode,
+    txn.ProprietaryBankTransactionCode?.Code
+  ].some((value) => /transfer/i.test(value || ""));
+}
+
 function firstUsefulText(values: Array<string | undefined>) {
   return values.find(isUsefulText);
 }
@@ -126,5 +161,13 @@ function isUsefulText(value: string | undefined): value is string {
     return false;
   }
 
-  return !["string", "undefined", "null"].includes(value.trim().toLowerCase());
+  return ![
+    "string",
+    "undefined",
+    "null",
+    "party being paid",
+    "party paying",
+    "a. creditor",
+    "a. debtor"
+  ].includes(value.trim().toLowerCase());
 }

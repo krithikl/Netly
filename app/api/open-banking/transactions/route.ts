@@ -39,23 +39,14 @@ export async function GET(request: NextRequest) {
   try {
     const client = createOpenBankingClientFromEnv();
     const now = new Date();
-    const response = (await client.getTransactions(
-      { accessToken },
-      SANDBOX_TRANSACTION_FROM,
-      now.toISOString()
-    )) as PnzTransactionsResponse;
+    const response = (await client.getAllTransactions({ accessToken })) as PnzTransactionsResponse;
     const accountsResponse = (await client.getAccounts({ accessToken })) as PnzAccountsResponse;
     const accountIds = (accountsResponse.Data?.Account || [])
       .map((account) => account.AccountId)
       .filter((accountId): accountId is string => Boolean(accountId));
     const accountTransactionResults = await Promise.allSettled(
       accountIds.map((accountId) =>
-        client.getAccountTransactions(
-          { accessToken },
-          accountId,
-          SANDBOX_TRANSACTION_FROM,
-          now.toISOString()
-        ) as Promise<PnzTransactionsResponse>
+        client.getAllAccountTransactions({ accessToken }, accountId) as Promise<PnzTransactionsResponse>
       )
     );
     const accountTransactions = accountTransactionResults.flatMap((result) =>
@@ -63,13 +54,16 @@ export async function GET(request: NextRequest) {
     );
     const rawTransactions = response?.Data?.Transaction || [];
     const mergedTransactions = dedupePnzTransactions([...rawTransactions, ...accountTransactions]);
+    const moneyFitRawTransactions = mergedTransactions.filter((transaction) =>
+      JSON.stringify(transaction).toLowerCase().includes("moneyfit")
+    );
     const transactions = normalizePnzTransactions({
       ...response,
       Data: {
         ...response.Data,
         Transaction: mergedTransactions
       }
-    });
+    }).sort((a, b) => b.date.localeCompare(a.date));
 
     return NextResponse.json({
       source: "pnz-sandbox",
@@ -78,8 +72,33 @@ export async function GET(request: NextRequest) {
       accountScopedRawCount: accountTransactions.length,
       mergedRawCount: mergedTransactions.length,
       normalizedCount: transactions.length,
-      requestedFrom: SANDBOX_TRANSACTION_FROM,
-      requestedTo: now.toISOString(),
+      debug: {
+        pnzHost: client.getConfig().baseUrl,
+        accountIds,
+        firstRawBookingDates: mergedTransactions.slice(0, 8).map((transaction) => ({
+          accountId: transaction.AccountId,
+          bookingDateTime: transaction.BookingDateTime,
+          transactionId: transaction.TransactionId,
+          creditorName: transaction.TransactionReference?.CreditorName,
+          amount: transaction.Amount?.Amount
+        })),
+        moneyFitRawCount: moneyFitRawTransactions.length,
+        moneyFitRaw: moneyFitRawTransactions.slice(0, 5).map((transaction) => ({
+          accountId: transaction.AccountId,
+          bookingDateTime: transaction.BookingDateTime,
+          transactionId: transaction.TransactionId,
+          creditorName: transaction.TransactionReference?.CreditorName,
+          amount: transaction.Amount?.Amount,
+          status: transaction.Status
+        }))
+      },
+      requestedFrom: null,
+      requestedTo: null,
+      previousDateWindow: {
+        from: SANDBOX_TRANSACTION_FROM,
+        to: now.toISOString()
+      },
+      bulkPages: "pages" in response && Array.isArray(response.pages) ? response.pages.length : 1,
       notice:
         transactions.length === 0
           ? "PNZ connected, but the sandbox returned no transactions for the current consent/date range."

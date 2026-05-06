@@ -472,16 +472,19 @@ h2 {
 
 .chart-layout {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(240px, 0.75fr) minmax(340px, 1.25fr);
+  gap: 30px;
   align-items: center;
+  justify-content: stretch;
+  min-height: 286px;
+  padding: 6px 2px 2px;
 }
 
 .donut-wrap {
   position: relative;
-  width: 260px;
-  height: 260px;
-  margin: 74px auto 0;
+  width: clamp(220px, 24vw, 290px);
+  height: clamp(220px, 24vw, 290px);
+  margin: 10px auto 0;
 }
 
 .donut {
@@ -494,7 +497,7 @@ h2 {
 .donut-base,
 .donut-slice {
   fill: none;
-  stroke-width: 28;
+  stroke-width: 26;
 }
 
 .donut-base {
@@ -514,14 +517,14 @@ h2 {
 .donut-slice:hover,
 .donut-slice[data-hovered="true"],
 .donut-slice.selected {
-  stroke-width: 34;
+  stroke-width: 32;
   transform: scale(1.025);
   filter: drop-shadow(0 8px 12px rgba(29, 27, 32, 0.22));
   outline: none;
 }
 
 .donut-slice:focus-visible {
-  stroke-width: 34;
+  stroke-width: 32;
   outline: none;
 }
 
@@ -537,7 +540,7 @@ h2 {
 .chart-tooltip {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 14px);
+  bottom: calc(100% + 10px);
   z-index: 2;
   min-width: 150px;
   display: grid;
@@ -570,7 +573,7 @@ h2 {
 
 .donut-center strong {
   margin-top: 5px;
-  font-size: 25px;
+  font-size: 26px;
 }
 
 .legend-list,
@@ -581,6 +584,12 @@ h2 {
 .insight-list {
   display: grid;
   gap: 10px;
+}
+
+.chart-panel .legend-list {
+  width: 100%;
+  align-self: stretch;
+  align-content: center;
 }
 
 .stable-list-panel {
@@ -602,16 +611,54 @@ h2 {
 
 .legend-row {
   display: grid;
-  grid-template-columns: 12px 1fr auto;
-  align-items: center;
-  gap: 10px;
+  grid-template-columns: 12px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
   border: 0;
-  border-radius: 16px;
-  padding: 11px 12px;
+  border-radius: 14px;
+  padding: 10px 12px 11px;
   background: transparent;
   color: var(--ink);
   cursor: pointer;
+  font-size: 14px;
   text-align: left;
+}
+
+.legend-content {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.legend-topline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.legend-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legend-topline strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.legend-track {
+  overflow: hidden;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(29, 27, 32, 0.08);
+}
+
+.legend-bar {
+  display: block;
+  height: 100%;
+  min-width: 6px;
+  border-radius: inherit;
 }
 
 .legend-row:hover,
@@ -765,6 +812,26 @@ h2 {
   margin-bottom: 14px;
 }
 
+.payment-help {
+  align-items: flex-start;
+  margin: 0 0 14px;
+}
+
+.payment-help-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(40, 94, 168, 0.14);
+  color: var(--info);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: lowercase;
+}
+
 .payment-form label {
   display: grid;
   gap: 6px;
@@ -842,6 +909,38 @@ h2 {
   height: 100%;
   border-radius: inherit;
   animation: grow-bar 520ms ease both;
+}
+
+.card-fit-basis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 251, 255, 0.72);
+  border: 1px solid var(--outline);
+}
+
+.card-fit-basis div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.card-fit-basis span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.card-fit-basis strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-option {
@@ -1087,21 +1186,41 @@ h2 {
   .metric-grid,
   .dashboard-grid,
   .chart-layout,
+  .card-fit-basis,
   .payment-form,
   .payment-result,
   .budget-grid {
     grid-template-columns: 1fr;
   }
 
+  .chart-layout {
+    gap: 14px;
+    justify-items: center;
+    min-height: 0;
+    padding: 0;
+  }
+
   .donut-wrap {
-    width: 230px;
-    height: 230px;
-    margin-top: 74px;
+    width: min(68vw, 240px);
+    height: min(68vw, 240px);
+    margin-top: 8px;
+  }
+
+  .chart-panel .legend-list {
+    width: 100%;
+  }
+
+  .legend-list {
+    gap: 8px;
+  }
+
+  .legend-row {
+    padding: 9px 10px 10px;
   }
 
   .chart-tooltip {
     left: 50%;
-    bottom: calc(100% + 12px);
+    bottom: calc(100% + 8px);
     transform: translateX(-50%);
   }
 }

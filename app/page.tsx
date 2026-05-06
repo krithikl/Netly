@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { budgets, cardProducts, categoryColors, currentBalance as fallbackBalance, payday, transactions as fallbackTransactions } from "@/lib/mock-data";
 import {
-  annualCardValues,
+  calculateCardFit,
   debitTransactions,
   detectRecurring,
   formatMoney,
@@ -367,7 +367,9 @@ export default function Home() {
   const shouldShowPeriodControl = activeView === "home" || activeView === "transactions" || activeView === "budgets";
   const categories = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
-  const cards = useMemo(() => annualCardValues(workingTransactions, cardProducts), [workingTransactions]);
+  const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
+  const cards = cardFit.cards;
+  const cardBasis = cardFit.basis;
   const balanceForCalculations = availableBalance ?? 0;
   const insights = useMemo(() => generateInsights(periodTransactions, cardProducts, balanceForCalculations), [periodTransactions, balanceForCalculations]);
   const expenses = useMemo(() => debitTransactions(periodTransactions), [periodTransactions]);
@@ -380,6 +382,7 @@ export default function Home() {
 
   const reviewCount = periodTransactions.filter((txn) => txn.needsReview).length;
   const chartCategories = categories.filter((item) => item.category !== "Income").slice(0, 8);
+  const chartTotal = sum(chartCategories.map((item) => item.amount));
   const transactionCategoryOptions = ["All categories", ...categories.map((item) => item.category).sort()];
   const connectionTitle = isLoadingTransactions
     ? "Checking sandbox"
@@ -459,6 +462,20 @@ export default function Home() {
     paymentTestResult?.status === "submitted" && paymentBalanceDelta !== null && paymentBalanceDelta !== 0 && paymentTransactionDelta === 0
       ? "PNZ accepted the payment and updated balances, but this sandbox has not published a matching row into the transactions feed."
       : "";
+  const cardFitSourceLabel =
+    dataMode === "demo"
+      ? "PNZ-format demo transactions"
+      : isConnected
+        ? "connected PNZ transactions"
+        : "connected user transactions";
+  const cardFitWindowLabel = cardBasis.latestTransactionDate
+    ? `Last ${cardBasis.windowDays} days ending ${cardBasis.latestTransactionDate}`
+    : `Last ${cardBasis.windowDays} days`;
+  const hasCardEligibleSpend = cardBasis.eligibleTransactionCount > 0 && cardBasis.eligibleAnnualSpend > 0;
+  const paymentTestHelp =
+    linkedUserName && dataMode === "user"
+      ? `For outgoing payment tests, authorize the payment as ${linkedUserName}, the same sandbox user connected to MoneyFit. If you log in as another sandbox user, MoneyFit will only see it when that user pays one of ${linkedUserName}'s linked accounts.`
+      : "For outgoing payment tests, authorize the payment as the same sandbox user connected to MoneyFit. If you log in as another sandbox user, set the creditor account to the connected user's account to simulate incoming money.";
 
   return (
     <div className="app-shell">
@@ -600,8 +617,21 @@ export default function Home() {
                           type="button"
                         >
                           <span className="legend-dot" style={{ background: categoryColors[item.category] || "#607d8b" }} />
-                          <span>{item.category}</span>
-                          <strong>{formatMoney(item.amount)}</strong>
+                          <span className="legend-content">
+                            <span className="legend-topline">
+                              <span className="legend-name">{item.category}</span>
+                              <strong>{formatMoney(item.amount)}</strong>
+                            </span>
+                            <span className="legend-track" aria-hidden="true">
+                              <span
+                                className="legend-bar"
+                                style={{
+                                  background: categoryColors[item.category] || "#607d8b",
+                                  width: `${chartTotal > 0 ? Math.max(4, Math.round((item.amount / chartTotal) * 100)) : 0}%`
+                                }}
+                              />
+                            </span>
+                          </span>
                         </button>
                       ))
                     ) : (
@@ -743,8 +773,34 @@ export default function Home() {
             <section className="material-card">
               <PanelTitle
                 title="Card fit comparison"
-                subtitle="Cards are ranked using all available mock spend: gross rewards + estimated perks - annual fee."
+                subtitle={`Cards are ranked from ${cardFitSourceLabel}: card-eligible spend + estimated perks - annual fee.`}
               />
+              <div className="card-fit-basis" aria-label="Card fit calculation basis">
+                <div>
+                  <span>Spend window</span>
+                  <strong>{cardFitWindowLabel}</strong>
+                </div>
+                <div>
+                  <span>Eligible spend</span>
+                  <strong>{formatMoney(cardBasis.eligibleSpend, true)}</strong>
+                </div>
+                <div>
+                  <span>Annual spend</span>
+                  <strong>{formatMoney(cardBasis.eligibleAnnualSpend)}</strong>
+                </div>
+                <div>
+                  <span>Rows used</span>
+                  <strong>
+                    {cardBasis.eligibleTransactionCount}/{cardBasis.transactionCount}
+                  </strong>
+                </div>
+              </div>
+              {!hasCardEligibleSpend && (
+                <div className="status-banner neutral" role="status">
+                  <strong>No card-eligible spend yet.</strong>
+                  <span>MoneyFit excludes income, transfers, fees, housing, upcoming payments, and needs-review rows from card rewards calculations.</span>
+                </div>
+              )}
               <div className="card-list">
                 {cards.map((card, index) => (
                   <article
@@ -797,6 +853,13 @@ export default function Home() {
                 <button className="tonal-action" disabled={isLoadingTransactions} onClick={() => refreshTransactions("user")} type="button">
                   Refresh PNZ data
                 </button>
+              </div>
+              <div className="status-banner neutral payment-help" role="note">
+                <span className="payment-help-icon" title={paymentTestHelp} aria-label={paymentTestHelp}>
+                  i
+                </span>
+                <strong>Use the same sandbox user.</strong>
+                <span>{paymentTestHelp}</span>
               </div>
               <form className="payment-form" onSubmit={startPaymentTest}>
                 <label>

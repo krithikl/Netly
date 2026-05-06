@@ -51,6 +51,17 @@ export type CardValue = CardProduct & {
   eligibleAnnualSpend: number;
 };
 
+export type CardFitBasis = {
+  windowDays: number;
+  transactionCount: number;
+  eligibleTransactionCount: number;
+  excludedTransactionCount: number;
+  eligibleSpend: number;
+  eligibleAnnualSpend: number;
+  latestTransactionDate: string | null;
+  categories: { category: string; amount: number }[];
+};
+
 export type Budget = {
   category: string;
   limit: number;

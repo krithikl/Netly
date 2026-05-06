@@ -1,4 +1,7 @@
-import type { CardProduct, CardValue, RecurringMerchant, Transaction } from "./types";
+import type { CardFitBasis, CardProduct, CardValue, RecurringMerchant, Transaction } from "./types";
+
+const cardExcludedCategories = new Set(["Housing", "Income", "Transfers", "Fees", "Needs review"]);
+const cardFitWindowDays = 365;
 
 export function formatMoney(amount: number, exact = false) {
   return new Intl.NumberFormat("en-NZ", {
@@ -54,11 +57,41 @@ export function safeToSpend(transactions: Transaction[], currentBalance: number)
   return Math.max(currentBalance - expectedBills - 250, 0);
 }
 
+export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWindowDays): CardFitBasis {
+  const debits = debitTransactions(transactions)
+    .filter((txn) => txn.status !== "Upcoming")
+    .filter((txn) => !Number.isNaN(Date.parse(txn.date)));
+  const latestTime = Math.max(...debits.map((txn) => Date.parse(txn.date)));
+  const latestTransactionDate = Number.isFinite(latestTime) ? new Date(latestTime).toISOString().slice(0, 10) : null;
+  const windowStart = Number.isFinite(latestTime) ? latestTime - (windowDays - 1) * 24 * 60 * 60 * 1000 : 0;
+  const windowTransactions = Number.isFinite(latestTime) ? debits.filter((txn) => Date.parse(txn.date) >= windowStart) : [];
+  const eligibleTransactions = windowTransactions.filter((txn) => !cardExcludedCategories.has(txn.category));
+  const eligibleSpend = sum(eligibleTransactions.map((txn) => Math.abs(txn.amount)));
+  const categoryTotals = new Map<string, number>();
+
+  eligibleTransactions.forEach((txn) => {
+    categoryTotals.set(txn.category, (categoryTotals.get(txn.category) || 0) + Math.abs(txn.amount));
+  });
+
+  const eligibleAnnualSpend = eligibleSpend;
+
+  return {
+    windowDays,
+    transactionCount: windowTransactions.length,
+    eligibleTransactionCount: eligibleTransactions.length,
+    excludedTransactionCount: windowTransactions.length - eligibleTransactions.length,
+    eligibleSpend,
+    eligibleAnnualSpend,
+    latestTransactionDate,
+    categories: [...categoryTotals.entries()]
+      .map(([category, amount]) => ({ category, amount }))
+      .sort((a, b) => b.amount - a.amount)
+  };
+}
+
 export function annualCardValues(transactions: Transaction[], cardProducts: CardProduct[]): CardValue[] {
-  const eligibleMonthlySpend = debitTransactions(transactions)
-    .filter((txn) => !["Housing", "Income", "Transfers", "Fees", "Needs review"].includes(txn.category))
-    .reduce((total, txn) => total + Math.abs(txn.amount), 0);
-  const eligibleAnnualSpend = eligibleMonthlySpend * 12;
+  const basis = cardFitBasis(transactions);
+  const eligibleAnnualSpend = basis.eligibleAnnualSpend;
 
   return cardProducts
     .map((card) => {
@@ -72,6 +105,13 @@ export function annualCardValues(transactions: Transaction[], cardProducts: Card
       };
     })
     .sort((a, b) => b.annualValue - a.annualValue);
+}
+
+export function calculateCardFit(transactions: Transaction[], cardProducts: CardProduct[]) {
+  return {
+    basis: cardFitBasis(transactions),
+    cards: annualCardValues(transactions, cardProducts)
+  };
 }
 
 export function generateInsights(transactions: Transaction[], cardProducts: CardProduct[], currentBalance: number) {

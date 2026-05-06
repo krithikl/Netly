@@ -117,7 +117,7 @@ function PaymentTestFormFields({ form, isStartingPaymentTest, onSubmit, updatePa
         Code
         <input maxLength={bankReferenceMaxLength} onChange={(event) => updatePaymentTestForm("code", event.target.value)} value={form.code} />
       </label>
-      <button className="primary-button" disabled={isStartingPaymentTest} type="submit">
+      <button className="primary-button mt-0" disabled={isStartingPaymentTest} type="submit">
         {isStartingPaymentTest ? "Starting payment..." : "Authorize sandbox payment"}
       </button>
     </form>

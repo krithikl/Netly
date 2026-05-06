@@ -1,3 +1,0 @@
-When i click the donut, there is a blakc outline and when i hover over a section, theres an outline to it.
-Also, when loading the page, the donut takes very long to spin up, and if i interrupt it while its still spinning, it stops spinning
-It should spin up the donut faster and also you need to fix the issue where hovering over it interrupts the spinning

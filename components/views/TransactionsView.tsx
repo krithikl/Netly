@@ -39,10 +39,11 @@ export function TransactionsView({
     <section className="view-stack">
       <section className="material-card">
         <PanelTitle title="Transactions" subtitle="Bank descriptions are categorized with confidence scoring" />
-        <div className="controls-grid">
+        <div className="transaction-controls">
           <label>
             Search
             <input
+              className="search"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search merchant, bank text, category"
               value={query}

@@ -366,6 +366,7 @@ h2 {
     transform 180ms ease,
     box-shadow 180ms ease,
     background 180ms ease;
+  margin-top: 10px;
 }
 
 .primary-button {
@@ -758,7 +759,7 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 14px;
+  margin: 14px 0px;
 }
 
 .transaction-controls label {
@@ -1068,6 +1069,7 @@ h2 {
   color: var(--primary);
   font-weight: 850;
   cursor: pointer;
+  margin-top: 10px;
 }
 
 .tonal-action:disabled {
@@ -1238,4 +1240,8 @@ h2 {
     justify-items: start;
     text-align: left;
   }
+}
+
+.mt-0 {
+  margin-top: 0;
 }

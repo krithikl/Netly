@@ -7,6 +7,7 @@ import type { PaymentTestForm, PaymentTestResult } from "@/lib/app/types";
 import type { Transaction } from "@/lib/types";
 
 type PaymentTestViewProps = {
+  categoryColors: Record<string, string>;
   isLoadingTransactions: boolean;
   isStartingPaymentTest: boolean;
   onRefreshTransactions: () => void;
@@ -23,6 +24,7 @@ type PaymentTestViewProps = {
 };
 
 export function PaymentTestView({
+  categoryColors,
   isLoadingTransactions,
   isStartingPaymentTest,
   onRefreshTransactions,
@@ -76,7 +78,7 @@ export function PaymentTestView({
           {paymentTestResult?.error || syncResult}
         </p>
         <div className="stable-list-panel">
-          <TransactionList emptyMessage="No PNZ user transactions loaded yet." transactions={recentTransactions} />
+          <TransactionList categoryColors={categoryColors} emptyMessage="No PNZ user transactions loaded yet." transactions={recentTransactions} />
         </div>
       </section>
     </section>

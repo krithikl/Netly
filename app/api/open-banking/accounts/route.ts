@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizePnzAccounts, type PnzAccountsResponse } from "@/lib/open-banking/accounts";
 import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
+import { getValidAccessToken, applyTokenCookies } from "@/lib/open-banking/token";
 import sandboxCustomers from "@/data/pnz-sandbox-customers.json";
 
 type SandboxCustomer = {
@@ -43,7 +44,7 @@ const demoAccountsResponse: PnzAccountsResponse = {
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const requestedSource = url.searchParams.get("source");
-  const accessToken = request.cookies.get("moneyfit_ob_access_token")?.value;
+  const { accessToken, newCookies } = await getValidAccessToken(request);
 
   if (requestedSource === "demo") {
     const accounts = normalizePnzAccounts(demoAccountsResponse).map((account) => ({
@@ -61,13 +62,14 @@ export async function GET(request: NextRequest) {
   }
 
   if (!accessToken) {
-    return NextResponse.json({
+    const responseObj = NextResponse.json({
       source: "pnz-sandbox",
       connected: false,
       accounts: [],
       primaryAccount: null,
       notice: "No PNZ sandbox user is connected. Connect a bank or switch to demo data."
     });
+    return applyTokenCookies(responseObj, newCookies);
   }
 
   try {
@@ -78,7 +80,7 @@ export async function GET(request: NextRequest) {
       ownerName: getSandboxOwnerName(account.accountId, account.identification)
     }));
 
-    return NextResponse.json({
+    const responseObj = NextResponse.json({
       source: "pnz-sandbox",
       connected: true,
       accounts,
@@ -89,6 +91,7 @@ export async function GET(request: NextRequest) {
           ? "PNZ connected, but the sandbox returned no accounts."
           : undefined
     });
+    return applyTokenCookies(responseObj, newCookies);
   } catch (error) {
     return NextResponse.json(
       {

@@ -27,9 +27,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const authorization = directCode
-      ? { code: directCode, state }
-      : getAuthorizationFromResponseJwt(responseJwt!);
+    const authorization = directCode ? { code: directCode, state } : getAuthorizationFromResponseJwt(responseJwt!);
     const { code } = authorization;
     const codeVerifier = request.cookies.get("moneyfit_ob_code_verifier")?.value;
 

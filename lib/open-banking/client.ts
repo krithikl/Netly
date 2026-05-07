@@ -266,6 +266,41 @@ export class OpenBankingClient {
     }>;
   }
 
+  async refreshAccessToken({
+    clientAssertion,
+    refreshToken,
+    tokenEndpoint = "/oauth/v2.0/token"
+  }: {
+    clientAssertion: string;
+    refreshToken: string;
+    tokenEndpoint?: string;
+  }) {
+    const body = new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+      client_assertion: clientAssertion
+    });
+
+    const response = await fetch(`${this.config.baseUrl}${tokenEndpoint}`, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/x-www-form-urlencoded",
+        "x-fapi-interaction-id": crypto.randomUUID()
+      },
+      body
+    });
+
+    return this.parseResponse(response) as Promise<{
+      access_token: string;
+      refresh_token?: string;
+      expires_in: number;
+      token_type: string;
+      id_token?: string;
+    }>;
+  }
+
   private async getJson(path: string, token?: PnzTokenSet) {
     const response = await fetch(`${this.config.baseUrl}${path}`, {
       headers: this.headers(token)

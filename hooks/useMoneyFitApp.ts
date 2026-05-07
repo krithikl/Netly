@@ -4,13 +4,15 @@ import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   bankReferenceMaxLength,
+  categoryColorsStorageKey,
   categoryOverridesStorageKey,
   customCategoriesStorageKey,
+  deletedCategoriesStorageKey,
   defaultPaymentTestForm,
   defaultTransactionCategories,
   periods
 } from "@/lib/app/constants";
-import { handleCallbackParams, readAuthResponseCookie, readCategoryOverrides, readCustomCategories, readInitialDataMode, storePaymentBaseline } from "@/lib/app/browser-state";
+import { handleCallbackParams, readAuthResponseCookie, readCategoryColors, readCategoryOverrides, readCustomCategories, readDeletedCategories, readInitialDataMode, storePaymentBaseline } from "@/lib/app/browser-state";
 import {
   applyCategoryOverrides,
   getCardFitSourceLabel,
@@ -74,6 +76,8 @@ export function useMoneyFitApp() {
   const [dataMode, setDataMode] = useState<DataMode>("user");
   const [categoryOverrides, setCategoryOverrides] = useState<Record<string, string>>({});
   const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [deletedCategories, setDeletedCategories] = useState<string[]>([]);
+  const [categoryColors, setCategoryColors] = useState<Record<string, string>>({});
   const [isConnected, setIsConnected] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [transactionLoadError, setTransactionLoadError] = useState("");
@@ -213,6 +217,18 @@ export function useMoneyFitApp() {
     window.localStorage.setItem(customCategoriesStorageKey, JSON.stringify(nextCategories));
   }
 
+  function deleteCategory(category: string) {
+    const next = [...deletedCategories, category];
+    setDeletedCategories(next);
+    window.localStorage.setItem(deletedCategoriesStorageKey, JSON.stringify(next));
+  }
+
+  function updateCategoryColor(category: string, color: string) {
+    const next = { ...categoryColors, [category]: color };
+    setCategoryColors(next);
+    window.localStorage.setItem(categoryColorsStorageKey, JSON.stringify(next));
+  }
+
   function updateConnectionResponse(value: string) {
     setConnectionResponse(value);
     hasAutoCompletedRef.current = false;
@@ -221,6 +237,8 @@ export function useMoneyFitApp() {
   useEffect(() => {
     setCategoryOverrides(readCategoryOverrides());
     setCustomCategories(readCustomCategories());
+    setDeletedCategories(readDeletedCategories());
+    setCategoryColors(readCategoryColors());
 
     let initialDataMode = readInitialDataMode();
     setDataMode(initialDataMode);
@@ -256,30 +274,51 @@ export function useMoneyFitApp() {
   }, [connectionResponse]);
 
   const workingTransactions = useMemo(() => applyCategoryOverrides(transactions, categoryOverrides), [transactions, categoryOverrides]);
+  
   const periodTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, period), [workingTransactions, period]);
+  
   const recurringTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, "90 days"), [workingTransactions]);
+  
   const categories = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
+  
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
+  
   const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
+  
   const insights = useMemo(
     () => generateInsights(periodTransactions, cardProducts, availableBalance ?? 0),
     [availableBalance, periodTransactions]
   );
+  
   const expenses = useMemo(() => debitTransactions(periodTransactions), [periodTransactions]);
+  
   const monthlySpend = useMemo(() => sum(expenses.map((transaction) => Math.abs(transaction.amount))), [expenses]);
+  
   const income = useMemo(() => sum(periodTransactions.filter((transaction) => transaction.amount > 0).map((transaction) => transaction.amount)), [periodTransactions]);
+  
   const upcoming = periodTransactions.filter((transaction) => transaction.status === "Upcoming");
+  
   const reviewCount = periodTransactions.filter((transaction) => transaction.needsReview).length;
   const chartCategories = categories.filter((item) => item.category !== "Income").slice(0, 8);
+  
   const chartTotal = sum(chartCategories.map((item) => item.amount));
-  const transactionCategoryOptions = getTransactionCategoryOptions(workingTransactions, categories, customCategories);
+  
+  const transactionCategoryOptions = getTransactionCategoryOptions(workingTransactions, categories, customCategories, deletedCategories);
+  
   const visibleTransactions = getVisibleTransactions(periodTransactions, query, transactionCategory, transactionFilter, transactionSort);
+  
   const transactionPreview = periodTransactions.filter((transaction) => !selectedHomeCategory || transaction.category === selectedHomeCategory);
+  
   const paymentBalanceDelta = getPaymentBalanceDelta(paymentTestResult, availableBalance);
+  
   const paymentTransactionDelta = getPaymentTransactionDelta(paymentTestResult, workingTransactions.length);
+  
   const paymentFeedNote = getPaymentFeedNote(paymentTestResult, paymentBalanceDelta, paymentTransactionDelta);
+  
   const safeToSpendAmount = safeToSpend(periodTransactions, availableBalance ?? 0);
+  
   const shouldShowPeriodControl = activeView === "home" || activeView === "transactions" || activeView === "budgets";
+  
   const linkedUserName = getLinkedUserName(primaryLinkedAccount, dataMode);
 
   const viewProps: ActiveViewProps = {
@@ -291,6 +330,7 @@ export function useMoneyFitApp() {
     cardFitWindowLabel: getCardFitWindowLabel(cardFit.basis),
     cards: cardFit.cards,
     categories,
+    categoryColors,
     chartCategories,
     chartTotal,
     completeOpenBankingConnection,
@@ -338,7 +378,9 @@ export function useMoneyFitApp() {
     upcomingTotal: sum(upcoming.map((transaction) => Math.abs(transaction.amount))),
     updatePaymentTestForm,
     visibleTransactions,
-    workingTransactions
+    workingTransactions,
+    updateCategoryColor,
+    deleteCategory
   };
 
   return {
@@ -364,7 +406,8 @@ export function useMoneyFitApp() {
 function getTransactionCategoryOptions(
   transactions: Transaction[],
   categories: { category: string; amount: number }[],
-  customCategories: string[]
+  customCategories: string[],
+  deletedCategories: string[]
 ) {
   const categorySet = new Set<string>();
   defaultTransactionCategories.forEach((category) => categorySet.add(category));
@@ -372,6 +415,7 @@ function getTransactionCategoryOptions(
   transactions.forEach((transaction) => categorySet.add(transaction.category));
   customCategories.forEach((category) => categorySet.add(category));
   categorySet.delete("Income");
+  deletedCategories.forEach((category) => categorySet.delete(category));
 
   return ["All categories", ...[...categorySet].sort()];
 }

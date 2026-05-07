@@ -59,4 +59,7 @@ export type ActiveViewProps = {
   updatePaymentTestForm: (field: keyof PaymentTestForm, value: string) => void;
   visibleTransactions: Transaction[];
   workingTransactions: Transaction[];
+  categoryColors: Record<string, string>;
+  updateCategoryColor: (category: string, color: string) => void;
+  deleteCategory: (category: string) => void;
 };

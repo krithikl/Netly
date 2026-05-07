@@ -1,4 +1,4 @@
-import { categoryOverridesStorageKey, customCategoriesStorageKey, paymentTestBaselineStorageKey, paymentTestResultStorageKey } from "@/lib/app/constants";
+import { categoryColorsStorageKey, categoryOverridesStorageKey, customCategoriesStorageKey, deletedCategoriesStorageKey, defaultCategoryColors, paymentTestBaselineStorageKey, paymentTestResultStorageKey } from "@/lib/app/constants";
 import { parseStoredJson } from "@/lib/app/storage";
 import type { DataMode, PaymentTestResult, View } from "@/lib/app/types";
 
@@ -18,6 +18,15 @@ export function readCategoryOverrides() {
 
 export function readCustomCategories() {
   return parseStoredJson<string[]>(window.localStorage.getItem(customCategoriesStorageKey)) || [];
+}
+
+export function readDeletedCategories() {
+  return parseStoredJson<string[]>(window.localStorage.getItem(deletedCategoriesStorageKey)) || [];
+}
+
+export function readCategoryColors() {
+  const stored = parseStoredJson<Record<string, string>>(window.localStorage.getItem(categoryColorsStorageKey)) || {};
+  return { ...defaultCategoryColors, ...stored };
 }
 
 export function readInitialDataMode(): DataMode {

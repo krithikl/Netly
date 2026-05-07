@@ -7,6 +7,7 @@ import type { Transaction } from "@/lib/types";
 import type { TransactionFilter, TransactionSort } from "@/lib/app/types";
 
 type TransactionsViewProps = {
+  categoryColors: Record<string, string>;
   categoryOptions: string[];
   isLoadingTransactions: boolean;
   onCategoryChange: (transactionId: string, category: string) => void;
@@ -26,6 +27,7 @@ const transactionFilters: TransactionFilter[] = ["All", "Expenses", "Income", "U
 const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount high", "Amount low"];
 
 export function TransactionsView({
+  categoryColors,
   categoryOptions,
   isLoadingTransactions,
   onCategoryChange,
@@ -120,6 +122,7 @@ export function TransactionsView({
           )}
         </div>
         <TransactionList
+          categoryColors={categoryColors}
           editable
           categorySelectOptions={editableCategorySelectOptions}
           emptyMessage="No transactions match the current filters."

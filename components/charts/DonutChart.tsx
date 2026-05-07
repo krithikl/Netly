@@ -3,7 +3,6 @@ import type { ActiveElement, Chart, ChartData, ChartEvent, ChartOptions, Tooltip
 import { Doughnut } from "react-chartjs-2";
 import { useCallback, useMemo, useState } from "react";
 import clsx from "clsx";
-import { categoryColors } from "@/lib/mock-data";
 import { formatMoney, sum } from "@/lib/insights";
 
 ChartJS.register(ArcElement, Tooltip);
@@ -15,6 +14,7 @@ type ChartCategory = {
 
 type DonutChartProps = {
   categories: ChartCategory[];
+  categoryColors: Record<string, string>;
   hoveredCategory: string | null;
   onHover: (category: string | null) => void;
   onSelect: (category: string | null) => void;
@@ -28,26 +28,31 @@ type ExternalTooltipContext = {
 
 type TooltipPlacement = "left" | "right" | "top";
 
-export function DonutChart({ categories, hoveredCategory, onHover, onSelect, selectedCategory }: DonutChartProps) {
+export function DonutChart({ categories, categoryColors, hoveredCategory, onHover, onSelect, selectedCategory }: DonutChartProps) {
   const [tooltipPlacement, setTooltipPlacement] = useState<TooltipPlacement>("top");
   const total = sum(categories.map((item) => item.amount));
   const hoveredItem = categories.find((item) => item.category === hoveredCategory);
   const tooltipClassName = getTooltipClassName(tooltipPlacement);
-  const chartData = useMemo(() => getChartData(categories), [categories]);
+  const chartData = useMemo(() => getChartData(categories, categoryColors), [categories, categoryColors]);
+
   const handleChartHover = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
     const category = getCategoryFromElements(categories, elements);
     onHover(category);
   }, [categories, onHover]);
+
   const handleChartClick = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
     const category = getCategoryFromElements(categories, elements);
     const nextCategory = getNextSelectedCategory(category, selectedCategory);
     onSelect(nextCategory);
   }, [categories, onSelect, selectedCategory]);
+
   const handleChartLeave = useCallback(() => onHover(null), [onHover]);
+
   const handleExternalTooltip = useCallback((context: ExternalTooltipContext) => {
     const nextPlacement = getTooltipPlacementFromModel(context.chart, context.tooltip);
     setTooltipPlacement((currentPlacement) => getNextTooltipPlacement(currentPlacement, nextPlacement));
   }, []);
+
   const chartOptions = useMemo(
     () => getChartOptions(handleChartHover, handleChartClick, handleExternalTooltip),
     [handleChartClick, handleChartHover, handleExternalTooltip]
@@ -73,12 +78,12 @@ export function DonutChart({ categories, hoveredCategory, onHover, onSelect, sel
   );
 }
 
-function getChartData(categories: ChartCategory[]): ChartData<"doughnut"> {
+function getChartData(categories: ChartCategory[], categoryColors: Record<string, string>): ChartData<"doughnut"> {
   return {
     labels: categories.map((item) => item.category),
     datasets: [
       {
-        backgroundColor: categories.map((item) => getCategoryColor(item.category)),
+        backgroundColor: categories.map((item) => getCategoryColor(item.category, categoryColors)),
         borderWidth: 0,
         data: categories.map((item) => item.amount),
         hoverBorderWidth: 0,
@@ -120,7 +125,7 @@ function getChartOptions(
   };
 }
 
-function getCategoryColor(category: string) {
+function getCategoryColor(category: string, categoryColors: Record<string, string>) {
   return categoryColors[category] || "#607d8b";
 }
 

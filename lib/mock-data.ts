@@ -16,24 +16,6 @@ export const budgets: Budget[] = [
   { category: "Needs review", limit: 200, color: "#607d8b" }
 ];
 
-export const categoryColors: Record<string, string> = {
-  Groceries: "#00a693",
-  "Eating out": "#f57c00",
-  Transport: "#4285f4",
-  Fuel: "#5e97f6",
-  Subscriptions: "#ab47bc",
-  Utilities: "#ffb300",
-  Housing: "#78909c",
-  Shopping: "#ef5350",
-  Health: "#26a69a",
-  Income: "#43a047",
-  Travel: "#7e57c2",
-  Entertainment: "#ec407a",
-  Transfers: "#8d6e63",
-  Fees: "#d84315",
-  "Needs review": "#607d8b"
-};
-
 export const cardProducts: CardProduct[] = [
   {
     name: "Current debit card baseline",

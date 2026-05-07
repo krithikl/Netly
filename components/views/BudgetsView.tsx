@@ -1,23 +1,23 @@
 import { InfoRow } from "@/components/ui/InfoRow";
 import { PanelTitle } from "@/components/ui/PanelTitle";
-import { categoryColors } from "@/lib/mock-data";
 import { formatMoney } from "@/lib/insights";
 import type { Budget, RecurringMerchant } from "@/lib/types";
 
 type BudgetsViewProps = {
   budgets: Budget[];
   categories: { category: string; amount: number }[];
+  categoryColors: Record<string, string>;
   recurring: RecurringMerchant[];
 };
 
-export function BudgetsView({ budgets, categories, recurring }: BudgetsViewProps) {
+export function BudgetsView({ budgets, categories, categoryColors, recurring }: BudgetsViewProps) {
   return (
     <section className="view-stack">
       <section className="material-card">
         <PanelTitle title="Budgets" subtitle="Spend is based on inferred categories" />
         <div className="budget-grid">
           {budgets.map((budget) => (
-            <BudgetCard budget={budget} key={budget.category} spent={getCategorySpend(categories, budget.category)} />
+            <BudgetCard budget={budget} categoryColor={categoryColors[budget.category] || budget.color} key={budget.category} spent={getCategorySpend(categories, budget.category)} />
           ))}
         </div>
       </section>
@@ -44,10 +44,10 @@ export function BudgetsView({ budgets, categories, recurring }: BudgetsViewProps
   );
 }
 
-function BudgetCard({ budget, spent }: { budget: Budget; spent: number }) {
+function BudgetCard({ budget, categoryColor, spent }: { budget: Budget; categoryColor: string; spent: number }) {
   const progress = Math.min((spent / budget.limit) * 100, 100);
-  const avatarStyle = getBudgetAvatarStyle(budget);
-  const progressStyle = getBudgetProgressStyle(progress, budget);
+  const avatarStyle = getBudgetAvatarStyle(categoryColor);
+  const progressStyle = getBudgetProgressStyle(progress, categoryColor);
 
   return (
     <article className="budget-card">
@@ -77,15 +77,15 @@ function getRecurringMeta(item: RecurringMerchant) {
   return `${item.category} · ${item.count} payments detected over 90 days`;
 }
 
-function getBudgetAvatarStyle(budget: Budget) {
+function getBudgetAvatarStyle(categoryColor: string) {
   return {
-    background: budget.color
+    background: categoryColor
   };
 }
 
-function getBudgetProgressStyle(progress: number, budget: Budget) {
+function getBudgetProgressStyle(progress: number, categoryColor: string) {
   return {
     width: `${progress}%`,
-    background: budget.color
+    background: categoryColor
   };
 }

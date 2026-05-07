@@ -7,7 +7,8 @@ export const navItems: { label: string; view: View; icon: string }[] = [
   { label: "Budgets", view: "budgets", icon: "◷" },
   { label: "Card fit", view: "cards", icon: "◇" },
   { label: "Payment test", view: "payment", icon: "$" },
-  { label: "Connect", view: "connect", icon: "↗" }
+  { label: "Connect", view: "connect", icon: "↗" },
+  { label: "Settings", view: "settings", icon: "⚙" }
 ];
 
 export const periods: PeriodOption[] = ["This month", "30 days", "90 days", "All"];
@@ -21,6 +22,10 @@ export const paymentTestResultStorageKey = "moneyfit_payment_test_result";
 export const categoryOverridesStorageKey = "moneyfit_category_overrides";
 
 export const customCategoriesStorageKey = "moneyfit_custom_categories";
+
+export const deletedCategoriesStorageKey = "moneyfit_deleted_categories";
+
+export const categoryColorsStorageKey = "moneyfit_category_colors";
 
 export const defaultTransactionCategories = [
   "Groceries",
@@ -41,6 +46,30 @@ export const defaultTransactionCategories = [
   "Income",
   "Needs review"
 ];
+
+export const moneyfitPalette = [
+  "#00a693", "#f57c00", "#4285f4", "#5e97f6", "#ab47bc",
+  "#ffb300", "#78909c", "#ef5350", "#26a69a", "#43a047",
+  "#7e57c2", "#ec407a", "#8d6e63", "#d84315", "#607d8b"
+];
+
+export const defaultCategoryColors: Record<string, string> = {
+  Groceries: "#00a693",
+  "Eating out": "#f57c00",
+  Transport: "#4285f4",
+  Fuel: "#5e97f6",
+  Subscriptions: "#ab47bc",
+  Utilities: "#ffb300",
+  Housing: "#78909c",
+  Shopping: "#ef5350",
+  Health: "#26a69a",
+  Income: "#43a047",
+  Travel: "#7e57c2",
+  Entertainment: "#ec407a",
+  Transfers: "#8d6e63",
+  Fees: "#d84315",
+  "Needs review": "#607d8b"
+};
 
 export const defaultPaymentTestForm: PaymentTestForm = {
   amount: "1.00",

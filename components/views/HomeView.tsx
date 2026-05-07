@@ -3,13 +3,13 @@ import { DonutChart } from "@/components/charts/DonutChart";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { Metric } from "@/components/ui/Metric";
 import { PanelTitle } from "@/components/ui/PanelTitle";
-import { categoryColors } from "@/lib/mock-data";
 import { formatMoney } from "@/lib/insights";
 import type { Transaction } from "@/lib/types";
 import type { View } from "@/lib/app/types";
 
 type HomeViewProps = {
   availableBalance: number | null;
+  categoryColors: Record<string, string>;
   chartCategories: { category: string; amount: number }[];
   chartTotal: number;
   expensesCount: number;
@@ -32,6 +32,7 @@ type HomeViewProps = {
 
 export function HomeView({
   availableBalance,
+  categoryColors,
   chartCategories,
   chartTotal,
   expensesCount,
@@ -101,6 +102,7 @@ export function HomeView({
           <div className="chart-layout">
             <DonutChart
               categories={chartCategories}
+              categoryColors={categoryColors}
               hoveredCategory={hoveredCategory}
               onHover={setHoveredCategory}
               selectedCategory={selectedHomeCategory}
@@ -108,6 +110,7 @@ export function HomeView({
             />
             <CategoryLegend
               categories={chartCategories}
+              categoryColors={categoryColors}
               chartTotal={chartTotal}
               hoveredCategory={hoveredCategory}
               selectedHomeCategory={selectedHomeCategory}
@@ -130,7 +133,7 @@ export function HomeView({
       <section className="material-card">
         <PanelTitle title="Recent activity" subtitle="Filtered by chart selection" />
         <div className={recentActivityClassName} aria-busy={isLoadingTransactions}>
-          <TransactionList emptyMessage="No transactions found for this category." transactions={recentTransactions} />
+          <TransactionList categoryColors={categoryColors} emptyMessage="No transactions found for this category." transactions={recentTransactions} />
         </div>
         <button className="tonal-action" onClick={openTransactionsView} type="button">
           View all transactions
@@ -142,6 +145,7 @@ export function HomeView({
 
 type CategoryLegendProps = {
   categories: { category: string; amount: number }[];
+  categoryColors: Record<string, string>;
   chartTotal: number;
   hoveredCategory: string | null;
   selectedHomeCategory: string | null;
@@ -151,6 +155,7 @@ type CategoryLegendProps = {
 
 function CategoryLegend({
   categories,
+  categoryColors,
   chartTotal,
   hoveredCategory,
   selectedHomeCategory,
@@ -165,6 +170,7 @@ function CategoryLegend({
     <div className="legend-list">
       {categories.map((item) => (
         <CategoryLegendRow
+          categoryColors={categoryColors}
           chartTotal={chartTotal}
           hoveredCategory={hoveredCategory}
           item={item}
@@ -179,6 +185,7 @@ function CategoryLegend({
 }
 
 function CategoryLegendRow({
+  categoryColors,
   chartTotal,
   hoveredCategory,
   item,
@@ -186,6 +193,7 @@ function CategoryLegendRow({
   setHoveredCategory,
   setSelectedHomeCategory
 }: {
+  categoryColors: Record<string, string>;
   chartTotal: number;
   hoveredCategory: string | null;
   item: { category: string; amount: number };
@@ -193,7 +201,7 @@ function CategoryLegendRow({
   setHoveredCategory: (category: string | null) => void;
   setSelectedHomeCategory: (category: string | null) => void;
 }) {
-  const categoryColor = getCategoryColor(item.category);
+  const categoryColor = getCategoryColor(item.category, categoryColors);
   const legendBarStyle = getLegendBarStyle(item, chartTotal, categoryColor);
   const legendRowClassName = getLegendRowClassName(item.category, selectedHomeCategory, hoveredCategory);
   const toggleCategory = () => setSelectedHomeCategory(getNextSelectedCategory(item.category, selectedHomeCategory));
@@ -233,7 +241,7 @@ function getLoadingClassName(baseClassName: string, isLoading: boolean) {
   return clsx(baseClassName, isLoading && "is-loading");
 }
 
-function getCategoryColor(category: string) {
+function getCategoryColor(category: string, categoryColors: Record<string, string>) {
   return categoryColors[category] || "#607d8b";
 }
 

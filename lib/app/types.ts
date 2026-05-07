@@ -1,4 +1,4 @@
-export type View = "home" | "transactions" | "budgets" | "cards" | "connect" | "payment";
+export type View = "home" | "transactions" | "budgets" | "cards" | "connect" | "payment" | "settings";
 
 export type DataMode = "user" | "demo";
 

@@ -1,11 +1,11 @@
 import { InfoRow } from "@/components/ui/InfoRow";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import type { CustomSelectOption } from "@/components/ui/CustomSelect";
-import { categoryColors } from "@/lib/mock-data";
 import { formatMoney } from "@/lib/insights";
 import type { Transaction } from "@/lib/types";
 
 type TransactionListProps = {
+  categoryColors: Record<string, string>;
   categorySelectOptions?: CustomSelectOption[];
   editable?: boolean;
   emptyMessage?: string;
@@ -14,6 +14,7 @@ type TransactionListProps = {
 };
 
 export function TransactionList({
+  categoryColors,
   categorySelectOptions = [],
   editable = false,
   emptyMessage = "No transactions to show.",
@@ -27,7 +28,7 @@ export function TransactionList({
   return (
     <div className="stack-list">
       {transactions.map((transaction) => {
-        const row = getTransactionRow(transaction);
+        const row = getTransactionRow(transaction, categoryColors);
 
         return (
           <InfoRow
@@ -46,9 +47,9 @@ export function TransactionList({
   );
 }
 
-function getTransactionRow(transaction: Transaction) {
+function getTransactionRow(transaction: Transaction, categoryColors: Record<string, string>) {
   return {
-    color: getTransactionColor(transaction),
+    color: getTransactionColor(transaction, categoryColors),
     meta: getTransactionMeta(transaction),
     title: transaction.merchant,
     value: formatMoney(transaction.amount, true),
@@ -57,7 +58,7 @@ function getTransactionRow(transaction: Transaction) {
   };
 }
 
-function getTransactionColor(transaction: Transaction) {
+function getTransactionColor(transaction: Transaction, categoryColors: Record<string, string>) {
   return categoryColors[transaction.category] || "#607d8b";
 }
 

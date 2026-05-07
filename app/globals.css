@@ -1404,3 +1404,137 @@ h2 {
 .mt-0 {
   margin-top: 0;
 }
+
+.settings-color-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-color-label {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.settings-color-palette {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.settings-color-button {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 180ms ease;
+}
+
+.settings-color-button:hover {
+  transform: scale(1.1);
+}
+
+.settings-color-button.selected {
+  border-color: var(--ink);
+}
+
+.settings-description {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.settings-categories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.settings-categories-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.settings-categories-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 4px 0 0 0;
+}
+
+.settings-category-item {
+  display: block;
+  position: relative;
+}
+
+.settings-category-row {
+  padding: 0;
+  border-bottom: none;
+}
+
+.settings-category-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.settings-color-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.settings-color-toggle.active {
+  border-color: var(--ink);
+}
+
+.settings-remove-button {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.settings-color-popup {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--surface-2);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  width: max-content;
+}
+
+.settings-color-popup-title {
+  font-size: 12px;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.settings-color-popup-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.settings-color-button.large {
+  width: 32px;
+  height: 32px;
+}

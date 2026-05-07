@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { transactions as mockTransactions } from "@/lib/mock-data";
 import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
 import { normalizePnzTransactions, type PnzTransaction, type PnzTransactionsResponse } from "@/lib/open-banking/normalize";
+import { getValidAccessToken, applyTokenCookies } from "@/lib/open-banking/token";
 
 const SANDBOX_TRANSACTION_FROM = "2018-01-01T00:00:00.000Z";
 
@@ -16,7 +17,7 @@ type PnzAccountsResponse = {
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const requestedSource = url.searchParams.get("source");
-  const accessToken = request.cookies.get("moneyfit_ob_access_token")?.value;
+  const { accessToken, newCookies } = await getValidAccessToken(request);
 
   if (requestedSource === "demo") {
     return NextResponse.json({
@@ -28,12 +29,13 @@ export async function GET(request: NextRequest) {
   }
 
   if (!accessToken) {
-    return NextResponse.json({
+    const responseObj = NextResponse.json({
       source: "pnz-sandbox",
       connected: false,
       notice: "No PNZ sandbox user is connected. Connect a bank or switch to demo data.",
       transactions: []
     });
+    return applyTokenCookies(responseObj, newCookies);
   }
 
   try {
@@ -65,7 +67,7 @@ export async function GET(request: NextRequest) {
       }
     }).sort((a, b) => b.date.localeCompare(a.date));
 
-    return NextResponse.json({
+    const responseObj = NextResponse.json({
       source: "pnz-sandbox",
       connected: true,
       rawCount: rawTransactions.length,
@@ -105,6 +107,7 @@ export async function GET(request: NextRequest) {
           : undefined,
       transactions
     });
+    return applyTokenCookies(responseObj, newCookies);
   } catch (error) {
     return NextResponse.json(
       {

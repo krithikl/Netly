@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { PanelTitle } from "@/components/ui/PanelTitle";
 import { bankReferenceMaxLength } from "@/lib/app/constants";
@@ -91,37 +91,48 @@ type PaymentTestFormFieldsProps = {
 };
 
 function PaymentTestFormFields({ form, isStartingPaymentTest, onSubmit, updatePaymentTestForm }: PaymentTestFormFieldsProps) {
+  const handleAmountChange = createPaymentFieldHandler("amount", updatePaymentTestForm);
+  const handleCreditorNameChange = createPaymentFieldHandler("creditorName", updatePaymentTestForm);
+  const handleCreditorAccountChange = createPaymentFieldHandler("creditorAccount", updatePaymentTestForm);
+  const handleReferenceChange = createPaymentFieldHandler("reference", updatePaymentTestForm);
+  const handleParticularsChange = createPaymentFieldHandler("particulars", updatePaymentTestForm);
+  const handleCodeChange = createPaymentFieldHandler("code", updatePaymentTestForm);
+
   return (
     <form className="payment-form" onSubmit={onSubmit}>
       <label>
         Amount
-        <input min="0.01" onChange={(event) => updatePaymentTestForm("amount", event.target.value)} step="0.01" type="number" value={form.amount} />
+        <input min="0.01" onChange={handleAmountChange} step="0.01" type="number" value={form.amount} />
       </label>
       <label>
         Creditor name
-        <input onChange={(event) => updatePaymentTestForm("creditorName", event.target.value)} value={form.creditorName} />
+        <input onChange={handleCreditorNameChange} value={form.creditorName} />
       </label>
       <label>
         Creditor account
-        <input onChange={(event) => updatePaymentTestForm("creditorAccount", event.target.value)} value={form.creditorAccount} />
+        <input onChange={handleCreditorAccountChange} value={form.creditorAccount} />
       </label>
       <label>
         Reference
-        <input maxLength={bankReferenceMaxLength} onChange={(event) => updatePaymentTestForm("reference", event.target.value)} value={form.reference} />
+        <input maxLength={bankReferenceMaxLength} onChange={handleReferenceChange} value={form.reference} />
       </label>
       <label>
         Particulars
-        <input maxLength={bankReferenceMaxLength} onChange={(event) => updatePaymentTestForm("particulars", event.target.value)} value={form.particulars} />
+        <input maxLength={bankReferenceMaxLength} onChange={handleParticularsChange} value={form.particulars} />
       </label>
       <label>
         Code
-        <input maxLength={bankReferenceMaxLength} onChange={(event) => updatePaymentTestForm("code", event.target.value)} value={form.code} />
+        <input maxLength={bankReferenceMaxLength} onChange={handleCodeChange} value={form.code} />
       </label>
-      <button className="primary-button mt-0" disabled={isStartingPaymentTest} type="submit">
+      <button className="primary-button" disabled={isStartingPaymentTest} type="submit">
         {isStartingPaymentTest ? "Starting payment..." : "Authorize sandbox payment"}
       </button>
     </form>
   );
+}
+
+function createPaymentFieldHandler(field: keyof PaymentTestForm, updatePaymentTestForm: (field: keyof PaymentTestForm, value: string) => void) {
+  return (event: ChangeEvent<HTMLInputElement>) => updatePaymentTestForm(field, event.target.value);
 }
 
 function PaymentResult({

@@ -18,6 +18,10 @@ export const paymentTestBaselineStorageKey = "moneyfit_payment_test_baseline";
 
 export const paymentTestResultStorageKey = "moneyfit_payment_test_result";
 
+export const categoryOverridesStorageKey = "moneyfit_category_overrides";
+
+export const customCategoriesStorageKey = "moneyfit_custom_categories";
+
 export const defaultPaymentTestForm: PaymentTestForm = {
   amount: "1.00",
   creditorAccount: "99-2385-6710320-00",

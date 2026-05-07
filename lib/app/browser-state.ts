@@ -1,4 +1,4 @@
-import { paymentTestBaselineStorageKey, paymentTestResultStorageKey } from "@/lib/app/constants";
+import { categoryOverridesStorageKey, customCategoriesStorageKey, paymentTestBaselineStorageKey, paymentTestResultStorageKey } from "@/lib/app/constants";
 import { parseStoredJson } from "@/lib/app/storage";
 import type { DataMode, PaymentTestResult, View } from "@/lib/app/types";
 
@@ -13,7 +13,11 @@ export function storePaymentBaseline(availableBalance: number | null, transactio
 }
 
 export function readCategoryOverrides() {
-  return parseStoredJson<Record<string, string>>(window.localStorage.getItem("moneyfit_category_overrides")) || {};
+  return parseStoredJson<Record<string, string>>(window.localStorage.getItem(categoryOverridesStorageKey)) || {};
+}
+
+export function readCustomCategories() {
+  return parseStoredJson<string[]>(window.localStorage.getItem(customCategoriesStorageKey)) || [];
 }
 
 export function readInitialDataMode(): DataMode {

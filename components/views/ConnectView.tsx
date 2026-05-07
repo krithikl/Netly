@@ -1,3 +1,4 @@
+import type { ChangeEvent } from "react";
 import { FlowStep } from "@/components/ui/FlowStep";
 import { PanelTitle } from "@/components/ui/PanelTitle";
 
@@ -16,6 +17,14 @@ export function ConnectView({
   setSyncResult,
   syncResult
 }: ConnectViewProps) {
+  const canCompleteConnection = connectionResponse.trim().length > 0;
+  const handleAuthorizationStart = () => {
+    setSyncResult("Opening sandbox bank authorization...");
+    window.location.href = "/api/open-banking/start";
+  };
+  const handleConnectionResponseChange = (event: ChangeEvent<HTMLTextAreaElement>) => onConnectionResponseChange(event.target.value);
+  const handleConnectionComplete = () => completeOpenBankingConnection(connectionResponse);
+
   return (
     <section className="view-stack">
       <section className="material-card">
@@ -36,10 +45,7 @@ export function ConnectView({
         </div>
         <button
           className="primary-button"
-          onClick={() => {
-            setSyncResult("Opening sandbox bank authorization...");
-            window.location.href = "/api/open-banking/start";
-          }}
+          onClick={handleAuthorizationStart}
           type="button"
         >
           Open sandbox authorization
@@ -50,11 +56,11 @@ export function ConnectView({
         <div className="completion-box">
           <PanelTitle title="Finish developer portal redirect" subtitle="Response JWT will automatically populate and submit when you complete authorization." />
           <textarea
-            onChange={(event) => onConnectionResponseChange(event.target.value)}
+            onChange={handleConnectionResponseChange}
             placeholder="Paste response=eyJ... value here (or it will auto-populate)"
             value={connectionResponse}
           />
-          <button className="tonal-action" disabled={!connectionResponse.trim()} onClick={() => completeOpenBankingConnection(connectionResponse)} type="button">
+          <button className="tonal-action" disabled={!canCompleteConnection} onClick={handleConnectionComplete} type="button">
             Complete connection
           </button>
         </div>

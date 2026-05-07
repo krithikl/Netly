@@ -1,3 +1,4 @@
+import type { ChangeEvent } from "react";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { PanelTitle } from "@/components/ui/PanelTitle";
 import type { Transaction } from "@/lib/types";
@@ -35,6 +36,13 @@ export function TransactionsView({
   transactionSort,
   transactions
 }: TransactionsViewProps) {
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value);
+  const handleFilterChange = (event: ChangeEvent<HTMLSelectElement>) => setTransactionFilter(event.target.value as TransactionFilter);
+  const handleCategoryChange = (event: ChangeEvent<HTMLSelectElement>) => setTransactionCategory(event.target.value);
+  const handleSortChange = (event: ChangeEvent<HTMLSelectElement>) => setTransactionSort(event.target.value as TransactionSort);
+  const editableCategoryOptions = categoryOptions.filter((category) => category !== "All categories");
+  const shownTransactions = isLoadingTransactions ? [] : transactions;
+
   return (
     <section className="view-stack">
       <section className="material-card">
@@ -44,14 +52,14 @@ export function TransactionsView({
             Search
             <input
               className="search"
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={handleSearchChange}
               placeholder="Search merchant, bank text, category"
               value={query}
             />
           </label>
           <label>
             Status
-            <select value={transactionFilter} onChange={(event) => setTransactionFilter(event.target.value as TransactionFilter)}>
+            <select value={transactionFilter} onChange={handleFilterChange}>
               {transactionFilters.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -61,7 +69,7 @@ export function TransactionsView({
           </label>
           <label>
             Category
-            <select value={transactionCategory} onChange={(event) => setTransactionCategory(event.target.value)}>
+            <select value={transactionCategory} onChange={handleCategoryChange}>
               {categoryOptions.map((category) => (
                 <option key={category} value={category}>
                   {category}
@@ -71,7 +79,7 @@ export function TransactionsView({
           </label>
           <label>
             Sort
-            <select value={transactionSort} onChange={(event) => setTransactionSort(event.target.value as TransactionSort)}>
+            <select value={transactionSort} onChange={handleSortChange}>
               {transactionSortOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -82,10 +90,10 @@ export function TransactionsView({
         </div>
         <TransactionList
           editable
-          categoryOptions={categoryOptions.filter((category) => category !== "All categories")}
+          categoryOptions={editableCategoryOptions}
           emptyMessage="No transactions match the current filters."
           onCategoryChange={onCategoryChange}
-          transactions={isLoadingTransactions ? [] : transactions}
+          transactions={shownTransactions}
         />
       </section>
     </section>

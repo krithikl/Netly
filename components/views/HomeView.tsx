@@ -57,6 +57,9 @@ export function HomeView({
   const dashboardGridClassName = getLoadingClassName("dashboard-grid", isLoadingTransactions);
   const recentActivityClassName = getLoadingClassName("stable-list-panel", isLoadingTransactions);
   const recentTransactions = transactionPreview.slice(0, 5);
+  const showConnectButton = !isConnected;
+  const openConnectView = () => setActiveView("connect");
+  const openTransactionsView = () => setActiveView("transactions");
 
   return (
     <>
@@ -67,12 +70,12 @@ export function HomeView({
           <p>{safeToSpendLabel}</p>
         </div>
         <div className="hero-actions">
-          {!isConnected && (
-            <button className="tonal-button" onClick={() => setActiveView("connect")} type="button">
+          {showConnectButton && (
+            <button className="tonal-button" onClick={openConnectView} type="button">
               Connect bank
             </button>
           )}
-          <button className="primary-button" onClick={() => setActiveView("transactions")} type="button">
+          <button className="primary-button" onClick={openTransactionsView} type="button">
             Review spend
           </button>
         </div>
@@ -129,7 +132,7 @@ export function HomeView({
         <div className={recentActivityClassName} aria-busy={isLoadingTransactions}>
           <TransactionList emptyMessage="No transactions found for this category." transactions={recentTransactions} />
         </div>
-        <button className="tonal-action" onClick={() => setActiveView("transactions")} type="button">
+        <button className="tonal-action" onClick={openTransactionsView} type="button">
           View all transactions
         </button>
       </section>
@@ -194,18 +197,21 @@ function CategoryLegendRow({
   const legendBarStyle = getLegendBarStyle(item, chartTotal, categoryColor);
   const legendRowClassName = getLegendRowClassName(item.category, selectedHomeCategory, hoveredCategory);
   const toggleCategory = () => setSelectedHomeCategory(getNextSelectedCategory(item.category, selectedHomeCategory));
+  const setHovered = () => setHoveredCategory(item.category);
+  const clearHovered = () => setHoveredCategory(null);
+  const legendDotStyle = getLegendDotStyle(categoryColor);
 
   return (
     <button
       className={legendRowClassName}
-      onMouseEnter={() => setHoveredCategory(item.category)}
-      onMouseLeave={() => setHoveredCategory(null)}
-      onFocus={() => setHoveredCategory(item.category)}
-      onBlur={() => setHoveredCategory(null)}
+      onMouseEnter={setHovered}
+      onMouseLeave={clearHovered}
+      onFocus={setHovered}
+      onBlur={clearHovered}
       onClick={toggleCategory}
       type="button"
     >
-      <span className="legend-dot" style={{ background: categoryColor }} />
+      <span className="legend-dot" style={legendDotStyle} />
       <span className="legend-content">
         <span className="legend-topline">
           <span className="legend-name">{item.category}</span>
@@ -235,6 +241,12 @@ function getLegendBarStyle(item: { amount: number }, chartTotal: number, categor
   return {
     background: categoryColor,
     width: `${getLegendBarWidth(item.amount, chartTotal)}%`
+  };
+}
+
+function getLegendDotStyle(categoryColor: string) {
+  return {
+    background: categoryColor
   };
 }
 

@@ -1,3 +1,4 @@
+import type { ChangeEvent } from "react";
 import { InfoRow } from "@/components/ui/InfoRow";
 import { categoryColors } from "@/lib/mock-data";
 import { formatMoney } from "@/lib/insights";
@@ -77,12 +78,30 @@ function getCategoryAction(
   const categoryLabel = `Set category for ${transaction.merchant}`;
 
   return (
-    <select
-      aria-label={categoryLabel}
-      className="row-category-select"
-      onChange={(event) => onCategoryChange?.(transaction.id, event.target.value)}
-      value={transaction.category}
-    >
+    <CategorySelect
+      categoryLabel={categoryLabel}
+      categoryOptions={categoryOptions}
+      onCategoryChange={onCategoryChange}
+      transaction={transaction}
+    />
+  );
+}
+
+function CategorySelect({
+  categoryLabel,
+  categoryOptions,
+  onCategoryChange,
+  transaction
+}: {
+  categoryLabel: string;
+  categoryOptions: string[];
+  onCategoryChange?: (transactionId: string, category: string) => void;
+  transaction: Transaction;
+}) {
+  const handleCategoryChange = (event: ChangeEvent<HTMLSelectElement>) => onCategoryChange?.(transaction.id, event.target.value);
+
+  return (
+    <select aria-label={categoryLabel} className="row-category-select" onChange={handleCategoryChange} value={transaction.category}>
       {categoryOptions.map((category) => (
         <option key={category} value={category}>
           {category}

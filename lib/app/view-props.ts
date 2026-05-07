@@ -24,6 +24,7 @@ export type ActiveViewProps = {
   isLoadingTransactions: boolean;
   isStartingPaymentTest: boolean;
   monthlySpend: number;
+  onCreateCategory: (category: string) => void;
   onCategoryChange: (transactionId: string, category: string) => void;
   onConnectionResponseChange: (value: string) => void;
   onRefreshUserTransactions: () => void;

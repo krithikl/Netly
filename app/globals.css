@@ -357,6 +357,10 @@ h2 {
 
 .primary-button,
 .tonal-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
   border: 0;
   border-radius: 999px;
   padding: 12px 18px;
@@ -489,19 +493,24 @@ h2 {
 }
 
 .donut {
+  display: grid;
+  place-items: center;
+  min-width: 1px;
+  min-height: 1px;
   width: 100%;
   height: 100%;
   overflow: visible;
 }
 
-.donut-cell {
+.donut canvas {
+  width: 100%;
+  height: 100%;
   cursor: pointer;
-  transition:
-    opacity 180ms ease,
-    stroke-width 180ms ease;
+  outline: none;
 }
 
-.donut-cell:focus-visible {
+.donut canvas:focus,
+.donut canvas:focus-visible {
   outline: none;
 }
 
@@ -516,8 +525,6 @@ h2 {
 
 .chart-tooltip {
   position: absolute;
-  left: 50%;
-  bottom: calc(100% + 10px);
   z-index: 2;
   min-width: 150px;
   display: grid;
@@ -527,10 +534,26 @@ h2 {
   border-radius: 16px;
   background: rgba(255, 251, 255, 0.96);
   box-shadow: 0 14px 30px rgba(29, 27, 32, 0.16);
-  transform: translateX(-50%);
   text-align: center;
-  animation: tooltip-in 140ms ease both;
   pointer-events: none;
+}
+
+.chart-tooltip.top {
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+}
+
+.chart-tooltip.left {
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.chart-tooltip.right {
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .chart-tooltip span {
@@ -663,6 +686,9 @@ h2 {
 }
 
 .empty-state {
+  display: grid;
+  align-items: center;
+  min-height: 58px;
   padding: 18px;
   border-radius: 18px;
   background: var(--surface-2);
@@ -756,10 +782,10 @@ h2 {
 }
 
 .transaction-controls {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(240px, 1.4fr) repeat(3, minmax(170px, 0.8fr));
   gap: 12px;
-  margin: 14px 0px;
+  margin: 14px 0;
 }
 
 .transaction-controls label {
@@ -771,7 +797,10 @@ h2 {
   text-transform: uppercase;
 }
 
+.transaction-controls input,
 .transaction-controls select {
+  width: 100%;
+  min-height: 44px;
   min-width: 190px;
   border: 1px solid var(--outline);
   border-radius: 999px;
@@ -1061,7 +1090,11 @@ h2 {
 }
 
 .tonal-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: fit-content;
+  min-height: 42px;
   border: 0;
   border-radius: 999px;
   padding: 11px 16px;
@@ -1111,17 +1144,6 @@ h2 {
   }
 }
 
-@keyframes tooltip-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 6px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
 @media (max-width: 1100px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -1165,6 +1187,7 @@ h2 {
   .dashboard-grid,
   .chart-layout,
   .card-fit-basis,
+  .transaction-controls,
   .payment-form,
   .payment-result,
   .budget-grid {
@@ -1196,7 +1219,12 @@ h2 {
     padding: 9px 10px 10px;
   }
 
-  .chart-tooltip {
+  .chart-tooltip,
+  .chart-tooltip.left,
+  .chart-tooltip.right,
+  .chart-tooltip.top {
+    right: auto;
+    top: auto;
     left: 50%;
     bottom: calc(100% + 8px);
     transform: translateX(-50%);

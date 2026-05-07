@@ -22,6 +22,26 @@ export const categoryOverridesStorageKey = "moneyfit_category_overrides";
 
 export const customCategoriesStorageKey = "moneyfit_custom_categories";
 
+export const defaultTransactionCategories = [
+  "Groceries",
+  "Eating out",
+  "Transport",
+  "Fuel",
+  "Housing",
+  "Utilities",
+  "Shopping",
+  "Subscriptions",
+  "Health",
+  "Insurance",
+  "Education",
+  "Entertainment",
+  "Travel",
+  "Transfers",
+  "Fees",
+  "Income",
+  "Needs review"
+];
+
 export const defaultPaymentTestForm: PaymentTestForm = {
   amount: "1.00",
   creditorAccount: "99-2385-6710320-00",

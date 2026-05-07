@@ -1,5 +1,7 @@
 import type { ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import { TransactionList } from "@/components/transactions/TransactionList";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import { PanelTitle } from "@/components/ui/PanelTitle";
 import type { Transaction } from "@/lib/types";
 import type { TransactionFilter, TransactionSort } from "@/lib/app/types";
@@ -8,6 +10,7 @@ type TransactionsViewProps = {
   categoryOptions: string[];
   isLoadingTransactions: boolean;
   onCategoryChange: (transactionId: string, category: string) => void;
+  onCreateCategory: (category: string) => void;
   query: string;
   setQuery: (query: string) => void;
   setTransactionCategory: (category: string) => void;
@@ -26,6 +29,7 @@ export function TransactionsView({
   categoryOptions,
   isLoadingTransactions,
   onCategoryChange,
+  onCreateCategory,
   query,
   setQuery,
   setTransactionCategory,
@@ -36,12 +40,38 @@ export function TransactionsView({
   transactionSort,
   transactions
 }: TransactionsViewProps) {
+  const [newCategory, setNewCategory] = useState("");
+  const [categorySuccessMessage, setCategorySuccessMessage] = useState("");
+  const normalizedNewCategory = normalizeCategoryName(newCategory);
+  const duplicateCategory = getMatchingCategory(categoryOptions, normalizedNewCategory);
+  const categoryErrorMessage = duplicateCategory ? `${duplicateCategory} already exists` : "";
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value);
-  const handleFilterChange = (event: ChangeEvent<HTMLSelectElement>) => setTransactionFilter(event.target.value as TransactionFilter);
-  const handleCategoryChange = (event: ChangeEvent<HTMLSelectElement>) => setTransactionCategory(event.target.value);
-  const handleSortChange = (event: ChangeEvent<HTMLSelectElement>) => setTransactionSort(event.target.value as TransactionSort);
+  const handleNewCategoryChange = (event: ChangeEvent<HTMLInputElement>) => setNewCategory(event.target.value);
+  const handleCreateCategory = () => {
+    if (!normalizedNewCategory || duplicateCategory) {
+      return;
+    }
+
+    onCreateCategory(normalizedNewCategory);
+    setCategorySuccessMessage(`Added ${normalizedNewCategory}`);
+    setNewCategory("");
+  };
   const editableCategoryOptions = categoryOptions.filter((category) => category !== "All categories");
+  const categorySelectOptions = getStringOptions(categoryOptions);
+  const editableCategorySelectOptions = getStringOptions(editableCategoryOptions);
+  const filterSelectOptions = getStringOptions(transactionFilters);
+  const sortSelectOptions = getStringOptions(transactionSortOptions);
+  const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
   const shownTransactions = isLoadingTransactions ? [] : transactions;
+
+  useEffect(() => {
+    if (!categorySuccessMessage) {
+      return undefined;
+    }
+
+    const clearMessage = window.setTimeout(() => setCategorySuccessMessage(""), 2400);
+    return () => window.clearTimeout(clearMessage);
+  }, [categorySuccessMessage]);
 
   return (
     <section className="view-stack">
@@ -59,38 +89,39 @@ export function TransactionsView({
           </label>
           <label>
             Status
-            <select value={transactionFilter} onChange={handleFilterChange}>
-              {transactionFilters.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            <CustomSelect onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
           </label>
           <label>
             Category
-            <select value={transactionCategory} onChange={handleCategoryChange}>
-              {categoryOptions.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+            <CustomSelect onChange={setTransactionCategory} options={categorySelectOptions} value={transactionCategory} />
           </label>
           <label>
             Sort
-            <select value={transactionSort} onChange={handleSortChange}>
-              {transactionSortOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            <CustomSelect onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
           </label>
+        </div>
+        <div className="category-create-row">
+          <label>
+            New category
+            <input onChange={handleNewCategoryChange} placeholder="e.g. Kids, Pets, Travel" value={newCategory} />
+          </label>
+          <button className="tonal-action" disabled={!canCreateCategory} onClick={handleCreateCategory} type="button">
+            Add category
+          </button>
+          {categoryErrorMessage && (
+            <p aria-live="polite" className="category-error-message">
+              {categoryErrorMessage}
+            </p>
+          )}
+          {categorySuccessMessage && (
+            <p aria-live="polite" className="category-success-message">
+              {categorySuccessMessage}
+            </p>
+          )}
         </div>
         <TransactionList
           editable
-          categoryOptions={editableCategoryOptions}
+          categorySelectOptions={editableCategorySelectOptions}
           emptyMessage="No transactions match the current filters."
           onCategoryChange={onCategoryChange}
           transactions={shownTransactions}
@@ -98,4 +129,23 @@ export function TransactionsView({
       </section>
     </section>
   );
+}
+
+function getStringOptions<T extends string>(values: T[]) {
+  return values.map((value) => ({
+    label: value,
+    value
+  }));
+}
+
+function normalizeCategoryName(category: string) {
+  return category.trim().replace(/\s+/g, " ");
+}
+
+function getMatchingCategory(categories: string[], category: string) {
+  if (!category) {
+    return "";
+  }
+
+  return categories.find((currentCategory) => currentCategory.toLowerCase() === category.toLowerCase()) || "";
 }

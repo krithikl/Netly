@@ -4,6 +4,8 @@ import clsx from "clsx";
 import type { KeyboardEvent } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
+const customSelectOpenEvent = "moneyfit-custom-select-open";
+
 export type CustomSelectOption<T extends string = string> = {
   label: string;
   value: T;
@@ -35,10 +37,26 @@ export function CustomSelect<T extends string = string>({ ariaLabel, className, 
         closeMenu();
       }
     };
+    const handleAnotherSelectOpen = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== selectId) {
+        closeMenu();
+      }
+    };
 
     document.addEventListener("mousedown", handleDocumentClick);
-    return () => document.removeEventListener("mousedown", handleDocumentClick);
-  }, []);
+    window.addEventListener(customSelectOpenEvent, handleAnotherSelectOpen);
+
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentClick);
+      window.removeEventListener(customSelectOpenEvent, handleAnotherSelectOpen);
+    };
+  }, [selectId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      window.dispatchEvent(new CustomEvent(customSelectOpenEvent, { detail: selectId }));
+    }
+  }, [isOpen, selectId]);
 
   const handleButtonKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {

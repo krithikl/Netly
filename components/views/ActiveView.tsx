@@ -14,6 +14,7 @@ export function ActiveView(props: ActiveViewProps) {
           categoryOptions={props.transactionCategoryOptions}
           isLoadingTransactions={props.isLoadingTransactions}
           onCategoryChange={props.onCategoryChange}
+          onCreateCategory={props.onCreateCategory}
           query={props.query}
           setQuery={props.setQuery}
           setTransactionCategory={props.setTransactionCategory}

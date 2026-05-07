@@ -1,11 +1,12 @@
-import type { ChangeEvent } from "react";
 import { InfoRow } from "@/components/ui/InfoRow";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import type { CustomSelectOption } from "@/components/ui/CustomSelect";
 import { categoryColors } from "@/lib/mock-data";
 import { formatMoney } from "@/lib/insights";
 import type { Transaction } from "@/lib/types";
 
 type TransactionListProps = {
-  categoryOptions?: string[];
+  categorySelectOptions?: CustomSelectOption[];
   editable?: boolean;
   emptyMessage?: string;
   onCategoryChange?: (transactionId: string, category: string) => void;
@@ -13,7 +14,7 @@ type TransactionListProps = {
 };
 
 export function TransactionList({
-  categoryOptions = [],
+  categorySelectOptions = [],
   editable = false,
   emptyMessage = "No transactions to show.",
   onCategoryChange,
@@ -30,7 +31,7 @@ export function TransactionList({
 
         return (
           <InfoRow
-            action={getCategoryAction(transaction, editable, categoryOptions, onCategoryChange)}
+            action={getCategoryAction(transaction, editable, categorySelectOptions, onCategoryChange)}
             color={row.color}
             key={transaction.id}
             meta={row.meta}
@@ -68,7 +69,7 @@ function getTransactionMeta(transaction: Transaction) {
 function getCategoryAction(
   transaction: Transaction,
   editable: boolean,
-  categoryOptions: string[],
+  categoryOptions: CustomSelectOption[],
   onCategoryChange?: (transactionId: string, category: string) => void
 ) {
   if (!editable) {
@@ -94,19 +95,19 @@ function CategorySelect({
   transaction
 }: {
   categoryLabel: string;
-  categoryOptions: string[];
+  categoryOptions: CustomSelectOption[];
   onCategoryChange?: (transactionId: string, category: string) => void;
   transaction: Transaction;
 }) {
-  const handleCategoryChange = (event: ChangeEvent<HTMLSelectElement>) => onCategoryChange?.(transaction.id, event.target.value);
+  const handleCategoryChange = (category: string) => onCategoryChange?.(transaction.id, category);
 
   return (
-    <select aria-label={categoryLabel} className="row-category-select" onChange={handleCategoryChange} value={transaction.category}>
-      {categoryOptions.map((category) => (
-        <option key={category} value={category}>
-          {category}
-        </option>
-      ))}
-    </select>
+    <CustomSelect
+      ariaLabel={categoryLabel}
+      className="row-category-select"
+      onChange={handleCategoryChange}
+      options={categoryOptions}
+      value={transaction.category}
+    />
   );
 }

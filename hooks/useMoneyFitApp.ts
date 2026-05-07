@@ -2,8 +2,15 @@
 
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { bankReferenceMaxLength, defaultPaymentTestForm, periods } from "@/lib/app/constants";
-import { handleCallbackParams, readAuthResponseCookie, readCategoryOverrides, readInitialDataMode, storePaymentBaseline } from "@/lib/app/browser-state";
+import {
+  bankReferenceMaxLength,
+  categoryOverridesStorageKey,
+  customCategoriesStorageKey,
+  defaultPaymentTestForm,
+  defaultTransactionCategories,
+  periods
+} from "@/lib/app/constants";
+import { handleCallbackParams, readAuthResponseCookie, readCategoryOverrides, readCustomCategories, readInitialDataMode, storePaymentBaseline } from "@/lib/app/browser-state";
 import {
   applyCategoryOverrides,
   getCardFitSourceLabel,
@@ -66,6 +73,7 @@ export function useMoneyFitApp() {
   const [availableBalance, setAvailableBalance] = useState<number | null>(null);
   const [dataMode, setDataMode] = useState<DataMode>("user");
   const [categoryOverrides, setCategoryOverrides] = useState<Record<string, string>>({});
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [transactionLoadError, setTransactionLoadError] = useState("");
@@ -189,7 +197,20 @@ export function useMoneyFitApp() {
     };
 
     setCategoryOverrides(next);
-    window.localStorage.setItem("moneyfit_category_overrides", JSON.stringify(next));
+    window.localStorage.setItem(categoryOverridesStorageKey, JSON.stringify(next));
+  }
+
+  function createCustomCategory(category: string) {
+    const normalizedCategory = normalizeCustomCategory(category);
+    const categoryExists = getCategoryExists(transactionCategoryOptions, normalizedCategory);
+
+    if (!normalizedCategory || categoryExists) {
+      return;
+    }
+
+    const nextCategories = [...customCategories, normalizedCategory].sort();
+    setCustomCategories(nextCategories);
+    window.localStorage.setItem(customCategoriesStorageKey, JSON.stringify(nextCategories));
   }
 
   function updateConnectionResponse(value: string) {
@@ -199,6 +220,7 @@ export function useMoneyFitApp() {
 
   useEffect(() => {
     setCategoryOverrides(readCategoryOverrides());
+    setCustomCategories(readCustomCategories());
 
     let initialDataMode = readInitialDataMode();
     setDataMode(initialDataMode);
@@ -250,7 +272,7 @@ export function useMoneyFitApp() {
   const reviewCount = periodTransactions.filter((transaction) => transaction.needsReview).length;
   const chartCategories = categories.filter((item) => item.category !== "Income").slice(0, 8);
   const chartTotal = sum(chartCategories.map((item) => item.amount));
-  const transactionCategoryOptions = ["All categories", ...categories.map((item) => item.category).sort()];
+  const transactionCategoryOptions = getTransactionCategoryOptions(workingTransactions, categories, customCategories);
   const visibleTransactions = getVisibleTransactions(periodTransactions, query, transactionCategory, transactionFilter, transactionSort);
   const transactionPreview = periodTransactions.filter((transaction) => !selectedHomeCategory || transaction.category === selectedHomeCategory);
   const paymentBalanceDelta = getPaymentBalanceDelta(paymentTestResult, availableBalance);
@@ -283,6 +305,7 @@ export function useMoneyFitApp() {
     isStartingPaymentTest,
     monthlySpend,
     onCategoryChange: updateTransactionCategory,
+    onCreateCategory: createCustomCategory,
     onConnectionResponseChange: updateConnectionResponse,
     onRefreshUserTransactions: () => refreshTransactions("user"),
     onStartPaymentTest: startPaymentTest,
@@ -336,6 +359,29 @@ export function useMoneyFitApp() {
     statusBannerTitle: getStatusBannerTitle(transactionLoadError, dataMode),
     viewProps
   };
+}
+
+function getTransactionCategoryOptions(
+  transactions: Transaction[],
+  categories: { category: string; amount: number }[],
+  customCategories: string[]
+) {
+  const categorySet = new Set<string>();
+  defaultTransactionCategories.forEach((category) => categorySet.add(category));
+  categories.forEach((item) => categorySet.add(item.category));
+  transactions.forEach((transaction) => categorySet.add(transaction.category));
+  customCategories.forEach((category) => categorySet.add(category));
+  categorySet.delete("Income");
+
+  return ["All categories", ...[...categorySet].sort()];
+}
+
+function normalizeCustomCategory(category: string) {
+  return category.trim().replace(/\s+/g, " ");
+}
+
+function getCategoryExists(categories: string[], category: string) {
+  return categories.some((currentCategory) => currentCategory.toLowerCase() === category.toLowerCase());
 }
 
 function assertOpenBankingResponse(response: Response, error: string | undefined, fallbackMessage: string) {

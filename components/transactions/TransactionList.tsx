@@ -11,6 +11,7 @@ import {
   getTransactionId,
   getTransactionMerchant,
   getTransactionRawText,
+  getTransactionStatus,
   getTransactionSummaryMeta
 } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
@@ -173,10 +174,16 @@ function TransactionDetailsDialog({
         </div>
 
         <div className="transaction-dialog-body">
-          <div className="transaction-dialog-value">
+        <div className="transaction-dialog-value">
+          <div>
             <span>Amount</span>
             <strong className={transaction.amount < 0 ? "negative" : "positive"}>{getTransactionAmountLabel(transaction)}</strong>
           </div>
+          <div>
+            <span>Status</span>
+            <strong>{getTransactionStatus(transaction)}</strong>
+          </div>
+        </div>
 
           <div className="transaction-detail-grid">
             {rows.map((row) => (

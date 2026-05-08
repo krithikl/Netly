@@ -89,9 +89,6 @@ export function getTransactionSummaryMeta(transaction: Transaction) {
 
 export function getTransactionDetailRows(transaction: Transaction) {
   return [
-    { label: "Date", value: getTransactionDate(transaction) },
-    { label: "Status", value: getTransactionStatus(transaction) },
-    { label: "Amount", value: getTransactionAmountLabel(transaction) },
     { label: "Account", value: getTransactionAccountLabel(transaction) },
     { label: "Currency", value: getTransactionCurrency(transaction) },
     { label: "Type", value: transaction.type },
@@ -100,16 +97,12 @@ export function getTransactionDetailRows(transaction: Transaction) {
     { label: "Merchant", value: transaction.merchant?.name },
     { label: "Card suffix", value: transaction.meta?.card_suffix },
     { label: "Balance after", value: getBalanceValue(transaction) },
-    { label: "Particulars", value: transaction.meta?.particulars },
-    { label: "Code", value: transaction.meta?.code },
-    { label: "Reference", value: transaction.meta?.reference },
     { label: "Other account", value: transaction.meta?.other_account },
     { label: "Original amount", value: getConversionValue(transaction) },
+    { label: "Payment reference", value: getPaymentReferenceValue(transaction) },
     { label: "Akahu ID", value: transaction._id },
     { label: "Account ID", value: transaction._account },
-    { label: "Connection ID", value: transaction._connection },
-    { label: "Created", value: transaction.created_at },
-    { label: "Updated", value: transaction.updated_at }
+    { label: "Connection ID", value: transaction._connection }
   ].filter(hasDetailValue);
 }
 
@@ -223,6 +216,16 @@ function getConversionValue(transaction: Transaction) {
   }).format(conversion.amount);
 
   return convertedAmount;
+}
+
+function getPaymentReferenceValue(transaction: Transaction) {
+  return [
+    transaction.meta?.particulars,
+    transaction.meta?.code,
+    transaction.meta?.reference
+  ]
+    .filter(isUsefulText)
+    .join(" ");
 }
 
 function hasDetailValue(row: { label: string; value?: unknown }): row is { label: string; value: string } {

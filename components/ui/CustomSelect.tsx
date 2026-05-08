@@ -70,7 +70,7 @@ export function CustomSelect<T extends string = string>({ ariaLabel, className, 
   };
 
   return (
-    <div className="custom-select" ref={rootRef}>
+    <div className="custom-select" ref={rootRef} onClick={(event) => event.stopPropagation()}>
       <button
         aria-expanded={isOpen}
         aria-haspopup="listbox"

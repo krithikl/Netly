@@ -43,16 +43,16 @@ export function PaymentTestView({
     <section className="view-stack">
       <section className="material-card">
         <div className="panel-header">
-          <PanelTitle title="Payment test" subtitle="Create and authorize a PNZ sandbox domestic payment" />
+          <PanelTitle title="Payment test" subtitle="Disabled on the Akahu data branch" />
           <button className="tonal-action" disabled={isLoadingTransactions} onClick={onRefreshTransactions} type="button">
-            Refresh PNZ data
+            Refresh Akahu data
           </button>
         </div>
         <div className="status-banner neutral payment-help" role="note">
           <span className="payment-help-icon" title={paymentTestHelp} aria-label={paymentTestHelp}>
             i
           </span>
-          <strong>Use the same sandbox user.</strong>
+          <strong>Payment tests are paused.</strong>
           <span>{paymentTestHelp}</span>
         </div>
         <PaymentTestFormFields
@@ -78,7 +78,7 @@ export function PaymentTestView({
           {paymentTestResult?.error || syncResult}
         </p>
         <div className="stable-list-panel">
-          <TransactionList categoryColors={categoryColors} emptyMessage="No PNZ user transactions loaded yet." transactions={recentTransactions} />
+          <TransactionList categoryColors={categoryColors} emptyMessage="No Akahu user transactions loaded yet." transactions={recentTransactions} />
         </div>
       </section>
     </section>
@@ -127,7 +127,7 @@ function PaymentTestFormFields({ form, isStartingPaymentTest, onSubmit, updatePa
         <input maxLength={bankReferenceMaxLength} onChange={handleCodeChange} value={form.code} />
       </label>
       <button className="primary-button" disabled={isStartingPaymentTest} type="submit">
-        {isStartingPaymentTest ? "Starting payment..." : "Authorize sandbox payment"}
+        {isStartingPaymentTest ? "Starting payment..." : "Authorize payment"}
       </button>
     </form>
   );

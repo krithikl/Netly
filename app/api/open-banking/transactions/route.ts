@@ -1,148 +1,74 @@
 import { NextRequest, NextResponse } from "next/server";
-import { transactions as mockTransactions } from "@/lib/mock-data";
 import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
-import { normalizePnzTransactions, type PnzTransaction, type PnzTransactionsResponse } from "@/lib/open-banking/normalize";
-import { getValidAccessToken, applyTokenCookies } from "@/lib/open-banking/token";
-
-const SANDBOX_TRANSACTION_FROM = "2018-01-01T00:00:00.000Z";
-
-type PnzAccountsResponse = {
-  Data?: {
-    Account?: Array<{
-      AccountId?: string;
-    }>;
-  };
-};
+import { getAkahuAccounts } from "@/lib/open-banking/accounts";
+import { dedupeAkahuTransactions, getAkahuTransactions } from "@/lib/open-banking/normalize";
+import { getValidAccessToken } from "@/lib/open-banking/token";
+import { transactions as demoTransactions } from "@/lib/mock-data";
 
 export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const requestedSource = url.searchParams.get("source");
-  const { accessToken, newCookies } = await getValidAccessToken(request);
+  const source = request.nextUrl.searchParams.get("source");
 
-  if (requestedSource === "demo") {
+  if (source === "demo") {
     return NextResponse.json({
-      source: "mock",
-      connected: false,
-      notice: "Showing PNZ-format demo transactions.",
-      transactions: mockTransactions
+      source: "demo",
+      connected: true,
+      rawCount: demoTransactions.length,
+      transactions: demoTransactions,
+      notice: "Showing Akahu-shaped demo transactions."
     });
   }
 
+  const { accessToken } = getValidAccessToken(request);
+
   if (!accessToken) {
-    const responseObj = NextResponse.json({
-      source: "pnz-sandbox",
+    return NextResponse.json({
+      source: "akahu",
       connected: false,
-      notice: "No PNZ sandbox user is connected. Connect a bank or switch to demo data.",
-      transactions: []
+      rawCount: 0,
+      transactions: [],
+      notice: "No Akahu user token is connected. Connect Akahu or switch to demo data."
     });
-    return applyTokenCookies(responseObj, newCookies);
   }
 
   try {
     const client = createOpenBankingClientFromEnv();
-    const now = new Date();
-    const response = (await client.getAllTransactions({ accessToken })) as PnzTransactionsResponse;
-    const accountsResponse = (await client.getAccounts({ accessToken })) as PnzAccountsResponse;
-    const accountIds = (accountsResponse.Data?.Account || [])
-      .map((account) => account.AccountId)
-      .filter((accountId): accountId is string => Boolean(accountId));
-    const accountTransactionResults = await Promise.allSettled(
-      accountIds.map((accountId) =>
-        client.getAllAccountTransactions({ accessToken }, accountId) as Promise<PnzTransactionsResponse>
-      )
-    );
-    const accountTransactions = accountTransactionResults.flatMap((result) =>
-      result.status === "fulfilled" ? result.value.Data?.Transaction || [] : []
-    );
-    const rawTransactions = response?.Data?.Transaction || [];
-    const mergedTransactions = dedupePnzTransactions([...rawTransactions, ...accountTransactions]);
-    const moneyFitRawTransactions = mergedTransactions.filter((transaction) =>
-      JSON.stringify(transaction).toLowerCase().includes("moneyfit")
-    );
-    const transactions = normalizePnzTransactions({
-      ...response,
-      Data: {
-        ...response.Data,
-        Transaction: mergedTransactions
-      }
-    }).sort((a, b) => b.date.localeCompare(a.date));
+    const accountsResponse = await client.getAccounts({ userToken: accessToken });
+    const accounts = getAkahuAccounts(accountsResponse);
+    const transactionsResponse = await client.getTransactionsForAccounts({ userToken: accessToken }, accounts);
+    const transactions = dedupeAkahuTransactions(getAkahuTransactions(transactionsResponse, accounts));
+    const notice = transactions.length === 0 ? getEmptyTransactionsNotice(accounts) : "";
 
-    const responseObj = NextResponse.json({
-      source: "pnz-sandbox",
+    return NextResponse.json({
+      source: "akahu",
       connected: true,
-      rawCount: rawTransactions.length,
-      accountScopedRawCount: accountTransactions.length,
-      mergedRawCount: mergedTransactions.length,
-      normalizedCount: transactions.length,
-      debug: {
-        pnzHost: client.getConfig().baseUrl,
-        accountIds,
-        firstRawBookingDates: mergedTransactions.slice(0, 8).map((transaction) => ({
-          accountId: transaction.AccountId,
-          bookingDateTime: transaction.BookingDateTime,
-          transactionId: transaction.TransactionId,
-          creditorName: transaction.TransactionReference?.CreditorName,
-          amount: transaction.Amount?.Amount
-        })),
-        moneyFitRawCount: moneyFitRawTransactions.length,
-        moneyFitRaw: moneyFitRawTransactions.slice(0, 5).map((transaction) => ({
-          accountId: transaction.AccountId,
-          bookingDateTime: transaction.BookingDateTime,
-          transactionId: transaction.TransactionId,
-          creditorName: transaction.TransactionReference?.CreditorName,
-          amount: transaction.Amount?.Amount,
-          status: transaction.Status
-        }))
-      },
-      requestedFrom: null,
-      requestedTo: null,
-      previousDateWindow: {
-        from: SANDBOX_TRANSACTION_FROM,
-        to: now.toISOString()
-      },
-      bulkPages: "pages" in response && Array.isArray(response.pages) ? response.pages.length : 1,
-      notice:
-        transactions.length === 0
-          ? "PNZ connected, but the sandbox returned no transactions for the current consent/date range."
-          : undefined,
-      transactions
+      rawCount: transactionsResponse.items?.length || 0,
+      accountCount: accounts.length,
+      rawAccounts: accounts,
+      transactions,
+      notice
     });
-    return applyTokenCookies(responseObj, newCookies);
   } catch (error) {
-    return NextResponse.json(
-      {
-        source: "mock",
-        connected: false,
-        error: error instanceof Error ? error.message : "Unknown PNZ transaction fetch error",
-        transactions: mockTransactions
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      source: "akahu",
+      connected: false,
+      rawCount: 0,
+      transactions: [],
+      error: error instanceof Error ? error.message : "Unknown Akahu transaction fetch error"
+    }, { status: 502 });
   }
 }
 
-function dedupePnzTransactions(transactions: PnzTransaction[]) {
-  const seen = new Set<string>();
+function getEmptyTransactionsNotice(accounts: Array<{ attributes?: string[]; connection?: { name?: string }; name?: string }>) {
+  const hasDemoBankAccount = accounts.some((account) => /demo bank/i.test(account.connection?.name || account.name || ""));
+  const hasTransactionCapableAccount = accounts.some((account) => account.attributes?.includes("TRANSACTIONS"));
 
-  return transactions.filter((transaction) => {
-    const key = [
-      transaction.TransactionId,
-      transaction.AccountId,
-      transaction.BookingDateTime,
-      transaction.Amount?.Amount,
-      transaction.Amount?.Currency,
-      transaction.CreditDebitIndicator,
-      transaction.TransactionReference?.CreditorName,
-      transaction.TransactionReference?.CreditorReference?.Reference
-    ]
-      .filter(Boolean)
-      .join("|");
+  if (hasDemoBankAccount && !hasTransactionCapableAccount) {
+    return "Akahu Demo Bank connected successfully, but Demo Bank enduring connections do not return transaction data. Use MoneyFit demo mode or connect a real transaction-capable account for transaction testing.";
+  }
 
-    if (seen.has(key)) {
-      return false;
-    }
+  if (!hasTransactionCapableAccount) {
+    return "Akahu connected successfully, but none of the shared accounts expose transaction data. In Akahu, share an account with the TRANSACTIONS attribute or connect a transaction-capable account.";
+  }
 
-    seen.add(key);
-    return true;
-  });
+  return "Akahu connected successfully, but no transactions were returned for the shared accounts yet.";
 }

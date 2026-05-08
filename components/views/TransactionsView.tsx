@@ -78,7 +78,7 @@ export function TransactionsView({
   return (
     <section className="view-stack">
       <section className="material-card">
-        <PanelTitle title="Transactions" subtitle="Bank descriptions are categorized with confidence scoring" />
+        <PanelTitle title="Transactions" subtitle="Akahu merchant and category enrichment where available" />
         <div className="transaction-controls">
           <label>
             Search

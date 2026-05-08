@@ -1,57 +1,38 @@
-# MoneyFit MVP
+# MoneyFit
 
-MoneyFit is a web-first MVP for a NZ open-banking financial helper.
+MoneyFit helps New Zealanders see where their money is going, spot repeat spending, and compare whether a different card could give better value.
 
-The first product wedge is:
+It connects to Akahu for account and transaction data, uses Akahu merchant/category enrichment where available, and falls back to demo data while you are building locally.
 
-> Connect or import transactions, understand where money is going, and estimate whether a different card or account setup would give better value.
+## Features
 
-This folder currently contains a dependency-free browser prototype so the product shape can be reviewed without installing Node. The implementation target is still:
+- Spending dashboard with balance, safe-to-spend, income, and review signals
+- Akahu-shaped transaction feed with merchant and category enrichment
+- Budget and recurring-payment views
+- Card fit comparison for annual eligible spend
+- Custom category overrides and category colour settings
+- Demo mode for no-cost local testing
 
-- Next.js
+## Tech Stack
+
+- Next.js App Router
+- React
 - TypeScript
-- Postgres
-- Drizzle or Prisma
-- Server-only PNZ API integration
-- Expo React Native later
+- Vanilla CSS
+- Chart.js
+- Akahu API
 
-## Run The App
-
-Install dependencies and start the hot-reloading Next.js dev server:
+## Run Locally
 
 ```powershell
-cd C:\Users\krith\Downloads\test\mvp
 npm install
 npm run dev
 ```
 
-Then open:
+Open `http://localhost:3000`.
 
-`http://127.0.0.1:3000`
+Copy `.env.example` to `.env.local` and add Akahu values when testing real data. You can also paste a Personal App User Access Token in the Connect page during development.
 
-Next.js hot reloads React pages and API routes during development. Changes to files such as `app/page.tsx`, `app/api/**/route.ts`, and `lib/**/*.ts` should be picked up without restarting the server.
+## Cost
 
-## What Is In Scope
-
-- Spending dashboard
-- Mock transaction import
-- Category summary
-- Safe-to-spend estimate
-- Recurring payment detection
-- Card/reward value comparison
-- Open banking integration notes based on `paymentsapi.yaml`
-
-## What Is Not In Scope Yet
-
-- Payments
-- Real production bank connections
-- AI chat
-- Stored credentials
-- User accounts
-- Subscription billing
-
-## Security Notes
-
-The PNZ private key must stay server-side only. Never expose it in browser JavaScript.
-
-Use `.env.local` for real sandbox credentials and keep it ignored by git.
+This MVP is designed to build and test for free locally. Keep using demo mode, Akahu Personal App development access, and free hosting/database tiers until the product value is proven.

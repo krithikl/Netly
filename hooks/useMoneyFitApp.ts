@@ -12,7 +12,7 @@ import {
   defaultTransactionCategories,
   periods
 } from "@/lib/app/constants";
-import { handleCallbackParams, readAuthResponseCookie, readCategoryColors, readCategoryOverrides, readCustomCategories, readDeletedCategories, readInitialDataMode, storePaymentBaseline } from "@/lib/app/browser-state";
+import { handleCallbackParams, readAuthResponseCookie, readCategoryColors, readCategoryOverrides, readCustomCategories, readDeletedCategories, readInitialDataMode } from "@/lib/app/browser-state";
 import {
   applyCategoryOverrides,
   getCardFitSourceLabel,
@@ -29,16 +29,16 @@ import {
   getStatusBannerTitle,
   getVisibleTransactions
 } from "@/lib/app/derived";
-import { createPaymentAuthorization } from "@/lib/app/payment-client";
 import type { DataMode, LinkedAccount, PaymentTestForm, PaymentTestResult, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 import type { ActiveViewProps } from "@/lib/app/view-props";
 import { budgets, cardProducts, currentBalance as fallbackBalance, payday, transactions as fallbackTransactions } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
 import { filterTransactionsByPeriod } from "@/lib/periods";
+import { getTransactionCategory, getTransactionStatus, transactionNeedsReview } from "@/lib/transaction-display";
 import type { PeriodOption, Transaction } from "@/lib/types";
 
 type TransactionsPayload = {
-  source: "mock" | "pnz-sandbox";
+  source: "demo" | "akahu";
   connected?: boolean;
   error?: string;
   notice?: string;
@@ -180,18 +180,8 @@ export function useMoneyFitApp() {
 
   async function startPaymentTest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsStartingPaymentTest(true);
-    setSyncResult("Creating PNZ payment consent...");
-    storePaymentBaseline(availableBalance, workingTransactions.length);
-
-    try {
-      const authorizationUrl = await createPaymentAuthorization(paymentTestForm);
-      setSyncResult("Opening sandbox payment authorization...");
-      window.location.href = authorizationUrl;
-    } catch (error) {
-      setSyncResult(error instanceof Error ? error.message : "Could not start payment test.");
-      setIsStartingPaymentTest(false);
-    }
+    setSyncResult("Payment testing is disabled on the Akahu data branch.");
+    setIsStartingPaymentTest(false);
   }
 
   function updateTransactionCategory(transactionId: string, category: string) {
@@ -243,7 +233,7 @@ export function useMoneyFitApp() {
     let initialDataMode = readInitialDataMode();
     setDataMode(initialDataMode);
 
-    // PNZ connection and payment callbacks return through query params.
+    // Akahu OAuth callbacks return through query params.
     const callbackResult = handleCallbackParams({
       setActiveView,
       setDataMode,
@@ -261,14 +251,14 @@ export function useMoneyFitApp() {
     }
 
     refreshTransactions(initialDataMode).catch((error: unknown) => {
-      applyFallbackState(initialDataMode, error, "Could not load PNZ transactions.");
+      applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
   }, []);
 
   useEffect(() => {
     if (connectionResponse.trim() && !hasAutoCompletedRef.current) {
       hasAutoCompletedRef.current = true;
-      setSyncResult("Completing sandbox authorization...");
+      setSyncResult("Completing Akahu connection...");
       completeOpenBankingConnection(connectionResponse);
     }
   }, [connectionResponse]);
@@ -296,9 +286,9 @@ export function useMoneyFitApp() {
   
   const income = useMemo(() => sum(periodTransactions.filter((transaction) => transaction.amount > 0).map((transaction) => transaction.amount)), [periodTransactions]);
   
-  const upcoming = periodTransactions.filter((transaction) => transaction.status === "Upcoming");
+  const upcoming = periodTransactions.filter((transaction) => getTransactionStatus(transaction) === "Upcoming");
   
-  const reviewCount = periodTransactions.filter((transaction) => transaction.needsReview).length;
+  const reviewCount = periodTransactions.filter(transactionNeedsReview).length;
   const chartCategories = categories.filter((item) => item.category !== "Income").slice(0, 8);
   
   const chartTotal = sum(chartCategories.map((item) => item.amount));
@@ -307,7 +297,7 @@ export function useMoneyFitApp() {
   
   const visibleTransactions = getVisibleTransactions(periodTransactions, query, transactionCategory, transactionFilter, transactionSort);
   
-  const transactionPreview = periodTransactions.filter((transaction) => !selectedHomeCategory || transaction.category === selectedHomeCategory);
+  const transactionPreview = periodTransactions.filter((transaction) => !selectedHomeCategory || getTransactionCategory(transaction) === selectedHomeCategory);
   
   const paymentBalanceDelta = getPaymentBalanceDelta(paymentTestResult, availableBalance);
   
@@ -412,7 +402,7 @@ function getTransactionCategoryOptions(
   const categorySet = new Set<string>();
   defaultTransactionCategories.forEach((category) => categorySet.add(category));
   categories.forEach((item) => categorySet.add(item.category));
-  transactions.forEach((transaction) => categorySet.add(transaction.category));
+  transactions.forEach((transaction) => categorySet.add(getTransactionCategory(transaction)));
   customCategories.forEach((category) => categorySet.add(category));
   categorySet.delete("Income");
   deletedCategories.forEach((category) => categorySet.delete(category));

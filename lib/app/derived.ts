@@ -1,9 +1,19 @@
 import type { DataMode, LinkedAccount, PaymentTestResult, TransactionFilter, TransactionSort } from "@/lib/app/types";
+import {
+  getTransactionAccountLabel,
+  getTransactionCategory,
+  getTransactionDate,
+  getTransactionId,
+  getTransactionMerchant,
+  getTransactionRawText,
+  getTransactionStatus,
+  isUpcomingTransaction
+} from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
 export function applyCategoryOverrides(transactions: Transaction[], categoryOverrides: Record<string, string>) {
   return transactions.map((transaction) => {
-    const override = categoryOverrides[transaction.id];
+    const override = categoryOverrides[getTransactionId(transaction)];
 
     if (!override) {
       return transaction;
@@ -11,10 +21,10 @@ export function applyCategoryOverrides(transactions: Transaction[], categoryOver
 
     return {
       ...transaction,
-      category: override,
-      confidence: 1,
-      needsReview: false,
-      note: "Manually categorized"
+      moneyfit: {
+        ...transaction.moneyfit,
+        categoryOverride: override
+      }
     };
   });
 }
@@ -32,9 +42,10 @@ export function getVisibleTransactions(
 }
 
 function matchesTransactionFilters(transaction: Transaction, query: string, transactionCategory: string, transactionFilter: TransactionFilter) {
-  const searchableText = `${transaction.merchant} ${transaction.category} ${transaction.account} ${transaction.rawDescription}`.toLowerCase();
+  const category = getTransactionCategory(transaction);
+  const searchableText = `${getTransactionMerchant(transaction)} ${category} ${getTransactionAccountLabel(transaction)} ${getTransactionRawText(transaction)}`.toLowerCase();
   const matchesQuery = searchableText.includes(query.trim().toLowerCase());
-  const matchesCategory = transactionCategory === "All categories" || transaction.category === transactionCategory;
+  const matchesCategory = transactionCategory === "All categories" || category === transactionCategory;
 
   return matchesQuery && matchesCategory && matchesTransactionFilter(transaction, transactionFilter);
 }
@@ -42,11 +53,11 @@ function matchesTransactionFilters(transaction: Transaction, query: string, tran
 function matchesTransactionFilter(transaction: Transaction, transactionFilter: TransactionFilter) {
   switch (transactionFilter) {
     case "Expenses":
-      return transaction.amount < 0 && transaction.status !== "Upcoming";
+      return transaction.amount < 0 && !isUpcomingTransaction(transaction);
     case "Income":
       return transaction.amount > 0;
     case "Upcoming":
-      return transaction.status === "Upcoming";
+      return getTransactionStatus(transaction) === "Upcoming";
     default:
       return true;
   }
@@ -55,13 +66,13 @@ function matchesTransactionFilter(transaction: Transaction, transactionFilter: T
 function compareTransactions(first: Transaction, second: Transaction, transactionSort: TransactionSort) {
   switch (transactionSort) {
     case "Oldest":
-      return first.date.localeCompare(second.date);
+      return getTransactionDate(first).localeCompare(getTransactionDate(second));
     case "Amount high":
       return Math.abs(second.amount) - Math.abs(first.amount);
     case "Amount low":
       return Math.abs(first.amount) - Math.abs(second.amount);
     default:
-      return second.date.localeCompare(first.date);
+      return getTransactionDate(second).localeCompare(getTransactionDate(first));
   }
 }
 
@@ -86,19 +97,19 @@ export function getPaymentFeedNote(paymentTestResult: PaymentTestResult | null, 
     return "";
   }
 
-  return "PNZ accepted the payment and updated balances, but this sandbox has not published a matching row into the transactions feed.";
+  return "The provider updated balances, but no matching row was published into the transactions feed yet.";
 }
 
 export function getConnectionTitle(isLoadingTransactions: boolean, dataMode: DataMode, isConnected: boolean) {
   if (isLoadingTransactions) {
-    return "Checking sandbox";
+    return "Checking Akahu";
   }
 
   if (dataMode === "demo") {
     return "Demo data";
   }
 
-  return isConnected ? "PNZ sandbox connected" : "Sandbox ready";
+  return isConnected ? "Akahu connected" : "Akahu ready";
 }
 
 export function getConnectionCopy(isLoadingTransactions: boolean, dataMode: DataMode, isConnected: boolean) {
@@ -107,10 +118,10 @@ export function getConnectionCopy(isLoadingTransactions: boolean, dataMode: Data
   }
 
   if (dataMode === "demo") {
-    return "Using PNZ-format sample transactions.";
+    return "Using Akahu-shaped sample transactions.";
   }
 
-  return isConnected ? "Transactions are loading from PNZ." : "No connected user data loaded.";
+  return isConnected ? "Transactions are loading from Akahu." : "No connected user data loaded.";
 }
 
 export function getDataSourceLabel(isLoadingTransactions: boolean, dataMode: DataMode, isConnected: boolean) {
@@ -119,10 +130,10 @@ export function getDataSourceLabel(isLoadingTransactions: boolean, dataMode: Dat
   }
 
   if (dataMode === "demo") {
-    return "PNZ-format demo data";
+    return "Akahu-shaped demo data";
   }
 
-  return isConnected ? "Payments NZ sandbox" : "no connected user";
+  return isConnected ? "Akahu" : "no connected user";
 }
 
 export function getLinkedAccountLabel(primaryLinkedAccount: LinkedAccount | null, linkedAccountCount: number, isConnected: boolean) {
@@ -151,15 +162,15 @@ export function getStatusBannerTitle(transactionLoadError: string, dataMode: Dat
     return dataMode === "demo" ? "Demo data unavailable." : "User data unavailable.";
   }
 
-  return dataMode === "demo" ? "Demo data." : "PNZ sandbox connected.";
+  return dataMode === "demo" ? "Demo data." : "Akahu connected.";
 }
 
 export function getCardFitSourceLabel(dataMode: DataMode, isConnected: boolean) {
   if (dataMode === "demo") {
-    return "PNZ-format demo transactions";
+    return "Akahu-shaped demo transactions";
   }
 
-  return isConnected ? "connected PNZ transactions" : "connected user transactions";
+  return isConnected ? "connected Akahu transactions" : "connected user transactions";
 }
 
 export function getCardFitWindowLabel(cardBasis: { latestTransactionDate: string | null; windowDays: number }) {
@@ -172,8 +183,8 @@ export function getCardFitWindowLabel(cardBasis: { latestTransactionDate: string
 
 export function getPaymentTestHelp(linkedUserName: string, dataMode: DataMode) {
   if (linkedUserName && dataMode === "user") {
-    return `For outgoing payment tests, authorize the payment as ${linkedUserName}, the same sandbox user connected to MoneyFit. If you log in as another sandbox user, MoneyFit will only see it when that user pays one of ${linkedUserName}'s linked accounts.`;
+    return `Payment testing is disabled on the Akahu data branch. Connected user: ${linkedUserName}.`;
   }
 
-  return "For outgoing payment tests, authorize the payment as the same sandbox user connected to MoneyFit. If you log in as another sandbox user, set the creditor account to the connected user's account to simulate incoming money.";
+  return "Payment testing is disabled on the Akahu data branch.";
 }

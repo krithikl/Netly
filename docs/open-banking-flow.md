@@ -1,78 +1,41 @@
-# Open Banking Flow Draft
+# Akahu Open Banking Flow
 
-The PNZ sandbox spec in `../paymentsapi.yaml` includes OpenID Connect endpoints, account-access consent, PAR, token, accounts, balances, and transactions endpoints.
+## Development Flow
 
-## Draft Flow
+1. Create an Akahu Personal App.
+2. Add `AKAHU_APP_TOKEN` to `.env.local`.
+3. Paste the Personal App User Access Token into MoneyFit's Connect page, or set `AKAHU_USER_TOKEN` locally.
+4. MoneyFit stores the token in an httpOnly cookie for local development.
+5. MoneyFit fetches Akahu accounts and account transactions.
 
-1. Discover provider metadata
-   - `GET /.well-known/openid-configuration`
+Note: Akahu Demo Bank enduring connections support account data, but they do not currently return transaction data. Use MoneyFit demo mode for local transaction UI testing, or connect a transaction-capable real institution when testing Akahu transactions.
 
-2. Create account access consent
-   - `POST /open-banking-nz/{e_apiVersion}/account-access-consents`
-   - Include read-only permissions for accounts, balances, and transactions.
+## OAuth Flow
 
-3. Create authorization request
-   - Generate PKCE verifier/challenge.
-   - Sign an authorization request JWT with:
-     - `response_type=code`
-     - `response_mode=jwt`
-     - `scope=openid accounts payments`
-     - `claims.id_token.ConsentId`
-     - `claims.id_token.acr=urn:openbanking:nz:ca`
-   - Submit PAR:
-   - `POST /oauth/v2.0/par`
+1. User clicks Connect.
+2. MoneyFit redirects to `https://oauth.akahu.nz`.
+3. Akahu returns to `/api/open-banking/callback` with an authorization code.
+4. MoneyFit exchanges the code at Akahu's `/token` endpoint.
+5. The returned User Access Token is stored server-side.
 
-4. Redirect user
-   - `GET /oauth/v2.0/authorize?client_id=...&request_uri=...`
+## API Calls
 
-5. Handle callback
-   - Exchange authorization code:
-   - `POST /oauth/v2.0/token`
-   - Use `private_key_jwt` client authentication.
+MoneyFit currently uses:
 
-6. Sync data
-   - `GET /open-banking-nz/{e_apiVersion}/accounts`
-   - `GET /open-banking-nz/{e_apiVersion}/balances`
-   - `GET /open-banking-nz/{e_apiVersion}/transactions`
+- `GET https://api.akahu.io/v1/accounts`
+- `GET https://api.akahu.io/v1/accounts/{id}/transactions`
+- `GET https://api.akahu.io/v1/accounts/{id}/transactions/pending`
 
-7. Generate product insights
-   - Categorize transactions.
-   - Detect recurring merchants.
-   - Estimate safe-to-spend.
-   - Calculate card/reward value.
+Requests use:
 
-## Server-Only Secrets
+- `Authorization: Bearer <Akahu User Access Token>`
+- `X-Akahu-Id: <Akahu App ID Token>`
 
-These must never be exposed to browser code:
+## Enrichment
 
-- `PNZ_CLIENT_ID`
-- `PNZ_CLIENT_KEY_ID`
-- `PNZ_CLIENT_PRIVATE_KEY`
-- access tokens
-- refresh tokens
+Use Akahu fields directly where possible:
 
-## Redirect URI
-
-`PNZ_REDIRECT_URI` must exactly match a callback URI registered for the sandbox client.
-
-The sample sandbox client may already have this developer portal callback registered:
-
-`https://developer.apicentre.middleware.co.nz/openbanking/accounts/v3.0`
-
-This opens the sample authorization flow but redirects to the developer portal callback, where the response can be inspected/copied.
-
-For an end-to-end app callback, register:
-
-`http://localhost:3000/api/open-banking/callback`
-
-Then set the same value in `.env.local`.
-
-## MVP Endpoints To Build In Next.js
-
-- `GET /api/open-banking/start`
-- `GET /api/open-banking/callback`
-- `POST /api/open-banking/sync`
-- `POST /api/open-banking/revoke`
-- `GET /api/transactions`
-- `GET /api/insights`
-- `GET /api/card-fit`
+- `merchant.name` for merchant display
+- `category.groups.personal_finance.name` for dashboard categories
+- `category.name` for the more detailed Akahu category
+- `meta.particulars`, `meta.code`, and `meta.reference` for payment details

@@ -1,7 +1,18 @@
+import { type MouseEvent, useState } from "react";
 import { InfoRow } from "@/components/ui/InfoRow";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import type { CustomSelectOption } from "@/components/ui/CustomSelect";
-import { formatMoney } from "@/lib/insights";
+import {
+  getTransactionAccountLabel,
+  getTransactionAmountLabel,
+  getTransactionCategory,
+  getTransactionDate,
+  getTransactionDetailRows,
+  getTransactionId,
+  getTransactionMerchant,
+  getTransactionRawText,
+  getTransactionSummaryMeta
+} from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
 type TransactionListProps = {
@@ -21,50 +32,65 @@ export function TransactionList({
   onCategoryChange,
   transactions
 }: TransactionListProps) {
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const closeDetails = () => setSelectedTransaction(null);
+
   if (transactions.length === 0) {
     return <div className="empty-state">{emptyMessage}</div>;
   }
 
   return (
-    <div className="stack-list">
-      {transactions.map((transaction) => {
-        const row = getTransactionRow(transaction, categoryColors);
+    <>
+      <div className="stack-list">
+        {transactions.map((transaction) => {
+          const row = getTransactionRow(transaction, categoryColors);
+          const openDetails = () => setSelectedTransaction(transaction);
 
-        return (
-          <InfoRow
-            action={getCategoryAction(transaction, editable, categorySelectOptions, onCategoryChange)}
-            color={row.color}
-            key={transaction.id}
-            meta={row.meta}
-            title={row.title}
-            value={row.value}
-            valueTone={row.valueTone}
-            warning={row.warning}
-          />
-        );
-      })}
-    </div>
+          return (
+            <InfoRow
+              action={getCategoryAction(transaction, editable, categorySelectOptions, onCategoryChange)}
+              color={row.color}
+              key={getTransactionId(transaction)}
+              meta={row.meta}
+              onClick={openDetails}
+              title={row.title}
+              value={row.value}
+              valueTone={row.valueTone}
+              warning={row.warning}
+            />
+          );
+        })}
+      </div>
+      {selectedTransaction && (
+        <TransactionDetailsDialog
+          categoryColors={categoryColors}
+          onClose={closeDetails}
+          transaction={selectedTransaction}
+        />
+      )}
+    </>
   );
 }
 
 function getTransactionRow(transaction: Transaction, categoryColors: Record<string, string>) {
+  const category = getTransactionCategory(transaction);
+
   return {
-    color: getTransactionColor(transaction, categoryColors),
+    color: getTransactionColor(category, categoryColors),
     meta: getTransactionMeta(transaction),
-    title: transaction.merchant,
-    value: formatMoney(transaction.amount, true),
+    title: getTransactionMerchant(transaction),
+    value: getTransactionAmountLabel(transaction),
     valueTone: transaction.amount < 0 ? "negative" : "positive",
-    warning: transaction.needsReview ? transaction.rawDescription : undefined
+    warning: undefined
   };
 }
 
-function getTransactionColor(transaction: Transaction, categoryColors: Record<string, string>) {
-  return categoryColors[transaction.category] || "#607d8b";
+function getTransactionColor(category: string, categoryColors: Record<string, string>) {
+  return categoryColors[category] || "#607d8b";
 }
 
 function getTransactionMeta(transaction: Transaction) {
-  const confidence = Math.round(transaction.confidence * 100);
-  return `${transaction.date} · ${transaction.category} · ${transaction.account} · ${transaction.status} · ${confidence}% confidence`;
+  return getTransactionSummaryMeta(transaction);
 }
 
 function getCategoryAction(
@@ -77,7 +103,7 @@ function getCategoryAction(
     return undefined;
   }
 
-  const categoryLabel = `Set category for ${transaction.merchant}`;
+  const categoryLabel = `Set category for ${getTransactionMerchant(transaction)}`;
 
   return (
     <CategorySelect
@@ -100,7 +126,7 @@ function CategorySelect({
   onCategoryChange?: (transactionId: string, category: string) => void;
   transaction: Transaction;
 }) {
-  const handleCategoryChange = (category: string) => onCategoryChange?.(transaction.id, category);
+  const handleCategoryChange = (category: string) => onCategoryChange?.(getTransactionId(transaction), category);
 
   return (
     <CustomSelect
@@ -108,7 +134,67 @@ function CategorySelect({
       className="row-category-select"
       onChange={handleCategoryChange}
       options={categoryOptions}
-      value={transaction.category}
+      value={getTransactionCategory(transaction)}
     />
+  );
+}
+
+function TransactionDetailsDialog({
+  categoryColors,
+  onClose,
+  transaction
+}: {
+  categoryColors: Record<string, string>;
+  onClose: () => void;
+  transaction: Transaction;
+}) {
+  const category = getTransactionCategory(transaction);
+  const rows = getTransactionDetailRows(transaction);
+  const rawText = getTransactionRawText(transaction);
+  const categoryColor = getTransactionColor(category, categoryColors);
+  const closeOnBackdrop = () => onClose();
+  const stopDialogClick = (event: MouseEvent<HTMLDivElement>) => event.stopPropagation();
+
+  return (
+    <div className="transaction-dialog-backdrop" onClick={closeOnBackdrop}>
+      <div className="transaction-dialog" onClick={stopDialogClick} role="dialog" aria-modal="true" aria-label="Transaction details">
+        <div className="transaction-dialog-header">
+          <span className="category-avatar" style={{ background: categoryColor }}>
+            {getTransactionMerchant(transaction).slice(0, 1)}
+          </span>
+          <div>
+            <span className="eyebrow">Transaction details</span>
+            <h2>{getTransactionMerchant(transaction)}</h2>
+            <p>{getTransactionSummaryMeta(transaction)}</p>
+          </div>
+          <button className="dialog-close-button" onClick={onClose} type="button" aria-label="Close transaction details">
+            x
+          </button>
+        </div>
+
+        <div className="transaction-dialog-body">
+          <div className="transaction-dialog-value">
+            <span>Amount</span>
+            <strong className={transaction.amount < 0 ? "negative" : "positive"}>{getTransactionAmountLabel(transaction)}</strong>
+          </div>
+
+          <div className="transaction-detail-grid">
+            {rows.map((row) => (
+              <div className="transaction-detail-item" key={row.label}>
+                <span>{row.label}</span>
+                <strong>{row.value}</strong>
+              </div>
+            ))}
+          </div>
+
+          {rawText && (
+            <div className="transaction-raw-box">
+              <span>Raw bank text</span>
+              <p>{rawText}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

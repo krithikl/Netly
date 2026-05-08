@@ -85,7 +85,7 @@ export function HomeView({
       {isLoadingTransactions && (
         <div className="status-banner neutral" role="status">
           <strong>Loading transactions.</strong>
-          <span>Checking whether PNZ sandbox data is available.</span>
+          <span>Checking whether Akahu data is available.</span>
         </div>
       )}
 
@@ -98,7 +98,7 @@ export function HomeView({
 
       <div className={dashboardGridClassName} aria-busy={isLoadingTransactions}>
         <section className="material-card chart-panel">
-          <PanelTitle title="Inferred categories" subtitle="Tap a slice to filter recent activity" />
+          <PanelTitle title="Akahu categories" subtitle="Tap a slice to filter recent activity" />
           <div className="chart-layout">
             <DonutChart
               categories={chartCategories}

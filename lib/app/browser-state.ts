@@ -34,15 +34,7 @@ export function readInitialDataMode(): DataMode {
 }
 
 export function readAuthResponseCookie() {
-  const authResponseCookie = document.cookie.split("; ").find((row) => row.startsWith("moneyfit_ob_response="));
-
-  if (!authResponseCookie) {
-    return "";
-  }
-
-  const response = authResponseCookie.split("=")[1];
-  document.cookie = "moneyfit_ob_response=; path=/; max-age=0";
-  return response ? decodeURIComponent(response) : "";
+  return "";
 }
 
 export function handleCallbackParams({
@@ -58,13 +50,13 @@ export function handleCallbackParams({
 }) {
   const params = new URLSearchParams(window.location.search);
   const connected = params.get("connected");
-  const connectionError = params.get("connectionError");
+  const connectionError = params.get("connect_error") || params.get("connectionError");
   const paymentTest = params.get("paymentTest");
 
   if (connected === "1") {
-    setSyncResult("Connected to PNZ sandbox. Loading transactions...");
+    setSyncResult("Connected to Akahu. Loading transactions...");
     clearUrlParams();
-    return { forceUserMode: false };
+    return { forceUserMode: true };
   }
 
   if (connectionError) {
@@ -118,7 +110,7 @@ function getPaymentCallbackMessage(paymentTest: string | null, paymentStatus: st
     return `Payment test failed: ${paymentError ? decodeURIComponent(paymentError) : "Unknown payment error"}`;
   }
 
-  return `Payment test submitted${paymentStatus ? `: ${paymentStatus}` : "."} Reloading PNZ balances and transactions...`;
+  return `Payment test submitted${paymentStatus ? `: ${paymentStatus}` : "."} Reloading balances and transactions...`;
 }
 
 function restoreStoredPaymentResult(setPaymentTestResult: (result: PaymentTestResult) => void) {

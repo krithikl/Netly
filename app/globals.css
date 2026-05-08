@@ -262,7 +262,6 @@ h2 {
   color: #334155;
 }
 
-.period-control,
 .filter-tabs,
 .source-switch {
   display: flex;
@@ -279,7 +278,6 @@ h2 {
   justify-items: end;
 }
 
-.period,
 .filter-tabs button,
 .source-switch button {
   border: 0;
@@ -294,13 +292,11 @@ h2 {
     transform 180ms ease;
 }
 
-.period:hover,
 .filter-tabs button:hover,
 .source-switch button:hover {
   transform: translateY(-1px);
 }
 
-.period.active,
 .filter-tabs button.active,
 .source-switch button.active {
   background: var(--ink);
@@ -1196,7 +1192,6 @@ h2 {
     min-width: 104px;
   }
 
-  .period-control,
   .source-switch,
   .filter-tabs,
   .hero-actions {

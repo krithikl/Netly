@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { periods } from "@/lib/app/constants";
 import type { DataMode } from "@/lib/app/types";
 import type { PeriodOption } from "@/lib/types";
@@ -59,14 +60,18 @@ function DataModeSwitch({ changeDataMode, dataMode }: { changeDataMode: (mode: D
 }
 
 function PeriodControl({ period, setPeriod }: { period: PeriodOption; setPeriod: (period: PeriodOption) => void }) {
+  const handlePeriodChange = (value: string) => setPeriod(value as PeriodOption);
+
   return (
-    <div className="period-control" aria-label="Selected period">
-      {periods.map((option) => (
-        <button className={getPeriodClassName(period, option)} key={option} onClick={() => setPeriod(option)} type="button">
-          {option}
-        </button>
-      ))}
-    </div>
+    <Tabs onValueChange={handlePeriodChange} value={period}>
+      <TabsList aria-label="Selected period" className="bg-white/75">
+        {periods.map((option) => (
+          <TabsTrigger key={option} value={option}>
+            {option}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   );
 }
 
@@ -76,8 +81,4 @@ function getDataModeClassName(currentMode: DataMode, mode: DataMode) {
 
 function getDataModeLabel(mode: DataMode) {
   return mode === "user" ? "User" : "Demo";
-}
-
-function getPeriodClassName(currentPeriod: PeriodOption, option: PeriodOption) {
-  return clsx("period", currentPeriod === option && "active");
 }

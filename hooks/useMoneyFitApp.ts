@@ -286,18 +286,30 @@ export function useMoneyFitApp() {
   
   const income = useMemo(() => sum(periodTransactions.filter((transaction) => transaction.amount > 0).map((transaction) => transaction.amount)), [periodTransactions]);
   
-  const upcoming = periodTransactions.filter((transaction) => getTransactionStatus(transaction) === "Upcoming");
+  const upcoming = useMemo(() => periodTransactions.filter((transaction) => getTransactionStatus(transaction) === "Upcoming"), [periodTransactions]);
+
+  const upcomingTotal = useMemo(() => sum(upcoming.map((transaction) => Math.abs(transaction.amount))), [upcoming]);
   
-  const reviewCount = periodTransactions.filter(transactionNeedsReview).length;
-  const chartCategories = categories.filter((item) => item.category !== "Income").slice(0, 8);
+  const reviewCount = useMemo(() => periodTransactions.filter(transactionNeedsReview).length, [periodTransactions]);
   
-  const chartTotal = sum(chartCategories.map((item) => item.amount));
+  const chartCategories = useMemo(() => categories.filter((item) => item.category !== "Income").slice(0, 8), [categories]);
   
-  const transactionCategoryOptions = getTransactionCategoryOptions(workingTransactions, categories, customCategories, deletedCategories);
+  const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
   
-  const visibleTransactions = getVisibleTransactions(periodTransactions, query, transactionCategory, transactionFilter, transactionSort);
+  const transactionCategoryOptions = useMemo(
+    () => getTransactionCategoryOptions(workingTransactions, categories, customCategories, deletedCategories),
+    [categories, customCategories, deletedCategories, workingTransactions]
+  );
   
-  const transactionPreview = periodTransactions.filter((transaction) => !selectedHomeCategory || getTransactionCategory(transaction) === selectedHomeCategory);
+  const visibleTransactions = useMemo(
+    () => getVisibleTransactions(periodTransactions, query, transactionCategory, transactionFilter, transactionSort),
+    [periodTransactions, query, transactionCategory, transactionFilter, transactionSort]
+  );
+  
+  const transactionPreview = useMemo(
+    () => periodTransactions.filter((transaction) => !selectedHomeCategory || getTransactionCategory(transaction) === selectedHomeCategory),
+    [periodTransactions, selectedHomeCategory]
+  );
   
   const paymentBalanceDelta = getPaymentBalanceDelta(paymentTestResult, availableBalance);
   
@@ -305,7 +317,7 @@ export function useMoneyFitApp() {
   
   const paymentFeedNote = getPaymentFeedNote(paymentTestResult, paymentBalanceDelta, paymentTransactionDelta);
   
-  const safeToSpendAmount = safeToSpend(periodTransactions, availableBalance ?? 0);
+  const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, availableBalance ?? 0), [availableBalance, periodTransactions]);
   
   const shouldShowPeriodControl = activeView === "home" || activeView === "transactions" || activeView === "budgets";
   
@@ -365,7 +377,7 @@ export function useMoneyFitApp() {
     transactionPreview,
     transactionSort,
     upcomingCount: upcoming.length,
-    upcomingTotal: sum(upcoming.map((transaction) => Math.abs(transaction.amount))),
+    upcomingTotal,
     updatePaymentTestForm,
     visibleTransactions,
     workingTransactions,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { InfoRow } from "@/components/ui/InfoRow";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import {
@@ -38,8 +38,13 @@ export function TransactionList({
   onCategoryChange,
   transactions
 }: TransactionListProps) {
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const closeDetails = () => setSelectedTransaction(null);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const selectedTransaction = useMemo(
+    () => transactions.find((transaction) => getTransactionId(transaction) === selectedTransactionId) || null,
+    [selectedTransactionId, transactions]
+  );
+  const closeDetails = useCallback(() => setSelectedTransactionId(null), []);
+  const openDetails = useCallback((transactionId: string) => setSelectedTransactionId(transactionId), []);
 
   if (transactions.length === 0) {
     return <div className="empty-state">{emptyMessage}</div>;
@@ -50,22 +55,17 @@ export function TransactionList({
       <div className="transaction-list-panel">
         <div className="stack-list">
           {transactions.map((transaction) => {
-            const row = getTransactionRow(transaction, categoryColors);
-            const openDetails = () => {
-              setSelectedTransaction(transaction);
-            };
+            const transactionId = getTransactionId(transaction);
 
             return (
-              <InfoRow
-                action={getCategoryAction(transaction, editable, categorySelectOptions, onCategoryChange)}
-                color={row.color}
-                key={getTransactionId(transaction)}
-                meta={row.meta}
-                onClick={openDetails}
-                title={row.title}
-                value={row.value}
-                valueTone={row.valueTone}
-                warning={row.warning}
+              <TransactionRow
+                categoryColors={categoryColors}
+                categorySelectOptions={categorySelectOptions}
+                editable={editable}
+                key={transactionId}
+                onCategoryChange={onCategoryChange}
+                onOpenDetails={openDetails}
+                transaction={transaction}
               />
             );
           })}
@@ -79,6 +79,42 @@ export function TransactionList({
     </div>
   );
 }
+
+type TransactionRowProps = {
+  categoryColors: Record<string, string>;
+  categorySelectOptions: SelectOption[];
+  editable: boolean;
+  onCategoryChange?: (transactionId: string, category: string) => void;
+  onOpenDetails: (transactionId: string) => void;
+  transaction: Transaction;
+};
+
+const TransactionRow = memo(function TransactionRow({
+  categoryColors,
+  categorySelectOptions,
+  editable,
+  onCategoryChange,
+  onOpenDetails,
+  transaction
+}: TransactionRowProps) {
+  const transactionId = getTransactionId(transaction);
+  const row = getTransactionRow(transaction, categoryColors);
+  const openDetails = useCallback(() => onOpenDetails(transactionId), [onOpenDetails, transactionId]);
+  const categoryAction = getCategoryAction(transaction, editable, categorySelectOptions, onCategoryChange);
+
+  return (
+    <InfoRow
+      action={categoryAction}
+      color={row.color}
+      meta={row.meta}
+      onClick={openDetails}
+      title={row.title}
+      value={row.value}
+      valueTone={row.valueTone}
+      warning={row.warning}
+    />
+  );
+});
 
 function getTransactionRow(transaction: Transaction, categoryColors: Record<string, string>) {
   const category = getTransactionCategory(transaction);

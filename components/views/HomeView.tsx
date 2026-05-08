@@ -113,9 +113,7 @@ export function HomeView({
               categories={chartCategories}
               categoryColors={categoryColors}
               chartTotal={chartTotal}
-              hoveredCategory={hoveredCategory}
               selectedHomeCategory={selectedHomeCategory}
-              setHoveredCategory={setHoveredCategory}
               setSelectedHomeCategory={setSelectedHomeCategory}
             />
           </div>
@@ -148,9 +146,7 @@ type CategoryLegendProps = {
   categories: { category: string; amount: number }[];
   categoryColors: Record<string, string>;
   chartTotal: number;
-  hoveredCategory: string | null;
   selectedHomeCategory: string | null;
-  setHoveredCategory: (category: string | null) => void;
   setSelectedHomeCategory: (category: string | null) => void;
 };
 
@@ -158,9 +154,7 @@ function CategoryLegend({
   categories,
   categoryColors,
   chartTotal,
-  hoveredCategory,
   selectedHomeCategory,
-  setHoveredCategory,
   setSelectedHomeCategory
 }: CategoryLegendProps) {
   if (categories.length === 0) {
@@ -173,11 +167,9 @@ function CategoryLegend({
         <CategoryLegendRow
           categoryColors={categoryColors}
           chartTotal={chartTotal}
-          hoveredCategory={hoveredCategory}
           item={item}
           key={item.category}
           selectedHomeCategory={selectedHomeCategory}
-          setHoveredCategory={setHoveredCategory}
           setSelectedHomeCategory={setSelectedHomeCategory}
         />
       ))}
@@ -188,35 +180,25 @@ function CategoryLegend({
 function CategoryLegendRow({
   categoryColors,
   chartTotal,
-  hoveredCategory,
   item,
   selectedHomeCategory,
-  setHoveredCategory,
   setSelectedHomeCategory
 }: {
   categoryColors: Record<string, string>;
   chartTotal: number;
-  hoveredCategory: string | null;
   item: { category: string; amount: number };
   selectedHomeCategory: string | null;
-  setHoveredCategory: (category: string | null) => void;
   setSelectedHomeCategory: (category: string | null) => void;
 }) {
   const categoryColor = getCategoryColor(item.category, categoryColors);
   const legendBarStyle = getLegendBarStyle(item, chartTotal, categoryColor);
-  const legendRowClassName = getLegendRowClassName(item.category, selectedHomeCategory, hoveredCategory);
+  const legendRowClassName = getLegendRowClassName(item.category, selectedHomeCategory);
   const toggleCategory = () => setSelectedHomeCategory(getNextSelectedCategory(item.category, selectedHomeCategory));
-  const setHovered = () => setHoveredCategory(item.category);
-  const clearHovered = () => setHoveredCategory(null);
   const legendDotStyle = getLegendDotStyle(categoryColor);
 
   return (
     <button
       className={legendRowClassName}
-      onMouseEnter={setHovered}
-      onMouseLeave={clearHovered}
-      onFocus={setHovered}
-      onBlur={clearHovered}
       onClick={toggleCategory}
       type="button"
     >
@@ -263,8 +245,8 @@ function getLegendBarWidth(amount: number, chartTotal: number) {
   return chartTotal > 0 ? Math.max(4, Math.round((amount / chartTotal) * 100)) : 0;
 }
 
-function getLegendRowClassName(category: string, selectedHomeCategory: string | null, hoveredCategory: string | null) {
-  return clsx("legend-row", selectedHomeCategory === category && "selected", hoveredCategory === category && "hovered");
+function getLegendRowClassName(category: string, selectedHomeCategory: string | null) {
+  return clsx("legend-row", selectedHomeCategory === category && "selected");
 }
 
 function getNextSelectedCategory(category: string, selectedHomeCategory: string | null) {

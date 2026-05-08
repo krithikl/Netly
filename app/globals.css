@@ -457,6 +457,8 @@ h2 {
 }
 
 .donut {
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
   min-width: 1px;
@@ -466,67 +468,14 @@ h2 {
   overflow: visible;
 }
 
-.donut canvas {
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-  outline: none;
-}
-
-.donut canvas:focus,
-.donut canvas:focus-visible {
-  outline: none;
-}
-
 .donut-center {
   position: absolute;
+  z-index: 0;
   inset: 0;
   display: grid;
   place-content: center;
   text-align: center;
   pointer-events: none;
-}
-
-.chart-tooltip {
-  position: absolute;
-  z-index: 2;
-  min-width: 150px;
-  display: grid;
-  gap: 2px;
-  padding: 10px 12px;
-  border: 1px solid var(--outline);
-  border-radius: 16px;
-  background: rgba(255, 251, 255, 0.96);
-  box-shadow: 0 14px 30px rgba(29, 27, 32, 0.16);
-  text-align: center;
-  pointer-events: none;
-}
-
-.chart-tooltip.top {
-  left: 50%;
-  bottom: calc(100% + 10px);
-  transform: translateX(-50%);
-}
-
-.chart-tooltip.left {
-  right: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.chart-tooltip.right {
-  left: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.chart-tooltip span {
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-}
-
-.chart-tooltip small {
-  color: var(--muted);
 }
 
 .donut-center span {
@@ -588,7 +537,7 @@ h2 {
   padding: 10px 12px 11px;
   background: transparent;
   color: var(--ink);
-  cursor: pointer;
+  cursor: default;
   font-size: 14px;
   text-align: left;
 }
@@ -630,9 +579,7 @@ h2 {
   border-radius: inherit;
 }
 
-.legend-row:hover,
-.legend-row.selected,
-.legend-row.hovered {
+.legend-row.selected {
   background: var(--surface-2);
 }
 
@@ -729,6 +676,8 @@ h2 {
 .row-action {
   position: relative;
   z-index: 0;
+  width: fit-content;
+  max-width: 100%;
   margin-top: 8px;
 }
 
@@ -1227,16 +1176,6 @@ h2 {
     padding: 9px 10px 10px;
   }
 
-  .chart-tooltip,
-  .chart-tooltip.left,
-  .chart-tooltip.right,
-  .chart-tooltip.top {
-    right: auto;
-    top: auto;
-    left: 50%;
-    bottom: calc(100% + 8px);
-    transform: translateX(-50%);
-  }
 }
 
 @media (max-width: 620px) {

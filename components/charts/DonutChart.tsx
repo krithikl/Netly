@@ -1,11 +1,10 @@
-import { ArcElement, Chart as ChartJS, Tooltip } from "chart.js";
-import type { ActiveElement, Chart, ChartData, ChartEvent, ChartOptions, TooltipModel } from "chart.js";
-import { Doughnut } from "react-chartjs-2";
-import { useCallback, useMemo, useState } from "react";
-import clsx from "clsx";
-import { formatMoney, sum } from "@/lib/insights";
+"use client";
 
-ChartJS.register(ArcElement, Tooltip);
+import { useCallback, useMemo } from "react";
+import { Cell, Pie, PieChart, Sector, Tooltip } from "recharts";
+import type { PieSectorDataItem, PieSectorShapeProps } from "recharts";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { formatMoney, sum } from "@/lib/insights";
 
 type ChartCategory = {
   category: string;
@@ -21,55 +20,56 @@ type DonutChartProps = {
   selectedCategory: string | null;
 };
 
-type ExternalTooltipContext = {
-  chart: Chart;
-  tooltip: TooltipModel<"doughnut">;
+type DonutDatum = ChartCategory & {
+  color: string;
 };
 
-type TooltipPlacement = "left" | "right" | "top";
-
 export function DonutChart({ categories, categoryColors, hoveredCategory, onHover, onSelect, selectedCategory }: DonutChartProps) {
-  const [tooltipPlacement, setTooltipPlacement] = useState<TooltipPlacement>("top");
+  const data = useMemo(() => getChartData(categories, categoryColors), [categories, categoryColors]);
   const total = sum(categories.map((item) => item.amount));
-  const hoveredItem = categories.find((item) => item.category === hoveredCategory);
-  const tooltipClassName = getTooltipClassName(tooltipPlacement);
-  const chartData = useMemo(() => getChartData(categories, categoryColors), [categories, categoryColors]);
-
-  const handleChartHover = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
-    const category = getCategoryFromElements(categories, elements);
-    onHover(category);
-  }, [categories, onHover]);
-
-  const handleChartClick = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
-    const category = getCategoryFromElements(categories, elements);
-    const nextCategory = getNextSelectedCategory(category, selectedCategory);
-    onSelect(nextCategory);
-  }, [categories, onSelect, selectedCategory]);
-
+  const activeIndex = getActiveIndex(data, hoveredCategory);
+  const renderSlice = useCallback(
+    (props: PieSectorShapeProps, index: number) => <AnimatedSector {...props} isActive={index === activeIndex} />,
+    [activeIndex]
+  );
+  const handleSliceEnter = useCallback(
+    (_entry: PieSectorDataItem, index: number) => onHover(data[index]?.category || null),
+    [data, onHover]
+  );
   const handleChartLeave = useCallback(() => onHover(null), [onHover]);
-
-  const handleExternalTooltip = useCallback((context: ExternalTooltipContext) => {
-    const nextPlacement = getTooltipPlacementFromModel(context.chart, context.tooltip);
-    setTooltipPlacement((currentPlacement) => getNextTooltipPlacement(currentPlacement, nextPlacement));
-  }, []);
-
-  const chartOptions = useMemo(
-    () => getChartOptions(handleChartHover, handleChartClick, handleExternalTooltip),
-    [handleChartClick, handleChartHover, handleExternalTooltip]
+  const handleSliceClick = useCallback(
+    (_entry: PieSectorDataItem, index: number) => {
+      const category = data[index]?.category || null;
+      onSelect(getNextSelectedCategory(category, selectedCategory));
+    },
+    [data, onSelect, selectedCategory]
   );
 
   return (
-    <div className="donut-wrap">
-      <div className="donut" onMouseLeave={handleChartLeave}>
-        <Doughnut aria-label="Expense categories donut chart" data={chartData} options={chartOptions} role="img" />
-      </div>
-      {hoveredItem && total > 0 && (
-        <div className={tooltipClassName} role="status">
-          <strong>{hoveredItem.category}</strong>
-          <span>{formatMoney(hoveredItem.amount)}</span>
-          <small>{Math.round((hoveredItem.amount / total) * 100)}% of shown expenses</small>
-        </div>
-      )}
+    <div className="donut-wrap" onMouseLeave={handleChartLeave}>
+      <ChartContainer className="donut">
+        <PieChart height={290} width={290}>
+          <Tooltip content={<ChartTooltipContent total={total} />} cursor={false} />
+          <Pie
+            isAnimationActive={false}
+            data={data}
+            dataKey="amount"
+            endAngle={-270}
+            innerRadius="64%"
+            nameKey="category"
+            onClick={handleSliceClick}
+            onMouseEnter={handleSliceEnter}
+            outerRadius="92%"
+            shape={renderSlice}
+            startAngle={90}
+            stroke="none"
+          >
+            {data.map((item) => (
+              <Cell fill={item.color} key={item.category} />
+            ))}
+          </Pie>
+        </PieChart>
+      </ChartContainer>
       <div className="donut-center">
         <span>Expenses</span>
         <strong>{formatMoney(total)}</strong>
@@ -78,65 +78,39 @@ export function DonutChart({ categories, categoryColors, hoveredCategory, onHove
   );
 }
 
-function getChartData(categories: ChartCategory[], categoryColors: Record<string, string>): ChartData<"doughnut"> {
-  return {
-    labels: categories.map((item) => item.category),
-    datasets: [
-      {
-        backgroundColor: categories.map((item) => getCategoryColor(item.category, categoryColors)),
-        borderWidth: 0,
-        data: categories.map((item) => item.amount),
-        hoverBorderWidth: 0,
-        hoverOffset: 10,
-        offset: categories.map(() => 0)
-      }
-    ]
+function AnimatedSector({
+  isActive,
+  ...props
+}: PieSectorShapeProps & {
+  isActive: boolean;
+}) {
+  const centerX = Number(props.cx || 0);
+  const centerY = Number(props.cy || 0);
+  const activeTransform = `translate(${centerX}px, ${centerY}px) scale(1.045) translate(${-centerX}px, ${-centerY}px)`;
+  const sectorStyle = {
+    cursor: "pointer",
+    filter: isActive ? "drop-shadow(0 8px 12px rgba(29, 27, 32, 0.18))" : "none",
+    outline: "none",
+    transform: isActive ? activeTransform : "none",
+    transition: "transform 180ms ease, filter 180ms ease, opacity 180ms ease"
   };
+
+  return <Sector {...props} style={sectorStyle} />;
 }
 
-function getChartOptions(
-  onHover: (event: ChartEvent, elements: ActiveElement[]) => void,
-  onClick: (event: ChartEvent, elements: ActiveElement[]) => void,
-  onExternalTooltip: (context: ExternalTooltipContext) => void
-): ChartOptions<"doughnut"> {
-  return {
-    animation: {
-      duration: 180,
-      easing: "easeOutQuart"
-    },
-    cutout: "64%",
-    layout: {
-      padding: 12
-    },
-    maintainAspectRatio: false,
-    onClick,
-    onHover,
-    plugins: {
-      legend: {
-        display: false
-      },
-      tooltip: {
-        enabled: false,
-        external: onExternalTooltip
-      }
-    },
-    rotation: -90,
-    responsive: true
-  };
+function getChartData(categories: ChartCategory[], categoryColors: Record<string, string>): DonutDatum[] {
+  return categories.map((item) => ({
+    ...item,
+    color: categoryColors[item.category] || "#607d8b"
+  }));
 }
 
-function getCategoryColor(category: string, categoryColors: Record<string, string>) {
-  return categoryColors[category] || "#607d8b";
-}
-
-function getCategoryFromElements(categories: ChartCategory[], elements: ActiveElement[]) {
-  const index = elements[0]?.index;
-
-  if (typeof index !== "number") {
-    return null;
+function getActiveIndex(data: DonutDatum[], hoveredCategory: string | null) {
+  if (!hoveredCategory) {
+    return -1;
   }
 
-  return categories[index]?.category || null;
+  return data.findIndex((item) => item.category === hoveredCategory);
 }
 
 function getNextSelectedCategory(category: string | null, selectedCategory: string | null) {
@@ -145,28 +119,4 @@ function getNextSelectedCategory(category: string | null, selectedCategory: stri
   }
 
   return selectedCategory === category ? null : category;
-}
-
-function getTooltipClassName(placement: TooltipPlacement) {
-  return clsx("chart-tooltip", placement);
-}
-
-function getTooltipPlacementFromModel(chart: Chart, tooltip: TooltipModel<"doughnut">): TooltipPlacement {
-  if (tooltip.opacity === 0) {
-    return "top";
-  }
-
-  const chartCenterX = chart.chartArea.left + chart.chartArea.width / 2;
-  const chartCenterY = chart.chartArea.top + chart.chartArea.height / 2;
-  const topThreshold = chartCenterY - chart.chartArea.height * 0.28;
-
-  if (tooltip.caretY < topThreshold) {
-    return "top";
-  }
-
-  return tooltip.caretX < chartCenterX ? "left" : "right";
-}
-
-function getNextTooltipPlacement(currentPlacement: TooltipPlacement, nextPlacement: TooltipPlacement) {
-  return currentPlacement === nextPlacement ? currentPlacement : nextPlacement;
 }

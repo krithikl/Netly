@@ -30,7 +30,13 @@ export function InfoRow({ action, color, detail, meta, onClick, title, value, va
   };
 
   return (
-    <article className={infoRowClassName} onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined}>
+    <article
+      className={infoRowClassName}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
       <span className="category-avatar" style={avatarStyle}>
         {title.slice(0, 1)}
       </span>

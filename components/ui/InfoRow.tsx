@@ -17,6 +17,9 @@ export function InfoRow({ action, color, detail, meta, onClick, title, value, va
   const avatarStyle = getAvatarStyle(color);
   const valueClassName = clsx("row-value", valueTone);
   const infoRowClassName = clsx("info-row", onClick && "clickable");
+  const stopActionEvent = (event: MouseEvent<HTMLDivElement> | KeyboardEvent<HTMLDivElement>) => {
+    event.stopPropagation();
+  };
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (!onClick || (event.key !== "Enter" && event.key !== " ")) {
       return;
@@ -36,7 +39,11 @@ export function InfoRow({ action, color, detail, meta, onClick, title, value, va
         <p>{meta}</p>
         {detail && <p>{detail}</p>}
         {warning && <em>Review: {warning}</em>}
-        {action && <div className="row-action">{action}</div>}
+        {action && (
+          <div className="row-action" onClick={stopActionEvent} onKeyDown={stopActionEvent}>
+            {action}
+          </div>
+        )}
       </div>
       <span className={valueClassName}>{value}</span>
     </article>

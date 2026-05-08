@@ -1,6 +1,7 @@
 import type { ChangeEvent } from "react";
 import { FlowStep } from "@/components/ui/FlowStep";
 import { PanelTitle } from "@/components/ui/PanelTitle";
+import { Button } from "@/components/ui/button";
 
 type ConnectViewProps = {
   connectionResponse: string;
@@ -43,13 +44,9 @@ export function ConnectView({
             Merchant and category fields come from Akahu enrichment when available.
           </FlowStep>
         </div>
-        <button
-          className="primary-button"
-          onClick={handleAuthorizationStart}
-          type="button"
-        >
+        <Button onClick={handleAuthorizationStart} type="button">
           Open Akahu authorization
-        </button>
+        </Button>
         <p aria-live="polite" className="sync-result">
           {syncResult}
         </p>
@@ -60,9 +57,9 @@ export function ConnectView({
             placeholder="Paste Akahu User Access Token"
             value={connectionResponse}
           />
-          <button className="tonal-action" disabled={!canCompleteConnection} onClick={handleConnectionComplete} type="button">
+          <Button disabled={!canCompleteConnection} onClick={handleConnectionComplete} type="button" variant="secondary">
             Complete connection
-          </button>
+          </Button>
         </div>
       </section>
     </section>

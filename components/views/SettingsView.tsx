@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { PanelTitle } from "@/components/ui/PanelTitle";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { moneyfitPalette } from "@/lib/app/constants";
+import { cn } from "@/lib/utils";
 
 type SettingsViewProps = {
   categoryColors: Record<string, string>;
@@ -13,8 +15,8 @@ export function SettingsView({ categoryColors, defaultCategories, deleteCategory
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
 
-  const toggleColorPicker = (category: string) => {
-    setActiveColorPicker((prev) => (prev === category ? null : category));
+  const setColorPickerOpen = (category: string, isOpen: boolean) => {
+    setActiveColorPicker(isOpen ? category : null);
   };
 
   return (
@@ -41,7 +43,7 @@ export function SettingsView({ categoryColors, defaultCategories, deleteCategory
               category={category}
               currentColor={categoryColors[category] || "#607d8b"}
               isActive={activeColorPicker === category}
-              onTogglePicker={() => toggleColorPicker(category)}
+              onColorPickerOpenChange={(isOpen) => setColorPickerOpen(category, isOpen)}
               onDelete={() => deleteCategory(category)}
               updateCategoryColor={(cat, color) => {
                 updateCategoryColor(cat, color);
@@ -59,12 +61,24 @@ type CategoryColorRowProps = {
   category: string;
   currentColor: string;
   isActive: boolean;
-  onTogglePicker: () => void;
+  onColorPickerOpenChange: (isOpen: boolean) => void;
   onDelete: () => void;
   updateCategoryColor: (category: string, color: string) => void;
 };
 
-function CategoryColorRow({ category, currentColor, isActive, onTogglePicker, onDelete, updateCategoryColor }: CategoryColorRowProps) {
+function CategoryColorRow({
+  category,
+  currentColor,
+  isActive,
+  onColorPickerOpenChange,
+  onDelete,
+  updateCategoryColor
+}: CategoryColorRowProps) {
+  const colorToggleClassName = cn(
+    "h-7 w-7 rounded-full border-2 border-transparent p-0 shadow-sm transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+    isActive && "border-[var(--ink)]"
+  );
+
   return (
     <div className="info-row settings-category-item">
       <div className="settings-color-row settings-category-row">
@@ -74,13 +88,30 @@ function CategoryColorRow({ category, currentColor, isActive, onTogglePicker, on
         </div>
         
         <div className="settings-category-actions">
-          <button
-            type="button"
-            onClick={onTogglePicker}
-            className={`settings-color-toggle ${isActive ? "active" : ""}`}
-            style={{ background: currentColor }}
-            aria-label="Choose color"
-          />
+          <Popover onOpenChange={onColorPickerOpenChange} open={isActive}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className={colorToggleClassName}
+                style={{ background: currentColor }}
+                aria-label={`Choose color for ${category}`}
+              />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-auto p-4">
+              <p className="mb-3 text-sm font-bold text-[var(--muted)]">Select a color</p>
+              <div className="grid grid-cols-5 gap-2">
+                {moneyfitPalette.map((color) => (
+                  <ColorOptionButton
+                    key={color}
+                    category={category}
+                    color={color}
+                    currentColor={currentColor}
+                    updateCategoryColor={updateCategoryColor}
+                  />
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           <button 
             type="button" 
             onClick={onDelete}
@@ -90,23 +121,6 @@ function CategoryColorRow({ category, currentColor, isActive, onTogglePicker, on
           </button>
         </div>
       </div>
-      
-      {isActive && (
-        <div className="settings-color-popup">
-          <p className="settings-color-popup-title">Select a color:</p>
-          <div className="settings-color-popup-grid">
-            {moneyfitPalette.map((color) => (
-              <ColorOptionButton
-                key={color}
-                category={category}
-                color={color}
-                currentColor={currentColor}
-                updateCategoryColor={updateCategoryColor}
-              />
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -120,11 +134,15 @@ type ColorOptionButtonProps = {
 
 function ColorOptionButton({ category, color, currentColor, updateCategoryColor }: ColorOptionButtonProps) {
   const isSelected = currentColor === color;
+  const buttonClassName = cn(
+    "h-8 w-8 rounded-full border-2 border-transparent p-0 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+    isSelected && "border-[var(--ink)]"
+  );
   
   return (
     <button
       type="button"
-      className={`settings-color-button large ${isSelected ? "selected" : ""}`}
+      className={buttonClassName}
       onClick={() => updateCategoryColor(category, color)}
       style={{ background: color }}
       aria-label={`Set color to ${color}`}

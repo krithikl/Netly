@@ -1,6 +1,7 @@
 import type { ChangeEvent, FormEvent } from "react";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { PanelTitle } from "@/components/ui/PanelTitle";
+import { Button } from "@/components/ui/button";
 import { bankReferenceMaxLength } from "@/lib/app/constants";
 import { formatMoney } from "@/lib/insights";
 import type { PaymentTestForm, PaymentTestResult } from "@/lib/app/types";
@@ -44,9 +45,9 @@ export function PaymentTestView({
       <section className="material-card">
         <div className="panel-header">
           <PanelTitle title="Payment test" subtitle="Disabled on the Akahu data branch" />
-          <button className="tonal-action" disabled={isLoadingTransactions} onClick={onRefreshTransactions} type="button">
+          <Button disabled={isLoadingTransactions} onClick={onRefreshTransactions} type="button" variant="secondary">
             Refresh Akahu data
-          </button>
+          </Button>
         </div>
         <div className="status-banner neutral payment-help" role="note">
           <span className="payment-help-icon" title={paymentTestHelp} aria-label={paymentTestHelp}>
@@ -126,9 +127,9 @@ function PaymentTestFormFields({ form, isStartingPaymentTest, onSubmit, updatePa
         Code
         <input maxLength={bankReferenceMaxLength} onChange={handleCodeChange} value={form.code} />
       </label>
-      <button className="primary-button" disabled={isStartingPaymentTest} type="submit">
+      <Button disabled={isStartingPaymentTest} type="submit">
         {isStartingPaymentTest ? "Starting payment..." : "Authorize payment"}
-      </button>
+      </Button>
     </form>
   );
 }

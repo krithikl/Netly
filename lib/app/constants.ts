@@ -47,9 +47,9 @@ export const defaultTransactionCategories = [
 ];
 
 export const moneyfitPalette = [
-  "#00a693", "#f57c00", "#4285f4", "#5e97f6", "#ab47bc",
-  "#ffb300", "#78909c", "#ef5350", "#26a69a", "#43a047",
-  "#7e57c2", "#ec407a", "#8d6e63", "#d84315", "#607d8b"
+  "#ef5350", "#d84315", "#f57c00", "#ffb300", "#43a047",
+  "#26a69a", "#00a693", "#4285f4", "#5e97f6", "#7e57c2",
+  "#ab47bc", "#ec407a", "#8d6e63", "#78909c", "#607d8b"
 ];
 
 export const defaultCategoryColors: Record<string, string> = {

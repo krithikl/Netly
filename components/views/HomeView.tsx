@@ -3,6 +3,7 @@ import { DonutChart } from "@/components/charts/DonutChart";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { Metric } from "@/components/ui/Metric";
 import { PanelTitle } from "@/components/ui/PanelTitle";
+import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/insights";
 import type { Transaction } from "@/lib/types";
 import type { View } from "@/lib/app/types";
@@ -72,13 +73,13 @@ export function HomeView({
         </div>
         <div className="hero-actions">
           {showConnectButton && (
-            <button className="tonal-button" onClick={openConnectView} type="button">
+            <Button className="bg-white/15 text-white hover:bg-white/25" onClick={openConnectView} type="button" variant="secondary">
               Connect bank
-            </button>
+            </Button>
           )}
-          <button className="primary-button" onClick={openTransactionsView} type="button">
+          <Button className="bg-white text-[var(--primary)] hover:bg-white/90" onClick={openTransactionsView} type="button">
             Review spend
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -135,9 +136,9 @@ export function HomeView({
         <div className={recentActivityClassName} aria-busy={isLoadingTransactions}>
           <TransactionList categoryColors={categoryColors} emptyMessage="No transactions found for this category." transactions={recentTransactions} />
         </div>
-        <button className="tonal-action" onClick={openTransactionsView} type="button">
+        <Button className="mt-2" onClick={openTransactionsView} type="button" variant="secondary">
           View all transactions
-        </button>
+        </Button>
       </section>
     </>
   );

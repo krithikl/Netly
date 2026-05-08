@@ -1,8 +1,9 @@
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
 import { TransactionList } from "@/components/transactions/TransactionList";
-import { CustomSelect } from "@/components/ui/CustomSelect";
 import { PanelTitle } from "@/components/ui/PanelTitle";
+import { Button } from "@/components/ui/button";
+import { SelectField } from "@/components/ui/select-field";
 import type { Transaction } from "@/lib/types";
 import type { TransactionFilter, TransactionSort } from "@/lib/app/types";
 
@@ -91,15 +92,15 @@ export function TransactionsView({
           </label>
           <label>
             Status
-            <CustomSelect onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
+            <SelectField onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
           </label>
           <label>
             Category
-            <CustomSelect onChange={setTransactionCategory} options={categorySelectOptions} value={transactionCategory} />
+            <SelectField onChange={setTransactionCategory} options={categorySelectOptions} value={transactionCategory} />
           </label>
           <label>
             Sort
-            <CustomSelect onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
+            <SelectField onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
           </label>
         </div>
         <div className="category-create-row">
@@ -107,9 +108,9 @@ export function TransactionsView({
             New category
             <input onChange={handleNewCategoryChange} placeholder="e.g. Kids, Pets, Travel" value={newCategory} />
           </label>
-          <button className="tonal-action" disabled={!canCreateCategory} onClick={handleCreateCategory} type="button">
+          <Button disabled={!canCreateCategory} onClick={handleCreateCategory} type="button" variant="secondary">
             Add category
-          </button>
+          </Button>
           {categoryErrorMessage && (
             <p aria-live="polite" className="category-error-message">
               {categoryErrorMessage}

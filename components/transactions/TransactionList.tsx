@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+"use client";
+
+import { useState } from "react";
 import { InfoRow } from "@/components/ui/InfoRow";
-import { CustomSelect } from "@/components/ui/CustomSelect";
-import type { CustomSelectOption } from "@/components/ui/CustomSelect";
+import { SelectField, type SelectOption } from "@/components/ui/select-field";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle
+} from "@/components/ui/sheet";
 import {
   getTransactionAmountLabel,
   getTransactionCategory,
@@ -10,14 +17,13 @@ import {
   getTransactionId,
   getTransactionMerchant,
   getTransactionRawText,
-  getTransactionStatus,
   getTransactionSummaryMeta
 } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
 type TransactionListProps = {
   categoryColors: Record<string, string>;
-  categorySelectOptions?: CustomSelectOption[];
+  categorySelectOptions?: SelectOption[];
   editable?: boolean;
   emptyMessage?: string;
   onCategoryChange?: (transactionId: string, category: string) => void;
@@ -35,89 +41,9 @@ export function TransactionList({
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const closeDetails = () => setSelectedTransaction(null);
 
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-
-    if (selectedTransaction) {
-      document.body.style.overflow = "hidden";
-    }
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [selectedTransaction]);
-
   if (transactions.length === 0) {
     return <div className="empty-state">{emptyMessage}</div>;
   }
-
-  const detailOverlay = selectedTransaction
-    ? createPortal(
-        <div className="transaction-details-overlay" onClick={closeDetails}>
-          <aside
-            className="transaction-details-panel"
-            role="complementary"
-            aria-labelledby="transaction-details-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="transaction-details-card">
-              <div className="transaction-details-header">
-                <div className="transaction-details-avatar" style={{ background: getTransactionColor(getTransactionCategory(selectedTransaction), categoryColors) }}>
-                  {getTransactionMerchant(selectedTransaction).slice(0, 1)}
-                </div>
-                <div className="transaction-details-header-copy">
-                  <span className="eyebrow">Transaction details</span>
-                  <h2 id="transaction-details-title">{getTransactionMerchant(selectedTransaction)}</h2>
-                  <p>{getTransactionSummaryMeta(selectedTransaction)}</p>
-                </div>
-                <button
-                  className="transaction-details-close"
-                  onClick={closeDetails}
-                  type="button"
-                  aria-label="Close transaction details"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="transaction-details-meta">
-                <div className="transaction-details-summary-card">
-                  <span>Amount</span>
-                  <strong className={selectedTransaction.amount < 0 ? "negative" : "positive"}>
-                    {getTransactionAmountLabel(selectedTransaction)}
-                  </strong>
-                </div>
-                <div className="transaction-details-summary-card">
-                  <span>Status</span>
-                  <strong>{getTransactionStatus(selectedTransaction)}</strong>
-                </div>
-                <div className="transaction-details-summary-card">
-                  <span>Category</span>
-                  <strong>{getTransactionCategory(selectedTransaction)}</strong>
-                </div>
-              </div>
-
-              <div className="transaction-detail-list">
-                {getTransactionDetailRows(selectedTransaction).map((row) => (
-                  <div className="transaction-detail-item" key={row.label}>
-                    <span>{row.label}</span>
-                    <strong>{row.value}</strong>
-                  </div>
-                ))}
-              </div>
-
-              {getTransactionRawText(selectedTransaction) && (
-                <div className="transaction-raw-box">
-                  <span>Raw bank text</span>
-                  <p>{getTransactionRawText(selectedTransaction)}</p>
-                </div>
-              )}
-            </div>
-          </aside>
-        </div>,
-        document.body
-      )
-    : null;
 
   return (
     <div className="transaction-list-layout">
@@ -125,7 +51,9 @@ export function TransactionList({
         <div className="stack-list">
           {transactions.map((transaction) => {
             const row = getTransactionRow(transaction, categoryColors);
-            const openDetails = () => setSelectedTransaction(transaction);
+            const openDetails = () => {
+              setSelectedTransaction(transaction);
+            };
 
             return (
               <InfoRow
@@ -143,7 +71,11 @@ export function TransactionList({
           })}
         </div>
       </div>
-      {detailOverlay}
+      <TransactionDetailsSheet
+        categoryColors={categoryColors}
+        onClose={closeDetails}
+        transaction={selectedTransaction}
+      />
     </div>
   );
 }
@@ -172,7 +104,7 @@ function getTransactionMeta(transaction: Transaction) {
 function getCategoryAction(
   transaction: Transaction,
   editable: boolean,
-  categoryOptions: CustomSelectOption[],
+  categoryOptions: SelectOption[],
   onCategoryChange?: (transactionId: string, category: string) => void
 ) {
   if (!editable) {
@@ -198,16 +130,16 @@ function CategorySelect({
   transaction
 }: {
   categoryLabel: string;
-  categoryOptions: CustomSelectOption[];
+  categoryOptions: SelectOption[];
   onCategoryChange?: (transactionId: string, category: string) => void;
   transaction: Transaction;
 }) {
   const handleCategoryChange = (category: string) => onCategoryChange?.(getTransactionId(transaction), category);
 
   return (
-    <CustomSelect
+    <SelectField
       ariaLabel={categoryLabel}
-      className="row-category-select"
+      className="min-h-9 w-[min(220px,100%)] px-3 py-2 text-[13px] font-bold"
       onChange={handleCategoryChange}
       options={categoryOptions}
       value={getTransactionCategory(transaction)}
@@ -215,3 +147,78 @@ function CategorySelect({
   );
 }
 
+function TransactionDetailsSheet({
+  categoryColors,
+  onClose,
+  transaction
+}: {
+  categoryColors: Record<string, string>;
+  onClose: () => void;
+  transaction: Transaction | null;
+}) {
+  const isOpen = Boolean(transaction);
+
+  return (
+    <Sheet onOpenChange={(open) => !open && onClose()} open={isOpen}>
+      <SheetContent className="grid grid-rows-[auto_minmax(0,1fr)] gap-5 overflow-hidden">
+        <SheetHeader>
+          <SheetTitle>Transaction Details</SheetTitle>
+          <SheetDescription>Merchant, amount, category, account, and raw bank text for the selected transaction.</SheetDescription>
+        </SheetHeader>
+        {transaction && (
+          <div className="min-h-0 overflow-y-auto pr-1">
+            <TransactionDetailsContent categoryColors={categoryColors} transaction={transaction} />
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function TransactionDetailsContent({
+  categoryColors,
+  transaction
+}: {
+  categoryColors: Record<string, string>;
+  transaction: Transaction;
+}) {
+  const merchant = getTransactionMerchant(transaction);
+  const category = getTransactionCategory(transaction);
+  const avatarStyle = { background: getTransactionColor(category, categoryColors) };
+  const amountClassName = transaction.amount < 0 ? "negative" : "positive";
+  const rawText = getTransactionRawText(transaction);
+
+  return (
+    <div className="grid gap-5">
+      <div className="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-[rgba(119,106,116,0.14)] bg-white/90 p-3">
+        <div className="grid h-10 w-10 place-items-center rounded-full text-sm font-black text-white" style={avatarStyle}>
+          {merchant.slice(0, 1)}
+        </div>
+        <div className="min-w-0">
+          <strong className="block truncate">{merchant}</strong>
+          <p className="mt-1 text-sm font-semibold text-[var(--muted)]">{getTransactionSummaryMeta(transaction)}</p>
+        </div>
+        <strong className={amountClassName}>{getTransactionAmountLabel(transaction)}</strong>
+      </div>
+
+      <section className="grid gap-3">
+        <h3 className="text-sm font-bold">Details</h3>
+        <div className="grid gap-2">
+          {getTransactionDetailRows(transaction).map((row) => (
+            <div className="flex justify-between gap-5 text-sm" key={row.label}>
+              <span className="text-[var(--muted)]">{row.label}</span>
+              <strong className="max-w-[62%] text-right [overflow-wrap:anywhere]">{row.value}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {rawText && (
+        <section className="grid gap-2">
+          <h3 className="text-sm font-bold">Raw bank text</h3>
+          <p className="text-sm leading-relaxed text-[var(--muted)]">{rawText}</p>
+        </section>
+      )}
+    </div>
+  );
+}

@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
-import { Cell, Pie, PieChart, Sector, Tooltip } from "recharts";
-import type { PieSectorDataItem, PieSectorShapeProps } from "recharts";
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { ArcElement, Chart as ChartJS, Tooltip } from "chart.js";
+import type { ActiveElement, ChartData, ChartEvent, ChartOptions, TooltipModel } from "chart.js";
+import { Doughnut } from "react-chartjs-2";
+import { useCallback, useMemo, useState } from "react";
 import { formatMoney, sum } from "@/lib/insights";
+
+ChartJS.register(ArcElement, Tooltip);
 
 type ChartCategory = {
   category: string;
@@ -20,56 +22,72 @@ type DonutChartProps = {
   selectedCategory: string | null;
 };
 
-type DonutDatum = ChartCategory & {
-  color: string;
+type TooltipState = {
+  amount: number;
+  category: string;
+  left: number;
+  opacity: number;
+  top: number;
+};
+
+type ExternalTooltipContext = {
+  chart: {
+    canvas: HTMLCanvasElement;
+  };
+  tooltip: TooltipModel<"doughnut">;
+};
+
+const initialTooltipState: TooltipState = {
+  amount: 0,
+  category: "",
+  left: 0,
+  opacity: 0,
+  top: 0
 };
 
 export function DonutChart({ categories, categoryColors, hoveredCategory, onHover, onSelect, selectedCategory }: DonutChartProps) {
-  const data = useMemo(() => getChartData(categories, categoryColors), [categories, categoryColors]);
+  const [tooltipState, setTooltipState] = useState<TooltipState>(initialTooltipState);
   const total = sum(categories.map((item) => item.amount));
-  const activeIndex = getActiveIndex(data, hoveredCategory);
-  const renderSlice = useCallback(
-    (props: PieSectorShapeProps, index: number) => <AnimatedSector {...props} isActive={index === activeIndex} />,
-    [activeIndex]
-  );
-  const handleSliceEnter = useCallback(
-    (_entry: PieSectorDataItem, index: number) => onHover(data[index]?.category || null),
-    [data, onHover]
-  );
-  const handleChartLeave = useCallback(() => onHover(null), [onHover]);
-  const handleSliceClick = useCallback(
-    (_entry: PieSectorDataItem, index: number) => {
-      const category = data[index]?.category || null;
-      onSelect(getNextSelectedCategory(category, selectedCategory));
-    },
-    [data, onSelect, selectedCategory]
+  const chartData = useMemo(() => getChartData(categories, categoryColors), [categories, categoryColors]);
+  const tooltipStyle = getTooltipStyle(tooltipState);
+
+  const handleChartHover = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
+    const category = getCategoryFromElements(categories, elements);
+    onHover(category);
+  }, [categories, onHover]);
+
+  const handleChartClick = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
+    const category = getCategoryFromElements(categories, elements);
+    onSelect(getNextSelectedCategory(category, selectedCategory));
+  }, [categories, onSelect, selectedCategory]);
+
+  const handleChartLeave = useCallback(() => {
+    onHover(null);
+    setTooltipState((currentTooltip) => ({ ...currentTooltip, opacity: 0 }));
+  }, [onHover]);
+
+  const handleExternalTooltip = useCallback((context: ExternalTooltipContext) => {
+    const nextTooltip = getExternalTooltipState(context.tooltip);
+    setTooltipState((currentTooltip) => getNextTooltipState(currentTooltip, nextTooltip));
+  }, []);
+
+  const chartOptions = useMemo(
+    () => getChartOptions(handleChartHover, handleChartClick, handleExternalTooltip),
+    [handleChartClick, handleChartHover, handleExternalTooltip]
   );
 
   return (
-    <div className="donut-wrap" onMouseLeave={handleChartLeave}>
-      <ChartContainer className="donut">
-        <PieChart height={290} width={290}>
-          <Tooltip content={<ChartTooltipContent total={total} />} cursor={false} />
-          <Pie
-            isAnimationActive={false}
-            data={data}
-            dataKey="amount"
-            endAngle={-270}
-            innerRadius="64%"
-            nameKey="category"
-            onClick={handleSliceClick}
-            onMouseEnter={handleSliceEnter}
-            outerRadius="92%"
-            shape={renderSlice}
-            startAngle={90}
-            stroke="none"
-          >
-            {data.map((item) => (
-              <Cell fill={item.color} key={item.category} />
-            ))}
-          </Pie>
-        </PieChart>
-      </ChartContainer>
+    <div className="donut-wrap">
+      <div className="donut" onMouseLeave={handleChartLeave}>
+        <Doughnut aria-label="Expense categories donut chart" data={chartData} options={chartOptions} role="img" />
+      </div>
+      {tooltipState.category && total > 0 && (
+        <div className="chart-tooltip" role="status" style={tooltipStyle}>
+          <strong>{tooltipState.category}</strong>
+          <span>{formatMoney(tooltipState.amount)}</span>
+          <small>{Math.round((tooltipState.amount / total) * 100)}% of shown expenses</small>
+        </div>
+      )}
       <div className="donut-center">
         <span>Expenses</span>
         <strong>{formatMoney(total)}</strong>
@@ -78,39 +96,65 @@ export function DonutChart({ categories, categoryColors, hoveredCategory, onHove
   );
 }
 
-function AnimatedSector({
-  isActive,
-  ...props
-}: PieSectorShapeProps & {
-  isActive: boolean;
-}) {
-  const centerX = Number(props.cx || 0);
-  const centerY = Number(props.cy || 0);
-  const activeTransform = `translate(${centerX}px, ${centerY}px) scale(1.045) translate(${-centerX}px, ${-centerY}px)`;
-  const sectorStyle = {
-    cursor: "pointer",
-    filter: isActive ? "drop-shadow(0 8px 12px rgba(29, 27, 32, 0.18))" : "none",
-    outline: "none",
-    transform: isActive ? activeTransform : "none",
-    transition: "transform 180ms ease, filter 180ms ease, opacity 180ms ease"
+function getChartData(categories: ChartCategory[], categoryColors: Record<string, string>): ChartData<"doughnut"> {
+  return {
+    labels: categories.map((item) => item.category),
+    datasets: [
+      {
+        backgroundColor: categories.map((item) => getCategoryColor(item.category, categoryColors)),
+        borderWidth: 0,
+        data: categories.map((item) => item.amount),
+        hoverBorderWidth: 0,
+        hoverOffset: 10,
+        offset: categories.map(() => 0)
+      }
+    ]
   };
-
-  return <Sector {...props} style={sectorStyle} />;
 }
 
-function getChartData(categories: ChartCategory[], categoryColors: Record<string, string>): DonutDatum[] {
-  return categories.map((item) => ({
-    ...item,
-    color: categoryColors[item.category] || "#607d8b"
-  }));
+function getChartOptions(
+  onHover: (event: ChartEvent, elements: ActiveElement[]) => void,
+  onClick: (event: ChartEvent, elements: ActiveElement[]) => void,
+  onExternalTooltip: (context: ExternalTooltipContext) => void
+): ChartOptions<"doughnut"> {
+  return {
+    animation: {
+      duration: 180,
+      easing: "easeOutQuart"
+    },
+    cutout: "64%",
+    layout: {
+      padding: 12
+    },
+    maintainAspectRatio: false,
+    onClick,
+    onHover,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        enabled: false,
+        external: onExternalTooltip
+      }
+    },
+    rotation: -90,
+    responsive: true
+  };
 }
 
-function getActiveIndex(data: DonutDatum[], hoveredCategory: string | null) {
-  if (!hoveredCategory) {
-    return -1;
+function getCategoryColor(category: string, categoryColors: Record<string, string>) {
+  return categoryColors[category] || "#607d8b";
+}
+
+function getCategoryFromElements(categories: ChartCategory[], elements: ActiveElement[]) {
+  const index = elements[0]?.index;
+
+  if (typeof index !== "number") {
+    return null;
   }
 
-  return data.findIndex((item) => item.category === hoveredCategory);
+  return categories[index]?.category || null;
 }
 
 function getNextSelectedCategory(category: string | null, selectedCategory: string | null) {
@@ -119,4 +163,42 @@ function getNextSelectedCategory(category: string | null, selectedCategory: stri
   }
 
   return selectedCategory === category ? null : category;
+}
+
+function getExternalTooltipState(tooltip: TooltipModel<"doughnut">): TooltipState {
+  const item = tooltip.dataPoints?.[0];
+
+  if (!item || tooltip.opacity === 0) {
+    return initialTooltipState;
+  }
+
+  return {
+    amount: Number(item.parsed || 0),
+    category: String(item.label || ""),
+    left: tooltip.caretX,
+    opacity: tooltip.opacity,
+    top: tooltip.caretY
+  };
+}
+
+function getNextTooltipState(currentTooltip: TooltipState, nextTooltip: TooltipState) {
+  if (
+    currentTooltip.amount === nextTooltip.amount &&
+    currentTooltip.category === nextTooltip.category &&
+    currentTooltip.left === nextTooltip.left &&
+    currentTooltip.opacity === nextTooltip.opacity &&
+    currentTooltip.top === nextTooltip.top
+  ) {
+    return currentTooltip;
+  }
+
+  return nextTooltip;
+}
+
+function getTooltipStyle(tooltip: TooltipState) {
+  return {
+    left: tooltip.left,
+    opacity: tooltip.opacity,
+    top: tooltip.top
+  };
 }

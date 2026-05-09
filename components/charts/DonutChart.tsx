@@ -4,7 +4,7 @@ import { ArcElement, Chart as ChartJS, Tooltip } from "chart.js";
 import type { ActiveElement, ChartData, ChartEvent, ChartOptions, TooltipModel } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import type { CSSProperties } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatMoney, sum } from "@/lib/insights";
 
 ChartJS.register(ArcElement, Tooltip);
@@ -57,10 +57,12 @@ const initialTooltipState: TooltipState = {
   opacity: 0,
   top: 0
 };
+const mobileChartQuery = "(max-width: 768px)";
 
 export function DonutChart({ categories, categoryColors, hoveredCategory, onHover }: DonutChartProps) {
   // Chart.js owns hover geometry, while React stores only the small external tooltip state.
   const [tooltipState, setTooltipState] = useState<TooltipState>(initialTooltipState);
+  const [isMobileChart, setIsMobileChart] = useState(false);
   const total = sum(categories.map((item) => item.amount));
   const chartData = useMemo(() => getChartData(categories, categoryColors), [categories, categoryColors]);
   const tooltipStyle = getTooltipStyle(tooltipState);
@@ -85,9 +87,23 @@ export function DonutChart({ categories, categoryColors, hoveredCategory, onHove
     });
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(mobileChartQuery);
+    setIsMobileChart(mediaQuery.matches);
+
+    const handleMediaChange = (event: MediaQueryListEvent) => setIsMobileChart(event.matches);
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    return () => mediaQuery.removeEventListener("change", handleMediaChange);
+  }, []);
+
   const chartOptions = useMemo(
-    () => getChartOptions(handleChartHover, handleExternalTooltip),
-    [handleChartHover, handleExternalTooltip]
+    () => getChartOptions(handleChartHover, handleExternalTooltip, isMobileChart),
+    [handleChartHover, handleExternalTooltip, isMobileChart]
   );
 
   return (
@@ -128,14 +144,15 @@ function getChartData(categories: ChartCategory[], categoryColors: Record<string
 
 function getChartOptions(
   onHover: (event: ChartEvent, elements: ActiveElement[]) => void,
-  onExternalTooltip: (context: ExternalTooltipContext) => void
+  onExternalTooltip: (context: ExternalTooltipContext) => void,
+  isMobileChart: boolean
 ): ChartOptions<"doughnut"> {
   return {
     animation: {
       duration: 180,
       easing: "easeOutQuart"
     },
-    cutout: "64%",
+    cutout: isMobileChart ? "50%" : "64%",
     layout: {
       padding: 12
     },

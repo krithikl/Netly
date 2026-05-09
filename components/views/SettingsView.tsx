@@ -1,5 +1,17 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { PanelTitle } from "@/components/ui/panel-title";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { moneyfitPalette } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
@@ -74,10 +86,16 @@ function CategoryColorRow({
   onDelete,
   updateCategoryColor
 }: CategoryColorRowProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const colorToggleClassName = cn(
     "h-7 w-7 rounded-full border-2 border-transparent p-0 shadow-sm transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
     isActive && "border-[var(--ink)]"
   );
+  const handleDelete = () => {
+    onDelete();
+    toast.success("Category removed");
+    setDeleteDialogOpen(false);
+  };
 
   return (
     <div className="info-row info-row-block relative">
@@ -112,13 +130,34 @@ function CategoryColorRow({
               </div>
             </PopoverContent>
           </Popover>
-          <button 
-            type="button" 
-            onClick={onDelete}
-            className="rounded-lg border-0 bg-transparent px-2 py-1 text-[13px] font-semibold text-[var(--danger)]"
-          >
-            Remove
-          </button>
+          <Dialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                className="rounded-lg border-0 bg-transparent px-2 py-1 text-[13px] font-semibold text-[var(--danger)]"
+              >
+                Remove
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Remove {category}?</DialogTitle>
+                <DialogDescription>
+                  This hides the category from filters and settings on this device. Existing matching transactions will fall back to their source category.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button className="bg-[var(--danger)] hover:bg-[var(--danger)]" onClick={handleDelete} type="button" variant="default">
+                  Remove category
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

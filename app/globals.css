@@ -282,28 +282,16 @@ h2 {
 }
 
 .source-switch {
-  display: flex;
-  gap: 6px;
+  display: inline-flex;
   width: fit-content;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(255, 251, 255, 0.72);
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 18px;
   border: 1px solid var(--outline);
-}
-
-.topbar-controls {
-  display: flex;
-  min-width: max-content;
-  justify-items: end;
-}
-
-.source-switch button {
-  border: 0;
-  border-radius: 999px;
-  min-height: 32px;
-  padding: 7px 12px;
   background: transparent;
-  color: var(--muted);
+  color: var(--ink);
   cursor: pointer;
   font-size: 13px;
   font-weight: 800;
@@ -313,13 +301,15 @@ h2 {
     transform 180ms ease;
 }
 
-.source-switch button:hover {
+.source-switch:hover {
+  background: var(--surface-2);
   transform: translateY(-1px);
 }
 
-.source-switch button.active {
-  background: var(--ink);
-  color: white;
+.topbar-controls {
+  display: flex;
+  min-width: max-content;
+  justify-items: end;
 }
 
 .sidebar-source-control {
@@ -887,7 +877,6 @@ h2 {
   text-transform: none;
 }
 
-.category-success-message,
 .category-error-message {
   min-height: 42px;
   display: flex;
@@ -895,10 +884,6 @@ h2 {
   margin: 0;
   font-size: 13px;
   font-weight: 850;
-}
-
-.category-success-message {
-  color: var(--success);
 }
 
 .category-error-message {
@@ -1208,11 +1193,7 @@ h2 {
 
   .mobile-more-source .source-switch {
     width: 100%;
-    justify-content: stretch;
-  }
-
-  .mobile-more-source .source-switch button {
-    flex: 1;
+    justify-content: center;
   }
 
   .main {
@@ -1501,8 +1482,7 @@ h2 {
     padding: 9px 13px;
   }
 
-  .category-error-message,
-  .category-success-message {
+  .category-error-message {
     grid-column: 1 / -1;
     min-height: 0;
   }
@@ -1571,6 +1551,10 @@ h2 {
     width: min(58vw, 210px);
     height: min(58vw, 210px);
     margin-top: 0;
+  }
+
+  .donut-center {
+    display: none;
   }
 
   .chart-panel .legend-list {

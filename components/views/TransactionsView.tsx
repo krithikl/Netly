@@ -1,6 +1,7 @@
 import type { ChangeEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowDownUp, SlidersHorizontal } from "lucide-react";
+import { toast } from "sonner";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,6 @@ export function TransactionsView({
 }: TransactionsViewProps) {
   // Keep transient drawer and new-category state local so global app state only stores active filters.
   const [newCategory, setNewCategory] = useState("");
-  const [categorySuccessMessage, setCategorySuccessMessage] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const normalizedNewCategory = normalizeCategoryName(newCategory);
@@ -68,7 +68,7 @@ export function TransactionsView({
     }
 
     onCreateCategory(normalizedNewCategory);
-    setCategorySuccessMessage(`Added ${normalizedNewCategory}`);
+    toast.success("Category added");
     setNewCategory("");
   };
   const editableCategoryOptions = useMemo(() => categoryOptions.filter((category) => category !== "All categories"), [categoryOptions]);
@@ -95,15 +95,6 @@ export function TransactionsView({
     setTransactionCategory(toggleCategorySelection(transactionCategory, category));
   };
   const closeSort = () => setSortOpen(false);
-
-  useEffect(() => {
-    if (!categorySuccessMessage) {
-      return undefined;
-    }
-
-    const clearMessage = window.setTimeout(() => setCategorySuccessMessage(""), 2400);
-    return () => window.clearTimeout(clearMessage);
-  }, [categorySuccessMessage]);
 
   return (
     <section className="view-stack">
@@ -181,11 +172,6 @@ export function TransactionsView({
           {categoryErrorMessage && (
             <p aria-live="polite" className="category-error-message">
               {categoryErrorMessage}
-            </p>
-          )}
-          {categorySuccessMessage && (
-            <p aria-live="polite" className="category-success-message">
-              {categorySuccessMessage}
             </p>
           )}
         </div>

@@ -109,7 +109,7 @@ export function getConnectionCopy(isLoadingTransactions: boolean, dataMode: Data
     return "Using Akahu-shaped sample transactions.";
   }
 
-  return isConnected ? "Transactions are loading from Akahu." : "No connected user data loaded.";
+  return isConnected ? "Transactions are loading from Akahu." : "No connected Akahu data loaded.";
 }
 
 export function getDataSourceLabel(isLoadingTransactions: boolean, dataMode: DataMode, isConnected: boolean) {
@@ -121,7 +121,7 @@ export function getDataSourceLabel(isLoadingTransactions: boolean, dataMode: Dat
     return "Akahu-shaped demo data";
   }
 
-  return isConnected ? "Akahu" : "no connected user";
+  return isConnected ? "Akahu" : "no connected Akahu data";
 }
 
 export function getLinkedAccountLabel(primaryLinkedAccount: LinkedAccount | null, linkedAccountCount: number, isConnected: boolean) {
@@ -148,7 +148,7 @@ export function getLinkedUserName(primaryLinkedAccount: LinkedAccount | null, da
 
 export function getStatusBannerTitle(transactionLoadError: string, dataMode: DataMode) {
   if (transactionLoadError) {
-    return dataMode === "demo" ? "Demo data unavailable." : "User data unavailable.";
+    return dataMode === "demo" ? "Demo data unavailable." : "Akahu data unavailable.";
   }
 
   return dataMode === "demo" ? "Demo data." : "Akahu connected.";
@@ -159,7 +159,7 @@ export function getCardFitSourceLabel(dataMode: DataMode, isConnected: boolean) 
     return "Akahu-shaped demo transactions";
   }
 
-  return isConnected ? "connected Akahu transactions" : "connected user transactions";
+  return isConnected ? "connected Akahu transactions" : "Akahu transactions";
 }
 
 export function getCardFitWindowLabel(cardBasis: { latestTransactionDate: string | null; windowDays: number }) {

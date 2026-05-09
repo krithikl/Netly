@@ -110,23 +110,17 @@ export function Sidebar({ activeView, changeDataMode, connectionCopy, connection
 }
 
 function DataModeSwitch({ changeDataMode, dataMode }: { changeDataMode: (mode: DataMode) => void; dataMode: DataMode }) {
+  const nextMode = dataMode === "user" ? "demo" : "user";
+
   return (
-    <div className="source-switch" aria-label="Selected data source">
-      {(["user", "demo"] as const).map((mode) => (
-        <button className={getDataModeClassName(dataMode, mode)} key={mode} onClick={() => changeDataMode(mode)} type="button">
-          {getDataModeLabel(mode)}
-        </button>
-      ))}
-    </div>
+    <button className="source-switch" onClick={() => changeDataMode(nextMode)} type="button">
+      Switch to {getDataModeLabel(nextMode)}
+    </button>
   );
 }
 
-function getDataModeClassName(currentMode: DataMode, mode: DataMode) {
-  return clsx(currentMode === mode && "active");
-}
-
 function getDataModeLabel(mode: DataMode) {
-  return mode === "user" ? "User" : "Demo";
+  return mode === "user" ? "Akahu" : "Demo";
 }
 
 function getNavItemClassName(activeView: View, itemView: View) {

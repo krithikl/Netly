@@ -94,7 +94,6 @@ export function TransactionsView({
 
     setTransactionCategory(toggleCategorySelection(transactionCategory, category));
   };
-  const closeFilters = () => setFiltersOpen(false);
   const closeSort = () => setSortOpen(false);
 
   useEffect(() => {
@@ -155,9 +154,7 @@ export function TransactionsView({
           </label>
         </div>
         <TransactionFilterDialog
-          activeFilterCount={activeFilterCount}
           categoryOptions={categoryOptions}
-          onApply={closeFilters}
           onCategoryToggle={toggleTransactionCategory}
           onOpenChange={setFiltersOpen}
           onReset={resetFilters}
@@ -206,9 +203,7 @@ export function TransactionsView({
 }
 
 type TransactionFilterDialogProps = {
-  activeFilterCount: number;
   categoryOptions: string[];
-  onApply: () => void;
   onCategoryToggle: (category: string) => void;
   onOpenChange: (open: boolean) => void;
   onReset: () => void;
@@ -219,9 +214,7 @@ type TransactionFilterDialogProps = {
 };
 
 function TransactionFilterDialog({
-  activeFilterCount,
   categoryOptions,
-  onApply,
   onCategoryToggle,
   onOpenChange,
   onReset,
@@ -263,9 +256,9 @@ function TransactionFilterDialog({
             <div className="mobile-filter-chips category">
               {categoryOptions.map((category) => (
                 <button
-                className={getFilterCategoryIsActive(category, transactionCategory) ? "active" : undefined}
-                key={category}
-                onClick={() => onCategoryToggle(category)}
+                  className={getFilterCategoryIsActive(category, transactionCategory) ? "active" : undefined}
+                  key={category}
+                  onClick={() => onCategoryToggle(category)}
                   type="button"
                 >
                   {category}
@@ -273,11 +266,6 @@ function TransactionFilterDialog({
               ))}
             </div>
           </div>
-        </div>
-        <div className="mobile-filter-footer">
-          <Button className="mobile-filter-apply" onClick={onApply} type="button">
-            Apply{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-          </Button>
         </div>
       </DrawerContent>
     </Drawer>
@@ -300,6 +288,11 @@ function TransactionSortDialog({
   transactionSort
 }: TransactionSortDialogProps) {
   // Sort stays separate from filters because it is a single-choice action with a smaller drawer.
+  const handleSortChange = (sort: TransactionSort) => {
+    onSortChange(sort);
+    onApply();
+  };
+
   return (
     <Drawer onOpenChange={onOpenChange} open={open}>
       <DrawerContent className="mobile-filter-drawer mobile-sort-drawer">
@@ -311,17 +304,12 @@ function TransactionSortDialog({
         <div className="mobile-filter-drawer-body">
           <div className="mobile-sort-options">
             {transactionSortOptions.map((sort) => (
-              <button key={sort} onClick={() => onSortChange(sort)} type="button">
+              <button key={sort} onClick={() => handleSortChange(sort)} type="button">
                 <span>{sort}</span>
                 <span aria-hidden="true" className={sort === transactionSort ? "radio active" : "radio"} />
               </button>
             ))}
           </div>
-        </div>
-        <div className="mobile-filter-footer">
-          <Button className="mobile-filter-apply" onClick={onApply} type="button">
-            Apply
-          </Button>
         </div>
       </DrawerContent>
     </Drawer>

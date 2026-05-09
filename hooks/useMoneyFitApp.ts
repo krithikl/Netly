@@ -365,7 +365,6 @@ export function useMoneyFitApp() {
     recurring,
     reviewCount,
     safeToSpendAmount,
-
     setActiveView,
     setHoveredCategory,
     setQuery,

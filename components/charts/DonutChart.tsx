@@ -3,6 +3,7 @@
 import { ArcElement, Chart as ChartJS, Tooltip } from "chart.js";
 import type { ActiveElement, ChartData, ChartEvent, ChartOptions, TooltipModel } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import type { CSSProperties } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { formatMoney, sum } from "@/lib/insights";
 
@@ -37,6 +38,20 @@ type ExternalTooltipContext = {
   tooltip: TooltipModel<"doughnut">;
 };
 
+type DoughnutArcGeometry = {
+  endAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  x: number;
+  y: number;
+};
+
+type TooltipPoint = {
+  left: number;
+  top: number;
+};
+
 const initialTooltipState: TooltipState = {
   amount: 0,
   category: "",
@@ -67,8 +82,11 @@ export function DonutChart({ categories, categoryColors, hoveredCategory, onHove
   }, [onHover]);
 
   const handleExternalTooltip = useCallback((context: ExternalTooltipContext) => {
-    const nextTooltip = getExternalTooltipState(context.tooltip);
-    setTooltipState((currentTooltip) => getNextTooltipState(currentTooltip, nextTooltip));
+    setTooltipState((currentTooltip) => {
+      const nextTooltip = getExternalTooltipState(context.tooltip, currentTooltip);
+
+      return getNextTooltipState(currentTooltip, nextTooltip);
+    });
   }, []);
 
   const chartOptions = useMemo(
@@ -165,20 +183,64 @@ function getNextSelectedCategory(category: string | null, selectedCategory: stri
   return selectedCategory === category ? null : category;
 }
 
-function getExternalTooltipState(tooltip: TooltipModel<"doughnut">): TooltipState {
+function getExternalTooltipState(tooltip: TooltipModel<"doughnut">, currentTooltip: TooltipState): TooltipState {
   const item = tooltip.dataPoints?.[0];
 
   if (!item || tooltip.opacity === 0) {
-    return initialTooltipState;
+    return {
+      ...currentTooltip,
+      opacity: 0
+    };
   }
+
+  const point = getTooltipPoint(getTooltipItemElement(item), tooltip);
 
   return {
     amount: Number(item.parsed || 0),
     category: String(item.label || ""),
-    left: tooltip.caretX,
+    left: point.left,
     opacity: tooltip.opacity,
-    top: tooltip.caretY
+    top: point.top
   };
+}
+
+function getTooltipItemElement(item: unknown) {
+  if (!isRecord(item)) {
+    return null;
+  }
+
+  return item.element;
+}
+
+function getTooltipPoint(element: unknown, tooltip: TooltipModel<"doughnut">): TooltipPoint {
+  if (!isDoughnutArcGeometry(element)) {
+    return {
+      left: tooltip.caretX,
+      top: tooltip.caretY
+    };
+  }
+
+  const angle = (element.startAngle + element.endAngle) / 2;
+  const radius = (element.innerRadius + element.outerRadius) / 2;
+
+  return {
+    left: element.x + Math.cos(angle) * radius,
+    top: element.y + Math.sin(angle) * radius
+  };
+}
+
+function isDoughnutArcGeometry(value: unknown): value is DoughnutArcGeometry {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const geometryKeys: Array<keyof DoughnutArcGeometry> = ["endAngle", "innerRadius", "outerRadius", "startAngle", "x", "y"];
+
+  return geometryKeys.every((key) => typeof value[key] === "number");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function getNextTooltipState(currentTooltip: TooltipState, nextTooltip: TooltipState) {
@@ -195,10 +257,14 @@ function getNextTooltipState(currentTooltip: TooltipState, nextTooltip: TooltipS
   return nextTooltip;
 }
 
-function getTooltipStyle(tooltip: TooltipState) {
+function getTooltipStyle(tooltip: TooltipState): CSSProperties {
+  const isVisible = tooltip.opacity > 0;
+
   return {
+    "--tooltip-scale": isVisible ? "1" : "0.96",
+    "--tooltip-shift": isVisible ? "0px" : "6px",
     left: tooltip.left,
     opacity: tooltip.opacity,
     top: tooltip.top
-  };
+  } as CSSProperties;
 }

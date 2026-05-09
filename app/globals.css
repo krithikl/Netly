@@ -490,11 +490,12 @@ h2 {
   box-shadow: 0 14px 30px rgba(29, 27, 32, 0.16);
   text-align: center;
   pointer-events: none;
-  transform: translate(-50%, calc(-100% - 10px));
+  transform: translate(-50%, calc(-100% - 10px)) translateY(var(--tooltip-shift, 0)) scale(var(--tooltip-scale, 1));
   transition:
-    opacity 110ms ease,
-    left 80ms linear,
-    top 80ms linear;
+    opacity 140ms ease,
+    transform 140ms ease,
+    left 140ms ease-out,
+    top 140ms ease-out;
 }
 
 .chart-tooltip span {

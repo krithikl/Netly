@@ -39,11 +39,9 @@ export type ActiveViewProps = {
   recurring: RecurringMerchant[];
   reviewCount: number;
   safeToSpendAmount: number;
-  selectedHomeCategory: string | null;
   setActiveView: (view: View) => void;
   setHoveredCategory: (category: string | null) => void;
   setQuery: (query: string) => void;
-  setSelectedHomeCategory: (category: string | null) => void;
   setSyncResult: (value: string) => void;
   setTransactionCategory: (category: string) => void;
   setTransactionFilter: (filter: TransactionFilter) => void;

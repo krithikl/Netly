@@ -67,7 +67,6 @@ export function useMoneyFitApp() {
   const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("All");
   const [transactionSort, setTransactionSort] = useState<TransactionSort>("Newest");
   const [transactionCategory, setTransactionCategory] = useState("All categories");
-  const [selectedHomeCategory, setSelectedHomeCategory] = useState<string | null>(null);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
@@ -362,7 +361,6 @@ export function useMoneyFitApp() {
     setActiveView,
     setHoveredCategory,
     setQuery,
-    setSelectedHomeCategory,
     setSyncResult,
     setTransactionCategory,
     setTransactionFilter,

@@ -306,10 +306,7 @@ export function useMoneyFitApp() {
     [periodTransactions, query, transactionCategory, transactionFilter, transactionSort]
   );
   
-  const transactionPreview = useMemo(
-    () => periodTransactions.filter((transaction) => !selectedHomeCategory || getTransactionCategory(transaction) === selectedHomeCategory),
-    [periodTransactions, selectedHomeCategory]
-  );
+   const transactionPreview = useMemo(() => periodTransactions, [periodTransactions]);
   
   const paymentBalanceDelta = getPaymentBalanceDelta(paymentTestResult, availableBalance);
   
@@ -361,7 +358,7 @@ export function useMoneyFitApp() {
     recurring,
     reviewCount,
     safeToSpendAmount,
-    selectedHomeCategory,
+
     setActiveView,
     setHoveredCategory,
     setQuery,

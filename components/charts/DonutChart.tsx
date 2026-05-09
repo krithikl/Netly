@@ -19,8 +19,6 @@ type DonutChartProps = {
   categoryColors: Record<string, string>;
   hoveredCategory: string | null;
   onHover: (category: string | null) => void;
-  onSelect: (category: string | null) => void;
-  selectedCategory: string | null;
 };
 
 type TooltipState = {
@@ -60,7 +58,7 @@ const initialTooltipState: TooltipState = {
   top: 0
 };
 
-export function DonutChart({ categories, categoryColors, hoveredCategory, onHover, onSelect, selectedCategory }: DonutChartProps) {
+export function DonutChart({ categories, categoryColors, hoveredCategory, onHover }: DonutChartProps) {
   const [tooltipState, setTooltipState] = useState<TooltipState>(initialTooltipState);
   const total = sum(categories.map((item) => item.amount));
   const chartData = useMemo(() => getChartData(categories, categoryColors), [categories, categoryColors]);
@@ -71,10 +69,7 @@ export function DonutChart({ categories, categoryColors, hoveredCategory, onHove
     onHover(category);
   }, [categories, onHover]);
 
-  const handleChartClick = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
-    const category = getCategoryFromElements(categories, elements);
-    onSelect(getNextSelectedCategory(category, selectedCategory));
-  }, [categories, onSelect, selectedCategory]);
+
 
   const handleChartLeave = useCallback(() => {
     onHover(null);
@@ -90,8 +85,8 @@ export function DonutChart({ categories, categoryColors, hoveredCategory, onHove
   }, []);
 
   const chartOptions = useMemo(
-    () => getChartOptions(handleChartHover, handleChartClick, handleExternalTooltip),
-    [handleChartClick, handleChartHover, handleExternalTooltip]
+    () => getChartOptions(handleChartHover, handleExternalTooltip),
+    [handleChartHover, handleExternalTooltip]
   );
 
   return (
@@ -132,7 +127,6 @@ function getChartData(categories: ChartCategory[], categoryColors: Record<string
 
 function getChartOptions(
   onHover: (event: ChartEvent, elements: ActiveElement[]) => void,
-  onClick: (event: ChartEvent, elements: ActiveElement[]) => void,
   onExternalTooltip: (context: ExternalTooltipContext) => void
 ): ChartOptions<"doughnut"> {
   return {
@@ -145,7 +139,7 @@ function getChartOptions(
       padding: 12
     },
     maintainAspectRatio: false,
-    onClick,
+
     onHover,
     plugins: {
       legend: {
@@ -175,13 +169,7 @@ function getCategoryFromElements(categories: ChartCategory[], elements: ActiveEl
   return categories[index]?.category || null;
 }
 
-function getNextSelectedCategory(category: string | null, selectedCategory: string | null) {
-  if (!category) {
-    return null;
-  }
 
-  return selectedCategory === category ? null : category;
-}
 
 function getExternalTooltipState(tooltip: TooltipModel<"doughnut">, currentTooltip: TooltipState): TooltipState {
   const item = tooltip.dataPoints?.[0];

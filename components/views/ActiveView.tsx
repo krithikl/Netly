@@ -95,10 +95,8 @@ export function ActiveView(props: ActiveViewProps) {
             monthlySpend={props.monthlySpend}
             reviewCount={props.reviewCount}
             safeToSpendAmount={props.safeToSpendAmount}
-            selectedHomeCategory={props.selectedHomeCategory}
             setActiveView={props.setActiveView}
             setHoveredCategory={props.setHoveredCategory}
-            setSelectedHomeCategory={props.setSelectedHomeCategory}
             transactionPreview={props.transactionPreview}
             upcomingCount={props.upcomingCount}
             upcomingTotal={props.upcomingTotal}

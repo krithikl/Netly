@@ -21,10 +21,8 @@ type HomeViewProps = {
   monthlySpend: number;
   reviewCount: number;
   safeToSpendAmount: number;
-  selectedHomeCategory: string | null;
   setActiveView: (view: View) => void;
   setHoveredCategory: (category: string | null) => void;
-  setSelectedHomeCategory: (category: string | null) => void;
   transactionPreview: Transaction[];
   upcomingCount: number;
   upcomingTotal: number;
@@ -44,10 +42,8 @@ export function HomeView({
   monthlySpend,
   reviewCount,
   safeToSpendAmount,
-  selectedHomeCategory,
   setActiveView,
   setHoveredCategory,
-  setSelectedHomeCategory,
   transactionPreview,
   upcomingCount,
   upcomingTotal,
@@ -99,22 +95,18 @@ export function HomeView({
 
       <div className={dashboardGridClassName} aria-busy={isLoadingTransactions}>
         <section className="material-card chart-panel">
-          <PanelTitle title="Akahu categories" subtitle="Tap a slice to filter recent activity" />
+          <PanelTitle title="Akahu categories" subtitle="Spending by category" />
           <div className="chart-layout">
             <DonutChart
               categories={chartCategories}
               categoryColors={categoryColors}
               hoveredCategory={hoveredCategory}
               onHover={setHoveredCategory}
-              selectedCategory={selectedHomeCategory}
-              onSelect={setSelectedHomeCategory}
             />
             <CategoryLegend
               categories={chartCategories}
               categoryColors={categoryColors}
               chartTotal={chartTotal}
-              selectedHomeCategory={selectedHomeCategory}
-              setSelectedHomeCategory={setSelectedHomeCategory}
             />
           </div>
         </section>
@@ -130,9 +122,9 @@ export function HomeView({
       </div>
 
       <section className="material-card">
-        <PanelTitle title="Recent activity" subtitle="Filtered by chart selection" />
+        <PanelTitle title="Recent activity" subtitle="Recent transactions" />
         <div className={recentActivityClassName} aria-busy={isLoadingTransactions}>
-          <TransactionList categoryColors={categoryColors} emptyMessage="No transactions found for this category." transactions={recentTransactions} />
+          <TransactionList categoryColors={categoryColors} emptyMessage="No transactions found." transactions={recentTransactions} />
         </div>
         <Button className="mt-2" onClick={openTransactionsView} type="button" variant="secondary">
           View all transactions
@@ -146,16 +138,12 @@ type CategoryLegendProps = {
   categories: { category: string; amount: number }[];
   categoryColors: Record<string, string>;
   chartTotal: number;
-  selectedHomeCategory: string | null;
-  setSelectedHomeCategory: (category: string | null) => void;
 };
 
 function CategoryLegend({
   categories,
   categoryColors,
-  chartTotal,
-  selectedHomeCategory,
-  setSelectedHomeCategory
+  chartTotal
 }: CategoryLegendProps) {
   if (categories.length === 0) {
     return <div className="empty-state">No spending categories found for this period.</div>;
@@ -169,8 +157,6 @@ function CategoryLegend({
           chartTotal={chartTotal}
           item={item}
           key={item.category}
-          selectedHomeCategory={selectedHomeCategory}
-          setSelectedHomeCategory={setSelectedHomeCategory}
         />
       ))}
     </div>
@@ -181,27 +167,18 @@ function CategoryLegendRow({
   categoryColors,
   chartTotal,
   item,
-  selectedHomeCategory,
-  setSelectedHomeCategory
 }: {
   categoryColors: Record<string, string>;
   chartTotal: number;
   item: { category: string; amount: number };
-  selectedHomeCategory: string | null;
-  setSelectedHomeCategory: (category: string | null) => void;
 }) {
   const categoryColor = getCategoryColor(item.category, categoryColors);
   const legendBarStyle = getLegendBarStyle(item, chartTotal, categoryColor);
-  const legendRowClassName = getLegendRowClassName(item.category, selectedHomeCategory);
-  const toggleCategory = () => setSelectedHomeCategory(getNextSelectedCategory(item.category, selectedHomeCategory));
+  const legendRowClassName = "legend-row";
   const legendDotStyle = getLegendDotStyle(categoryColor);
 
   return (
-    <button
-      className={legendRowClassName}
-      onClick={toggleCategory}
-      type="button"
-    >
+    <div className={legendRowClassName}>
       <span className="legend-dot" style={legendDotStyle} />
       <span className="legend-content">
         <span className="legend-topline">
@@ -212,7 +189,7 @@ function CategoryLegendRow({
           <span className="legend-bar" style={legendBarStyle} />
         </span>
       </span>
-    </button>
+    </div>
   );
 }
 
@@ -245,10 +222,4 @@ function getLegendBarWidth(amount: number, chartTotal: number) {
   return chartTotal > 0 ? Math.max(4, Math.round((amount / chartTotal) * 100)) : 0;
 }
 
-function getLegendRowClassName(category: string, selectedHomeCategory: string | null) {
-  return clsx("legend-row", selectedHomeCategory === category && "selected");
-}
 
-function getNextSelectedCategory(category: string, selectedHomeCategory: string | null) {
-  return selectedHomeCategory === category ? null : category;
-}

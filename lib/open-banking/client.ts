@@ -68,6 +68,7 @@ export class AkahuClient {
   }
 
   async getTransactionsForAccounts(token: AkahuToken, accounts: AkahuAccount[]): Promise<AkahuTransactionsResponse> {
+    // Fetch global booked and pending transaction feeds, then merge them into the shape the app expects.
     const transactionGroups: AkahuTransactionsResponse[] = await Promise.all([
       this.getTransactions(token),
       this.getPendingTransactions(token)
@@ -86,6 +87,7 @@ export class AkahuClient {
   }
 
   private async getAllItems<T extends { items?: unknown[]; cursor?: { next?: string } }>(path: string, token: AkahuToken): Promise<T> {
+    // Follow Akahu cursor pagination and return a single combined payload for callers.
     let nextCursor: string | null | undefined = undefined;
     const items: unknown[] = [];
     let lastPayload: T | null = null;
@@ -133,6 +135,7 @@ export class AkahuClient {
   }
 
   private async readResponse<T>(response: Response) {
+    // Include response body text in errors because Akahu failures are otherwise hard to diagnose.
     const body = await readJsonBody(response);
 
     if (!response.ok) {
@@ -150,6 +153,7 @@ export class AkahuClient {
 }
 
 export function createOpenBankingClientFromEnv() {
+  // Centralize environment defaults so API routes do not need to duplicate Akahu configuration.
   const appToken = process.env.AKAHU_APP_TOKEN;
 
   if (!appToken) {
@@ -166,6 +170,7 @@ export function createOpenBankingClientFromEnv() {
 }
 
 function combineItems<T extends { success?: boolean; items?: unknown[] }>(responses: T[]) {
+  // Preserve failure signals while flattening items from booked and pending feeds.
   return {
     success: responses.every((response) => response.success !== false),
     items: responses.flatMap((response) => response.items || [])

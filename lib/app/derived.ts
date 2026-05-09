@@ -12,6 +12,7 @@ import {
 import type { Transaction } from "@/lib/types";
 
 export function applyCategoryOverrides(transactions: Transaction[], categoryOverrides: Record<string, string>) {
+  // Overlay local category edits without mutating the original transaction objects returned by Akahu.
   return transactions.map((transaction) => {
     const override = categoryOverrides[getTransactionId(transaction)];
 
@@ -36,12 +37,14 @@ export function getVisibleTransactions(
   transactionFilter: TransactionFilter,
   transactionSort: TransactionSort
 ) {
+  // Apply search, category, status, and sort in one derived step so the UI list has a single source of truth.
   return transactions
     .filter((transaction) => matchesTransactionFilters(transaction, query, transactionCategories, transactionFilter))
     .sort((first, second) => compareTransactions(first, second, transactionSort));
 }
 
 function matchesTransactionFilters(transaction: Transaction, query: string, transactionCategories: string[], transactionFilter: TransactionFilter) {
+  // Search uses display-safe fields so users can find merchant, account, category, or raw bank text.
   const category = getTransactionCategory(transaction);
   const searchableText = `${getTransactionMerchant(transaction)} ${category} ${getTransactionAccountLabel(transaction)} ${getTransactionRawText(transaction)}`.toLowerCase();
   const matchesQuery = searchableText.includes(query.trim().toLowerCase());
@@ -93,6 +96,7 @@ export function getPaymentTransactionDelta(paymentTestResult: PaymentTestResult 
 }
 
 export function getPaymentFeedNote(paymentTestResult: PaymentTestResult | null, paymentBalanceDelta: number | null, paymentTransactionDelta: number | null) {
+  // Flag the specific sandbox case where balances changed but no matching transaction row appeared.
   if (paymentTestResult?.status !== "submitted" || paymentBalanceDelta === null || paymentBalanceDelta === 0 || paymentTransactionDelta !== 0) {
     return "";
   }
@@ -137,6 +141,7 @@ export function getDataSourceLabel(isLoadingTransactions: boolean, dataMode: Dat
 }
 
 export function getLinkedAccountLabel(primaryLinkedAccount: LinkedAccount | null, linkedAccountCount: number, isConnected: boolean) {
+  // Prefer the primary account identity, then fall back to a count when Akahu returns multiple accounts.
   if (primaryLinkedAccount) {
     const ownerPrefix = primaryLinkedAccount.ownerName ? `${primaryLinkedAccount.ownerName} · ` : "";
     return `${ownerPrefix}${primaryLinkedAccount.displayName} ${primaryLinkedAccount.identification}`;

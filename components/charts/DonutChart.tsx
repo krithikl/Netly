@@ -59,6 +59,7 @@ const initialTooltipState: TooltipState = {
 };
 
 export function DonutChart({ categories, categoryColors, hoveredCategory, onHover }: DonutChartProps) {
+  // Chart.js owns hover geometry, while React stores only the small external tooltip state.
   const [tooltipState, setTooltipState] = useState<TooltipState>(initialTooltipState);
   const total = sum(categories.map((item) => item.amount));
   const chartData = useMemo(() => getChartData(categories, categoryColors), [categories, categoryColors]);
@@ -172,6 +173,7 @@ function getCategoryFromElements(categories: ChartCategory[], elements: ActiveEl
 
 
 function getExternalTooltipState(tooltip: TooltipModel<"doughnut">, currentTooltip: TooltipState): TooltipState {
+  // Convert Chart.js tooltip internals into stable React state without updating when hidden.
   const item = tooltip.dataPoints?.[0];
 
   if (!item || tooltip.opacity === 0) {
@@ -201,6 +203,7 @@ function getTooltipItemElement(item: unknown) {
 }
 
 function getTooltipPoint(element: unknown, tooltip: TooltipModel<"doughnut">): TooltipPoint {
+  // Prefer arc midpoint positioning so the custom tooltip follows the hovered slice, not just the cursor.
   if (!isDoughnutArcGeometry(element)) {
     return {
       left: tooltip.caretX,
@@ -232,6 +235,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function getNextTooltipState(currentTooltip: TooltipState, nextTooltip: TooltipState) {
+  // Avoid redundant state updates because Chart.js can call the external tooltip handler very frequently.
   if (
     currentTooltip.amount === nextTooltip.amount &&
     currentTooltip.category === nextTooltip.category &&

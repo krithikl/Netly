@@ -89,6 +89,7 @@ export function useMoneyFitApp() {
   const [isStartingPaymentTest, setIsStartingPaymentTest] = useState(false);
   const hasAutoCompletedRef = useRef(false);
 
+  // Refreshes every banking-dependent slice together so transactions, balances, and accounts stay in sync.
   async function refreshTransactions(mode: DataMode = dataMode) {
     setIsLoadingTransactions(true);
     resetBankData();
@@ -124,6 +125,7 @@ export function useMoneyFitApp() {
     setAvailableBalance(null);
   }
 
+  // Keeps the app usable if Akahu or demo API loading fails, while only showing sample data in demo mode.
   function applyFallbackState(mode: DataMode, error: unknown, fallbackMessage: string) {
     const isDemoMode = mode === "demo";
 
@@ -148,6 +150,7 @@ export function useMoneyFitApp() {
     });
   }
 
+  // Completes the pasted Personal App token flow and immediately reloads user data when it succeeds.
   async function completeOpenBankingConnection(responseValue?: string) {
     const response = await fetch("/api/open-banking/complete", {
       method: "POST",
@@ -184,6 +187,7 @@ export function useMoneyFitApp() {
     setIsStartingPaymentTest(false);
   }
 
+  // Stores per-transaction category edits locally until category settings move into persistent user storage.
   function updateTransactionCategory(transactionId: string, category: string) {
     const next = {
       ...categoryOverrides,
@@ -207,6 +211,7 @@ export function useMoneyFitApp() {
     window.localStorage.setItem(customCategoriesStorageKey, JSON.stringify(nextCategories));
   }
 
+  // Hides a category from user-facing category options without changing historical transaction data.
   function deleteCategory(category: string) {
     const next = [...deletedCategories, category];
     setDeletedCategories(next);
@@ -225,6 +230,7 @@ export function useMoneyFitApp() {
   }
 
   useEffect(() => {
+    // Restore local UI preferences before the first transaction load so derived category options are complete.
     setCategoryOverrides(readCategoryOverrides());
     setCustomCategories(readCustomCategories());
     setDeletedCategories(readDeletedCategories());
@@ -256,6 +262,7 @@ export function useMoneyFitApp() {
   }, []);
 
   useEffect(() => {
+    // Auto-complete once when Akahu redirects back with a token response stored in the browser.
     if (connectionResponse.trim() && !hasAutoCompletedRef.current) {
       hasAutoCompletedRef.current = true;
       setSyncResult("Completing Akahu connection...");
@@ -407,6 +414,7 @@ function getTransactionCategoryOptions(
   customCategories: string[],
   deletedCategories: string[]
 ) {
+  // Merge defaults, live transaction categories, and user-created categories into one stable sorted list.
   const categorySet = new Set<string>();
   defaultTransactionCategories.forEach((category) => categorySet.add(category));
   categories.forEach((item) => categorySet.add(item.category));

@@ -48,6 +48,7 @@ export function handleCallbackParams({
   setPaymentTestResult: (result: PaymentTestResult) => void;
   setSyncResult: (message: string) => void;
 }) {
+  // Translate OAuth and payment callback query params into app state, then clean the URL.
   const params = new URLSearchParams(window.location.search);
   const connected = params.get("connected");
   const connectionError = params.get("connect_error") || params.get("connectionError");
@@ -82,6 +83,7 @@ function handlePaymentCallback(
   setPaymentTestResult: (result: PaymentTestResult) => void,
   setSyncResult: (message: string) => void
 ) {
+  // Restore the pre-payment baseline so the UI can compare balances and transaction counts after redirect.
   const paymentTest = params.get("paymentTest");
   const paymentStatus = params.get("paymentStatus");
   const paymentError = params.get("paymentError");
@@ -114,6 +116,7 @@ function getPaymentCallbackMessage(paymentTest: string | null, paymentStatus: st
 }
 
 function restoreStoredPaymentResult(setPaymentTestResult: (result: PaymentTestResult) => void) {
+  // Keep the last payment test result visible after a reload until a new test replaces it.
   const parsedPaymentTestResult = parseStoredJson<PaymentTestResult>(window.localStorage.getItem(paymentTestResultStorageKey));
 
   if (parsedPaymentTestResult) {

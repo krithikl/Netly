@@ -1,5 +1,5 @@
 import type { ChangeEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowDownUp, SlidersHorizontal } from "lucide-react";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { PanelTitle } from "@/components/ui/PanelTitle";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerHeaderClose,
   DrawerTitle
@@ -51,6 +52,7 @@ export function TransactionsView({
   transactionSort,
   transactions
 }: TransactionsViewProps) {
+  // Keep transient drawer and new-category state local so global app state only stores active filters.
   const [newCategory, setNewCategory] = useState("");
   const [categorySuccessMessage, setCategorySuccessMessage] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -69,11 +71,11 @@ export function TransactionsView({
     setCategorySuccessMessage(`Added ${normalizedNewCategory}`);
     setNewCategory("");
   };
-  const editableCategoryOptions = categoryOptions.filter((category) => category !== "All categories");
-  const categorySelectOptions = getStringOptions(categoryOptions);
-  const editableCategorySelectOptions = getStringOptions(editableCategoryOptions);
-  const filterSelectOptions = getStringOptions(transactionFilters);
-  const sortSelectOptions = getStringOptions(transactionSortOptions);
+  const editableCategoryOptions = useMemo(() => categoryOptions.filter((category) => category !== "All categories"), [categoryOptions]);
+  const categorySelectOptions = useMemo(() => getStringOptions(categoryOptions), [categoryOptions]);
+  const editableCategorySelectOptions = useMemo(() => getStringOptions(editableCategoryOptions), [editableCategoryOptions]);
+  const filterSelectOptions = useMemo(() => getStringOptions(transactionFilters), []);
+  const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
   const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
   const shownTransactions = isLoadingTransactions ? [] : transactions;
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionCategory);
@@ -84,6 +86,7 @@ export function TransactionsView({
   };
   const handleDesktopCategoryChange = (category: string) => setTransactionCategory(category === "All categories" ? [] : [category]);
   const toggleTransactionCategory = (category: string) => {
+    // In the mobile drawer, category chips are multi-select and All categories acts as a clear action.
     if (category === "All categories") {
       setTransactionCategory([]);
       return;
@@ -227,6 +230,7 @@ function TransactionFilterDialog({
   transactionCategory,
   transactionFilter
 }: TransactionFilterDialogProps) {
+  // Vaul Drawer is used here instead of Dialog so mobile filters behave like a native bottom drawer.
   return (
     <Drawer onOpenChange={onOpenChange} open={open}>
       <DrawerContent className="mobile-filter-drawer">
@@ -235,6 +239,7 @@ function TransactionFilterDialog({
             Reset
           </button>
           <DrawerTitle>Filters</DrawerTitle>
+          <DrawerDescription className="sr-only">Filter transactions by status and one or more categories.</DrawerDescription>
           <DrawerHeaderClose className="mobile-filter-close" />
         </DrawerHeader>
         <div className="mobile-filter-drawer-body">
@@ -294,11 +299,13 @@ function TransactionSortDialog({
   open,
   transactionSort
 }: TransactionSortDialogProps) {
+  // Sort stays separate from filters because it is a single-choice action with a smaller drawer.
   return (
     <Drawer onOpenChange={onOpenChange} open={open}>
       <DrawerContent className="mobile-filter-drawer mobile-sort-drawer">
         <DrawerHeader className="mobile-filter-header centered">
           <DrawerTitle>Sort</DrawerTitle>
+          <DrawerDescription className="sr-only">Choose the order for the transactions list.</DrawerDescription>
           <DrawerHeaderClose className="mobile-filter-close" />
         </DrawerHeader>
         <div className="mobile-filter-drawer-body">
@@ -341,6 +348,7 @@ function getMatchingCategory(categories: string[], category: string) {
 }
 
 function getActiveFilterCount(transactionFilter: TransactionFilter, transactionCategory: string[]) {
+  // Count status plus each selected category so the Filters button reflects multi-select state.
   let count = 0;
 
   if (transactionFilter !== "All") {

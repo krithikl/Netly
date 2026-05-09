@@ -571,6 +571,10 @@ h2 {
   min-width: 0;
 }
 
+.transaction-load-more {
+  margin-top: 12px;
+}
+
 .chart-panel .legend-list {
   width: 100%;
   max-width: 560px;
@@ -719,10 +723,6 @@ h2 {
 }
 
 .info-row:hover {
-  background: #fff7fb;
-}
-
-.info-row:has([role="combobox"][data-state="open"]) {
   background: #fff7fb;
 }
 
@@ -1287,10 +1287,6 @@ h2 {
 
   .transaction-mobile-detail {
     animation: mobile-detail-in 220ms ease-out both;
-  }
-
-  .transaction-mobile-detail .transaction-detail-summary {
-    animation: detail-summary-in 260ms ease-out 60ms both;
   }
 }
 

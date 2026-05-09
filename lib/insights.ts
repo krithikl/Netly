@@ -26,6 +26,7 @@ export function sum(values: number[]) {
 }
 
 export function spendByCategory(transactions: Transaction[]) {
+  // Group only outgoing spend so income and positive adjustments do not distort category totals.
   const totals = new Map<string, number>();
 
   debitTransactions(transactions).forEach((txn) => {
@@ -39,6 +40,7 @@ export function spendByCategory(transactions: Transaction[]) {
 }
 
 export function detectRecurring(transactions: Transaction[]): RecurringMerchant[] {
+  // Treat repeated debit merchants as recurring signals for budgeting and safe-to-spend estimates.
   const byMerchant = new Map<string, Transaction[]>();
 
   debitTransactions(transactions).forEach((txn) => {
@@ -58,6 +60,7 @@ export function detectRecurring(transactions: Transaction[]): RecurringMerchant[
 }
 
 export function safeToSpend(transactions: Transaction[], currentBalance: number) {
+  // Reserve likely recurring bills plus a small buffer before showing discretionary available spend.
   const expectedBills = detectRecurring(transactions)
     .filter((item) => item.category !== "Groceries" && item.category !== "Fuel")
     .reduce((total, item) => total + item.average, 0);
@@ -66,6 +69,7 @@ export function safeToSpend(transactions: Transaction[], currentBalance: number)
 }
 
 export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWindowDays): CardFitBasis {
+  // Estimate eligible card spend from the latest transaction window, excluding transfer-like categories.
   const debits = debitTransactions(transactions)
     .filter((txn) => getTransactionStatus(txn) !== "Upcoming")
     .filter((txn) => !Number.isNaN(Date.parse(getTransactionDate(txn))));
@@ -99,6 +103,7 @@ export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWi
 }
 
 export function annualCardValues(transactions: Transaction[], cardProducts: CardProduct[]): CardValue[] {
+  // Convert eligible annual spend into net card value after rewards, perks, and annual fees.
   const basis = cardFitBasis(transactions);
   const eligibleAnnualSpend = basis.eligibleAnnualSpend;
 
@@ -124,6 +129,7 @@ export function calculateCardFit(transactions: Transaction[], cardProducts: Card
 }
 
 export function generateInsights(transactions: Transaction[], cardProducts: CardProduct[], currentBalance: number) {
+  // Build short dashboard insights from the same derived values used by metrics and card fit.
   const categories = spendByCategory(transactions);
   const recurring = detectRecurring(transactions);
   const bestCard = annualCardValues(transactions, cardProducts)[0];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   categoryColorsStorageKey,
   categoryOverridesStorageKey,
@@ -27,14 +27,14 @@ export function useCategorySettings(
     [categories, customCategories, deletedCategories, transactions]
   );
 
-  function restoreCategorySettings() {
+  const restoreCategorySettings = useCallback(() => {
     setCategoryOverrides(readCategoryOverrides());
     setCustomCategories(readCustomCategories());
     setDeletedCategories(readDeletedCategories());
     setCategoryColors(readCategoryColors());
-  }
+  }, []);
 
-  function updateTransactionCategory(transactionId: string, category: string) {
+  const updateTransactionCategory = useCallback((transactionId: string, category: string) => {
     const next = {
       ...categoryOverrides,
       [transactionId]: category
@@ -42,9 +42,9 @@ export function useCategorySettings(
 
     setCategoryOverrides(next);
     window.localStorage.setItem(categoryOverridesStorageKey, JSON.stringify(next));
-  }
+  }, [categoryOverrides]);
 
-  function createCustomCategory(category: string) {
+  const createCustomCategory = useCallback((category: string) => {
     const normalizedCategory = normalizeCustomCategory(category);
     const categoryExists = getCategoryExists(transactionCategoryOptions, normalizedCategory);
 
@@ -55,19 +55,19 @@ export function useCategorySettings(
     const nextCategories = [...customCategories, normalizedCategory].sort();
     setCustomCategories(nextCategories);
     window.localStorage.setItem(customCategoriesStorageKey, JSON.stringify(nextCategories));
-  }
+  }, [customCategories, transactionCategoryOptions]);
 
-  function deleteCategory(category: string) {
+  const deleteCategory = useCallback((category: string) => {
     const next = [...deletedCategories, category];
     setDeletedCategories(next);
     window.localStorage.setItem(deletedCategoriesStorageKey, JSON.stringify(next));
-  }
+  }, [deletedCategories]);
 
-  function updateCategoryColor(category: string, color: string) {
+  const updateCategoryColor = useCallback((category: string, color: string) => {
     const next = { ...categoryColors, [category]: color };
     setCategoryColors(next);
     window.localStorage.setItem(categoryColorsStorageKey, JSON.stringify(next));
-  }
+  }, [categoryColors]);
 
   return {
     categoryColors,

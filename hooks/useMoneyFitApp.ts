@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { handleCallbackParams, readAuthResponseCookie } from "@/lib/app/browser-state";
 import {
   applyCategoryOverrides,
@@ -48,7 +48,7 @@ export function useMoneyFitApp() {
   const recurringTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, "90 days"), [workingTransactions]);
   const categoryTotals = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
 
-  async function completeOpenBankingConnection(responseValue?: string) {
+  const completeOpenBankingConnection = useCallback(async (responseValue?: string) => {
     const response = await fetch("/api/open-banking/complete", {
       method: "POST",
       headers: {
@@ -66,12 +66,12 @@ export function useMoneyFitApp() {
       window.localStorage.setItem("moneyfit_data_mode", "user");
       await banking.refreshTransactions("user");
     }
-  }
+  }, [banking.refreshTransactions, banking.setDataMode, connectionResponse]);
 
-  function updateConnectionResponse(value: string) {
+  const updateConnectionResponse = useCallback((value: string) => {
     setConnectionResponse(value);
     hasAutoCompletedRef.current = false;
-  }
+  }, []);
 
   useEffect(() => {
     categories.restoreCategorySettings();
@@ -101,7 +101,7 @@ export function useMoneyFitApp() {
       setSyncResult("Completing Akahu connection...");
       completeOpenBankingConnection(connectionResponse);
     }
-  }, [connectionResponse]);
+  }, [completeOpenBankingConnection, connectionResponse]);
 
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
   const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
@@ -121,6 +121,7 @@ export function useMoneyFitApp() {
     () => getVisibleTransactions(periodTransactions, query, transactionCategory, transactionFilter, transactionSort),
     [periodTransactions, query, transactionCategory, transactionFilter, transactionSort]
   );
+  const refreshUserTransactions = useCallback(() => banking.refreshTransactions("user"), [banking.refreshTransactions]);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
   const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
   const shouldShowPeriodControl = activeView === "home" || activeView === "transactions" || activeView === "budgets";
@@ -150,7 +151,7 @@ export function useMoneyFitApp() {
     onCategoryChange: categories.updateTransactionCategory,
     onCreateCategory: categories.createCustomCategory,
     onConnectionResponseChange: updateConnectionResponse,
-    onRefreshUserTransactions: () => banking.refreshTransactions("user"),
+    onRefreshUserTransactions: refreshUserTransactions,
     query,
     recurring,
     reviewCount,

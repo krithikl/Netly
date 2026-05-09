@@ -1,10 +1,18 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { ChevronDown } from "lucide-react";
 import { InfoRow } from "@/components/ui/info-row";
 import { Button } from "@/components/ui/button";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerHeaderClose,
+  DrawerTitle
+} from "@/components/ui/drawer";
 import {
   Sheet,
   SheetContent,
@@ -34,6 +42,11 @@ type TransactionListProps = {
 
 const initialVisibleTransactionCount = 40;
 const visibleTransactionIncrement = 60;
+const transactionDetailsExitAnimationMs = 220;
+const transactionDetailsInitialSnapPoint = 0.52;
+const transactionDetailsExpandedSnapPoint = 0.88;
+const transactionDetailsSnapPoints = [transactionDetailsInitialSnapPoint, transactionDetailsExpandedSnapPoint];
+const expandedSnapCloseDragDistance = 56;
 
 export function TransactionList({
   categoryColors,
@@ -45,6 +58,7 @@ export function TransactionList({
 }: TransactionListProps) {
   // Render a small first page of rows to keep the Transactions tab responsive with large Akahu histories.
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [detailsTransaction, setDetailsTransaction] = useState<Transaction | null>(null);
   const [visibleCount, setVisibleCount] = useState(initialVisibleTransactionCount);
   const isDesktop = useIsDesktopNavigation();
   const visibleTransactions = useMemo(() => transactions.slice(0, visibleCount), [transactions, visibleCount]);
@@ -60,7 +74,21 @@ export function TransactionList({
   useEffect(() => {
     setVisibleCount(initialVisibleTransactionCount);
     setSelectedTransactionId(null);
+    setDetailsTransaction(null);
   }, [transactions]);
+
+  useEffect(() => {
+    if (selectedTransaction) {
+      setDetailsTransaction(selectedTransaction);
+      return undefined;
+    }
+
+    const clearDetailsTransaction = window.setTimeout(() => {
+      setDetailsTransaction(null);
+    }, transactionDetailsExitAnimationMs);
+
+    return () => window.clearTimeout(clearDetailsTransaction);
+  }, [selectedTransaction]);
 
   if (transactions.length === 0) {
     return <div className="empty-state">{emptyMessage}</div>;
@@ -68,46 +96,47 @@ export function TransactionList({
 
   return (
     <div className="transaction-list-layout">
-      {!isDesktop && selectedTransaction ? (
-        <MobileTransactionDetails
+      <div className="transaction-list-panel">
+        <div className="stack-list">
+          {visibleTransactions.map((transaction) => {
+            const transactionId = getTransactionId(transaction);
+
+            return (
+              <TransactionRow
+                categoryColors={categoryColors}
+                key={transactionId}
+                onOpenDetails={openDetails}
+                transaction={transaction}
+              />
+            );
+          })}
+        </div>
+        {remainingTransactionCount > 0 && (
+          <Button className="transaction-load-more" onClick={showMoreTransactions} type="button" variant="secondary">
+            Load {Math.min(visibleTransactionIncrement, remainingTransactionCount)} more
+          </Button>
+        )}
+      </div>
+      {!isDesktop && detailsTransaction && (
+        <TransactionDetailsDrawer
           categorySelectOptions={categorySelectOptions}
           categoryColors={categoryColors}
           editable={editable}
+          open={Boolean(selectedTransaction)}
           onCategoryChange={onCategoryChange}
-          onBack={closeDetails}
-          transaction={selectedTransaction}
+          onClose={closeDetails}
+          transaction={detailsTransaction}
         />
-      ) : (
-        <div className="transaction-list-panel">
-          <div className="stack-list">
-            {visibleTransactions.map((transaction) => {
-              const transactionId = getTransactionId(transaction);
-
-              return (
-                <TransactionRow
-                  categoryColors={categoryColors}
-                  key={transactionId}
-                  onOpenDetails={openDetails}
-                  transaction={transaction}
-                />
-              );
-            })}
-          </div>
-          {remainingTransactionCount > 0 && (
-            <Button className="transaction-load-more" onClick={showMoreTransactions} type="button" variant="secondary">
-              Load {Math.min(visibleTransactionIncrement, remainingTransactionCount)} more
-            </Button>
-          )}
-        </div>
       )}
-      {isDesktop && (
+      {isDesktop && detailsTransaction && (
         <TransactionDetailsSheet
           categorySelectOptions={categorySelectOptions}
           categoryColors={categoryColors}
           editable={editable}
+          open={Boolean(selectedTransaction)}
           onCategoryChange={onCategoryChange}
           onClose={closeDetails}
-          transaction={selectedTransaction}
+          transaction={detailsTransaction}
         />
       )}
     </div>
@@ -197,6 +226,7 @@ function TransactionDetailsSheet({
   categorySelectOptions,
   categoryColors,
   editable,
+  open,
   onCategoryChange,
   onClose,
   transaction
@@ -204,72 +234,121 @@ function TransactionDetailsSheet({
   categorySelectOptions: SelectOption[];
   categoryColors: Record<string, string>;
   editable: boolean;
+  open: boolean;
   onCategoryChange?: (transactionId: string, category: string) => void;
   onClose: () => void;
-  transaction: Transaction | null;
+  transaction: Transaction;
 }) {
   // Desktop keeps details in a side sheet so the transaction list remains visible for comparison.
-  const isOpen = Boolean(transaction);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const focusTitleOnOpen = (event: Event) => {
+    event.preventDefault();
+    titleRef.current?.focus();
+  };
 
   return (
-    <Sheet onOpenChange={(open) => !open && onClose()} open={isOpen}>
-      <SheetContent className="transaction-details-shell overflow-hidden p-0">
+    <Sheet onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open}>
+      <SheetContent className="transaction-details-shell overflow-hidden p-0" onOpenAutoFocus={focusTitleOnOpen}>
         <div className="transaction-details-sheet flex h-full flex-col overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Transaction Details</SheetTitle>
-            <SheetDescription>Merchant, amount, category, account, and raw bank text for the selected transaction.</SheetDescription>
+            <SheetTitle ref={titleRef} tabIndex={-1}>Transaction Details</SheetTitle>
+            <SheetDescription className="sr-only">Selected transaction details.</SheetDescription>
           </SheetHeader>
-          {transaction && (
-            <div>
-              <TransactionDetailsContent
-                categorySelectOptions={categorySelectOptions}
-                categoryColors={categoryColors}
-                editable={editable}
-                onCategoryChange={onCategoryChange}
-                transaction={transaction}
-              />
-            </div>
-          )}
+          <div>
+            <TransactionDetailsContent
+              categorySelectOptions={categorySelectOptions}
+              categoryColors={categoryColors}
+              editable={editable}
+              onCategoryChange={onCategoryChange}
+              transaction={transaction}
+            />
+          </div>
         </div>
       </SheetContent>
     </Sheet>
   );
 }
 
-function MobileTransactionDetails({
+function TransactionDetailsDrawer({
   categorySelectOptions,
   categoryColors,
   editable,
+  open,
   onCategoryChange,
-  onBack,
+  onClose,
   transaction
 }: {
   categorySelectOptions: SelectOption[];
   categoryColors: Record<string, string>;
   editable: boolean;
+  open: boolean;
   onCategoryChange?: (transactionId: string, category: string) => void;
-  onBack: () => void;
+  onClose: () => void;
   transaction: Transaction;
 }) {
-  // Mobile uses a full in-page detail state to avoid cramped overlays and nested sheet scrolling.
+  // Mobile uses the same drawer pattern as filters and sorting so the list stays mounted behind details.
+  const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(transactionDetailsInitialSnapPoint);
+  const expandedDragStartYRef = useRef<number | null>(null);
+  const expandedDragDistanceRef = useRef(0);
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setActiveSnapPoint(transactionDetailsInitialSnapPoint);
+      return;
+    }
+
+    onClose();
+  };
+  const resetExpandedDrag = () => {
+    expandedDragStartYRef.current = null;
+    expandedDragDistanceRef.current = 0;
+  };
+  const handleDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (activeSnapPoint !== transactionDetailsExpandedSnapPoint) {
+      resetExpandedDrag();
+      return;
+    }
+
+    expandedDragStartYRef.current ??= event.clientY;
+    expandedDragDistanceRef.current = Math.max(expandedDragDistanceRef.current, event.clientY - expandedDragStartYRef.current);
+  };
+  const handleRelease = () => {
+    const shouldCloseFromExpandedSnap = activeSnapPoint === transactionDetailsExpandedSnapPoint
+      && expandedDragDistanceRef.current >= expandedSnapCloseDragDistance;
+
+    resetExpandedDrag();
+
+    if (shouldCloseFromExpandedSnap) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="transaction-mobile-detail">
-      <Button className="transaction-back-button" onClick={onBack} type="button" variant="secondary">
-        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-        Back
-      </Button>
-      <div className="grid gap-1">
-        <h2 className="text-xl font-bold">Transaction Details</h2>
-        <p className="text-sm font-semibold text-[var(--muted)]">Merchant, amount, category, account, and raw bank text for the selected transaction.</p>
-      </div>
-      <TransactionDetailsContent
-        categorySelectOptions={categorySelectOptions}
-        categoryColors={categoryColors}
-        editable={editable}
-        onCategoryChange={onCategoryChange}
-        transaction={transaction}
-      />
-    </div>
+    <Drawer
+      activeSnapPoint={activeSnapPoint}
+      onDrag={handleDrag}
+      onOpenChange={handleOpenChange}
+      onRelease={handleRelease}
+      open={open}
+      setActiveSnapPoint={setActiveSnapPoint}
+      snapPoints={transactionDetailsSnapPoints}
+    >
+      <DrawerContent className="h-dvh !max-h-dvh overflow-hidden after:hidden after:content-none">
+        <DrawerHeader className="mobile-filter-header">
+          <DrawerTitle>Transaction Details</DrawerTitle>
+          <DrawerDescription className="sr-only">Selected transaction details.</DrawerDescription>
+          <DrawerHeaderClose className="mobile-filter-close" />
+        </DrawerHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(20px+env(safe-area-inset-bottom))]">
+          <TransactionDetailsContent
+            categorySelectOptions={categorySelectOptions}
+            categoryColors={categoryColors}
+            editable={editable}
+            onCategoryChange={onCategoryChange}
+            transaction={transaction}
+          />
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
 
@@ -292,6 +371,12 @@ function TransactionDetailsContent({
   const avatarStyle = { background: getTransactionColor(category, categoryColors) };
   const amountClassName = transaction.amount < 0 ? "negative" : "positive";
   const rawText = getTransactionRawText(transaction);
+  const transactionId = getTransactionId(transaction);
+  const [rawTextExpanded, setRawTextExpanded] = useState(false);
+
+  useEffect(() => {
+    setRawTextExpanded(false);
+  }, [transactionId]);
 
   return (
     <div className="grid gap-5">
@@ -333,8 +418,19 @@ function TransactionDetailsContent({
 
       {rawText && (
         <section className="grid gap-2">
-          <h3 className="text-sm font-bold">Raw bank text</h3>
-          <p className="text-sm leading-relaxed text-[var(--muted)]">{rawText}</p>
+          <button
+            aria-expanded={rawTextExpanded}
+            className="flex items-center justify-between gap-3 rounded-xl border border-[var(--outline)] bg-white/70 px-3 py-2 text-left text-sm font-bold text-[var(--ink)]"
+            onClick={() => setRawTextExpanded((isExpanded) => !isExpanded)}
+            type="button"
+          >
+            <span>Raw bank text</span>
+            <ChevronDown
+              aria-hidden="true"
+              className={`h-4 w-4 shrink-0 text-[var(--muted)] transition-transform ${rawTextExpanded ? "rotate-180" : ""}`}
+            />
+          </button>
+          {rawTextExpanded && <p className="text-sm leading-relaxed text-[var(--muted)]">{rawText}</p>}
         </section>
       )}
     </div>

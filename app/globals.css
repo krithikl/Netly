@@ -605,15 +605,6 @@ h2 {
   scrollbar-gutter: stable;
 }
 
-.transaction-mobile-detail {
-  display: grid;
-  gap: 18px;
-}
-
-.transaction-back-button {
-  justify-self: start;
-}
-
 .is-loading {
   visibility: hidden;
   pointer-events: none;
@@ -1097,17 +1088,6 @@ h2 {
   }
 }
 
-@keyframes mobile-detail-in {
-  from {
-    opacity: 0;
-    transform: translateX(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 @keyframes detail-summary-in {
   from {
     opacity: 0;
@@ -1186,9 +1166,6 @@ h2 {
     padding-bottom: calc(104px + env(safe-area-inset-bottom));
   }
 
-  .transaction-mobile-detail {
-    animation: mobile-detail-in 220ms ease-out both;
-  }
 }
 
 @media (max-width: 1280px) and (min-width: 769px) {

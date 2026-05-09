@@ -38,19 +38,28 @@ export function getVisibleTransactions(
   transactionSort: TransactionSort
 ) {
   // Apply search, category, status, and sort in one derived step so the UI list has a single source of truth.
+  const normalizedQuery = query.trim().toLowerCase();
+
   return transactions
-    .filter((transaction) => matchesTransactionFilters(transaction, query, transactionCategories, transactionFilter))
+    .filter((transaction) => matchesTransactionFilters(transaction, normalizedQuery, transactionCategories, transactionFilter))
     .sort((first, second) => compareTransactions(first, second, transactionSort));
 }
 
-function matchesTransactionFilters(transaction: Transaction, query: string, transactionCategories: string[], transactionFilter: TransactionFilter) {
-  // Search uses display-safe fields so users can find merchant, account, category, or raw bank text.
+function matchesTransactionFilters(transaction: Transaction, normalizedQuery: string, transactionCategories: string[], transactionFilter: TransactionFilter) {
   const category = getTransactionCategory(transaction);
-  const searchableText = `${getTransactionMerchant(transaction)} ${category} ${getTransactionAccountLabel(transaction)} ${getTransactionRawText(transaction)}`.toLowerCase();
-  const matchesQuery = searchableText.includes(query.trim().toLowerCase());
   const matchesCategory = transactionCategories.length === 0 || transactionCategories.includes(category);
 
-  return matchesQuery && matchesCategory && matchesTransactionFilter(transaction, transactionFilter);
+  if (!matchesCategory || !matchesTransactionFilter(transaction, transactionFilter)) {
+    return false;
+  }
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  // Search uses display-safe fields so users can find merchant, account, category, or raw bank text.
+  const searchableText = `${getTransactionMerchant(transaction)} ${category} ${getTransactionAccountLabel(transaction)} ${getTransactionRawText(transaction)}`.toLowerCase();
+  return searchableText.includes(normalizedQuery);
 }
 
 function matchesTransactionFilter(transaction: Transaction, transactionFilter: TransactionFilter) {

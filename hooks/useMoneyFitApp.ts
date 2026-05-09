@@ -8,6 +8,7 @@ import {
   categoryOverridesStorageKey,
   customCategoriesStorageKey,
   deletedCategoriesStorageKey,
+  defaultCategoryColors,
   defaultPaymentTestForm,
   defaultTransactionCategories,
   periods
@@ -76,7 +77,7 @@ export function useMoneyFitApp() {
   const [categoryOverrides, setCategoryOverrides] = useState<Record<string, string>>({});
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [deletedCategories, setDeletedCategories] = useState<string[]>([]);
-  const [categoryColors, setCategoryColors] = useState<Record<string, string>>({});
+  const [categoryColors, setCategoryColors] = useState<Record<string, string>>(defaultCategoryColors);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [transactionLoadError, setTransactionLoadError] = useState("");

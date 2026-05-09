@@ -281,45 +281,86 @@ h2 {
   color: #334155;
 }
 
-.filter-tabs,
 .source-switch {
   display: flex;
   gap: 6px;
-  padding: 5px;
+  width: fit-content;
+  padding: 4px;
   border-radius: 999px;
-  background: rgba(255, 251, 255, 0.74);
+  background: rgba(255, 251, 255, 0.72);
   border: 1px solid var(--outline);
 }
 
 .topbar-controls {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  min-width: max-content;
   justify-items: end;
 }
 
-.filter-tabs button,
 .source-switch button {
   border: 0;
   border-radius: 999px;
-  padding: 9px 13px;
+  min-height: 32px;
+  padding: 7px 12px;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
   transition:
     background 180ms ease,
     color 180ms ease,
     transform 180ms ease;
 }
 
-.filter-tabs button:hover,
 .source-switch button:hover {
   transform: translateY(-1px);
 }
 
-.filter-tabs button.active,
 .source-switch button.active {
   background: var(--ink);
   color: white;
+}
+
+.sidebar-source-control {
+  display: grid;
+  gap: 8px;
+  padding: 0 6px;
+}
+
+.sidebar-source-control > span,
+.mobile-more-source > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.period-control {
+  width: fit-content;
+}
+
+.period-tabs.period-tabs {
+  height: 44px;
+  gap: 2px;
+  border: 1px solid rgba(216, 207, 214, 0.6);
+  background: rgba(255, 251, 255, 0.68);
+  box-shadow: 0 10px 28px rgba(29, 27, 32, 0.06);
+}
+
+.period-tab.period-tab {
+  min-width: 76px;
+  height: 34px;
+  padding-inline: 16px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.period-tab.period-tab[data-state="active"] {
+  background: rgba(255, 251, 255, 0.96);
+  box-shadow: 0 7px 18px rgba(29, 27, 32, 0.1);
+  color: var(--ink);
 }
 
 .view-stack {
@@ -437,14 +478,6 @@ h2 {
 
 .material-card {
   padding: 18px;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 16px;
 }
 
 .title-block {
@@ -711,6 +744,10 @@ h2 {
     background 160ms ease;
 }
 
+.info-row.info-row-block {
+  display: block;
+}
+
 .info-row:hover {
   background: #fff7fb;
 }
@@ -781,11 +818,6 @@ h2 {
   border-radius: 999px;
   padding: 12px 15px;
   background: rgba(255, 251, 255, 0.86);
-}
-
-.filter-tabs {
-  width: fit-content;
-  margin-bottom: 14px;
 }
 
 .transaction-controls {
@@ -1162,6 +1194,27 @@ h2 {
     text-align: left;
   }
 
+  .sidebar-source-control {
+    display: none;
+  }
+
+  .mobile-more-source {
+    display: grid;
+    gap: 8px;
+    margin-top: 4px;
+    padding: 12px;
+    border-top: 1px solid var(--outline);
+  }
+
+  .mobile-more-source .source-switch {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .mobile-more-source .source-switch button {
+    flex: 1;
+  }
+
   .main {
     padding-bottom: calc(104px + env(safe-area-inset-bottom));
   }
@@ -1206,10 +1259,38 @@ h2 {
   }
 
   .topbar,
-  .hero-card,
-  .panel-header {
+  .hero-card {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .topbar-controls {
+    min-width: 0;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .topbar-controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  .period-control {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .period-tabs.period-tabs {
+    width: 100%;
+    height: 38px;
+  }
+
+  .period-tab.period-tab {
+    flex: 1;
+    min-width: 0;
+    height: 30px;
+    padding-inline: 8px;
+    font-size: 12px;
   }
 
   .metric-grid,
@@ -1284,10 +1365,6 @@ h2 {
     overflow-y: auto;
     padding: 6px 16px 16px;
     scrollbar-gutter: stable;
-  }
-
-  .mobile-filter-footer {
-    padding: 0 16px calc(28px + env(safe-area-inset-bottom));
   }
 
   .mobile-filter-header {
@@ -1401,13 +1478,6 @@ h2 {
 
   .mobile-sort-options .radio.active {
     border: 6px solid #26323d;
-  }
-
-  .mobile-filter-apply {
-    width: 100%;
-    height: 48px;
-    border-radius: 12px;
-    background: #26323d;
   }
 
   .transaction-controls [role="combobox"],
@@ -1546,8 +1616,6 @@ h2 {
     font-size: 38px;
   }
 
-  .source-switch,
-  .filter-tabs,
   .hero-actions {
     overflow-x: auto;
   }

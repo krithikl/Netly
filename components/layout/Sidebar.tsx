@@ -5,16 +5,18 @@ import { CreditCard, Home, Link2, List, MoreHorizontal, PieChart, Settings } fro
 import { useState } from "react";
 import { navItems } from "@/lib/app/constants";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { View } from "@/lib/app/types";
+import type { DataMode, View } from "@/lib/app/types";
 
 type SidebarProps = {
   activeView: View;
+  changeDataMode: (mode: DataMode) => void;
   connectionCopy: string;
   connectionTitle: string;
+  dataMode: DataMode;
   setActiveView: (view: View) => void;
 };
 
-export function Sidebar({ activeView, connectionCopy, connectionTitle, setActiveView }: SidebarProps) {
+export function Sidebar({ activeView, changeDataMode, connectionCopy, connectionTitle, dataMode, setActiveView }: SidebarProps) {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const primaryMobileItems = navItems.filter((item) => item.view === "home" || item.view === "transactions" || item.view === "budgets");
   const moreMobileItems = navItems.filter((item) => !primaryMobileItems.includes(item));
@@ -48,6 +50,11 @@ export function Sidebar({ activeView, connectionCopy, connectionTitle, setActive
           </button>
         ))}
       </nav>
+
+      <div className="sidebar-source-control" aria-label="Data source">
+        <span>Data source</span>
+        <DataModeSwitch changeDataMode={changeDataMode} dataMode={dataMode} />
+      </div>
 
       <div className="material-card connection-panel">
         <div className="status-dot" />
@@ -91,11 +98,35 @@ export function Sidebar({ activeView, connectionCopy, connectionTitle, setActive
                 <span>{item.label}</span>
               </button>
             ))}
+            <div className="mobile-more-source">
+              <span>Data source</span>
+              <DataModeSwitch changeDataMode={changeDataMode} dataMode={dataMode} />
+            </div>
           </PopoverContent>
         </Popover>
       </nav>
     </aside>
   );
+}
+
+function DataModeSwitch({ changeDataMode, dataMode }: { changeDataMode: (mode: DataMode) => void; dataMode: DataMode }) {
+  return (
+    <div className="source-switch" aria-label="Selected data source">
+      {(["user", "demo"] as const).map((mode) => (
+        <button className={getDataModeClassName(dataMode, mode)} key={mode} onClick={() => changeDataMode(mode)} type="button">
+          {getDataModeLabel(mode)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function getDataModeClassName(currentMode: DataMode, mode: DataMode) {
+  return clsx(currentMode === mode && "active");
+}
+
+function getDataModeLabel(mode: DataMode) {
+  return mode === "user" ? "User" : "Demo";
 }
 
 function getNavItemClassName(activeView: View, itemView: View) {

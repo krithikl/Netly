@@ -12,15 +12,15 @@ export function AppShell() {
     <div className="app-shell">
       <Sidebar
         activeView={app.activeView}
+        changeDataMode={app.changeDataMode}
         connectionCopy={app.connectionCopy}
         connectionTitle={app.connectionTitle}
+        dataMode={app.dataMode}
         setActiveView={app.setActiveView}
       />
 
       <main className="main">
         <Topbar
-          changeDataMode={app.changeDataMode}
-          dataMode={app.dataMode}
           dataSourceLabel={app.dataSourceLabel}
           linkedAccountLabel={app.linkedAccountLabel}
           linkedUserName={app.linkedUserName}

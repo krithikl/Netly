@@ -80,7 +80,7 @@ function CategoryColorRow({
   );
 
   return (
-    <div className="info-row relative block">
+    <div className="info-row info-row-block relative">
       <div className="flex items-center justify-between border-b-0 p-0">
         <div className="flex items-center gap-4">
           <span className="legend-dot" style={{ background: currentColor }} />

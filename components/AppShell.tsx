@@ -5,7 +5,7 @@ import { Topbar } from "@/components/layout/Topbar";
 import { ActiveView } from "@/components/views/ActiveView";
 import { useMoneyFitApp } from "@/hooks/useMoneyFitApp";
 
-export default function Home() {
+export function AppShell() {
   const app = useMoneyFitApp();
 
   return (

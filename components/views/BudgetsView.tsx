@@ -1,5 +1,5 @@
-import { InfoRow } from "@/components/ui/InfoRow";
-import { PanelTitle } from "@/components/ui/PanelTitle";
+import { InfoRow } from "@/components/ui/info-row";
+import { PanelTitle } from "@/components/ui/panel-title";
 import { formatMoney } from "@/lib/insights";
 import type { Budget, RecurringMerchant } from "@/lib/types";
 

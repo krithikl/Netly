@@ -1,6 +1,5 @@
-import type { FormEvent } from "react";
 import type { Budget, CardFitBasis, CardValue, RecurringMerchant, Transaction } from "@/lib/types";
-import type { PaymentTestForm, PaymentTestResult, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
+import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 
 export type ActiveViewProps = {
   activeView: View;
@@ -22,19 +21,11 @@ export type ActiveViewProps = {
   insights: string[];
   isConnected: boolean;
   isLoadingTransactions: boolean;
-  isStartingPaymentTest: boolean;
   monthlySpend: number;
   onCreateCategory: (category: string) => void;
   onCategoryChange: (transactionId: string, category: string) => void;
   onConnectionResponseChange: (value: string) => void;
   onRefreshUserTransactions: () => void;
-  onStartPaymentTest: (event: FormEvent<HTMLFormElement>) => void;
-  paymentBalanceDelta: number | null;
-  paymentFeedNote: string;
-  paymentTestForm: PaymentTestForm;
-  paymentTestHelp: string;
-  paymentTestResult: PaymentTestResult | null;
-  paymentTransactionDelta: number | null;
   query: string;
   recurring: RecurringMerchant[];
   reviewCount: number;
@@ -54,7 +45,6 @@ export type ActiveViewProps = {
   transactionSort: TransactionSort;
   upcomingCount: number;
   upcomingTotal: number;
-  updatePaymentTestForm: (field: keyof PaymentTestForm, value: string) => void;
   visibleTransactions: Transaction[];
   workingTransactions: Transaction[];
   categoryColors: Record<string, string>;

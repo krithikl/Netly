@@ -2,7 +2,7 @@ import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownUp, SlidersHorizontal } from "lucide-react";
 import { TransactionList } from "@/components/transactions/TransactionList";
-import { PanelTitle } from "@/components/ui/PanelTitle";
+import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,

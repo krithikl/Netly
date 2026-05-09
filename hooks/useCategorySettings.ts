@@ -1,0 +1,108 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  categoryColorsStorageKey,
+  categoryOverridesStorageKey,
+  customCategoriesStorageKey,
+  defaultCategoryColors,
+  defaultTransactionCategories,
+  deletedCategoriesStorageKey
+} from "@/lib/app/constants";
+import { readCategoryColors, readCategoryOverrides, readCustomCategories, readDeletedCategories } from "@/lib/app/browser-state";
+import { getTransactionCategory } from "@/lib/transaction-display";
+import type { Transaction } from "@/lib/types";
+
+export function useCategorySettings(
+  transactions: Transaction[],
+  categories: { category: string; amount: number }[]
+) {
+  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, string>>({});
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [deletedCategories, setDeletedCategories] = useState<string[]>([]);
+  const [categoryColors, setCategoryColors] = useState<Record<string, string>>(defaultCategoryColors);
+
+  const transactionCategoryOptions = useMemo(
+    () => getTransactionCategoryOptions(transactions, categories, customCategories, deletedCategories),
+    [categories, customCategories, deletedCategories, transactions]
+  );
+
+  function restoreCategorySettings() {
+    setCategoryOverrides(readCategoryOverrides());
+    setCustomCategories(readCustomCategories());
+    setDeletedCategories(readDeletedCategories());
+    setCategoryColors(readCategoryColors());
+  }
+
+  function updateTransactionCategory(transactionId: string, category: string) {
+    const next = {
+      ...categoryOverrides,
+      [transactionId]: category
+    };
+
+    setCategoryOverrides(next);
+    window.localStorage.setItem(categoryOverridesStorageKey, JSON.stringify(next));
+  }
+
+  function createCustomCategory(category: string) {
+    const normalizedCategory = normalizeCustomCategory(category);
+    const categoryExists = getCategoryExists(transactionCategoryOptions, normalizedCategory);
+
+    if (!normalizedCategory || categoryExists) {
+      return;
+    }
+
+    const nextCategories = [...customCategories, normalizedCategory].sort();
+    setCustomCategories(nextCategories);
+    window.localStorage.setItem(customCategoriesStorageKey, JSON.stringify(nextCategories));
+  }
+
+  function deleteCategory(category: string) {
+    const next = [...deletedCategories, category];
+    setDeletedCategories(next);
+    window.localStorage.setItem(deletedCategoriesStorageKey, JSON.stringify(next));
+  }
+
+  function updateCategoryColor(category: string, color: string) {
+    const next = { ...categoryColors, [category]: color };
+    setCategoryColors(next);
+    window.localStorage.setItem(categoryColorsStorageKey, JSON.stringify(next));
+  }
+
+  return {
+    categoryColors,
+    categoryOverrides,
+    createCustomCategory,
+    deleteCategory,
+    restoreCategorySettings,
+    transactionCategoryOptions,
+    updateCategoryColor,
+    updateTransactionCategory
+  };
+}
+
+function getTransactionCategoryOptions(
+  transactions: Transaction[],
+  categories: { category: string; amount: number }[],
+  customCategories: string[],
+  deletedCategories: string[]
+) {
+  // Merge default, live, and user-created categories so every selector offers the same sorted options.
+  const categorySet = new Set<string>();
+  defaultTransactionCategories.forEach((category) => categorySet.add(category));
+  categories.forEach((item) => categorySet.add(item.category));
+  transactions.forEach((transaction) => categorySet.add(getTransactionCategory(transaction)));
+  customCategories.forEach((category) => categorySet.add(category));
+  categorySet.delete("Income");
+  deletedCategories.forEach((category) => categorySet.delete(category));
+
+  return ["All categories", ...[...categorySet].sort()];
+}
+
+function normalizeCustomCategory(category: string) {
+  return category.trim().replace(/\s+/g, " ");
+}
+
+function getCategoryExists(categories: string[], category: string) {
+  return categories.some((currentCategory) => currentCategory.toLowerCase() === category.toLowerCase());
+}

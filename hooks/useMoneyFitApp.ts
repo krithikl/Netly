@@ -1,19 +1,7 @@
 "use client";
 
-import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  bankReferenceMaxLength,
-  categoryColorsStorageKey,
-  categoryOverridesStorageKey,
-  customCategoriesStorageKey,
-  deletedCategoriesStorageKey,
-  defaultCategoryColors,
-  defaultPaymentTestForm,
-  defaultTransactionCategories,
-  periods
-} from "@/lib/app/constants";
-import { handleCallbackParams, readAuthResponseCookie, readCategoryColors, readCategoryOverrides, readCustomCategories, readDeletedCategories, readInitialDataMode } from "@/lib/app/browser-state";
+import { handleCallbackParams, readAuthResponseCookie } from "@/lib/app/browser-state";
 import {
   applyCategoryOverrides,
   getCardFitSourceLabel,
@@ -23,134 +11,43 @@ import {
   getDataSourceLabel,
   getLinkedAccountLabel,
   getLinkedUserName,
-  getPaymentBalanceDelta,
-  getPaymentFeedNote,
-  getPaymentTestHelp,
-  getPaymentTransactionDelta,
   getStatusBannerTitle,
   getVisibleTransactions
 } from "@/lib/app/derived";
-import type { DataMode, LinkedAccount, PaymentTestForm, PaymentTestResult, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
+import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 import type { ActiveViewProps } from "@/lib/app/view-props";
-import { budgets, cardProducts, currentBalance as fallbackBalance, payday, transactions as fallbackTransactions } from "@/lib/mock-data";
+import { budgets, cardProducts, payday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
 import { filterTransactionsByPeriod } from "@/lib/periods";
-import { getTransactionCategory, getTransactionStatus, transactionNeedsReview } from "@/lib/transaction-display";
-import type { PeriodOption, Transaction } from "@/lib/types";
-
-type TransactionsPayload = {
-  source: "demo" | "akahu";
-  connected?: boolean;
-  error?: string;
-  notice?: string;
-  transactions: Transaction[];
-};
-
-type BalancesPayload = {
-  connected?: boolean;
-  availableBalance: number | null;
-  error?: string;
-  notice?: string;
-};
-
-type AccountsPayload = {
-  connected?: boolean;
-  accounts: LinkedAccount[];
-  primaryAccount: LinkedAccount | null;
-  error?: string;
-  notice?: string;
-};
+import { getTransactionStatus, transactionNeedsReview } from "@/lib/transaction-display";
+import { periods } from "@/lib/app/constants";
+import { useCategorySettings } from "@/hooks/useCategorySettings";
+import { useOpenBankingData } from "@/hooks/useOpenBankingData";
+import { useRoutedView } from "@/hooks/useRoutedView";
+import type { PeriodOption } from "@/lib/types";
 
 export function useMoneyFitApp() {
-  const [activeView, setActiveView] = useState<View>("home");
+  const { activeView, setActiveView } = useRoutedView();
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
   const [query, setQuery] = useState("");
   const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("All");
   const [transactionSort, setTransactionSort] = useState<TransactionSort>("Newest");
   const [transactionCategory, setTransactionCategory] = useState<string[]>([]);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
-  const [primaryLinkedAccount, setPrimaryLinkedAccount] = useState<LinkedAccount | null>(null);
-  const [availableBalance, setAvailableBalance] = useState<number | null>(null);
-  const [dataMode, setDataMode] = useState<DataMode>("user");
-  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, string>>({});
-  const [customCategories, setCustomCategories] = useState<string[]>([]);
-  const [deletedCategories, setDeletedCategories] = useState<string[]>([]);
-  const [categoryColors, setCategoryColors] = useState<Record<string, string>>(defaultCategoryColors);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
-  const [transactionLoadError, setTransactionLoadError] = useState("");
-  const [transactionLoadNotice, setTransactionLoadNotice] = useState("");
   const [connectionResponse, setConnectionResponse] = useState("");
   const [syncResult, setSyncResult] = useState("");
-  const [paymentTestForm, setPaymentTestForm] = useState<PaymentTestForm>(defaultPaymentTestForm);
-  const [paymentTestResult, setPaymentTestResult] = useState<PaymentTestResult | null>(null);
-  const [isStartingPaymentTest, setIsStartingPaymentTest] = useState(false);
   const hasAutoCompletedRef = useRef(false);
 
-  // Refreshes every banking-dependent slice together so transactions, balances, and accounts stay in sync.
-  async function refreshTransactions(mode: DataMode = dataMode) {
-    setIsLoadingTransactions(true);
-    resetBankData();
+  const banking = useOpenBankingData();
+  const categories = useCategorySettings(banking.transactions, []);
+  const workingTransactions = useMemo(
+    () => applyCategoryOverrides(banking.transactions, categories.categoryOverrides),
+    [banking.transactions, categories.categoryOverrides]
+  );
+  const periodTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, period), [workingTransactions, period]);
+  const recurringTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, "90 days"), [workingTransactions]);
+  const categoryTotals = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
 
-    const [transactionsResponse, balancesResponse, accountsResponse] = await Promise.all([
-      fetch(`/api/open-banking/transactions?source=${mode}`),
-      fetch(`/api/open-banking/balances?source=${mode}`),
-      fetch(`/api/open-banking/accounts?source=${mode}`)
-    ]);
-
-    const transactionsPayload = (await transactionsResponse.json()) as TransactionsPayload;
-    const balancesPayload = (await balancesResponse.json()) as BalancesPayload;
-    const accountsPayload = (await accountsResponse.json()) as AccountsPayload;
-
-    assertOpenBankingResponse(transactionsResponse, transactionsPayload.error, "Could not load transactions.");
-    assertOpenBankingResponse(balancesResponse, balancesPayload.error, "Could not load balances.");
-    assertOpenBankingResponse(accountsResponse, accountsPayload.error, "Could not load accounts.");
-
-    setTransactions(transactionsPayload.transactions);
-    setLinkedAccounts(accountsPayload.accounts || []);
-    setPrimaryLinkedAccount(accountsPayload.primaryAccount || null);
-    setAvailableBalance(balancesPayload.availableBalance);
-    setIsConnected(mode === "user" && Boolean(transactionsPayload.connected || balancesPayload.connected || accountsPayload.connected));
-    setTransactionLoadError(transactionsPayload.error || balancesPayload.error || accountsPayload.error || "");
-    setTransactionLoadNotice(transactionsPayload.notice || balancesPayload.notice || accountsPayload.notice || "");
-    setIsLoadingTransactions(false);
-  }
-
-  function resetBankData() {
-    setTransactions([]);
-    setLinkedAccounts([]);
-    setPrimaryLinkedAccount(null);
-    setAvailableBalance(null);
-  }
-
-  // Keeps the app usable if Akahu or demo API loading fails, while only showing sample data in demo mode.
-  function applyFallbackState(mode: DataMode, error: unknown, fallbackMessage: string) {
-    const isDemoMode = mode === "demo";
-
-    setTransactions(isDemoMode ? fallbackTransactions : []);
-    setLinkedAccounts([]);
-    setPrimaryLinkedAccount(null);
-    setAvailableBalance(isDemoMode ? fallbackBalance : null);
-    setIsConnected(false);
-    setTransactionLoadError(error instanceof Error ? error.message : fallbackMessage);
-    setTransactionLoadNotice("");
-    setIsLoadingTransactions(false);
-  }
-
-  function changeDataMode(mode: DataMode) {
-    setDataMode(mode);
-    window.localStorage.setItem("moneyfit_data_mode", mode);
-    setTransactionLoadError("");
-    setTransactionLoadNotice("");
-
-    refreshTransactions(mode).catch((error: unknown) => {
-      applyFallbackState(mode, error, "Could not load transactions.");
-    });
-  }
-
-  // Completes the pasted Personal App token flow and immediately reloads user data when it succeeds.
   async function completeOpenBankingConnection(responseValue?: string) {
     const response = await fetch("/api/open-banking/complete", {
       method: "POST",
@@ -165,63 +62,10 @@ export function useMoneyFitApp() {
 
     if (response.ok) {
       setConnectionResponse("");
-      setDataMode("user");
+      banking.setDataMode("user");
       window.localStorage.setItem("moneyfit_data_mode", "user");
-      await refreshTransactions("user");
+      await banking.refreshTransactions("user");
     }
-  }
-
-  function updatePaymentTestForm(field: keyof PaymentTestForm, value: string) {
-    const shouldLimitValue = field === "reference" || field === "particulars" || field === "code";
-    const nextValue = shouldLimitValue ? value.slice(0, bankReferenceMaxLength) : value;
-
-    setPaymentTestForm((current) => ({
-      ...current,
-      [field]: nextValue
-    }));
-  }
-
-  async function startPaymentTest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSyncResult("Payment testing is disabled on the Akahu data branch.");
-    setIsStartingPaymentTest(false);
-  }
-
-  // Stores per-transaction category edits locally until category settings move into persistent user storage.
-  function updateTransactionCategory(transactionId: string, category: string) {
-    const next = {
-      ...categoryOverrides,
-      [transactionId]: category
-    };
-
-    setCategoryOverrides(next);
-    window.localStorage.setItem(categoryOverridesStorageKey, JSON.stringify(next));
-  }
-
-  function createCustomCategory(category: string) {
-    const normalizedCategory = normalizeCustomCategory(category);
-    const categoryExists = getCategoryExists(transactionCategoryOptions, normalizedCategory);
-
-    if (!normalizedCategory || categoryExists) {
-      return;
-    }
-
-    const nextCategories = [...customCategories, normalizedCategory].sort();
-    setCustomCategories(nextCategories);
-    window.localStorage.setItem(customCategoriesStorageKey, JSON.stringify(nextCategories));
-  }
-
-  // Hides a category from user-facing category options without changing historical transaction data.
-  function deleteCategory(category: string) {
-    const next = [...deletedCategories, category];
-    setDeletedCategories(next);
-    window.localStorage.setItem(deletedCategoriesStorageKey, JSON.stringify(next));
-  }
-
-  function updateCategoryColor(category: string, color: string) {
-    const next = { ...categoryColors, [category]: color };
-    setCategoryColors(next);
-    window.localStorage.setItem(categoryColorsStorageKey, JSON.stringify(next));
   }
 
   function updateConnectionResponse(value: string) {
@@ -230,20 +74,10 @@ export function useMoneyFitApp() {
   }
 
   useEffect(() => {
-    // Restore local UI preferences before the first transaction load so derived category options are complete.
-    setCategoryOverrides(readCategoryOverrides());
-    setCustomCategories(readCustomCategories());
-    setDeletedCategories(readDeletedCategories());
-    setCategoryColors(readCategoryColors());
+    categories.restoreCategorySettings();
 
-    let initialDataMode = readInitialDataMode();
-    setDataMode(initialDataMode);
-
-    // Akahu OAuth callbacks return through query params.
+    let initialDataMode = banking.restoreInitialDataMode();
     const callbackResult = handleCallbackParams({
-      setActiveView,
-      setDataMode,
-      setPaymentTestResult,
       setSyncResult
     });
 
@@ -256,13 +90,12 @@ export function useMoneyFitApp() {
       setConnectionResponse(authResponse);
     }
 
-    refreshTransactions(initialDataMode).catch((error: unknown) => {
-      applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
+    banking.refreshTransactions(initialDataMode).catch((error: unknown) => {
+      banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
   }, []);
 
   useEffect(() => {
-    // Auto-complete once when Akahu redirects back with a token response stored in the browser.
     if (connectionResponse.trim() && !hasAutoCompletedRef.current) {
       hasAutoCompletedRef.current = true;
       setSyncResult("Completing Akahu connection...");
@@ -270,73 +103,38 @@ export function useMoneyFitApp() {
     }
   }, [connectionResponse]);
 
-  const workingTransactions = useMemo(() => applyCategoryOverrides(transactions, categoryOverrides), [transactions, categoryOverrides]);
-  
-  const periodTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, period), [workingTransactions, period]);
-  
-  const recurringTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, "90 days"), [workingTransactions]);
-  
-  const categories = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
-  
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
-  
   const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
-  
   const insights = useMemo(
-    () => generateInsights(periodTransactions, cardProducts, availableBalance ?? 0),
-    [availableBalance, periodTransactions]
+    () => generateInsights(periodTransactions, cardProducts, banking.availableBalance ?? 0),
+    [banking.availableBalance, periodTransactions]
   );
-  
   const expenses = useMemo(() => debitTransactions(periodTransactions), [periodTransactions]);
-  
   const monthlySpend = useMemo(() => sum(expenses.map((transaction) => Math.abs(transaction.amount))), [expenses]);
-  
   const income = useMemo(() => sum(periodTransactions.filter((transaction) => transaction.amount > 0).map((transaction) => transaction.amount)), [periodTransactions]);
-  
   const upcoming = useMemo(() => periodTransactions.filter((transaction) => getTransactionStatus(transaction) === "Upcoming"), [periodTransactions]);
-
   const upcomingTotal = useMemo(() => sum(upcoming.map((transaction) => Math.abs(transaction.amount))), [upcoming]);
-  
   const reviewCount = useMemo(() => periodTransactions.filter(transactionNeedsReview).length, [periodTransactions]);
-  
-  const chartCategories = useMemo(() => categories.filter((item) => item.category !== "Income").slice(0, 8), [categories]);
-  
+  const chartCategories = useMemo(() => categoryTotals.filter((item) => item.category !== "Income").slice(0, 8), [categoryTotals]);
   const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
-  
-  const transactionCategoryOptions = useMemo(
-    () => getTransactionCategoryOptions(workingTransactions, categories, customCategories, deletedCategories),
-    [categories, customCategories, deletedCategories, workingTransactions]
-  );
-  
   const visibleTransactions = useMemo(
     () => getVisibleTransactions(periodTransactions, query, transactionCategory, transactionFilter, transactionSort),
     [periodTransactions, query, transactionCategory, transactionFilter, transactionSort]
   );
-  
-   const transactionPreview = useMemo(() => periodTransactions, [periodTransactions]);
-  
-  const paymentBalanceDelta = getPaymentBalanceDelta(paymentTestResult, availableBalance);
-  
-  const paymentTransactionDelta = getPaymentTransactionDelta(paymentTestResult, workingTransactions.length);
-  
-  const paymentFeedNote = getPaymentFeedNote(paymentTestResult, paymentBalanceDelta, paymentTransactionDelta);
-  
-  const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, availableBalance ?? 0), [availableBalance, periodTransactions]);
-  
+  const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
+  const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
   const shouldShowPeriodControl = activeView === "home" || activeView === "transactions" || activeView === "budgets";
-  
-  const linkedUserName = getLinkedUserName(primaryLinkedAccount, dataMode);
 
   const viewProps: ActiveViewProps = {
     activeView,
-    availableBalance,
+    availableBalance: banking.availableBalance,
     budgets,
     cardBasis: cardFit.basis,
-    cardFitSourceLabel: getCardFitSourceLabel(dataMode, isConnected),
+    cardFitSourceLabel: getCardFitSourceLabel(banking.dataMode, banking.isConnected),
     cardFitWindowLabel: getCardFitWindowLabel(cardFit.basis),
     cards: cardFit.cards,
-    categories,
-    categoryColors,
+    categories: categoryTotals,
+    categoryColors: categories.categoryColors,
     chartCategories,
     chartTotal,
     completeOpenBankingConnection,
@@ -346,21 +144,13 @@ export function useMoneyFitApp() {
     hoveredCategory,
     income,
     insights,
-    isConnected,
-    isLoadingTransactions,
-    isStartingPaymentTest,
+    isConnected: banking.isConnected,
+    isLoadingTransactions: banking.isLoadingTransactions,
     monthlySpend,
-    onCategoryChange: updateTransactionCategory,
-    onCreateCategory: createCustomCategory,
+    onCategoryChange: categories.updateTransactionCategory,
+    onCreateCategory: categories.createCustomCategory,
     onConnectionResponseChange: updateConnectionResponse,
-    onRefreshUserTransactions: () => refreshTransactions("user"),
-    onStartPaymentTest: startPaymentTest,
-    paymentBalanceDelta,
-    paymentFeedNote,
-    paymentTestForm,
-    paymentTestHelp: getPaymentTestHelp(linkedUserName, dataMode),
-    paymentTestResult,
-    paymentTransactionDelta,
+    onRefreshUserTransactions: () => banking.refreshTransactions("user"),
     query,
     recurring,
     reviewCount,
@@ -374,69 +164,36 @@ export function useMoneyFitApp() {
     setTransactionSort,
     syncResult,
     transactionCategory,
-    transactionCategoryOptions,
+    transactionCategoryOptions: categories.transactionCategoryOptions,
     transactionFilter,
-    transactionPreview,
+    transactionPreview: periodTransactions,
     transactionSort,
     upcomingCount: upcoming.length,
     upcomingTotal,
-    updatePaymentTestForm,
     visibleTransactions,
     workingTransactions,
-    updateCategoryColor,
-    deleteCategory
+    updateCategoryColor: categories.updateCategoryColor,
+    deleteCategory: categories.deleteCategory
   };
 
   return {
     activeView,
-    changeDataMode,
-    connectionCopy: getConnectionCopy(isLoadingTransactions, dataMode, isConnected),
-    connectionTitle: getConnectionTitle(isLoadingTransactions, dataMode, isConnected),
-    dataMode,
-    dataSourceLabel: getDataSourceLabel(isLoadingTransactions, dataMode, isConnected),
-    linkedAccountLabel: getLinkedAccountLabel(primaryLinkedAccount, linkedAccounts.length, isConnected),
+    changeDataMode: banking.changeDataMode,
+    connectionCopy: getConnectionCopy(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
+    connectionTitle: getConnectionTitle(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
+    dataMode: banking.dataMode,
+    dataSourceLabel: getDataSourceLabel(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
+    linkedAccountLabel: getLinkedAccountLabel(banking.primaryLinkedAccount, banking.linkedAccounts.length, banking.isConnected),
     linkedUserName,
     payday,
     period,
     setActiveView,
     setPeriod,
     shouldShowPeriodControl,
-    statusBannerMessage: transactionLoadError || transactionLoadNotice,
-    statusBannerTitle: getStatusBannerTitle(transactionLoadError, dataMode),
+    statusBannerMessage: banking.transactionLoadError || banking.transactionLoadNotice,
+    statusBannerTitle: getStatusBannerTitle(banking.transactionLoadError, banking.dataMode),
     viewProps
   };
-}
-
-function getTransactionCategoryOptions(
-  transactions: Transaction[],
-  categories: { category: string; amount: number }[],
-  customCategories: string[],
-  deletedCategories: string[]
-) {
-  // Merge defaults, live transaction categories, and user-created categories into one stable sorted list.
-  const categorySet = new Set<string>();
-  defaultTransactionCategories.forEach((category) => categorySet.add(category));
-  categories.forEach((item) => categorySet.add(item.category));
-  transactions.forEach((transaction) => categorySet.add(getTransactionCategory(transaction)));
-  customCategories.forEach((category) => categorySet.add(category));
-  categorySet.delete("Income");
-  deletedCategories.forEach((category) => categorySet.delete(category));
-
-  return ["All categories", ...[...categorySet].sort()];
-}
-
-function normalizeCustomCategory(category: string) {
-  return category.trim().replace(/\s+/g, " ");
-}
-
-function getCategoryExists(categories: string[], category: string) {
-  return categories.some((currentCategory) => currentCategory.toLowerCase() === category.toLowerCase());
-}
-
-function assertOpenBankingResponse(response: Response, error: string | undefined, fallbackMessage: string) {
-  if (!response.ok) {
-    throw new Error(error || fallbackMessage);
-  }
 }
 
 function getCompletionMessage(isComplete: boolean, payload: { error?: string; message?: string }) {

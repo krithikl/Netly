@@ -2,7 +2,6 @@ import { BudgetsView } from "@/components/views/BudgetsView";
 import { CardFitView } from "@/components/views/CardFitView";
 import { ConnectView } from "@/components/views/ConnectView";
 import { HomeView } from "@/components/views/HomeView";
-import { PaymentTestView } from "@/components/views/PaymentTestView";
 import { SettingsView } from "@/components/views/SettingsView";
 import { TransactionsView } from "@/components/views/TransactionsView";
 import type { ActiveViewProps } from "@/lib/app/view-props";
@@ -38,25 +37,6 @@ export function ActiveView(props: ActiveViewProps) {
           cardFitWindowLabel={props.cardFitWindowLabel}
           cards={props.cards}
           hasCardEligibleSpend={props.hasCardEligibleSpend}
-        />
-      );
-    case "payment":
-      return (
-        <PaymentTestView
-          categoryColors={props.categoryColors}
-          isLoadingTransactions={props.isLoadingTransactions}
-          isStartingPaymentTest={props.isStartingPaymentTest}
-          onRefreshTransactions={props.onRefreshUserTransactions}
-          onStartPaymentTest={props.onStartPaymentTest}
-          paymentBalanceDelta={props.paymentBalanceDelta}
-          paymentFeedNote={props.paymentFeedNote}
-          paymentTestForm={props.paymentTestForm}
-          paymentTestHelp={props.paymentTestHelp}
-          paymentTestResult={props.paymentTestResult}
-          paymentTransactionDelta={props.paymentTransactionDelta}
-          recentTransactions={props.workingTransactions.slice(0, 6)}
-          syncResult={props.syncResult}
-          updatePaymentTestForm={props.updatePaymentTestForm}
         />
       );
     case "connect":

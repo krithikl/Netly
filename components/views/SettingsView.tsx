@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PanelTitle } from "@/components/ui/PanelTitle";
+import { PanelTitle } from "@/components/ui/panel-title";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { moneyfitPalette } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
@@ -23,16 +23,16 @@ export function SettingsView({ categoryColors, defaultCategories, deleteCategory
     <section className="view-stack">
       <section className="material-card">
         <PanelTitle title="Settings" subtitle="Manage your preferences" />
-        <p className="settings-description">
+        <p className="text-sm text-[var(--muted)]">
           Additional app settings and preferences will appear here.
         </p>
       </section>
 
       <section className="material-card">
-        <div className="settings-categories-header">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="settings-categories-title">Categories</h3>
-            <p className="settings-categories-subtitle">Customize colors or remove unused categories.</p>
+            <h3 className="m-0 text-base font-semibold text-[var(--ink)]">Categories</h3>
+            <p className="mt-1 text-[13px] text-[var(--muted)]">Customize colors or remove unused categories.</p>
           </div>
         </div>
         
@@ -80,14 +80,14 @@ function CategoryColorRow({
   );
 
   return (
-    <div className="info-row settings-category-item">
-      <div className="settings-color-row settings-category-row">
-        <div className="settings-color-label">
+    <div className="info-row relative block">
+      <div className="flex items-center justify-between border-b-0 p-0">
+        <div className="flex items-center gap-4">
           <span className="legend-dot" style={{ background: currentColor }} />
           <strong>{category}</strong>
         </div>
         
-        <div className="settings-category-actions">
+        <div className="flex items-center gap-3">
           <Popover onOpenChange={onColorPickerOpenChange} open={isActive}>
             <PopoverTrigger asChild>
               <button
@@ -115,7 +115,7 @@ function CategoryColorRow({
           <button 
             type="button" 
             onClick={onDelete}
-            className="settings-remove-button"
+            className="rounded-lg border-0 bg-transparent px-2 py-1 text-[13px] font-semibold text-[var(--danger)]"
           >
             Remove
           </button>

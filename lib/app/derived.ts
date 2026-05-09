@@ -1,4 +1,4 @@
-import type { DataMode, LinkedAccount, PaymentTestResult, TransactionFilter, TransactionSort } from "@/lib/app/types";
+import type { DataMode, LinkedAccount, TransactionFilter, TransactionSort } from "@/lib/app/types";
 import {
   getTransactionAccountLabel,
   getTransactionCategory,
@@ -77,31 +77,6 @@ function compareTransactions(first: Transaction, second: Transaction, transactio
     default:
       return getTransactionDate(second).localeCompare(getTransactionDate(first));
   }
-}
-
-export function getPaymentBalanceDelta(paymentTestResult: PaymentTestResult | null, availableBalance: number | null) {
-  if (paymentTestResult?.baselineBalance === undefined || paymentTestResult.baselineBalance === null || availableBalance === null) {
-    return null;
-  }
-
-  return availableBalance - paymentTestResult.baselineBalance;
-}
-
-export function getPaymentTransactionDelta(paymentTestResult: PaymentTestResult | null, transactionCount: number) {
-  if (typeof paymentTestResult?.baselineTransactionCount !== "number") {
-    return null;
-  }
-
-  return transactionCount - paymentTestResult.baselineTransactionCount;
-}
-
-export function getPaymentFeedNote(paymentTestResult: PaymentTestResult | null, paymentBalanceDelta: number | null, paymentTransactionDelta: number | null) {
-  // Flag the specific sandbox case where balances changed but no matching transaction row appeared.
-  if (paymentTestResult?.status !== "submitted" || paymentBalanceDelta === null || paymentBalanceDelta === 0 || paymentTransactionDelta !== 0) {
-    return "";
-  }
-
-  return "The provider updated balances, but no matching row was published into the transactions feed yet.";
 }
 
 export function getConnectionTitle(isLoadingTransactions: boolean, dataMode: DataMode, isConnected: boolean) {
@@ -184,12 +159,4 @@ export function getCardFitWindowLabel(cardBasis: { latestTransactionDate: string
   }
 
   return `Last ${cardBasis.windowDays} days ending ${cardBasis.latestTransactionDate}`;
-}
-
-export function getPaymentTestHelp(linkedUserName: string, dataMode: DataMode) {
-  if (linkedUserName && dataMode === "user") {
-    return `Payment testing is disabled on the Akahu data branch. Connected user: ${linkedUserName}.`;
-  }
-
-  return "Payment testing is disabled on the Akahu data branch.";
 }

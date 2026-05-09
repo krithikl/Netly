@@ -325,7 +325,6 @@ h2 {
 .view-stack {
   display: grid;
   gap: 18px;
-  animation: fade-up 320ms ease both;
 }
 
 .hero-card {
@@ -389,7 +388,6 @@ h2 {
   background: var(--surface);
   border: 1px solid var(--outline);
   overflow: hidden;
-  animation: float-in 420ms ease both;
 }
 
 .metric::after {
@@ -884,81 +882,6 @@ h2 {
   color: var(--danger);
 }
 
-.payment-form {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.payment-help {
-  align-items: flex-start;
-  margin: 0 0 14px;
-}
-
-.payment-help-icon {
-  display: inline-grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: rgba(40, 94, 168, 0.14);
-  color: var(--info);
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1;
-  text-transform: lowercase;
-}
-
-.payment-form label {
-  display: grid;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 850;
-  text-transform: uppercase;
-}
-
-.payment-form input {
-  min-width: 0;
-  border: 1px solid var(--outline);
-  border-radius: 999px;
-  padding: 10px 13px;
-  background: rgba(255, 251, 255, 0.9);
-  color: var(--ink);
-  font: inherit;
-  text-transform: none;
-}
-
-.payment-result {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin: 12px 0 14px;
-}
-
-.payment-result div {
-  display: grid;
-  gap: 4px;
-  border-radius: 18px;
-  padding: 13px;
-  background: var(--surface-2);
-}
-
-.payment-result span {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.payment-result strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .budget-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -1162,28 +1085,6 @@ h2 {
   font: inherit;
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes float-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 @keyframes draw-ring {
   from {
     stroke-dashoffset: 480;
@@ -1338,8 +1239,6 @@ h2 {
   .dashboard-grid,
   .chart-layout,
   .card-fit-basis,
-  .payment-form,
-  .payment-result,
   .budget-grid {
     grid-template-columns: 1fr;
   }
@@ -1741,72 +1640,4 @@ h2 {
     justify-self: start;
   }
 
-}
-
-.mt-0 {
-  margin-top: 0;
-}
-
-.settings-color-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.settings-color-label {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.settings-description {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.settings-categories-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.settings-categories-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ink);
-  margin: 0;
-}
-
-.settings-categories-subtitle {
-  font-size: 13px;
-  color: var(--muted);
-  margin: 4px 0 0 0;
-}
-
-.settings-category-item {
-  display: block;
-  position: relative;
-}
-
-.settings-category-row {
-  padding: 0;
-  border-bottom: none;
-}
-
-.settings-category-actions {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.settings-remove-button {
-  background: transparent;
-  border: none;
-  color: var(--danger);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 8px;
 }

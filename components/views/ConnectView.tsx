@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
-import { FlowStep } from "@/components/ui/FlowStep";
-import { PanelTitle } from "@/components/ui/PanelTitle";
+import { FlowStep } from "@/components/ui/flow-step";
+import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
 
 type ConnectViewProps = {

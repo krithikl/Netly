@@ -1,16 +1,6 @@
-import { categoryColorsStorageKey, categoryOverridesStorageKey, customCategoriesStorageKey, deletedCategoriesStorageKey, defaultCategoryColors, paymentTestBaselineStorageKey, paymentTestResultStorageKey } from "@/lib/app/constants";
+import { categoryColorsStorageKey, categoryOverridesStorageKey, customCategoriesStorageKey, deletedCategoriesStorageKey, defaultCategoryColors } from "@/lib/app/constants";
 import { parseStoredJson } from "@/lib/app/storage";
-import type { DataMode, PaymentTestResult, View } from "@/lib/app/types";
-
-export function storePaymentBaseline(availableBalance: number | null, transactionCount: number) {
-  window.localStorage.setItem(
-    paymentTestBaselineStorageKey,
-    JSON.stringify({
-      availableBalance,
-      transactionCount
-    })
-  );
-}
+import type { DataMode } from "@/lib/app/types";
 
 export function readCategoryOverrides() {
   return parseStoredJson<Record<string, string>>(window.localStorage.getItem(categoryOverridesStorageKey)) || {};
@@ -38,21 +28,14 @@ export function readAuthResponseCookie() {
 }
 
 export function handleCallbackParams({
-  setActiveView,
-  setDataMode,
-  setPaymentTestResult,
   setSyncResult
 }: {
-  setActiveView: (view: View) => void;
-  setDataMode: (mode: DataMode) => void;
-  setPaymentTestResult: (result: PaymentTestResult) => void;
   setSyncResult: (message: string) => void;
 }) {
-  // Translate OAuth and payment callback query params into app state, then clean the URL.
+  // Translate OAuth callback query params into app state, then clean the URL.
   const params = new URLSearchParams(window.location.search);
   const connected = params.get("connected");
   const connectionError = params.get("connect_error") || params.get("connectionError");
-  const paymentTest = params.get("paymentTest");
 
   if (connected === "1") {
     setSyncResult("Connected to Akahu. Loading transactions...");
@@ -66,62 +49,7 @@ export function handleCallbackParams({
     return { forceUserMode: false };
   }
 
-  if (paymentTest) {
-    handlePaymentCallback(params, setActiveView, setDataMode, setPaymentTestResult, setSyncResult);
-    clearUrlParams();
-    return { forceUserMode: true };
-  }
-
-  restoreStoredPaymentResult(setPaymentTestResult);
   return { forceUserMode: false };
-}
-
-function handlePaymentCallback(
-  params: URLSearchParams,
-  setActiveView: (view: View) => void,
-  setDataMode: (mode: DataMode) => void,
-  setPaymentTestResult: (result: PaymentTestResult) => void,
-  setSyncResult: (message: string) => void
-) {
-  // Restore the pre-payment baseline so the UI can compare balances and transaction counts after redirect.
-  const paymentTest = params.get("paymentTest");
-  const paymentStatus = params.get("paymentStatus");
-  const paymentError = params.get("paymentError");
-  const baseline =
-    parseStoredJson<{ availableBalance?: number | null; transactionCount?: number }>(window.localStorage.getItem(paymentTestBaselineStorageKey)) || {};
-  const nextPaymentTestResult: PaymentTestResult = {
-    status: paymentTest === "error" ? "error" : "submitted",
-    paymentStatus: paymentStatus || undefined,
-    paymentId: params.get("paymentId") || undefined,
-    consentId: params.get("consentId") || undefined,
-    error: paymentError ? decodeURIComponent(paymentError) : undefined,
-    baselineBalance: baseline.availableBalance ?? null,
-    baselineTransactionCount: baseline.transactionCount
-  };
-
-  setActiveView("payment");
-  setDataMode("user");
-  window.localStorage.setItem("moneyfit_data_mode", "user");
-  window.localStorage.setItem(paymentTestResultStorageKey, JSON.stringify(nextPaymentTestResult));
-  setPaymentTestResult(nextPaymentTestResult);
-  setSyncResult(getPaymentCallbackMessage(paymentTest, paymentStatus, paymentError));
-}
-
-function getPaymentCallbackMessage(paymentTest: string | null, paymentStatus: string | null, paymentError: string | null) {
-  if (paymentTest === "error") {
-    return `Payment test failed: ${paymentError ? decodeURIComponent(paymentError) : "Unknown payment error"}`;
-  }
-
-  return `Payment test submitted${paymentStatus ? `: ${paymentStatus}` : "."} Reloading balances and transactions...`;
-}
-
-function restoreStoredPaymentResult(setPaymentTestResult: (result: PaymentTestResult) => void) {
-  // Keep the last payment test result visible after a reload until a new test replaces it.
-  const parsedPaymentTestResult = parseStoredJson<PaymentTestResult>(window.localStorage.getItem(paymentTestResultStorageKey));
-
-  if (parsedPaymentTestResult) {
-    setPaymentTestResult(parsedPaymentTestResult);
-  }
 }
 
 function clearUrlParams() {

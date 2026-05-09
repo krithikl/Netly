@@ -126,7 +126,5 @@ function getIconForView(view: View) {
       return Link2;
     case "settings":
       return Settings;
-    case "payment":
-      return CreditCard;
   }
 }

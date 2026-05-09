@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { PanelTitle } from "@/components/ui/PanelTitle";
+import { PanelTitle } from "@/components/ui/panel-title";
 import { formatMoney } from "@/lib/insights";
 import type { CardFitBasis, CardValue } from "@/lib/types";
 

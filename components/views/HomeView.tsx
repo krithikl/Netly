@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { useState } from "react";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { Metric } from "@/components/ui/Metric";
@@ -49,6 +50,7 @@ export function HomeView({
   upcomingTotal,
   isConnected
 }: HomeViewProps) {
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const balanceLabel = getBalanceLabel(availableBalance);
   const safeToSpendLabel = `${formatMoney(safeToSpendAmount)} looks safe after upcoming bills and buffer.`;
   const metricGridClassName = getLoadingClassName("metric-grid", isLoadingTransactions);
@@ -56,8 +58,10 @@ export function HomeView({
   const recentActivityClassName = getLoadingClassName("stable-list-panel", isLoadingTransactions);
   const recentTransactions = transactionPreview.slice(0, 5);
   const showConnectButton = !isConnected;
+  const topCategory = chartCategories[0] ?? null;
   const openConnectView = () => setActiveView("connect");
   const openTransactionsView = () => setActiveView("transactions");
+  const toggleCategoryList = () => setShowAllCategories((isExpanded) => !isExpanded);
 
   return (
     <>
@@ -94,8 +98,21 @@ export function HomeView({
       </div>
 
       <div className={dashboardGridClassName} aria-busy={isLoadingTransactions}>
-        <section className="material-card chart-panel">
+        <section className="material-card chart-panel category-panel">
           <PanelTitle title="Akahu categories" subtitle="Spending by category" />
+          {topCategory && (
+            <div className="category-mobile-summary">
+              <div>
+                <span>Total spend</span>
+                <strong>{formatMoney(chartTotal)}</strong>
+              </div>
+              <div>
+                <span>Top category</span>
+                <strong>{topCategory.category}</strong>
+                <small>{formatMoney(topCategory.amount)}</small>
+              </div>
+            </div>
+          )}
           <div className="chart-layout">
             <DonutChart
               categories={chartCategories}
@@ -107,8 +124,20 @@ export function HomeView({
               categories={chartCategories}
               categoryColors={categoryColors}
               chartTotal={chartTotal}
+              isExpanded={showAllCategories}
             />
           </div>
+          {chartCategories.length > 5 && (
+            <Button
+              aria-expanded={showAllCategories}
+              className="category-toggle"
+              onClick={toggleCategoryList}
+              type="button"
+              variant="secondary"
+            >
+              {showAllCategories ? "Show top categories" : "Show all categories"}
+            </Button>
+          )}
         </section>
 
         <section className="material-card">
@@ -138,19 +167,21 @@ type CategoryLegendProps = {
   categories: { category: string; amount: number }[];
   categoryColors: Record<string, string>;
   chartTotal: number;
+  isExpanded: boolean;
 };
 
 function CategoryLegend({
   categories,
   categoryColors,
-  chartTotal
+  chartTotal,
+  isExpanded
 }: CategoryLegendProps) {
   if (categories.length === 0) {
     return <div className="empty-state">No spending categories found for this period.</div>;
   }
 
   return (
-    <div className="legend-list">
+    <div className={clsx("legend-list", !isExpanded && "is-mobile-collapsed")}>
       {categories.map((item) => (
         <CategoryLegendRow
           categoryColors={categoryColors}
@@ -221,5 +252,4 @@ function getLegendDotStyle(categoryColor: string) {
 function getLegendBarWidth(amount: number, chartTotal: number) {
   return chartTotal > 0 ? Math.max(4, Math.round((amount / chartTotal) * 100)) : 0;
 }
-
 

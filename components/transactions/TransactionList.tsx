@@ -1,7 +1,9 @@
 "use client";
 
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { InfoRow } from "@/components/ui/InfoRow";
+import { Button } from "@/components/ui/button";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import {
   Sheet,
@@ -39,6 +41,7 @@ export function TransactionList({
   transactions
 }: TransactionListProps) {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const isDesktop = useIsDesktopNavigation();
   const selectedTransaction = useMemo(
     () => transactions.find((transaction) => getTransactionId(transaction) === selectedTransactionId) || null,
     [selectedTransactionId, transactions]
@@ -52,30 +55,40 @@ export function TransactionList({
 
   return (
     <div className="transaction-list-layout">
-      <div className="transaction-list-panel">
-        <div className="stack-list">
-          {transactions.map((transaction) => {
-            const transactionId = getTransactionId(transaction);
+      {!isDesktop && selectedTransaction ? (
+        <MobileTransactionDetails
+          categoryColors={categoryColors}
+          onBack={closeDetails}
+          transaction={selectedTransaction}
+        />
+      ) : (
+        <div className="transaction-list-panel">
+          <div className="stack-list">
+            {transactions.map((transaction) => {
+              const transactionId = getTransactionId(transaction);
 
-            return (
-              <TransactionRow
-                categoryColors={categoryColors}
-                categorySelectOptions={categorySelectOptions}
-                editable={editable}
-                key={transactionId}
-                onCategoryChange={onCategoryChange}
-                onOpenDetails={openDetails}
-                transaction={transaction}
-              />
-            );
-          })}
+              return (
+                <TransactionRow
+                  categoryColors={categoryColors}
+                  categorySelectOptions={categorySelectOptions}
+                  editable={editable}
+                  key={transactionId}
+                  onCategoryChange={onCategoryChange}
+                  onOpenDetails={openDetails}
+                  transaction={transaction}
+                />
+              );
+            })}
+          </div>
         </div>
-      </div>
-      <TransactionDetailsSheet
-        categoryColors={categoryColors}
-        onClose={closeDetails}
-        transaction={selectedTransaction}
-      />
+      )}
+      {isDesktop && (
+        <TransactionDetailsSheet
+          categoryColors={categoryColors}
+          onClose={closeDetails}
+          transaction={selectedTransaction}
+        />
+      )}
     </div>
   );
 }
@@ -196,18 +209,44 @@ function TransactionDetailsSheet({
 
   return (
     <Sheet onOpenChange={(open) => !open && onClose()} open={isOpen}>
-      <SheetContent className="grid grid-rows-[auto_minmax(0,1fr)] gap-5 overflow-hidden">
-        <SheetHeader>
-          <SheetTitle>Transaction Details</SheetTitle>
-          <SheetDescription>Merchant, amount, category, account, and raw bank text for the selected transaction.</SheetDescription>
-        </SheetHeader>
-        {transaction && (
-          <div className="min-h-0 overflow-y-auto pr-1">
-            <TransactionDetailsContent categoryColors={categoryColors} transaction={transaction} />
-          </div>
-        )}
+      <SheetContent className="transaction-details-shell overflow-hidden p-0">
+        <div className="transaction-details-sheet flex h-full flex-col overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Transaction Details</SheetTitle>
+            <SheetDescription>Merchant, amount, category, account, and raw bank text for the selected transaction.</SheetDescription>
+          </SheetHeader>
+          {transaction && (
+            <div>
+              <TransactionDetailsContent categoryColors={categoryColors} transaction={transaction} />
+            </div>
+          )}
+        </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function MobileTransactionDetails({
+  categoryColors,
+  onBack,
+  transaction
+}: {
+  categoryColors: Record<string, string>;
+  onBack: () => void;
+  transaction: Transaction;
+}) {
+  return (
+    <div className="transaction-mobile-detail">
+      <Button className="transaction-back-button" onClick={onBack} type="button" variant="secondary">
+        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+        Back
+      </Button>
+      <div className="grid gap-1">
+        <h2 className="text-xl font-bold">Transaction Details</h2>
+        <p className="text-sm font-semibold text-[var(--muted)]">Merchant, amount, category, account, and raw bank text for the selected transaction.</p>
+      </div>
+      <TransactionDetailsContent categoryColors={categoryColors} transaction={transaction} />
+    </div>
   );
 }
 
@@ -226,7 +265,7 @@ function TransactionDetailsContent({
 
   return (
     <div className="grid gap-5">
-      <div className="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-[rgba(119,106,116,0.14)] bg-white/90 p-3">
+      <div className="transaction-detail-summary grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-[rgba(119,106,116,0.14)] bg-white/90 p-3">
         <div className="grid h-10 w-10 place-items-center rounded-full text-sm font-black text-white" style={avatarStyle}>
           {merchant.slice(0, 1)}
         </div>
@@ -257,4 +296,20 @@ function TransactionDetailsContent({
       )}
     </div>
   );
+}
+
+function useIsDesktopNavigation() {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1025px)");
+    const handleChange = () => setIsDesktop(mediaQuery.matches);
+
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  return isDesktop;
 }

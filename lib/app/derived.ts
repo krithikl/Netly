@@ -32,20 +32,20 @@ export function applyCategoryOverrides(transactions: Transaction[], categoryOver
 export function getVisibleTransactions(
   transactions: Transaction[],
   query: string,
-  transactionCategory: string,
+  transactionCategories: string[],
   transactionFilter: TransactionFilter,
   transactionSort: TransactionSort
 ) {
   return transactions
-    .filter((transaction) => matchesTransactionFilters(transaction, query, transactionCategory, transactionFilter))
+    .filter((transaction) => matchesTransactionFilters(transaction, query, transactionCategories, transactionFilter))
     .sort((first, second) => compareTransactions(first, second, transactionSort));
 }
 
-function matchesTransactionFilters(transaction: Transaction, query: string, transactionCategory: string, transactionFilter: TransactionFilter) {
+function matchesTransactionFilters(transaction: Transaction, query: string, transactionCategories: string[], transactionFilter: TransactionFilter) {
   const category = getTransactionCategory(transaction);
   const searchableText = `${getTransactionMerchant(transaction)} ${category} ${getTransactionAccountLabel(transaction)} ${getTransactionRawText(transaction)}`.toLowerCase();
   const matchesQuery = searchableText.includes(query.trim().toLowerCase());
-  const matchesCategory = transactionCategory === "All categories" || category === transactionCategory;
+  const matchesCategory = transactionCategories.length === 0 || transactionCategories.includes(category);
 
   return matchesQuery && matchesCategory && matchesTransactionFilter(transaction, transactionFilter);
 }

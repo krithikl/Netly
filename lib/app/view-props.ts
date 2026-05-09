@@ -43,11 +43,11 @@ export type ActiveViewProps = {
   setHoveredCategory: (category: string | null) => void;
   setQuery: (query: string) => void;
   setSyncResult: (value: string) => void;
-  setTransactionCategory: (category: string) => void;
+  setTransactionCategory: (categories: string[]) => void;
   setTransactionFilter: (filter: TransactionFilter) => void;
   setTransactionSort: (sort: TransactionSort) => void;
   syncResult: string;
-  transactionCategory: string;
+  transactionCategory: string[];
   transactionCategoryOptions: string[];
   transactionFilter: TransactionFilter;
   transactionPreview: Transaction[];

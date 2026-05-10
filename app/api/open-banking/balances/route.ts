@@ -1,64 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
-import { pnzMockBalancesResponse } from "@/lib/mock-data";
-import { normalizePnzBalances } from "@/lib/open-banking/balances";
+import { getAkahuAccounts, getAvailableBalance } from "@/lib/open-banking/accounts";
 import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
-import { getValidAccessToken, applyTokenCookies } from "@/lib/open-banking/token";
+import { getValidAccessToken } from "@/lib/open-banking/token";
+import { currentBalance } from "@/lib/mock-data";
 
 export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const requestedSource = url.searchParams.get("source");
-  const { accessToken, newCookies } = await getValidAccessToken(request);
+  const source = request.nextUrl.searchParams.get("source");
 
-  if (requestedSource === "demo") {
-    const normalized = normalizePnzBalances(pnzMockBalancesResponse);
-
+  if (source === "demo") {
     return NextResponse.json({
-      source: "mock",
-      connected: false,
-      availableBalance: normalized.availableBalance,
-      balances: normalized.selectedBalances,
-      rawCount: pnzMockBalancesResponse.Data?.Balance?.length || 0
+      source: "demo",
+      connected: true,
+      availableBalance: currentBalance,
+      rawAccounts: []
     });
   }
 
+  const { accessToken } = getValidAccessToken(request);
+
   if (!accessToken) {
-    const responseObj = NextResponse.json({
-      source: "pnz-sandbox",
+    return NextResponse.json({
+      source: "akahu",
       connected: false,
       availableBalance: null,
-      balances: [],
-      notice: "No PNZ sandbox user is connected. Connect a bank or switch to demo data."
+      notice: "No Akahu user token is connected. Connect Akahu or switch to demo data."
     });
-    return applyTokenCookies(responseObj, newCookies);
   }
 
   try {
     const client = createOpenBankingClientFromEnv();
-    const response = await client.getBalances({ accessToken });
-    const normalized = normalizePnzBalances(response);
+    const response = await client.getAccounts({ userToken: accessToken });
+    const accounts = getAkahuAccounts(response);
+    const availableBalance = getAvailableBalance(accounts);
+    const notice = availableBalance === null ? "Akahu connected, but no account balances were returned." : "";
 
-    const responseObj = NextResponse.json({
-      source: "pnz-sandbox",
+    return NextResponse.json({
+      source: "akahu",
       connected: true,
-      availableBalance: normalized.availableBalance,
-      balances: normalized.selectedBalances,
-      rawCount: response?.Data?.Balance?.length || 0,
-      notice:
-        normalized.selectedBalances.length === 0
-          ? "PNZ connected, but the sandbox returned no balances."
-          : undefined
+      availableBalance,
+      rawAccounts: accounts,
+      notice
     });
-    return applyTokenCookies(responseObj, newCookies);
   } catch (error) {
-    return NextResponse.json(
-      {
-        source: "pnz-sandbox",
-        connected: false,
-        availableBalance: null,
-        balances: [],
-        error: error instanceof Error ? error.message : "Unknown PNZ balance fetch error"
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      source: "akahu",
+      connected: false,
+      availableBalance: null,
+      error: error instanceof Error ? error.message : "Unknown Akahu balance fetch error"
+    }, { status: 502 });
   }
 }

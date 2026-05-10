@@ -1,119 +1,87 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizePnzAccounts, type PnzAccountsResponse } from "@/lib/open-banking/accounts";
+import { getAkahuAccounts, toLinkedAccount, type AkahuAccount } from "@/lib/open-banking/accounts";
 import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
-import { getValidAccessToken, applyTokenCookies } from "@/lib/open-banking/token";
-import sandboxCustomers from "@/data/pnz-sandbox-customers.json";
+import { getValidAccessToken } from "@/lib/open-banking/token";
 
-type SandboxCustomer = {
-  Username?: string;
-  Accounts?: Array<{
-    AccountId?: string;
-    Account?: {
-      Identification?: string;
-    };
-  }>;
-};
-
-const demoAccountsResponse: PnzAccountsResponse = {
-  Data: {
-    Account: [
-      {
-        AccountId: "OBA-DEMO-EVERYDAY-00",
-        Currency: "NZD",
-        Nickname: "Demo Everyday",
-        Description: "Demo Everyday",
-        AccountType: "Personal",
-        AccountSubType: "CurrentAccount",
-        Account: {
-          SchemeName: "BECSElectronicCredit",
-          Identification: "99-0000-1234567-00",
-          Name: "CurrentAccount",
-          SecondaryIdentification: "ID2-DEMO-EVERYDAY-00"
-        }
-      }
-    ]
+const demoAccounts: AkahuAccount[] = [
+  {
+    _id: "acc_demo_everyday",
+    name: "Everyday",
+    status: "ACTIVE",
+    type: "CHECKING",
+    formatted_account: "00-0000-0000000-00",
+    balance: {
+      available: 2268.42,
+      current: 2268.42,
+      currency: "NZD"
+    },
+    meta: {
+      holder: "Demo user"
+    }
   },
-  Links: {
-    Self: "/open-banking-nz/v2.3/accounts"
-  },
-  Meta: {
-    TotalPages: 1
+  {
+    _id: "acc_demo_bills",
+    name: "Bills",
+    status: "ACTIVE",
+    type: "SAVINGS",
+    formatted_account: "00-0000-0000001-00",
+    balance: {
+      available: 1000,
+      current: 1000,
+      currency: "NZD"
+    },
+    meta: {
+      holder: "Demo user"
+    }
   }
-};
+];
 
 export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const requestedSource = url.searchParams.get("source");
-  const { accessToken, newCookies } = await getValidAccessToken(request);
+  const source = request.nextUrl.searchParams.get("source");
 
-  if (requestedSource === "demo") {
-    const accounts = normalizePnzAccounts(demoAccountsResponse).map((account) => ({
-      ...account,
-      ownerName: "Demo user"
-    }));
-
-    return NextResponse.json({
-      source: "mock",
-      connected: false,
-      accounts,
-      primaryAccount: accounts[0] || null,
-      rawCount: demoAccountsResponse.Data?.Account?.length || 0
-    });
+  if (source === "demo") {
+    return NextResponse.json(toAccountsPayload(demoAccounts, true, "demo"));
   }
 
+  const { accessToken } = getValidAccessToken(request);
+
   if (!accessToken) {
-    const responseObj = NextResponse.json({
-      source: "pnz-sandbox",
+    return NextResponse.json({
+      source: "akahu",
       connected: false,
       accounts: [],
       primaryAccount: null,
-      notice: "No PNZ sandbox user is connected. Connect a bank or switch to demo data."
+      notice: "No Akahu user token is connected. Connect Akahu or switch to demo data."
     });
-    return applyTokenCookies(responseObj, newCookies);
   }
 
   try {
     const client = createOpenBankingClientFromEnv();
-    const response = await client.getAccounts({ accessToken });
-    const accounts = normalizePnzAccounts(response).map((account) => ({
-      ...account,
-      ownerName: getSandboxOwnerName(account.accountId, account.identification)
-    }));
+    const response = await client.getAccounts({ userToken: accessToken });
+    const accounts = getAkahuAccounts(response);
+    const notice = accounts.length === 0 ? "Akahu connected, but no accounts were returned." : "";
 
-    const responseObj = NextResponse.json({
-      source: "pnz-sandbox",
-      connected: true,
-      accounts,
-      primaryAccount: accounts[0] || null,
-      rawCount: response?.Data?.Account?.length || 0,
-      notice:
-        accounts.length === 0
-          ? "PNZ connected, but the sandbox returned no accounts."
-          : undefined
-    });
-    return applyTokenCookies(responseObj, newCookies);
+    return NextResponse.json(toAccountsPayload(accounts, true, "akahu", notice));
   } catch (error) {
-    return NextResponse.json(
-      {
-        source: "pnz-sandbox",
-        connected: false,
-        accounts: [],
-        primaryAccount: null,
-        error: error instanceof Error ? error.message : "Unknown PNZ account fetch error"
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      source: "akahu",
+      connected: false,
+      accounts: [],
+      primaryAccount: null,
+      error: error instanceof Error ? error.message : "Unknown Akahu account fetch error"
+    }, { status: 502 });
   }
 }
 
-function getSandboxOwnerName(accountId: string, identification: string) {
-  const customers = sandboxCustomers.customers.Customers as SandboxCustomer[];
-  const owner = customers.find((customer) =>
-    customer.Accounts?.some((account) =>
-      account.AccountId === accountId ||
-      account.Account?.Identification === identification
-    )
-  );
+function toAccountsPayload(accounts: AkahuAccount[], connected: boolean, source: "akahu" | "demo", notice = "") {
+  const linkedAccounts = accounts.map(toLinkedAccount);
 
-  return owner?.Username;
+  return {
+    source,
+    connected,
+    rawAccounts: accounts,
+    accounts: linkedAccounts,
+    primaryAccount: linkedAccounts[0] || null,
+    notice
+  };
 }

@@ -1,9 +1,20 @@
-import type { DataMode, LinkedAccount, PaymentTestResult, TransactionFilter, TransactionSort } from "@/lib/app/types";
+import type { DataMode, LinkedAccount, TransactionFilter, TransactionSort } from "@/lib/app/types";
+import {
+  getTransactionAccountLabel,
+  getTransactionCategory,
+  getTransactionDate,
+  getTransactionId,
+  getTransactionMerchant,
+  getTransactionRawText,
+  getTransactionStatus,
+  isUpcomingTransaction
+} from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
+// Applies saved category edits without changing the original Akahu records
 export function applyCategoryOverrides(transactions: Transaction[], categoryOverrides: Record<string, string>) {
   return transactions.map((transaction) => {
-    const override = categoryOverrides[transaction.id];
+    const override = categoryOverrides[getTransactionId(transaction)];
 
     if (!override) {
       return transaction;
@@ -11,42 +22,54 @@ export function applyCategoryOverrides(transactions: Transaction[], categoryOver
 
     return {
       ...transaction,
-      category: override,
-      confidence: 1,
-      needsReview: false,
-      note: "Manually categorized"
+      netly: {
+        ...transaction.netly,
+        categoryOverride: override
+      }
     };
   });
 }
 
+// Filters and sorts transactions for the Transactions page
 export function getVisibleTransactions(
   transactions: Transaction[],
   query: string,
-  transactionCategory: string,
+  transactionCategories: string[],
   transactionFilter: TransactionFilter,
   transactionSort: TransactionSort
 ) {
+  const normalizedQuery = query.trim().toLowerCase();
+
   return transactions
-    .filter((transaction) => matchesTransactionFilters(transaction, query, transactionCategory, transactionFilter))
+    .filter((transaction) => matchesTransactionFilters(transaction, normalizedQuery, transactionCategories, transactionFilter))
     .sort((first, second) => compareTransactions(first, second, transactionSort));
 }
 
-function matchesTransactionFilters(transaction: Transaction, query: string, transactionCategory: string, transactionFilter: TransactionFilter) {
-  const searchableText = `${transaction.merchant} ${transaction.category} ${transaction.account} ${transaction.rawDescription}`.toLowerCase();
-  const matchesQuery = searchableText.includes(query.trim().toLowerCase());
-  const matchesCategory = transactionCategory === "All categories" || transaction.category === transactionCategory;
+// Checks whether one transaction matches the active filters and search text
+function matchesTransactionFilters(transaction: Transaction, normalizedQuery: string, transactionCategories: string[], transactionFilter: TransactionFilter) {
+  const category = getTransactionCategory(transaction);
+  const matchesCategory = transactionCategories.length === 0 || transactionCategories.includes(category);
 
-  return matchesQuery && matchesCategory && matchesTransactionFilter(transaction, transactionFilter);
+  if (!matchesCategory || !matchesTransactionFilter(transaction, transactionFilter)) {
+    return false;
+  }
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  const searchableText = `${getTransactionMerchant(transaction)} ${category} ${getTransactionAccountLabel(transaction)} ${getTransactionRawText(transaction)}`.toLowerCase();
+  return searchableText.includes(normalizedQuery);
 }
 
 function matchesTransactionFilter(transaction: Transaction, transactionFilter: TransactionFilter) {
   switch (transactionFilter) {
     case "Expenses":
-      return transaction.amount < 0 && transaction.status !== "Upcoming";
+      return transaction.amount < 0 && !isUpcomingTransaction(transaction);
     case "Income":
       return transaction.amount > 0;
     case "Upcoming":
-      return transaction.status === "Upcoming";
+      return getTransactionStatus(transaction) === "Upcoming";
     default:
       return true;
   }
@@ -55,50 +78,26 @@ function matchesTransactionFilter(transaction: Transaction, transactionFilter: T
 function compareTransactions(first: Transaction, second: Transaction, transactionSort: TransactionSort) {
   switch (transactionSort) {
     case "Oldest":
-      return first.date.localeCompare(second.date);
+      return getTransactionDate(first).localeCompare(getTransactionDate(second));
     case "Amount high":
       return Math.abs(second.amount) - Math.abs(first.amount);
     case "Amount low":
       return Math.abs(first.amount) - Math.abs(second.amount);
     default:
-      return second.date.localeCompare(first.date);
+      return getTransactionDate(second).localeCompare(getTransactionDate(first));
   }
-}
-
-export function getPaymentBalanceDelta(paymentTestResult: PaymentTestResult | null, availableBalance: number | null) {
-  if (paymentTestResult?.baselineBalance === undefined || paymentTestResult.baselineBalance === null || availableBalance === null) {
-    return null;
-  }
-
-  return availableBalance - paymentTestResult.baselineBalance;
-}
-
-export function getPaymentTransactionDelta(paymentTestResult: PaymentTestResult | null, transactionCount: number) {
-  if (typeof paymentTestResult?.baselineTransactionCount !== "number") {
-    return null;
-  }
-
-  return transactionCount - paymentTestResult.baselineTransactionCount;
-}
-
-export function getPaymentFeedNote(paymentTestResult: PaymentTestResult | null, paymentBalanceDelta: number | null, paymentTransactionDelta: number | null) {
-  if (paymentTestResult?.status !== "submitted" || paymentBalanceDelta === null || paymentBalanceDelta === 0 || paymentTransactionDelta !== 0) {
-    return "";
-  }
-
-  return "PNZ accepted the payment and updated balances, but this sandbox has not published a matching row into the transactions feed.";
 }
 
 export function getConnectionTitle(isLoadingTransactions: boolean, dataMode: DataMode, isConnected: boolean) {
   if (isLoadingTransactions) {
-    return "Checking sandbox";
+    return "Checking Akahu";
   }
 
   if (dataMode === "demo") {
     return "Demo data";
   }
 
-  return isConnected ? "PNZ sandbox connected" : "Sandbox ready";
+  return isConnected ? "Akahu connected" : "Akahu ready";
 }
 
 export function getConnectionCopy(isLoadingTransactions: boolean, dataMode: DataMode, isConnected: boolean) {
@@ -107,10 +106,10 @@ export function getConnectionCopy(isLoadingTransactions: boolean, dataMode: Data
   }
 
   if (dataMode === "demo") {
-    return "Using PNZ-format sample transactions.";
+    return "Using Akahu-shaped sample transactions.";
   }
 
-  return isConnected ? "Transactions are loading from PNZ." : "No connected user data loaded.";
+  return isConnected ? "Transactions are loading from Akahu." : "No connected Akahu data loaded.";
 }
 
 export function getDataSourceLabel(isLoadingTransactions: boolean, dataMode: DataMode, isConnected: boolean) {
@@ -119,12 +118,13 @@ export function getDataSourceLabel(isLoadingTransactions: boolean, dataMode: Dat
   }
 
   if (dataMode === "demo") {
-    return "PNZ-format demo data";
+    return "Akahu-shaped demo data";
   }
 
-  return isConnected ? "Payments NZ sandbox" : "no connected user";
+  return isConnected ? "Akahu" : "no connected Akahu data";
 }
 
+// Shows the linked account name, or a simple count when there are multiple accounts
 export function getLinkedAccountLabel(primaryLinkedAccount: LinkedAccount | null, linkedAccountCount: number, isConnected: boolean) {
   if (primaryLinkedAccount) {
     const ownerPrefix = primaryLinkedAccount.ownerName ? `${primaryLinkedAccount.ownerName} · ` : "";
@@ -148,18 +148,18 @@ export function getLinkedUserName(primaryLinkedAccount: LinkedAccount | null, da
 
 export function getStatusBannerTitle(transactionLoadError: string, dataMode: DataMode) {
   if (transactionLoadError) {
-    return dataMode === "demo" ? "Demo data unavailable." : "User data unavailable.";
+    return dataMode === "demo" ? "Demo data unavailable." : "Akahu data unavailable.";
   }
 
-  return dataMode === "demo" ? "Demo data." : "PNZ sandbox connected.";
+  return dataMode === "demo" ? "Demo data." : "Akahu connected.";
 }
 
 export function getCardFitSourceLabel(dataMode: DataMode, isConnected: boolean) {
   if (dataMode === "demo") {
-    return "PNZ-format demo transactions";
+    return "Akahu-shaped demo transactions";
   }
 
-  return isConnected ? "connected PNZ transactions" : "connected user transactions";
+  return isConnected ? "connected Akahu transactions" : "Akahu transactions";
 }
 
 export function getCardFitWindowLabel(cardBasis: { latestTransactionDate: string | null; windowDays: number }) {
@@ -168,12 +168,4 @@ export function getCardFitWindowLabel(cardBasis: { latestTransactionDate: string
   }
 
   return `Last ${cardBasis.windowDays} days ending ${cardBasis.latestTransactionDate}`;
-}
-
-export function getPaymentTestHelp(linkedUserName: string, dataMode: DataMode) {
-  if (linkedUserName && dataMode === "user") {
-    return `For outgoing payment tests, authorize the payment as ${linkedUserName}, the same sandbox user connected to MoneyFit. If you log in as another sandbox user, MoneyFit will only see it when that user pays one of ${linkedUserName}'s linked accounts.`;
-  }
-
-  return "For outgoing payment tests, authorize the payment as the same sandbox user connected to MoneyFit. If you log in as another sandbox user, set the creditor account to the connected user's account to simulate incoming money.";
 }

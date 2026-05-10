@@ -1,62 +1,69 @@
-export type PnzAccount = {
-  AccountId?: string;
-  Currency?: string;
-  Nickname?: string;
-  Description?: string;
-  AccountType?: string;
-  AccountSubType?: string;
-  Account?: {
-    SchemeName?: string;
-    Identification?: string;
-    Name?: string;
-    SecondaryIdentification?: string;
+import type { LinkedAccount } from "@/lib/app/types";
+
+export type AkahuAccount = {
+  _id: string;
+  connection?: {
+    _id?: string;
+    name?: string;
+    logo?: string;
+  };
+  name?: string;
+  status?: string;
+  balance?: {
+    available?: number;
+    currency?: string;
+    current?: number;
+    overdrawn?: boolean;
+  };
+  attributes?: string[];
+  type?: string;
+  formatted_account?: string;
+  meta?: {
+    holder?: string;
+    address?: string;
+    [key: string]: unknown;
+  };
+  refreshed?: {
+    balance?: string;
+    meta?: string;
+    transactions?: string;
+    party?: string;
   };
 };
 
-export type PnzAccountsResponse = {
-  Data?: {
-    Account?: PnzAccount[];
+export type AkahuAccountsResponse = {
+  success?: boolean;
+  items?: AkahuAccount[];
+  item?: AkahuAccount;
+  cursor?: {
+    next?: string;
   };
-  Links?: {
-    Self?: string;
-    First?: string;
-    Last?: string;
-  };
-  Meta?: Record<string, unknown>;
 };
 
-export type NormalizedAccount = {
-  accountId: string;
-  displayName: string;
-  identification: string;
-  currency: string;
-  accountType: string;
-  accountSubType: string;
-  ownerName?: string;
-};
-
-export function normalizePnzAccounts(response: PnzAccountsResponse) {
-  return (response.Data?.Account || []).map((account) => {
-    const displayName =
-      usable(account.Nickname) ||
-      usable(account.Description) ||
-      usable(account.Account?.Name) ||
-      usable(account.AccountSubType) ||
-      usable(account.AccountId) ||
-      "PNZ account";
-
-    return {
-      accountId: account.AccountId || account.Account?.Identification || "PNZ account",
-      displayName,
-      identification: account.Account?.Identification || account.AccountId || "Unknown account",
-      currency: account.Currency || "NZD",
-      accountType: account.AccountType || "Account",
-      accountSubType: account.AccountSubType || ""
-    };
-  });
+export function getAkahuAccounts(response: AkahuAccountsResponse) {
+  return response.items || (response.item ? [response.item] : []);
 }
 
-function usable(value: string | undefined) {
-  const trimmed = value?.trim();
-  return trimmed && trimmed.toLowerCase() !== "string" ? trimmed : "";
+export function toLinkedAccount(account: AkahuAccount): LinkedAccount {
+  return {
+    accountId: account._id,
+    displayName: account.name || account.connection?.name || "Akahu account",
+    identification: account.formatted_account || account._id,
+    currency: account.balance?.currency || "NZD",
+    accountType: account.type || "Account",
+    accountSubType: account.status || "Connected",
+    ownerName: account.meta?.holder
+  };
+}
+
+export function getAvailableBalance(accounts: AkahuAccount[]) {
+  if (accounts.length === 0) {
+    return null;
+  }
+
+  return accounts.reduce((total, account) => total + getAccountAvailableBalance(account), 0);
+}
+
+function getAccountAvailableBalance(account: AkahuAccount) {
+  return account.balance?.available ?? account.balance?.current ?? 0;
 }

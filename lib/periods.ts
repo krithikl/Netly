@@ -1,4 +1,5 @@
 import type { PeriodOption, Transaction } from "./types";
+import { getTransactionDate, getTransactionStatus } from "@/lib/transaction-display";
 
 const fallbackReferenceDate = new Date("2026-05-04T12:00:00+12:00");
 
@@ -10,11 +11,11 @@ export function filterTransactionsByPeriod(transactions: Transaction[], period: 
   const referenceDate = getReferenceDate(transactions);
 
   return transactions.filter((txn) => {
-    if (txn.status === "Upcoming") {
+    if (getTransactionStatus(txn) === "Upcoming") {
       return true;
     }
 
-    const txnDate = new Date(`${txn.date}T12:00:00+12:00`);
+    const txnDate = new Date(`${getTransactionDate(txn)}T12:00:00+12:00`);
 
     if (period === "This month") {
       return txnDate.getFullYear() === referenceDate.getFullYear() && txnDate.getMonth() === referenceDate.getMonth();
@@ -30,8 +31,8 @@ export function filterTransactionsByPeriod(transactions: Transaction[], period: 
 
 function getReferenceDate(transactions: Transaction[]) {
   const latestTimestamp = transactions
-    .filter((txn) => txn.status !== "Upcoming")
-    .map((txn) => new Date(`${txn.date}T12:00:00+12:00`).getTime())
+    .filter((txn) => getTransactionStatus(txn) !== "Upcoming")
+    .map((txn) => new Date(`${getTransactionDate(txn)}T12:00:00+12:00`).getTime())
     .filter(Number.isFinite)
     .sort((a, b) => b - a)[0];
 

@@ -1,8 +1,19 @@
 import type { ChangeEvent } from "react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
+import { ArrowDownUp, SlidersHorizontal } from "lucide-react";
+import { toast } from "sonner";
 import { TransactionList } from "@/components/transactions/TransactionList";
-import { CustomSelect } from "@/components/ui/CustomSelect";
-import { PanelTitle } from "@/components/ui/PanelTitle";
+import { PanelTitle } from "@/components/ui/panel-title";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerHeaderClose,
+  DrawerTitle
+} from "@/components/ui/drawer";
+import { SelectField } from "@/components/ui/select-field";
 import type { Transaction } from "@/lib/types";
 import type { TransactionFilter, TransactionSort } from "@/lib/app/types";
 
@@ -14,10 +25,10 @@ type TransactionsViewProps = {
   onCreateCategory: (category: string) => void;
   query: string;
   setQuery: (query: string) => void;
-  setTransactionCategory: (category: string) => void;
+  setTransactionCategory: (categories: string[]) => void;
   setTransactionFilter: (filter: TransactionFilter) => void;
   setTransactionSort: (sort: TransactionSort) => void;
-  transactionCategory: string;
+  transactionCategory: string[];
   transactionFilter: TransactionFilter;
   transactionSort: TransactionSort;
   transactions: Transaction[];
@@ -26,6 +37,7 @@ type TransactionsViewProps = {
 const transactionFilters: TransactionFilter[] = ["All", "Expenses", "Income", "Upcoming"];
 const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount high", "Amount low"];
 
+// Handles transaction search, filters, sorting, and category creation
 export function TransactionsView({
   categoryColors,
   categoryOptions,
@@ -43,7 +55,8 @@ export function TransactionsView({
   transactions
 }: TransactionsViewProps) {
   const [newCategory, setNewCategory] = useState("");
-  const [categorySuccessMessage, setCategorySuccessMessage] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const normalizedNewCategory = normalizeCategoryName(newCategory);
   const duplicateCategory = getMatchingCategory(categoryOptions, normalizedNewCategory);
   const categoryErrorMessage = duplicateCategory ? `${duplicateCategory} already exists` : "";
@@ -55,31 +68,61 @@ export function TransactionsView({
     }
 
     onCreateCategory(normalizedNewCategory);
-    setCategorySuccessMessage(`Added ${normalizedNewCategory}`);
+    toast.success("Category added");
     setNewCategory("");
   };
-  const editableCategoryOptions = categoryOptions.filter((category) => category !== "All categories");
-  const categorySelectOptions = getStringOptions(categoryOptions);
-  const editableCategorySelectOptions = getStringOptions(editableCategoryOptions);
-  const filterSelectOptions = getStringOptions(transactionFilters);
-  const sortSelectOptions = getStringOptions(transactionSortOptions);
+  const editableCategoryOptions = useMemo(() => categoryOptions.filter((category) => category !== "All categories"), [categoryOptions]);
+  const categorySelectOptions = useMemo(() => getStringOptions(categoryOptions), [categoryOptions]);
+  const editableCategorySelectOptions = useMemo(() => getStringOptions(editableCategoryOptions), [editableCategoryOptions]);
+  const filterSelectOptions = useMemo(() => getStringOptions(transactionFilters), []);
+  const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
   const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
   const shownTransactions = isLoadingTransactions ? [] : transactions;
+  const activeFilterCount = getActiveFilterCount(transactionFilter, transactionCategory);
+  const desktopCategoryValue = getDesktopCategoryValue(transactionCategory);
+  const resetFilters = () => {
+    setTransactionFilter("All");
+    setTransactionCategory([]);
+  };
+  const handleDesktopCategoryChange = (category: string) => setTransactionCategory(category === "All categories" ? [] : [category]);
 
-  useEffect(() => {
-    if (!categorySuccessMessage) {
-      return undefined;
+  // Let mobile users choose multiple categories, or clear them with All categories
+  const toggleTransactionCategory = (category: string) => {
+    if (category === "All categories") {
+      setTransactionCategory([]);
+      return;
     }
 
-    const clearMessage = window.setTimeout(() => setCategorySuccessMessage(""), 2400);
-    return () => window.clearTimeout(clearMessage);
-  }, [categorySuccessMessage]);
+    setTransactionCategory(toggleCategorySelection(transactionCategory, category));
+  };
+  const closeSort = () => setSortOpen(false);
 
   return (
     <section className="view-stack">
       <section className="material-card">
-        <PanelTitle title="Transactions" subtitle="Bank descriptions are categorized with confidence scoring" />
-        <div className="transaction-controls">
+        <PanelTitle title="Transactions" subtitle="Akahu merchant and category enrichment where available" />
+        <div className="transaction-mobile-controls">
+          <label className="transaction-mobile-search">
+            Search
+            <input
+              className="search"
+              onChange={handleSearchChange}
+              placeholder="Search transactions"
+              value={query}
+            />
+          </label>
+          <div className="transaction-mobile-actions">
+            <Button onClick={() => setFiltersOpen(true)} type="button" variant="secondary">
+              <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </Button>
+            <Button onClick={() => setSortOpen(true)} type="button" variant="secondary">
+              <ArrowDownUp aria-hidden="true" className="h-4 w-4" />
+              Sort
+            </Button>
+          </div>
+        </div>
+        <div className="transaction-controls transaction-desktop-controls">
           <label>
             Search
             <input
@@ -91,33 +134,45 @@ export function TransactionsView({
           </label>
           <label>
             Status
-            <CustomSelect onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
+            <SelectField onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
           </label>
           <label>
             Category
-            <CustomSelect onChange={setTransactionCategory} options={categorySelectOptions} value={transactionCategory} />
+            <SelectField onChange={handleDesktopCategoryChange} options={categorySelectOptions} value={desktopCategoryValue} />
           </label>
           <label>
             Sort
-            <CustomSelect onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
+            <SelectField onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
           </label>
         </div>
+        <TransactionFilterDialog
+          categoryOptions={categoryOptions}
+          onCategoryToggle={toggleTransactionCategory}
+          onOpenChange={setFiltersOpen}
+          onReset={resetFilters}
+          onStatusChange={setTransactionFilter}
+          open={filtersOpen}
+          transactionCategory={transactionCategory}
+          transactionFilter={transactionFilter}
+        />
+        <TransactionSortDialog
+          onApply={closeSort}
+          onOpenChange={setSortOpen}
+          onSortChange={setTransactionSort}
+          open={sortOpen}
+          transactionSort={transactionSort}
+        />
         <div className="category-create-row">
           <label>
             New category
             <input onChange={handleNewCategoryChange} placeholder="e.g. Kids, Pets, Travel" value={newCategory} />
           </label>
-          <button className="tonal-action" disabled={!canCreateCategory} onClick={handleCreateCategory} type="button">
+          <Button disabled={!canCreateCategory} onClick={handleCreateCategory} type="button" variant="secondary">
             Add category
-          </button>
+          </Button>
           {categoryErrorMessage && (
             <p aria-live="polite" className="category-error-message">
               {categoryErrorMessage}
-            </p>
-          )}
-          {categorySuccessMessage && (
-            <p aria-live="polite" className="category-success-message">
-              {categorySuccessMessage}
             </p>
           )}
         </div>
@@ -131,6 +186,120 @@ export function TransactionsView({
         />
       </section>
     </section>
+  );
+}
+
+type TransactionFilterDialogProps = {
+  categoryOptions: string[];
+  onCategoryToggle: (category: string) => void;
+  onOpenChange: (open: boolean) => void;
+  onReset: () => void;
+  onStatusChange: (filter: TransactionFilter) => void;
+  open: boolean;
+  transactionCategory: string[];
+  transactionFilter: TransactionFilter;
+};
+
+// Shows mobile filters in a bottom drawer
+function TransactionFilterDialog({
+  categoryOptions,
+  onCategoryToggle,
+  onOpenChange,
+  onReset,
+  onStatusChange,
+  open,
+  transactionCategory,
+  transactionFilter
+}: TransactionFilterDialogProps) {
+  return (
+    <Drawer onOpenChange={onOpenChange} open={open}>
+      <DrawerContent className="mobile-filter-drawer">
+        <DrawerHeader className="mobile-filter-header">
+          <button className="mobile-filter-reset" onClick={onReset} type="button">
+            Reset
+          </button>
+          <DrawerTitle>Filters</DrawerTitle>
+          <DrawerDescription className="sr-only">Filter transactions by status and one or more categories.</DrawerDescription>
+          <DrawerHeaderClose className="mobile-filter-close" />
+        </DrawerHeader>
+        <div className="mobile-filter-drawer-body">
+          <div className="mobile-filter-section">
+            <h3>Status</h3>
+            <div className="mobile-filter-chips">
+              {transactionFilters.map((filter) => (
+                <button
+                  className={filter === transactionFilter ? "active" : undefined}
+                  key={filter}
+                  onClick={() => onStatusChange(filter)}
+                  type="button"
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mobile-filter-section">
+            <h3>Category</h3>
+            <div className="mobile-filter-chips category">
+              {categoryOptions.map((category) => (
+                <button
+                  className={getFilterCategoryIsActive(category, transactionCategory) ? "active" : undefined}
+                  key={category}
+                  onClick={() => onCategoryToggle(category)}
+                  type="button"
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+type TransactionSortDialogProps = {
+  onApply: () => void;
+  onOpenChange: (open: boolean) => void;
+  onSortChange: (sort: TransactionSort) => void;
+  open: boolean;
+  transactionSort: TransactionSort;
+};
+
+// Shows mobile sorting in a bottom drawer and applies the choice immediately
+function TransactionSortDialog({
+  onApply,
+  onOpenChange,
+  onSortChange,
+  open,
+  transactionSort
+}: TransactionSortDialogProps) {
+  const handleSortChange = (sort: TransactionSort) => {
+    onSortChange(sort);
+    onApply();
+  };
+
+  return (
+    <Drawer onOpenChange={onOpenChange} open={open}>
+      <DrawerContent className="mobile-filter-drawer mobile-sort-drawer">
+        <DrawerHeader className="mobile-filter-header centered">
+          <DrawerTitle>Sort</DrawerTitle>
+          <DrawerDescription className="sr-only">Choose the order for the transactions list.</DrawerDescription>
+          <DrawerHeaderClose className="mobile-filter-close" />
+        </DrawerHeader>
+        <div className="mobile-filter-drawer-body">
+          <div className="mobile-sort-options">
+            {transactionSortOptions.map((sort) => (
+              <button key={sort} onClick={() => handleSortChange(sort)} type="button">
+                <span>{sort}</span>
+                <span aria-hidden="true" className={sort === transactionSort ? "radio active" : "radio"} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
 
@@ -151,4 +320,33 @@ function getMatchingCategory(categories: string[], category: string) {
   }
 
   return categories.find((currentCategory) => currentCategory.toLowerCase() === category.toLowerCase()) || "";
+}
+
+// Counts hidden mobile filters so the Filters button can show a badge
+function getActiveFilterCount(transactionFilter: TransactionFilter, transactionCategory: string[]) {
+  let count = 0;
+
+  if (transactionFilter !== "All") {
+    count += 1;
+  }
+
+  count += transactionCategory.length;
+
+  return count;
+}
+
+function getDesktopCategoryValue(transactionCategory: string[]) {
+  return transactionCategory.length === 1 ? transactionCategory[0] : "All categories";
+}
+
+function getFilterCategoryIsActive(category: string, transactionCategory: string[]) {
+  return category === "All categories" ? transactionCategory.length === 0 : transactionCategory.includes(category);
+}
+
+function toggleCategorySelection(selectedCategories: string[], category: string) {
+  if (selectedCategories.includes(category)) {
+    return selectedCategories.filter((selectedCategory) => selectedCategory !== category);
+  }
+
+  return [...selectedCategories, category];
 }

@@ -1,8 +1,10 @@
+"use client";
+
 import { ArcElement, Chart as ChartJS, Tooltip } from "chart.js";
-import type { ActiveElement, Chart, ChartData, ChartEvent, ChartOptions, TooltipModel } from "chart.js";
+import type { ActiveElement, ChartData, ChartEvent, ChartOptions, TooltipModel } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import { useCallback, useMemo, useState } from "react";
-import clsx from "clsx";
+import type { CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatMoney, sum } from "@/lib/insights";
 
 ChartJS.register(ArcElement, Tooltip);
@@ -17,45 +19,91 @@ type DonutChartProps = {
   categoryColors: Record<string, string>;
   hoveredCategory: string | null;
   onHover: (category: string | null) => void;
-  onSelect: (category: string | null) => void;
-  selectedCategory: string | null;
+};
+
+type TooltipState = {
+  amount: number;
+  category: string;
+  left: number;
+  opacity: number;
+  top: number;
 };
 
 type ExternalTooltipContext = {
-  chart: Chart;
+  chart: {
+    canvas: HTMLCanvasElement;
+  };
   tooltip: TooltipModel<"doughnut">;
 };
 
-type TooltipPlacement = "left" | "right" | "top";
+type DoughnutArcGeometry = {
+  endAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  x: number;
+  y: number;
+};
 
-export function DonutChart({ categories, categoryColors, hoveredCategory, onHover, onSelect, selectedCategory }: DonutChartProps) {
-  const [tooltipPlacement, setTooltipPlacement] = useState<TooltipPlacement>("top");
+type TooltipPoint = {
+  left: number;
+  top: number;
+};
+
+const initialTooltipState: TooltipState = {
+  amount: 0,
+  category: "",
+  left: 0,
+  opacity: 0,
+  top: 0
+};
+const mobileChartQuery = "(max-width: 768px)";
+
+// Shows the category donut chart with hover tooltips and mobile sizing
+export function DonutChart({ categories, categoryColors, hoveredCategory, onHover }: DonutChartProps) {
+  const [tooltipState, setTooltipState] = useState<TooltipState>(initialTooltipState);
+  const [isMobileChart, setIsMobileChart] = useState(false);
   const total = sum(categories.map((item) => item.amount));
-  const hoveredItem = categories.find((item) => item.category === hoveredCategory);
-  const tooltipClassName = getTooltipClassName(tooltipPlacement);
   const chartData = useMemo(() => getChartData(categories, categoryColors), [categories, categoryColors]);
+  const tooltipStyle = getTooltipStyle(tooltipState);
 
   const handleChartHover = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
     const category = getCategoryFromElements(categories, elements);
     onHover(category);
   }, [categories, onHover]);
 
-  const handleChartClick = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
-    const category = getCategoryFromElements(categories, elements);
-    const nextCategory = getNextSelectedCategory(category, selectedCategory);
-    onSelect(nextCategory);
-  }, [categories, onSelect, selectedCategory]);
 
-  const handleChartLeave = useCallback(() => onHover(null), [onHover]);
+
+  const handleChartLeave = useCallback(() => {
+    onHover(null);
+    setTooltipState((currentTooltip) => ({ ...currentTooltip, opacity: 0 }));
+  }, [onHover]);
 
   const handleExternalTooltip = useCallback((context: ExternalTooltipContext) => {
-    const nextPlacement = getTooltipPlacementFromModel(context.chart, context.tooltip);
-    setTooltipPlacement((currentPlacement) => getNextTooltipPlacement(currentPlacement, nextPlacement));
+    setTooltipState((currentTooltip) => {
+      const nextTooltip = getExternalTooltipState(context.tooltip, currentTooltip);
+
+      return getNextTooltipState(currentTooltip, nextTooltip);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(mobileChartQuery);
+    setIsMobileChart(mediaQuery.matches);
+
+    const handleMediaChange = (event: MediaQueryListEvent) => setIsMobileChart(event.matches);
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    return () => mediaQuery.removeEventListener("change", handleMediaChange);
   }, []);
 
   const chartOptions = useMemo(
-    () => getChartOptions(handleChartHover, handleChartClick, handleExternalTooltip),
-    [handleChartClick, handleChartHover, handleExternalTooltip]
+    () => getChartOptions(handleChartHover, handleExternalTooltip, isMobileChart),
+    [handleChartHover, handleExternalTooltip, isMobileChart]
   );
 
   return (
@@ -63,11 +111,11 @@ export function DonutChart({ categories, categoryColors, hoveredCategory, onHove
       <div className="donut" onMouseLeave={handleChartLeave}>
         <Doughnut aria-label="Expense categories donut chart" data={chartData} options={chartOptions} role="img" />
       </div>
-      {hoveredItem && total > 0 && (
-        <div className={tooltipClassName} role="status">
-          <strong>{hoveredItem.category}</strong>
-          <span>{formatMoney(hoveredItem.amount)}</span>
-          <small>{Math.round((hoveredItem.amount / total) * 100)}% of shown expenses</small>
+      {tooltipState.category && total > 0 && (
+        <div className="chart-tooltip" role="status" style={tooltipStyle}>
+          <strong>{tooltipState.category}</strong>
+          <span>{formatMoney(tooltipState.amount)}</span>
+          <small>{Math.round((tooltipState.amount / total) * 100)}% of shown expenses</small>
         </div>
       )}
       <div className="donut-center">
@@ -94,22 +142,23 @@ function getChartData(categories: ChartCategory[], categoryColors: Record<string
   };
 }
 
+// Keeps the chart settings in one place
 function getChartOptions(
   onHover: (event: ChartEvent, elements: ActiveElement[]) => void,
-  onClick: (event: ChartEvent, elements: ActiveElement[]) => void,
-  onExternalTooltip: (context: ExternalTooltipContext) => void
+  onExternalTooltip: (context: ExternalTooltipContext) => void,
+  isMobileChart: boolean
 ): ChartOptions<"doughnut"> {
   return {
     animation: {
       duration: 180,
       easing: "easeOutQuart"
     },
-    cutout: "64%",
+    cutout: isMobileChart ? "50%" : "64%",
     layout: {
       padding: 12
     },
     maintainAspectRatio: false,
-    onClick,
+
     onHover,
     plugins: {
       legend: {
@@ -139,34 +188,93 @@ function getCategoryFromElements(categories: ChartCategory[], elements: ActiveEl
   return categories[index]?.category || null;
 }
 
-function getNextSelectedCategory(category: string | null, selectedCategory: string | null) {
-  if (!category) {
+
+
+// Turns Chart.js tooltip data into React state
+function getExternalTooltipState(tooltip: TooltipModel<"doughnut">, currentTooltip: TooltipState): TooltipState {
+  const item = tooltip.dataPoints?.[0];
+
+  if (!item || tooltip.opacity === 0) {
+    return {
+      ...currentTooltip,
+      opacity: 0
+    };
+  }
+
+  const point = getTooltipPoint(getTooltipItemElement(item), tooltip);
+
+  return {
+    amount: Number(item.parsed || 0),
+    category: String(item.label || ""),
+    left: point.left,
+    opacity: tooltip.opacity,
+    top: point.top
+  };
+}
+
+function getTooltipItemElement(item: unknown) {
+  if (!isRecord(item)) {
     return null;
   }
 
-  return selectedCategory === category ? null : category;
+  return item.element;
 }
 
-function getTooltipClassName(placement: TooltipPlacement) {
-  return clsx("chart-tooltip", placement);
-}
-
-function getTooltipPlacementFromModel(chart: Chart, tooltip: TooltipModel<"doughnut">): TooltipPlacement {
-  if (tooltip.opacity === 0) {
-    return "top";
+// Puts the tooltip near the middle of the hovered slice
+function getTooltipPoint(element: unknown, tooltip: TooltipModel<"doughnut">): TooltipPoint {
+  if (!isDoughnutArcGeometry(element)) {
+    return {
+      left: tooltip.caretX,
+      top: tooltip.caretY
+    };
   }
 
-  const chartCenterX = chart.chartArea.left + chart.chartArea.width / 2;
-  const chartCenterY = chart.chartArea.top + chart.chartArea.height / 2;
-  const topThreshold = chartCenterY - chart.chartArea.height * 0.28;
+  const angle = (element.startAngle + element.endAngle) / 2;
+  const radius = (element.innerRadius + element.outerRadius) / 2;
 
-  if (tooltip.caretY < topThreshold) {
-    return "top";
-  }
-
-  return tooltip.caretX < chartCenterX ? "left" : "right";
+  return {
+    left: element.x + Math.cos(angle) * radius,
+    top: element.y + Math.sin(angle) * radius
+  };
 }
 
-function getNextTooltipPlacement(currentPlacement: TooltipPlacement, nextPlacement: TooltipPlacement) {
-  return currentPlacement === nextPlacement ? currentPlacement : nextPlacement;
+function isDoughnutArcGeometry(value: unknown): value is DoughnutArcGeometry {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const geometryKeys: Array<keyof DoughnutArcGeometry> = ["endAngle", "innerRadius", "outerRadius", "startAngle", "x", "y"];
+
+  return geometryKeys.every((key) => typeof value[key] === "number");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+// Skips state updates when the tooltip has not changed
+function getNextTooltipState(currentTooltip: TooltipState, nextTooltip: TooltipState) {
+  if (
+    currentTooltip.amount === nextTooltip.amount &&
+    currentTooltip.category === nextTooltip.category &&
+    currentTooltip.left === nextTooltip.left &&
+    currentTooltip.opacity === nextTooltip.opacity &&
+    currentTooltip.top === nextTooltip.top
+  ) {
+    return currentTooltip;
+  }
+
+  return nextTooltip;
+}
+
+function getTooltipStyle(tooltip: TooltipState): CSSProperties {
+  const isVisible = tooltip.opacity > 0;
+
+  return {
+    "--tooltip-scale": isVisible ? "1" : "0.96",
+    "--tooltip-shift": isVisible ? "0px" : "6px",
+    left: tooltip.left,
+    opacity: tooltip.opacity,
+    top: tooltip.top
+  } as CSSProperties;
 }

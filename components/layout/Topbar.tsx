@@ -1,11 +1,8 @@
-import clsx from "clsx";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { periods } from "@/lib/app/constants";
-import type { DataMode } from "@/lib/app/types";
 import type { PeriodOption } from "@/lib/types";
 
 type TopbarProps = {
-  changeDataMode: (mode: DataMode) => void;
-  dataMode: DataMode;
   dataSourceLabel: string;
   linkedAccountLabel: string;
   linkedUserName: string;
@@ -16,8 +13,6 @@ type TopbarProps = {
 };
 
 export function Topbar({
-  changeDataMode,
-  dataMode,
   dataSourceLabel,
   linkedAccountLabel,
   linkedUserName,
@@ -38,7 +33,6 @@ export function Topbar({
       </div>
       {showPeriodControl && (
         <div className="topbar-controls">
-          <DataModeSwitch changeDataMode={changeDataMode} dataMode={dataMode} />
           <PeriodControl period={period} setPeriod={setPeriod} />
         </div>
       )}
@@ -46,38 +40,18 @@ export function Topbar({
   );
 }
 
-function DataModeSwitch({ changeDataMode, dataMode }: { changeDataMode: (mode: DataMode) => void; dataMode: DataMode }) {
-  return (
-    <div className="source-switch" aria-label="Selected data source">
-      {(["user", "demo"] as const).map((mode) => (
-        <button className={getDataModeClassName(dataMode, mode)} key={mode} onClick={() => changeDataMode(mode)} type="button">
-          {getDataModeLabel(mode)}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function PeriodControl({ period, setPeriod }: { period: PeriodOption; setPeriod: (period: PeriodOption) => void }) {
+  const handlePeriodChange = (value: string) => setPeriod(value as PeriodOption);
+
   return (
-    <div className="period-control" aria-label="Selected period">
-      {periods.map((option) => (
-        <button className={getPeriodClassName(period, option)} key={option} onClick={() => setPeriod(option)} type="button">
-          {option}
-        </button>
-      ))}
-    </div>
+    <Tabs className="period-control" onValueChange={handlePeriodChange} value={period}>
+      <TabsList aria-label="Selected period" className="period-tabs">
+        {periods.map((option) => (
+          <TabsTrigger className="period-tab" key={option} value={option}>
+            {option}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   );
-}
-
-function getDataModeClassName(currentMode: DataMode, mode: DataMode) {
-  return clsx(currentMode === mode && "active");
-}
-
-function getDataModeLabel(mode: DataMode) {
-  return mode === "user" ? "User" : "Demo";
-}
-
-function getPeriodClassName(currentPeriod: PeriodOption, option: PeriodOption) {
-  return clsx("period", currentPeriod === option && "active");
 }

@@ -1,4 +1,18 @@
-import type { RawBankTransaction, Transaction } from "./types";
+import type { RawBankTransaction } from "./types";
+
+export type CategorizedDemoTransaction = {
+  id: string;
+  date: string;
+  rawDescription: string;
+  merchant: string;
+  category: string;
+  account: string;
+  amount: number;
+  status: "Booked" | "Pending" | "Upcoming";
+  confidence: number;
+  needsReview: boolean;
+  note?: string;
+};
 
 type CategorizationRule = {
   category: string;
@@ -40,7 +54,7 @@ const rules: CategorizationRule[] = [
   { category: "Income", merchant: "Salary", patterns: [/salary/i, /payroll/i, /wages/i] }
 ];
 
-export function categorizeTransaction(raw: RawBankTransaction): Transaction {
+export function categorizeTransaction(raw: RawBankTransaction): CategorizedDemoTransaction {
   const match = rules.find((rule) => rule.patterns.some((pattern) => pattern.test(raw.description)));
   const fallback = inferFallback(raw.description, raw.amount);
   const merchant = match?.category === "Transfers"

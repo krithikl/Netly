@@ -3,24 +3,24 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ActiveView } from "@/components/views/ActiveView";
-import { useMoneyFitApp } from "@/hooks/useMoneyFitApp";
+import { useNetlyApp } from "@/hooks/useNetlyApp";
 
-export default function Home() {
-  const app = useMoneyFitApp();
+export function AppShell() {
+  const app = useNetlyApp();
 
   return (
     <div className="app-shell">
       <Sidebar
         activeView={app.activeView}
+        changeDataMode={app.changeDataMode}
         connectionCopy={app.connectionCopy}
         connectionTitle={app.connectionTitle}
+        dataMode={app.dataMode}
         setActiveView={app.setActiveView}
       />
 
       <main className="main">
         <Topbar
-          changeDataMode={app.changeDataMode}
-          dataMode={app.dataMode}
           dataSourceLabel={app.dataSourceLabel}
           linkedAccountLabel={app.linkedAccountLabel}
           linkedUserName={app.linkedUserName}

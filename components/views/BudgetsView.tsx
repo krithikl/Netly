@@ -1,5 +1,5 @@
-import { InfoRow } from "@/components/ui/InfoRow";
-import { PanelTitle } from "@/components/ui/PanelTitle";
+import { InfoRow } from "@/components/ui/info-row";
+import { PanelTitle } from "@/components/ui/panel-title";
 import { formatMoney } from "@/lib/insights";
 import type { Budget, RecurringMerchant } from "@/lib/types";
 
@@ -14,7 +14,7 @@ export function BudgetsView({ budgets, categories, categoryColors, recurring }: 
   return (
     <section className="view-stack">
       <section className="material-card">
-        <PanelTitle title="Budgets" subtitle="Spend is based on inferred categories" />
+        <PanelTitle title="Budgets" subtitle="Spend is based on Akahu category data" />
         <div className="budget-grid">
           {budgets.map((budget) => (
             <BudgetCard budget={budget} categoryColor={categoryColors[budget.category] || budget.color} key={budget.category} spent={getCategorySpend(categories, budget.category)} />

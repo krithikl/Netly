@@ -1,8 +1,10 @@
 import clsx from "clsx";
+import { useState } from "react";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { TransactionList } from "@/components/transactions/TransactionList";
-import { Metric } from "@/components/ui/Metric";
-import { PanelTitle } from "@/components/ui/PanelTitle";
+import { Metric } from "@/components/ui/metric";
+import { PanelTitle } from "@/components/ui/panel-title";
+import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/insights";
 import type { Transaction } from "@/lib/types";
 import type { View } from "@/lib/app/types";
@@ -20,16 +22,15 @@ type HomeViewProps = {
   monthlySpend: number;
   reviewCount: number;
   safeToSpendAmount: number;
-  selectedHomeCategory: string | null;
   setActiveView: (view: View) => void;
   setHoveredCategory: (category: string | null) => void;
-  setSelectedHomeCategory: (category: string | null) => void;
   transactionPreview: Transaction[];
   upcomingCount: number;
   upcomingTotal: number;
   isConnected: boolean;
 };
 
+// Shows the dashboard summary, category chart, insights, and recent transactions
 export function HomeView({
   availableBalance,
   categoryColors,
@@ -43,15 +44,14 @@ export function HomeView({
   monthlySpend,
   reviewCount,
   safeToSpendAmount,
-  selectedHomeCategory,
   setActiveView,
   setHoveredCategory,
-  setSelectedHomeCategory,
   transactionPreview,
   upcomingCount,
   upcomingTotal,
   isConnected
 }: HomeViewProps) {
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const balanceLabel = getBalanceLabel(availableBalance);
   const safeToSpendLabel = `${formatMoney(safeToSpendAmount)} looks safe after upcoming bills and buffer.`;
   const metricGridClassName = getLoadingClassName("metric-grid", isLoadingTransactions);
@@ -59,8 +59,10 @@ export function HomeView({
   const recentActivityClassName = getLoadingClassName("stable-list-panel", isLoadingTransactions);
   const recentTransactions = transactionPreview.slice(0, 5);
   const showConnectButton = !isConnected;
+  const topCategory = chartCategories[0] ?? null;
   const openConnectView = () => setActiveView("connect");
   const openTransactionsView = () => setActiveView("transactions");
+  const toggleCategoryList = () => setShowAllCategories((isExpanded) => !isExpanded);
 
   return (
     <>
@@ -72,20 +74,20 @@ export function HomeView({
         </div>
         <div className="hero-actions">
           {showConnectButton && (
-            <button className="tonal-button" onClick={openConnectView} type="button">
+            <Button className="bg-white/15 text-white hover:bg-white/25" onClick={openConnectView} type="button" variant="secondary">
               Connect bank
-            </button>
+            </Button>
           )}
-          <button className="primary-button" onClick={openTransactionsView} type="button">
+          <Button className="bg-white text-[var(--primary)] hover:bg-white/90" onClick={openTransactionsView} type="button">
             Review spend
-          </button>
+          </Button>
         </div>
       </div>
 
       {isLoadingTransactions && (
         <div className="status-banner neutral" role="status">
           <strong>Loading transactions.</strong>
-          <span>Checking whether PNZ sandbox data is available.</span>
+          <span>Checking whether Akahu data is available.</span>
         </div>
       )}
 
@@ -97,27 +99,46 @@ export function HomeView({
       </div>
 
       <div className={dashboardGridClassName} aria-busy={isLoadingTransactions}>
-        <section className="material-card chart-panel">
-          <PanelTitle title="Inferred categories" subtitle="Tap a slice to filter recent activity" />
+        <section className="material-card chart-panel category-panel">
+          <PanelTitle title="Akahu categories" subtitle="Spending by category" />
+          {topCategory && (
+            <div className="category-mobile-summary">
+              <div>
+                <span>Total spend</span>
+                <strong>{formatMoney(chartTotal)}</strong>
+              </div>
+              <div>
+                <span>Top category</span>
+                <strong>{topCategory.category}</strong>
+                <small>{formatMoney(topCategory.amount)}</small>
+              </div>
+            </div>
+          )}
           <div className="chart-layout">
             <DonutChart
               categories={chartCategories}
               categoryColors={categoryColors}
               hoveredCategory={hoveredCategory}
               onHover={setHoveredCategory}
-              selectedCategory={selectedHomeCategory}
-              onSelect={setSelectedHomeCategory}
             />
             <CategoryLegend
               categories={chartCategories}
               categoryColors={categoryColors}
               chartTotal={chartTotal}
-              hoveredCategory={hoveredCategory}
-              selectedHomeCategory={selectedHomeCategory}
-              setHoveredCategory={setHoveredCategory}
-              setSelectedHomeCategory={setSelectedHomeCategory}
+              isExpanded={showAllCategories}
             />
           </div>
+          {chartCategories.length > 5 && (
+            <Button
+              aria-expanded={showAllCategories}
+              className="category-toggle"
+              onClick={toggleCategoryList}
+              type="button"
+              variant="secondary"
+            >
+              {showAllCategories ? "Show top categories" : "Show all categories"}
+            </Button>
+          )}
         </section>
 
         <section className="material-card">
@@ -131,13 +152,13 @@ export function HomeView({
       </div>
 
       <section className="material-card">
-        <PanelTitle title="Recent activity" subtitle="Filtered by chart selection" />
+        <PanelTitle title="Recent activity" subtitle="Recent transactions" />
         <div className={recentActivityClassName} aria-busy={isLoadingTransactions}>
-          <TransactionList categoryColors={categoryColors} emptyMessage="No transactions found for this category." transactions={recentTransactions} />
+          <TransactionList categoryColors={categoryColors} emptyMessage="No transactions found." transactions={recentTransactions} />
         </div>
-        <button className="tonal-action" onClick={openTransactionsView} type="button">
+        <Button className="mt-2" onClick={openTransactionsView} type="button" variant="secondary">
           View all transactions
-        </button>
+        </Button>
       </section>
     </>
   );
@@ -147,37 +168,28 @@ type CategoryLegendProps = {
   categories: { category: string; amount: number }[];
   categoryColors: Record<string, string>;
   chartTotal: number;
-  hoveredCategory: string | null;
-  selectedHomeCategory: string | null;
-  setHoveredCategory: (category: string | null) => void;
-  setSelectedHomeCategory: (category: string | null) => void;
+  isExpanded: boolean;
 };
 
+// CSS hides extra rows on mobile while desktop keeps the full list
 function CategoryLegend({
   categories,
   categoryColors,
   chartTotal,
-  hoveredCategory,
-  selectedHomeCategory,
-  setHoveredCategory,
-  setSelectedHomeCategory
+  isExpanded
 }: CategoryLegendProps) {
   if (categories.length === 0) {
     return <div className="empty-state">No spending categories found for this period.</div>;
   }
 
   return (
-    <div className="legend-list">
+    <div className={clsx("legend-list", !isExpanded && "is-mobile-collapsed")}>
       {categories.map((item) => (
         <CategoryLegendRow
           categoryColors={categoryColors}
           chartTotal={chartTotal}
-          hoveredCategory={hoveredCategory}
           item={item}
           key={item.category}
-          selectedHomeCategory={selectedHomeCategory}
-          setHoveredCategory={setHoveredCategory}
-          setSelectedHomeCategory={setSelectedHomeCategory}
         />
       ))}
     </div>
@@ -187,38 +199,19 @@ function CategoryLegend({
 function CategoryLegendRow({
   categoryColors,
   chartTotal,
-  hoveredCategory,
   item,
-  selectedHomeCategory,
-  setHoveredCategory,
-  setSelectedHomeCategory
 }: {
   categoryColors: Record<string, string>;
   chartTotal: number;
-  hoveredCategory: string | null;
   item: { category: string; amount: number };
-  selectedHomeCategory: string | null;
-  setHoveredCategory: (category: string | null) => void;
-  setSelectedHomeCategory: (category: string | null) => void;
 }) {
   const categoryColor = getCategoryColor(item.category, categoryColors);
   const legendBarStyle = getLegendBarStyle(item, chartTotal, categoryColor);
-  const legendRowClassName = getLegendRowClassName(item.category, selectedHomeCategory, hoveredCategory);
-  const toggleCategory = () => setSelectedHomeCategory(getNextSelectedCategory(item.category, selectedHomeCategory));
-  const setHovered = () => setHoveredCategory(item.category);
-  const clearHovered = () => setHoveredCategory(null);
+  const legendRowClassName = "legend-row";
   const legendDotStyle = getLegendDotStyle(categoryColor);
 
   return (
-    <button
-      className={legendRowClassName}
-      onMouseEnter={setHovered}
-      onMouseLeave={clearHovered}
-      onFocus={setHovered}
-      onBlur={clearHovered}
-      onClick={toggleCategory}
-      type="button"
-    >
+    <div className={legendRowClassName}>
       <span className="legend-dot" style={legendDotStyle} />
       <span className="legend-content">
         <span className="legend-topline">
@@ -229,7 +222,7 @@ function CategoryLegendRow({
           <span className="legend-bar" style={legendBarStyle} />
         </span>
       </span>
-    </button>
+    </div>
   );
 }
 
@@ -260,12 +253,4 @@ function getLegendDotStyle(categoryColor: string) {
 
 function getLegendBarWidth(amount: number, chartTotal: number) {
   return chartTotal > 0 ? Math.max(4, Math.round((amount / chartTotal) * 100)) : 0;
-}
-
-function getLegendRowClassName(category: string, selectedHomeCategory: string | null, hoveredCategory: string | null) {
-  return clsx("legend-row", selectedHomeCategory === category && "selected", hoveredCategory === category && "hovered");
-}
-
-function getNextSelectedCategory(category: string, selectedHomeCategory: string | null) {
-  return selectedHomeCategory === category ? null : category;
 }

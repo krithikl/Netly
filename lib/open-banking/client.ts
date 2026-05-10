@@ -1,429 +1,203 @@
-type PnzConfig = {
+import type { AkahuAccount, AkahuAccountsResponse } from "@/lib/open-banking/accounts";
+import type { AkahuTransactionsResponse } from "@/lib/open-banking/normalize";
+
+type AkahuConfig = {
   baseUrl: string;
-  apiVersion: string;
-  clientId: string;
-  clientKeyId: string;
+  appToken: string;
+  appSecret?: string;
   redirectUri: string;
-  privateKeyPem: string;
+  oauthUrl: string;
 };
 
-type PnzTokenSet = {
-  accessToken: string;
-  refreshToken?: string;
-  expiresAt?: Date;
+export type AkahuToken = {
+  userToken: string;
 };
 
-type CreateConsentInput = {
-  transactionFromDateTime: string;
-  transactionToDateTime: string;
-  expirationDateTime: string;
-};
-
-export type DomesticPaymentInitiation = {
-  InstructedAmount: {
-    Amount: string;
-    Currency: "NZD";
-  };
-  InstructionIdentification: string;
-  RemittanceInformation: {
-    Reference: {
-      CreditorReference: {
-        Reference: string;
-        Particulars: string;
-        Code: string;
-      };
-      CreditorName: string;
-    };
-  };
-  CreditorAccount: {
-    Identification: string;
-    SchemeName: "BECSElectronicCredit";
-    SecondaryIdentification?: string;
-    Name: string;
-  };
-  DebtorAccountRelease: boolean;
-  EndToEndIdentification: string;
-};
-
-export type DomesticPaymentRisk = {
-  EndUserAppName: string;
-  EndUserAppVersion: string;
-  PaymentContextCode: string;
-  MerchantName: string;
-  MerchantNZBN: string;
-  MerchantCategoryCode: string;
-  MerchantCustomerIdentification: string;
-};
-
-const DEFAULT_PERMISSIONS = [
-  "ReadAccountsDetail",
-  "ReadBalances",
-  "ReadTransactionsDetail",
-  "ReadTransactionsCredits",
-  "ReadTransactionsDebits"
-];
-
-export class OpenBankingClient {
-  constructor(private readonly config: PnzConfig) {}
+export class AkahuClient {
+  constructor(private readonly config: AkahuConfig) {}
 
   getConfig() {
     return this.config;
   }
 
-  async discover() {
-    return this.getJson("/.well-known/openid-configuration");
+  getAuthorizationUrl(state: string, email?: string) {
+    const url = new URL(this.config.oauthUrl);
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("client_id", this.config.appToken);
+    url.searchParams.set("redirect_uri", this.config.redirectUri);
+    url.searchParams.set("scope", "ENDURING_CONSENT");
+    url.searchParams.set("state", state);
+
+    if (email) {
+      url.searchParams.set("email", email);
+    }
+
+    return url.toString();
   }
 
-  async createAccountAccessConsent(input: CreateConsentInput, token: PnzTokenSet) {
-    return this.postJson(
-      `/open-banking-nz/${this.config.apiVersion}/account-access-consents`,
-      {
-        Data: {
-          Consent: {
-            Permissions: DEFAULT_PERMISSIONS,
-            TransactionFromDateTime: input.transactionFromDateTime,
-            TransactionToDateTime: input.transactionToDateTime,
-            ExpirationDateTime: input.expirationDateTime
-          }
-        },
-        Risk: {}
-      },
-      token
-    );
-  }
+  async exchangeAuthorizationCode(code: string) {
+    this.assertAppSecret();
 
-  async createDomesticPaymentConsent(
-    input: {
-      initiation: DomesticPaymentInitiation;
-      risk: DomesticPaymentRisk;
-    },
-    token: PnzTokenSet
-  ) {
-    return this.postJson(
-      `/open-banking-nz/${this.config.apiVersion}/domestic-payment-consents`,
-      {
-        Data: {
-          Consent: input.initiation
-        },
-        Risk: input.risk
-      },
-      token,
-      {
-        "x-idempotency-key": crypto.randomUUID()
-      }
-    );
-  }
-
-  async submitDomesticPayment(
-    input: {
-      consentId: string;
-      initiation: DomesticPaymentInitiation;
-      risk: DomesticPaymentRisk;
-    },
-    token: PnzTokenSet
-  ) {
-    return this.postJson(
-      `/open-banking-nz/${this.config.apiVersion}/domestic-payments`,
-      {
-        Data: {
-          ConsentId: input.consentId,
-          Initiation: input.initiation
-        },
-        Risk: input.risk
-      },
-      token,
-      {
-        "x-idempotency-key": crypto.randomUUID()
-      }
-    );
-  }
-
-  async getAccounts(token: PnzTokenSet) {
-    return this.getJson(`/open-banking-nz/${this.config.apiVersion}/accounts`, token);
-  }
-
-  async getBalances(token: PnzTokenSet) {
-    return this.getJson(`/open-banking-nz/${this.config.apiVersion}/balances`, token);
-  }
-
-  async getTransactions(token: PnzTokenSet, from?: string, to?: string) {
-    const params = this.transactionDateParams(from, to);
-
-    return this.getJson(
-      `/open-banking-nz/${this.config.apiVersion}/transactions${params}`,
-      token
-    );
-  }
-
-  async getAllTransactions(token: PnzTokenSet, from?: string, to?: string) {
-    const params = this.transactionDateParams(from, to);
-
-    return this.getAllPages(`/open-banking-nz/${this.config.apiVersion}/transactions${params}`, token);
-  }
-
-  async getAccountTransactions(token: PnzTokenSet, accountId: string, from?: string, to?: string) {
-    const params = this.transactionDateParams(from, to);
-
-    return this.getJson(
-      `/open-banking-nz/${this.config.apiVersion}/accounts/${encodeURIComponent(accountId)}/transactions${params}`,
-      token
-    );
-  }
-
-  async getAllAccountTransactions(token: PnzTokenSet, accountId: string, from?: string, to?: string) {
-    const params = this.transactionDateParams(from, to);
-
-    return this.getAllPages(
-      `/open-banking-nz/${this.config.apiVersion}/accounts/${encodeURIComponent(accountId)}/transactions${params}`,
-      token
-    );
-  }
-
-  async getClientCredentialsToken(clientAssertion: string, tokenEndpoint = "/oauth/v2.0/token") {
-    const body = new URLSearchParams({
-      grant_type: "client_credentials",
-      scope: "openid accounts payments",
-      client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-      client_assertion: clientAssertion
-    });
-
-    const response = await fetch(`${this.config.baseUrl}${tokenEndpoint}`, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/x-www-form-urlencoded",
-        "x-fapi-interaction-id": crypto.randomUUID()
-      },
-      body
-    });
-
-    return this.parseResponse(response) as Promise<{
-      access_token: string;
-      expires_in: number;
-      token_type: string;
-    }>;
-  }
-
-  async pushAuthorizationRequest(requestJwt: string, clientAssertion: string) {
-    const body = new URLSearchParams({
-      request: requestJwt,
-      client_assertion: clientAssertion,
-      client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-    });
-
-    const response = await fetch(`${this.config.baseUrl}/oauth/v2.0/par`, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/x-www-form-urlencoded",
-        "x-fapi-interaction-id": crypto.randomUUID()
-      },
-      body
-    });
-
-    return this.parseResponse(response) as Promise<{
-      request_uri: string;
-      expires_in: number;
-    }>;
-  }
-
-  async exchangeAuthorizationCode({
-    clientAssertion,
-    code,
-    codeVerifier,
-    tokenEndpoint = "/oauth/v2.0/token"
-  }: {
-    clientAssertion: string;
-    code: string;
-    codeVerifier: string;
-    tokenEndpoint?: string;
-  }) {
-    const body = new URLSearchParams({
+    return this.postJson<{ success?: boolean; access_token?: string; error?: string; error_description?: string }>("/token", {
       grant_type: "authorization_code",
       code,
       redirect_uri: this.config.redirectUri,
-      code_verifier: codeVerifier,
-      client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-      client_assertion: clientAssertion
+      client_id: this.config.appToken,
+      client_secret: this.config.appSecret
     });
-
-    const response = await fetch(`${this.config.baseUrl}${tokenEndpoint}`, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/x-www-form-urlencoded",
-        "x-fapi-interaction-id": crypto.randomUUID()
-      },
-      body
-    });
-
-    return this.parseResponse(response) as Promise<{
-      access_token: string;
-      refresh_token?: string;
-      expires_in: number;
-      token_type: string;
-      id_token?: string;
-    }>;
   }
 
-  async refreshAccessToken({
-    clientAssertion,
-    refreshToken,
-    tokenEndpoint = "/oauth/v2.0/token"
-  }: {
-    clientAssertion: string;
-    refreshToken: string;
-    tokenEndpoint?: string;
-  }) {
-    const body = new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-      client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-      client_assertion: clientAssertion
-    });
-
-    const response = await fetch(`${this.config.baseUrl}${tokenEndpoint}`, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/x-www-form-urlencoded",
-        "x-fapi-interaction-id": crypto.randomUUID()
-      },
-      body
-    });
-
-    return this.parseResponse(response) as Promise<{
-      access_token: string;
-      refresh_token?: string;
-      expires_in: number;
-      token_type: string;
-      id_token?: string;
-    }>;
+  async getAccounts(token: AkahuToken) {
+    return this.getJson<AkahuAccountsResponse>("/accounts", token);
   }
 
-  private async getJson(path: string, token?: PnzTokenSet) {
-    const response = await fetch(`${this.config.baseUrl}${path}`, {
-      headers: this.headers(token)
+  async getTransactions(token: AkahuToken) {
+    return this.getAllItems<AkahuTransactionsResponse>("/transactions", token);
+  }
+
+  async getPendingTransactions(token: AkahuToken) {
+    return this.getAllItems<AkahuTransactionsResponse>("/transactions/pending", token);
+  }
+
+  async getAccountTransactions(token: AkahuToken, accountId: string) {
+    return this.getAllItems<AkahuTransactionsResponse>(`/accounts/${encodeURIComponent(accountId)}/transactions`, token);
+  }
+
+  async getAccountPendingTransactions(token: AkahuToken, accountId: string) {
+    return this.getAllItems<AkahuTransactionsResponse>(`/accounts/${encodeURIComponent(accountId)}/transactions/pending`, token);
+  }
+
+  // Loads booked and pending transactions together
+  async getTransactionsForAccounts(token: AkahuToken, accounts: AkahuAccount[]): Promise<AkahuTransactionsResponse> {
+
+    const transactionGroups: AkahuTransactionsResponse[] = await Promise.all([
+      this.getTransactions(token),
+      this.getPendingTransactions(token)
+    ]);
+
+    return combineItems(transactionGroups);
+  }
+
+  private async getJson<T>(path: string, token: AkahuToken) {
+    const response = await fetch(this.buildUrl(path), {
+      headers: this.userHeaders(token),
+      cache: "no-store"
     });
 
-    return this.parseResponse(response);
+    return this.readResponse<T>(response);
   }
 
-  private transactionDateParams(from?: string, to?: string) {
-    const params = new URLSearchParams();
+  // Keeps requesting pages until Akahu has no next page
+  private async getAllItems<T extends { items?: unknown[]; cursor?: { next?: string } }>(path: string, token: AkahuToken): Promise<T> {
 
-    if (from) {
-      params.set("fromBookingDateTime", from);
-    }
+    let nextCursor: string | null | undefined = undefined;
+    const items: unknown[] = [];
+    let lastPayload: T | null = null;
 
-    if (to) {
-      params.set("toBookingDateTime", to);
-    }
-
-    const query = params.toString();
-    return query ? `?${query}` : "";
-  }
-
-  private async getAllPages(path: string, token?: PnzTokenSet) {
-    const pages: unknown[] = [];
-    let nextPath: string | undefined = path;
-    let pageCount = 0;
-
-    while (nextPath && pageCount < 10) {
-      const page = await this.getJson(nextPath, token) as {
-        Data?: {
-          Transaction?: unknown[];
-        };
-        Links?: {
-          Next?: string;
-        };
-      };
-
-      pages.push(page);
-      pageCount += 1;
-      nextPath = page.Links?.Next ? this.toPath(page.Links.Next) : undefined;
-    }
+    do {
+      const pagePath = addCursorToPath(path, nextCursor);
+      const payload: T = await this.getJson<T>(pagePath, token);
+      lastPayload = payload;
+      items.push(...(payload.items || []));
+      nextCursor = payload.cursor?.next;
+    } while (nextCursor);
 
     return {
-      pages,
-      Data: {
-        Transaction: pages.flatMap((page) =>
-          (page as { Data?: { Transaction?: unknown[] } }).Data?.Transaction || []
-        )
-      }
-    };
+      ...(lastPayload || {}),
+      items
+    } as T;
   }
 
-  private async postJson(path: string, body: unknown, token?: PnzTokenSet, extraHeaders: Record<string, string> = {}) {
-    const response = await fetch(`${this.config.baseUrl}${path}`, {
+  private async postJson<T>(path: string, body: unknown) {
+    const response = await fetch(this.buildUrl(path), {
       method: "POST",
       headers: {
-        ...this.headers(token),
-        "content-type": "application/json",
-        ...extraHeaders
+        "content-type": "application/json"
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      cache: "no-store"
     });
 
-    return this.parseResponse(response);
+    return this.readResponse<T>(response);
   }
 
-  private headers(token?: PnzTokenSet) {
-    const headers: Record<string, string> = {
-      accept: "application/json",
-      "x-fapi-interaction-id": crypto.randomUUID()
+  private buildUrl(path: string) {
+    if (path.startsWith("http")) {
+      return path;
+    }
+
+    return `${this.config.baseUrl}${path}`;
+  }
+
+  private userHeaders(token: AkahuToken) {
+    return {
+      Authorization: `Bearer ${token.userToken}`,
+      "X-Akahu-Id": this.config.appToken
     };
-
-    if (token) {
-      headers.authorization = `Bearer ${token.accessToken}`;
-    }
-
-    return headers;
   }
 
-  private toPath(value: string) {
-    if (value.startsWith("http://") || value.startsWith("https://")) {
-      const url = new URL(value);
-      return `${url.pathname}${url.search}`;
-    }
-
-    return value;
-  }
-
-  private async parseResponse(response: Response) {
-    const text = await response.text();
-    const body = text ? JSON.parse(text) : null;
+  // Include Akahu's response text when an API request fails
+  private async readResponse<T>(response: Response) {
+    const body = await readJsonBody(response);
 
     if (!response.ok) {
-      throw new Error(`PNZ API request failed: ${response.status} ${JSON.stringify(body)}`);
+      throw new Error(`Akahu API request failed: ${response.status} ${response.url} ${JSON.stringify(body)}`);
     }
 
-    return body;
+    return body as T;
+  }
+
+  private assertAppSecret() {
+    if (!this.config.appSecret) {
+      throw new Error("AKAHU_APP_SECRET is required for OAuth code exchange.");
+    }
   }
 }
 
+// Creates an Akahu client from environment variables
 export function createOpenBankingClientFromEnv() {
-  const required = [
-    "PNZ_BASE_URL",
-    "PNZ_API_VERSION",
-    "PNZ_CLIENT_ID",
-    "PNZ_CLIENT_KEY_ID",
-    "PNZ_REDIRECT_URI",
-    "PNZ_CLIENT_PRIVATE_KEY"
-  ];
+  const appToken = process.env.AKAHU_APP_TOKEN;
 
-  for (const key of required) {
-    if (!process.env[key]) {
-      throw new Error(`Missing required environment variable: ${key}`);
-    }
+  if (!appToken) {
+    throw new Error("Missing required Akahu environment variable: AKAHU_APP_TOKEN");
   }
 
-  return new OpenBankingClient({
-    baseUrl: process.env.PNZ_BASE_URL!,
-    apiVersion: process.env.PNZ_API_VERSION!,
-    clientId: process.env.PNZ_CLIENT_ID!,
-    clientKeyId: process.env.PNZ_CLIENT_KEY_ID!,
-    redirectUri: process.env.PNZ_REDIRECT_URI!,
-    privateKeyPem: process.env.PNZ_CLIENT_PRIVATE_KEY!
+  return new AkahuClient({
+    baseUrl: process.env.AKAHU_BASE_URL || "https://api.akahu.io/v1",
+    appToken,
+    appSecret: process.env.AKAHU_APP_SECRET,
+    redirectUri: process.env.AKAHU_REDIRECT_URI || `${process.env.APP_BASE_URL || "http://localhost:3000"}/api/open-banking/callback`,
+    oauthUrl: process.env.AKAHU_OAUTH_URL || "https://oauth.akahu.nz"
   });
+}
+
+// Combines several Akahu item lists into one list
+function combineItems<T extends { success?: boolean; items?: unknown[] }>(responses: T[]) {
+  return {
+    success: responses.every((response) => response.success !== false),
+    items: responses.flatMap((response) => response.items || [])
+  } as T;
+}
+
+function addCursorToPath(path: string, cursor?: string | null) {
+  if (!cursor) {
+    return path;
+  }
+
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}cursor=${encodeURIComponent(cursor)}`;
+}
+
+async function readJsonBody(response: Response) {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
 }

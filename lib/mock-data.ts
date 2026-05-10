@@ -1,6 +1,5 @@
-import { normalizePnzTransactions, type PnzTransaction, type PnzTransactionsResponse } from "./open-banking/normalize";
-import { type PnzBalancesResponse } from "./open-banking/balances";
-import type { Budget, CardProduct, RawBankTransaction } from "./types";
+import { categorizeTransactions } from "./categorization";
+import type { Budget, CardProduct, RawBankTransaction, Transaction } from "./types";
 
 export const payday = "2026-05-15";
 
@@ -276,104 +275,235 @@ export const rawBankTransactions: RawBankTransaction[] = [
   { id: "txn_072", date: "2026-01-16", description: "Z ENERGY GREENLANE 6601", account: "Everyday", amount: -76.4, status: "Booked" }
 ];
 
-export const pnzMockTransactionsResponse: PnzTransactionsResponse = {
-  Data: {
-    Transaction: rawBankTransactions.map(toPnzTransaction)
-  },
-  Links: {
-    Self: "/open-banking-nz/v2.3/transactions"
-  },
-  Meta: {
-    TotalPages: 1,
-    FirstAvailableDateTime: `${rawBankTransactions.at(-1)?.date || "2026-01-16"}T00:00:00.000Z`,
-    LastAvailableDateTime: `${rawBankTransactions[0]?.date || "2026-05-04"}T23:59:59.000Z`
-  }
+const demoAkahuCategories: Record<string, { name: string; group: string }> = {
+  Groceries: { name: "Supermarkets & Groceries", group: "Groceries" },
+  "Eating out": { name: "Cafes & Restaurants", group: "Lifestyle" },
+  Transport: { name: "Public Transport", group: "Transport" },
+  Fuel: { name: "Fuel", group: "Transport" },
+  Housing: { name: "Rent", group: "Housing" },
+  Utilities: { name: "Utilities", group: "Bills" },
+  Shopping: { name: "Retail", group: "Shopping" },
+  Subscriptions: { name: "Subscriptions", group: "Entertainment" },
+  Health: { name: "Health & Pharmacy", group: "Health" },
+  Insurance: { name: "Insurance", group: "Insurance" },
+  Education: { name: "Education", group: "Education" },
+  Entertainment: { name: "Movies & Events", group: "Entertainment" },
+  Travel: { name: "Travel", group: "Travel" },
+  Transfers: { name: "Account Transfers", group: "Transfers" },
+  Fees: { name: "Bank Fees", group: "Fees" },
+  Income: { name: "Salary & Wages", group: "Income" },
+  "Needs review": { name: "Uncategorised", group: "Needs review" }
 };
 
-export const pnzMockBalancesResponse: PnzBalancesResponse = {
-  Data: {
-    Balance: [
-      {
-        AccountId: "OBA-DEMO-EVERYDAY-00",
-        Type: "ForwardAvailable",
-        Amount: {
-          Amount: "2268.42",
-          Currency: "NZD"
-        },
-        CreditDebitIndicator: "Credit",
-        DateTime: "2026-05-05T12:00:00.000Z"
-      },
-      {
-        AccountId: "OBA-DEMO-BILLS-00",
-        Type: "ForwardAvailable",
-        Amount: {
-          Amount: "1000.00",
-          Currency: "NZD"
-        },
-        CreditDebitIndicator: "Credit",
-        DateTime: "2026-05-05T12:00:00.000Z"
-      }
-    ]
-  },
-  Links: {
-    Self: "/open-banking-nz/v2.3/balances"
-  }
+const demoMerchantWebsites: Record<string, string> = {
+  Woolworths: "https://www.woolworths.co.nz/",
+  "New World": "https://www.newworld.co.nz/",
+  "Pak'nSave": "https://www.paknsave.co.nz/",
+  Spotify: "https://www.spotify.com/nz/",
+  Netflix: "https://www.netflix.com/nz/",
+  "Z Energy": "https://z.co.nz/",
+  Kmart: "https://www.kmart.co.nz/",
+  "Chemist Warehouse": "https://www.chemistwarehouse.co.nz/"
 };
 
-export const transactions = normalizePnzTransactions(pnzMockTransactionsResponse);
+export const transactions: Transaction[] = categorizeTransactions(rawBankTransactions).map(toAkahuDemoTransaction);
 
-function toPnzTransaction(txn: RawBankTransaction): PnzTransaction {
-  const isCredit = txn.amount > 0;
-  const dateTime = `${txn.date}T12:00:00.000Z`;
+function toAkahuDemoTransaction(txn: ReturnType<typeof categorizeTransactions>[number], index: number): Transaction {
+  const account = getDemoAccount(txn.account);
+  const category = getDemoAkahuCategory(txn.category);
+  const merchant = getDemoMerchant(txn.merchant);
+  const pending = txn.status === "Pending";
 
   return {
-    AccountId: txn.account === "Bills" ? "OBA-DEMO-BILLS-00" : "OBA-DEMO-EVERYDAY-00",
-    TransactionId: txn.id,
-    TransactionReference: isCredit
-      ? {
-          DebtorName: getCounterparty(txn.description),
-          DebtorReference: {
-            Particulars: txn.description
-          }
-        }
-      : {
-          CreditorName: getCounterparty(txn.description),
-          CreditorReference: {
-            Particulars: txn.description
-          }
-        },
-    StatementReference: [],
-    Amount: {
-      Amount: Math.abs(txn.amount).toFixed(2),
-      Currency: "NZD"
-    },
-    CreditDebitIndicator: isCredit ? "Credit" : "Debit",
-    Status: txn.status === "Pending" || txn.status === "Upcoming" ? "Pending" : "Booked",
-    BookingDateTime: dateTime,
-    ValueDateTime: dateTime,
-    MerchantDetails: !isCredit
-      ? {
-          MerchantName: getCounterparty(txn.description)
-        }
-      : undefined,
-    TransactionInformation: txn.description,
-    BankTransactionCode: {
-      Code: isCredit ? "ReceivedCreditTransfer" : "DomesticCreditTransfer",
-      SubCode: txn.status === "Upcoming" ? "FutureDated" : "CardTransaction"
-    },
-    ProprietaryBankTransactionCode: {
-      Code: txn.status,
-      Issuer: "MoneyFit demo"
+    _id: pending ? undefined : txn.id.replace("txn_", "trans_demo_"),
+    _account: account.id,
+    _connection: "conn_demo_netly",
+    created_at: getDemoCreatedAt(txn.date),
+    updated_at: getDemoUpdatedAt(txn.date),
+    date: `${txn.date}T12:00:00.000Z`,
+    description: txn.rawDescription,
+    amount: txn.amount,
+    balance: getDemoBalanceAfterTransaction(txn, index),
+    type: getDemoTransactionType(txn),
+    merchant,
+    category,
+    meta: getDemoTransactionMeta(txn),
+    pending,
+    netly: {
+      accountName: txn.account,
+      accountCurrency: account.currency
     }
   };
 }
 
-function getCounterparty(description: string) {
-  return description
-    .replace(/\bvisa debit\b/gi, "")
-    .replace(/\beftpos\b/gi, "")
-    .replace(/\bonline\b/gi, "")
-    .replace(/\d{2,}/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+function getDemoAccount(accountName: string) {
+  if (accountName === "Bills") {
+    return {
+      id: "acc_demo_bills",
+      currency: "NZD",
+      openingBalance: 1000
+    };
+  }
+
+  return {
+    id: "acc_demo_everyday",
+    currency: "NZD",
+    openingBalance: 2268.42
+  };
+}
+
+function getDemoAkahuCategory(category: string) {
+  const categoryDetails = demoAkahuCategories[category] || {
+    name: category,
+    group: category
+  };
+
+  return {
+    _id: `nzfcc_demo_${slugify(categoryDetails.name)}`,
+    name: categoryDetails.name,
+    groups: {
+      personal_finance: {
+        _id: `group_demo_${slugify(categoryDetails.group)}`,
+        name: categoryDetails.group
+      }
+    }
+  };
+}
+
+function getDemoMerchant(merchantName: string) {
+  return {
+    _id: `merchant_demo_${slugify(merchantName)}`,
+    name: merchantName,
+    website: demoMerchantWebsites[merchantName]
+  };
+}
+
+function getDemoCreatedAt(date: string) {
+  return `${date}T14:20:00.000Z`;
+}
+
+function getDemoUpdatedAt(date: string) {
+  return `${date}T18:45:00.000Z`;
+}
+
+function getDemoBalanceAfterTransaction(txn: ReturnType<typeof categorizeTransactions>[number], index: number) {
+  const account = getDemoAccount(txn.account);
+  const trend = txn.account === "Bills" ? index * 3.25 : index * 7.15;
+  return Number((account.openingBalance + txn.amount - trend).toFixed(2));
+}
+
+function getDemoTransactionType(txn: ReturnType<typeof categorizeTransactions>[number]) {
+  if (txn.amount > 0 && txn.category === "Income") {
+    return "DIRECT CREDIT";
+  }
+
+  if (txn.category === "Transfers") {
+    return "TRANSFER";
+  }
+
+  if (txn.category === "Fees") {
+    return "FEE";
+  }
+
+  if (txn.rawDescription.includes("AUTOPAY")) {
+    return "STANDING ORDER";
+  }
+
+  if (txn.rawDescription.includes("VISA") || txn.rawDescription.includes("EFTPOS") || txn.rawDescription.includes("CARD")) {
+    return "EFTPOS";
+  }
+
+  return txn.amount > 0 ? "CREDIT" : "DEBIT";
+}
+
+function getDemoTransactionMeta(txn: ReturnType<typeof categorizeTransactions>[number]) {
+  const baseMeta = {
+    particulars: getDemoParticulars(txn),
+    code: getDemoCode(txn),
+    reference: getDemoReference(txn),
+    other_account: getDemoOtherAccount(txn),
+    card_suffix: getDemoCardSuffix(txn),
+    logo: `https://cdn.akahu.nz/logos/merchants/merchant_demo_${slugify(txn.merchant)}.png`
+  };
+
+  if (txn.rawDescription.includes("WISE")) {
+    return {
+      ...baseMeta,
+      conversion: {
+        amount: 3.49,
+        currency: "USD",
+        rate: 0.57
+      }
+    };
+  }
+
+  return baseMeta;
+}
+
+function getDemoParticulars(txn: ReturnType<typeof categorizeTransactions>[number]) {
+  if (txn.category === "Housing") {
+    return "Rent";
+  }
+
+  if (txn.category === "Income") {
+    return "Salary";
+  }
+
+  if (txn.category === "Transfers") {
+    return "Savings";
+  }
+
+  return txn.merchant.slice(0, 12);
+}
+
+function getDemoCode(txn: ReturnType<typeof categorizeTransactions>[number]) {
+  if (txn.category === "Housing") {
+    return "HOME";
+  }
+
+  if (txn.category === "Income") {
+    return "PAY";
+  }
+
+  if (txn.category === "Transfers") {
+    return "MOVE";
+  }
+
+  return txn.category.slice(0, 4).toUpperCase();
+}
+
+function getDemoReference(txn: ReturnType<typeof categorizeTransactions>[number]) {
+  if (txn.category === "Housing") {
+    return "Property 12A";
+  }
+
+  if (txn.category === "Income") {
+    return "Acme payroll";
+  }
+
+  return txn.rawDescription.slice(0, 18);
+}
+
+function getDemoOtherAccount(txn: ReturnType<typeof categorizeTransactions>[number]) {
+  if (txn.category === "Income") {
+    return "12-3000-1234567-00";
+  }
+
+  if (txn.category === "Housing") {
+    return "06-0411-9876543-00";
+  }
+
+  if (txn.category === "Transfers") {
+    return "38-9000-1234567-00";
+  }
+
+  return undefined;
+}
+
+function getDemoCardSuffix(txn: ReturnType<typeof categorizeTransactions>[number]) {
+  return txn.amount < 0 && txn.category !== "Housing" && txn.category !== "Transfers" ? "1234" : undefined;
+}
+
+function slugify(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }

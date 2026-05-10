@@ -1,15 +1,56 @@
+export type AkahuCategory = {
+  _id?: string;
+  name?: string;
+  groups?: {
+    personal_finance?: {
+      _id?: string;
+      name?: string;
+    };
+    [groupName: string]: { _id?: string; name?: string } | undefined;
+  };
+};
+
+export type AkahuMerchant = {
+  _id?: string;
+  name?: string;
+  website?: string;
+};
+
+export type AkahuTransactionMeta = {
+  particulars?: string;
+  code?: string;
+  reference?: string;
+  other_account?: string;
+  logo?: string;
+  card_suffix?: string;
+  conversion?: {
+    amount?: number;
+    currency?: string;
+    rate?: number;
+  };
+  [key: string]: unknown;
+};
+
 export type Transaction = {
-  id: string;
+  _id?: string;
+  _account?: string;
+  _connection?: string;
+  created_at?: string;
+  updated_at?: string;
   date: string;
-  rawDescription: string;
-  merchant: string;
-  category: string;
-  account: string;
+  description: string;
   amount: number;
-  status: "Booked" | "Pending" | "Upcoming";
-  confidence: number;
-  needsReview: boolean;
-  note?: string;
+  balance?: number;
+  type?: string;
+  merchant?: AkahuMerchant;
+  category?: AkahuCategory;
+  meta?: AkahuTransactionMeta;
+  pending?: boolean;
+  netly?: {
+    accountName?: string;
+    accountCurrency?: string;
+    categoryOverride?: string;
+  };
 };
 
 export type RawBankTransaction = {

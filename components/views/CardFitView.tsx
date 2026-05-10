@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { PanelTitle } from "@/components/ui/PanelTitle";
+import { PanelTitle } from "@/components/ui/panel-title";
 import { formatMoney } from "@/lib/insights";
 import type { CardFitBasis, CardValue } from "@/lib/types";
 
@@ -22,7 +22,7 @@ export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, car
         {!hasCardEligibleSpend && (
           <div className="status-banner neutral" role="status">
             <strong>No card-eligible spend yet.</strong>
-            <span>MoneyFit excludes income, transfers, fees, housing, upcoming payments, and needs-review rows from card rewards calculations.</span>
+            <span>Netly excludes income, transfers, fees, housing, upcoming payments, and needs-review rows from card rewards calculations.</span>
           </div>
         )}
         <div className="card-list">

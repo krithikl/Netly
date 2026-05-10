@@ -489,6 +489,14 @@ h2 {
   min-width: 0;
 }
 
+.chart-visual {
+  display: grid;
+  align-self: start;
+  justify-self: stretch;
+  min-height: clamp(280px, 26vw, 380px);
+  place-items: center;
+}
+
 .donut-wrap {
   position: relative;
   width: clamp(280px, 26vw, 380px);
@@ -605,8 +613,7 @@ h2 {
   justify-self: center;
 }
 
-.category-mobile-summary,
-.category-toggle {
+.category-mobile-summary {
   display: none;
 }
 
@@ -1209,6 +1216,10 @@ h2 {
     justify-items: center;
   }
 
+  .chart-visual {
+    min-height: clamp(320px, 34vw, 400px);
+  }
+
   .donut-wrap {
     width: clamp(320px, 34vw, 400px);
     height: clamp(320px, 34vw, 400px);
@@ -1547,6 +1558,10 @@ h2 {
     white-space: nowrap;
   }
 
+  .chart-visual {
+    min-height: min(58vw, 210px);
+  }
+
   .donut-wrap {
     width: min(58vw, 210px);
     height: min(58vw, 210px);
@@ -1566,10 +1581,6 @@ h2 {
     gap: 6px;
   }
 
-  .legend-list.is-mobile-collapsed .legend-row:nth-child(n+6) {
-    display: none;
-  }
-
   .legend-row {
     gap: 10px;
     padding: 7px 2px 8px;
@@ -1582,11 +1593,6 @@ h2 {
 
   .legend-track {
     height: 5px;
-  }
-
-  .category-toggle {
-    display: inline-flex;
-    justify-self: start;
   }
 
 }
@@ -1634,6 +1640,10 @@ h2 {
 
   .material-card {
     padding: 14px;
+  }
+
+  .chart-visual {
+    min-height: min(62vw, 190px);
   }
 
   .donut-wrap {

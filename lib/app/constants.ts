@@ -67,5 +67,6 @@ export const defaultCategoryColors: Record<string, string> = {
   Entertainment: "#ec407a",
   Transfers: "#8d6e63",
   Fees: "#d84315",
+  Other: "#9e9e9e",
   "Needs review": "#607d8b"
 };

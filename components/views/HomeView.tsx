@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import { useState } from "react";
 import { DonutChart } from "@/components/charts/DonutChart";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { Metric } from "@/components/ui/metric";
@@ -51,7 +50,6 @@ export function HomeView({
   upcomingTotal,
   isConnected
 }: HomeViewProps) {
-  const [showAllCategories, setShowAllCategories] = useState(false);
   const balanceLabel = getBalanceLabel(availableBalance);
   const safeToSpendLabel = `${formatMoney(safeToSpendAmount)} looks safe after upcoming bills and buffer.`;
   const metricGridClassName = getLoadingClassName("metric-grid", isLoadingTransactions);
@@ -62,7 +60,6 @@ export function HomeView({
   const topCategory = chartCategories[0] ?? null;
   const openConnectView = () => setActiveView("connect");
   const openTransactionsView = () => setActiveView("transactions");
-  const toggleCategoryList = () => setShowAllCategories((isExpanded) => !isExpanded);
 
   return (
     <>
@@ -115,30 +112,20 @@ export function HomeView({
             </div>
           )}
           <div className="chart-layout">
-            <DonutChart
-              categories={chartCategories}
-              categoryColors={categoryColors}
-              hoveredCategory={hoveredCategory}
-              onHover={setHoveredCategory}
-            />
+            <div className="chart-visual">
+              <DonutChart
+                categories={chartCategories}
+                categoryColors={categoryColors}
+                hoveredCategory={hoveredCategory}
+                onHover={setHoveredCategory}
+              />
+            </div>
             <CategoryLegend
               categories={chartCategories}
               categoryColors={categoryColors}
               chartTotal={chartTotal}
-              isExpanded={showAllCategories}
             />
           </div>
-          {chartCategories.length > 5 && (
-            <Button
-              aria-expanded={showAllCategories}
-              className="category-toggle"
-              onClick={toggleCategoryList}
-              type="button"
-              variant="secondary"
-            >
-              {showAllCategories ? "Show top categories" : "Show all categories"}
-            </Button>
-          )}
         </section>
 
         <section className="material-card">
@@ -168,22 +155,15 @@ type CategoryLegendProps = {
   categories: { category: string; amount: number }[];
   categoryColors: Record<string, string>;
   chartTotal: number;
-  isExpanded: boolean;
 };
 
-// CSS hides extra rows on mobile while desktop keeps the full list
-function CategoryLegend({
-  categories,
-  categoryColors,
-  chartTotal,
-  isExpanded
-}: CategoryLegendProps) {
+function CategoryLegend({ categories, categoryColors, chartTotal }: CategoryLegendProps) {
   if (categories.length === 0) {
     return <div className="empty-state">No spending categories found for this period.</div>;
   }
 
   return (
-    <div className={clsx("legend-list", !isExpanded && "is-mobile-collapsed")}>
+    <div className="legend-list">
       {categories.map((item) => (
         <CategoryLegendRow
           categoryColors={categoryColors}

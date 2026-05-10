@@ -26,6 +26,8 @@ import { useOpenBankingData } from "@/hooks/useOpenBankingData";
 import { useRoutedView } from "@/hooks/useRoutedView";
 import type { PeriodOption } from "@/lib/types";
 
+const topCategoryLimit = 5;
+
 // Connects banking data, category settings, routing, and screen props for the app
 export function useNetlyApp() {
   const { activeView, setActiveView } = useRoutedView();
@@ -119,7 +121,7 @@ export function useNetlyApp() {
   const upcoming = useMemo(() => periodTransactions.filter((transaction) => getTransactionStatus(transaction) === "Upcoming"), [periodTransactions]);
   const upcomingTotal = useMemo(() => sum(upcoming.map((transaction) => Math.abs(transaction.amount))), [upcoming]);
   const reviewCount = useMemo(() => periodTransactions.filter(transactionNeedsReview).length, [periodTransactions]);
-  const chartCategories = useMemo(() => categoryTotals.filter((item) => item.category !== "Income").slice(0, 8), [categoryTotals]);
+  const chartCategories = useMemo(() => groupCategoriesForChart(categoryTotals, topCategoryLimit), [categoryTotals]);
   const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
   const visibleTransactions = useMemo(
     () => getVisibleTransactions(periodTransactions, query, transactionCategory, transactionFilter, transactionSort),
@@ -207,4 +209,19 @@ function getCompletionMessage(isComplete: boolean, payload: { error?: string; me
   }
 
   return payload.message || "Connected.";
+}
+
+function groupCategoriesForChart(categories: { category: string; amount: number }[], limit: number) {
+  const sortedCategories = categories
+    .filter((item) => item.category !== "Income")
+    .sort((first, second) => second.amount - first.amount);
+
+  if (sortedCategories.length <= limit) {
+    return sortedCategories;
+  }
+
+  const visibleCategories = sortedCategories.slice(0, limit);
+  const otherAmount = sum(sortedCategories.slice(limit).map((item) => item.amount));
+
+  return [...visibleCategories, { category: "Other", amount: otherAmount }];
 }

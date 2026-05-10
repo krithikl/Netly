@@ -564,6 +564,7 @@ h2 {
   z-index: 0;
   inset: 0;
   display: grid;
+  gap: 4px;
   place-content: center;
   text-align: center;
   pointer-events: none;
@@ -611,10 +612,6 @@ h2 {
   align-self: stretch;
   align-content: center;
   justify-self: center;
-}
-
-.category-mobile-summary {
-  display: none;
 }
 
 .stable-list-panel {
@@ -1524,40 +1521,6 @@ h2 {
     gap: 2px;
   }
 
-  .category-mobile-summary {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .category-mobile-summary div {
-    min-width: 0;
-    display: grid;
-    gap: 3px;
-    border-radius: 16px;
-    padding: 12px;
-    background: var(--surface-2);
-  }
-
-  .category-mobile-summary span,
-  .category-mobile-summary small {
-    overflow: hidden;
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 800;
-    text-overflow: ellipsis;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .category-mobile-summary strong {
-    overflow: hidden;
-    font-size: 18px;
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .chart-visual {
     min-height: min(58vw, 210px);
   }
@@ -1569,7 +1532,20 @@ h2 {
   }
 
   .donut-center {
-    display: none;
+    display: grid;
+    gap: 2px;
+  }
+
+  .donut-center span {
+    font-size: 11px;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  .donut-center strong {
+    margin-top: 3px;
+    font-size: clamp(17px, 4.8vw, 22px);
+    line-height: 1;
   }
 
   .chart-panel .legend-list {
@@ -1653,10 +1629,6 @@ h2 {
 
   .chart-panel .legend-list {
     width: 100%;
-  }
-
-  .category-mobile-summary {
-    grid-template-columns: 1fr;
   }
 
   .transaction-details-sheet {

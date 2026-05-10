@@ -57,7 +57,6 @@ export function HomeView({
   const recentActivityClassName = getLoadingClassName("stable-list-panel", isLoadingTransactions);
   const recentTransactions = transactionPreview.slice(0, 5);
   const showConnectButton = !isConnected;
-  const topCategory = chartCategories[0] ?? null;
   const openConnectView = () => setActiveView("connect");
   const openTransactionsView = () => setActiveView("transactions");
 
@@ -98,19 +97,6 @@ export function HomeView({
       <div className={dashboardGridClassName} aria-busy={isLoadingTransactions}>
         <section className="material-card chart-panel category-panel">
           <PanelTitle title="Akahu categories" subtitle="Spending by category" />
-          {topCategory && (
-            <div className="category-mobile-summary">
-              <div>
-                <span>Total spend</span>
-                <strong>{formatMoney(chartTotal)}</strong>
-              </div>
-              <div>
-                <span>Top category</span>
-                <strong>{topCategory.category}</strong>
-                <small>{formatMoney(topCategory.amount)}</small>
-              </div>
-            </div>
-          )}
           <div className="chart-layout">
             <div className="chart-visual">
               <DonutChart

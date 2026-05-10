@@ -94,7 +94,7 @@ export function useOpenBankingData() {
   // Save the selected mode so refreshes keep using Akahu or demo data
   const changeDataMode = useCallback((mode: DataMode) => {
     setDataMode(mode);
-    window.localStorage.setItem("moneyfit_data_mode", mode);
+    window.localStorage.setItem("netly_data_mode", mode);
     setTransactionLoadError("");
     setTransactionLoadNotice("");
 

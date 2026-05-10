@@ -27,7 +27,7 @@ import { useRoutedView } from "@/hooks/useRoutedView";
 import type { PeriodOption } from "@/lib/types";
 
 // Connects banking data, category settings, routing, and screen props for the app
-export function useMoneyFitApp() {
+export function useNetlyApp() {
   const { activeView, setActiveView } = useRoutedView();
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
   const [query, setQuery] = useState("");
@@ -65,7 +65,7 @@ export function useMoneyFitApp() {
     if (response.ok) {
       setConnectionResponse("");
       banking.setDataMode("user");
-      window.localStorage.setItem("moneyfit_data_mode", "user");
+      window.localStorage.setItem("netly_data_mode", "user");
       await banking.refreshTransactions("user");
     }
   }, [banking.refreshTransactions, banking.setDataMode, connectionResponse]);

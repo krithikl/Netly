@@ -35,7 +35,7 @@ export function ConnectView({
             Connect through Akahu OAuth, or use a Personal App user token while developing.
           </FlowStep>
           <FlowStep number="2" title="Read accounts">
-            MoneyFit reads Akahu accounts directly, including balances and account metadata.
+            Netly reads Akahu accounts directly, including balances and account metadata.
           </FlowStep>
           <FlowStep number="3" title="Read transactions">
             Settled and pending Akahu transactions are loaded from connected accounts.

@@ -63,7 +63,7 @@ function getEmptyTransactionsNotice(accounts: Array<{ attributes?: string[]; con
   const hasTransactionCapableAccount = accounts.some((account) => account.attributes?.includes("TRANSACTIONS"));
 
   if (hasDemoBankAccount && !hasTransactionCapableAccount) {
-    return "Akahu Demo Bank connected successfully, but Demo Bank enduring connections do not return transaction data. Use MoneyFit demo mode or connect a real transaction-capable account for transaction testing.";
+    return "Akahu Demo Bank connected successfully, but Demo Bank enduring connections do not return transaction data. Use Netly demo mode or connect a real transaction-capable account for transaction testing.";
   }
 
   if (!hasTransactionCapableAccount) {

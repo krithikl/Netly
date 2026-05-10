@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const error = request.nextUrl.searchParams.get("error");
-  const expectedState = request.cookies.get("moneyfit_akahu_state")?.value;
+  const expectedState = request.cookies.get("netly_akahu_state")?.value;
 
   if (error) {
     return redirectWithStatus(request, `connect_error=${encodeURIComponent(error)}`);
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       path: "/",
       maxAge: 60 * 60 * 24 * 365
     });
-    response.cookies.delete("moneyfit_akahu_state");
+    response.cookies.delete("netly_akahu_state");
 
     return response;
   } catch (exchangeError) {

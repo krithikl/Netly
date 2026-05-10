@@ -2,7 +2,7 @@
 
 ## Product Wedge
 
-MoneyFit should avoid becoming a generic budgeting app.
+Netly should avoid becoming a generic budgeting app.
 
 The sharp version is:
 
@@ -10,12 +10,12 @@ The sharp version is:
 
 ## Current Provider Direction
 
-MoneyFit now treats Akahu as the open banking provider for this branch. The UI should use Akahu-shaped data as much as possible:
+Netly now treats Akahu as the open banking provider for this branch. The UI should use Akahu-shaped data as much as possible:
 
 - Accounts use Akahu account fields such as `_id`, `name`, `formatted_account`, `balance`, `type`, and `meta`.
 - Transactions use Akahu fields such as `_id`, `_account`, `date`, `description`, `amount`, `type`, `merchant`, `category`, and `meta`.
 - Categories should come from Akahu enrichment first, especially `category.groups.personal_finance.name`.
-- MoneyFit-specific display helpers are allowed for labels, filtering, charting, and card-fit calculations.
+- Netly-specific display helpers are allowed for labels, filtering, charting, and card-fit calculations.
 
 ## First User Journey
 

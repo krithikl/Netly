@@ -16,7 +16,7 @@ export function getAkahuTransactions(response: AkahuTransactionsResponse, accoun
   const accountCurrencies = new Map(accounts.map((account) => [account._id, account.balance?.currency || "NZD"]));
   const transactions = response.items || (response.item ? [response.item] : []);
 
-  return transactions.map((transaction) => attachMoneyFitAccountInfo(transaction, accountNames, accountCurrencies));
+  return transactions.map((transaction) => attachNetlyAccountInfo(transaction, accountNames, accountCurrencies));
 }
 
 // Removes duplicate transactions from booked and pending feeds
@@ -35,8 +35,8 @@ export function dedupeAkahuTransactions(transactions: Transaction[]) {
   });
 }
 
-// Adds MoneyFit account display fields without changing raw Akahu fields
-function attachMoneyFitAccountInfo(
+// Adds Netly account display fields without changing raw Akahu fields
+function attachNetlyAccountInfo(
   transaction: Transaction,
   accountNames: Map<string, string>,
   accountCurrencies: Map<string, string>
@@ -51,8 +51,8 @@ function attachMoneyFitAccountInfo(
 
   return {
     ...transaction,
-    moneyfit: {
-      ...transaction.moneyfit,
+    netly: {
+      ...transaction.netly,
       accountName,
       accountCurrency
     }

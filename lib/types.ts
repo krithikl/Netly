@@ -46,7 +46,7 @@ export type Transaction = {
   category?: AkahuCategory;
   meta?: AkahuTransactionMeta;
   pending?: boolean;
-  moneyfit?: {
+  netly?: {
     accountName?: string;
     accountCurrency?: string;
     categoryOverride?: string;

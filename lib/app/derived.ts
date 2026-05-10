@@ -22,8 +22,8 @@ export function applyCategoryOverrides(transactions: Transaction[], categoryOver
 
     return {
       ...transaction,
-      moneyfit: {
-        ...transaction.moneyfit,
+      netly: {
+        ...transaction.netly,
         categoryOverride: override
       }
     };

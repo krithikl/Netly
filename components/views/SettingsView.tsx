@@ -13,7 +13,7 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { moneyfitPalette } from "@/lib/app/constants";
+import { netlyPalette } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
 
 type SettingsViewProps = {
@@ -118,7 +118,7 @@ function CategoryColorRow({
             <PopoverContent align="end" className="w-auto p-4">
               <p className="mb-3 text-sm font-bold text-[var(--muted)]">Select a color</p>
               <div className="grid grid-cols-5 gap-2">
-                {moneyfitPalette.map((color) => (
+                {netlyPalette.map((color) => (
                   <ColorOptionButton
                     key={color}
                     category={category}

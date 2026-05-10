@@ -317,7 +317,7 @@ function toAkahuDemoTransaction(txn: ReturnType<typeof categorizeTransactions>[n
   return {
     _id: pending ? undefined : txn.id.replace("txn_", "trans_demo_"),
     _account: account.id,
-    _connection: "conn_demo_moneyfit",
+    _connection: "conn_demo_netly",
     created_at: getDemoCreatedAt(txn.date),
     updated_at: getDemoUpdatedAt(txn.date),
     date: `${txn.date}T12:00:00.000Z`,
@@ -329,7 +329,7 @@ function toAkahuDemoTransaction(txn: ReturnType<typeof categorizeTransactions>[n
     category,
     meta: getDemoTransactionMeta(txn),
     pending,
-    moneyfit: {
+    netly: {
       accountName: txn.account,
       accountCurrency: account.currency
     }

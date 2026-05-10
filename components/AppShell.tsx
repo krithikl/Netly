@@ -3,10 +3,10 @@
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ActiveView } from "@/components/views/ActiveView";
-import { useMoneyFitApp } from "@/hooks/useMoneyFitApp";
+import { useNetlyApp } from "@/hooks/useNetlyApp";
 
 export function AppShell() {
-  const app = useMoneyFitApp();
+  const app = useNetlyApp();
 
   return (
     <div className="app-shell">

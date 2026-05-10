@@ -42,7 +42,7 @@ export function getTransactionMerchant(transaction: Transaction) {
 // Picks the category to show, with local edits taking priority
 export function getTransactionCategory(transaction: Transaction) {
   return firstUsefulText([
-    transaction.moneyfit?.categoryOverride,
+    transaction.netly?.categoryOverride,
     transaction.category?.groups?.personal_finance?.name,
     transaction.category?.name
   ], "Needs review");
@@ -50,14 +50,14 @@ export function getTransactionCategory(transaction: Transaction) {
 
 export function getTransactionAccountLabel(transaction: Transaction) {
   return firstUsefulText([
-    transaction.moneyfit?.accountName,
+    transaction.netly?.accountName,
     transaction._account,
     transaction.meta?.other_account
   ], "Akahu account");
 }
 
 export function getTransactionCurrency(transaction: Transaction) {
-  return transaction.moneyfit?.accountCurrency || "NZD";
+  return transaction.netly?.accountCurrency || "NZD";
 }
 
 export function getTransactionAmountLabel(transaction: Transaction) {
@@ -128,7 +128,7 @@ export function getTransactionRawText(transaction: Transaction) {
 
 // Scores how reliable the category looks
 export function getTransactionConfidence(transaction: Transaction) {
-  if (transaction.moneyfit?.categoryOverride) {
+  if (transaction.netly?.categoryOverride) {
     return 1;
   }
 

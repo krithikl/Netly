@@ -1,6 +1,6 @@
-# MoneyFit
+# Netly
 
-MoneyFit helps New Zealanders see where their money is going, spot repeat spending, and compare whether a different card could give better value.
+Netly helps New Zealanders see where their money is going, spot repeat spending, and compare whether a different card could give better value.
 
 It connects to Akahu for account and transaction data, uses Akahu merchant/category enrichment where available, and falls back to demo data while you are building locally.
 
@@ -32,6 +32,15 @@ npm run dev
 Open `http://localhost:3000`.
 
 Copy `.env.example` to `.env.local` and add Akahu values when testing real data. You can also paste a Personal App User Access Token in the Connect page during development.
+
+## Akahu Schemas
+
+Akahu documents the account and transaction response models here:
+
+- Transaction model: `https://developers.akahu.nz/docs/the-transaction-model`
+- Account model: `https://developers.akahu.nz/me/docs/the-account-model`
+
+Akahu fields can vary by app permissions, account type, and integration type. Keep local transaction types permissive for optional `merchant`, `category`, `meta`, pending rows, and enrichment data. Keep account types permissive for optional `balance`, `formatted_account`, `meta`, `refreshed`, and connection/provider fields.
 
 ## Cost
 

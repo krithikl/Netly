@@ -1,6 +1,6 @@
 import type { NextRequest, NextResponse } from "next/server";
 
-export const akahuUserTokenCookieName = "moneyfit_akahu_user_token";
+export const akahuUserTokenCookieName = "netly_akahu_user_token";
 
 export function getValidAccessToken(request: NextRequest) {
   const userToken = request.cookies.get(akahuUserTokenCookieName)?.value || process.env.AKAHU_USER_TOKEN || "";

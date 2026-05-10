@@ -32,7 +32,7 @@ export function Sidebar({ activeView, changeDataMode, connectionCopy, connection
       <div className="brand">
         <div className="brand-mark">M</div>
         <div>
-          <div className="brand-name">MoneyFit</div>
+          <div className="brand-name">Netly</div>
           <div className="brand-subtitle">Open banking assistant</div>
         </div>
       </div>

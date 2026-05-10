@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MoneyFit MVP",
+  title: "Netly MVP",
   description: "NZ open banking spend insights and card fit"
 };
 

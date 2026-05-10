@@ -20,7 +20,7 @@ export function readCategoryColors() {
 }
 
 export function readInitialDataMode(): DataMode {
-  return window.localStorage.getItem("moneyfit_data_mode") === "demo" ? "demo" : "user";
+  return window.localStorage.getItem("netly_data_mode") === "demo" ? "demo" : "user";
 }
 
 export function readAuthResponseCookie() {

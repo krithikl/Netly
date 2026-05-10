@@ -7,7 +7,7 @@ export async function GET() {
     const state = crypto.randomUUID();
     const response = NextResponse.redirect(client.getAuthorizationUrl(state));
 
-    response.cookies.set("moneyfit_akahu_state", state, {
+    response.cookies.set("netly_akahu_state", state, {
       httpOnly: true,
       sameSite: "lax",
       path: "/",

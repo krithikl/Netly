@@ -12,13 +12,13 @@ export const navItems: { label: string; view: View; icon: string }[] = [
 
 export const periods: PeriodOption[] = ["This month", "30 days", "90 days", "All"];
 
-export const categoryOverridesStorageKey = "moneyfit_category_overrides";
+export const categoryOverridesStorageKey = "netly_category_overrides";
 
-export const customCategoriesStorageKey = "moneyfit_custom_categories";
+export const customCategoriesStorageKey = "netly_custom_categories";
 
-export const deletedCategoriesStorageKey = "moneyfit_deleted_categories";
+export const deletedCategoriesStorageKey = "netly_deleted_categories";
 
-export const categoryColorsStorageKey = "moneyfit_category_colors";
+export const categoryColorsStorageKey = "netly_category_colors";
 
 export const defaultTransactionCategories = [
   "Groceries",
@@ -42,7 +42,7 @@ export const defaultTransactionCategories = [
   "Needs review"
 ];
 
-export const moneyfitPalette = [
+export const netlyPalette = [
   "#ef5350", "#d84315", "#f57c00", "#ffb300", "#43a047",
   "#26a69a", "#00a693", "#4285f4", "#5e97f6", "#7e57c2",
   "#ab47bc", "#ec407a", "#8d6e63", "#78909c", "#607d8b"

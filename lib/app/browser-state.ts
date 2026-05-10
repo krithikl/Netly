@@ -27,12 +27,12 @@ export function readAuthResponseCookie() {
   return "";
 }
 
+// Reads Akahu callback URL params, shows a status message, then cleans the URL
 export function handleCallbackParams({
   setSyncResult
 }: {
   setSyncResult: (message: string) => void;
 }) {
-  // Translate OAuth callback query params into app state, then clean the URL.
   const params = new URLSearchParams(window.location.search);
   const connected = params.get("connected");
   const connectionError = params.get("connect_error") || params.get("connectionError");

@@ -21,8 +21,8 @@ export function getViewForPathname(pathname: string): View {
   return routeViews[pathname] || "home";
 }
 
+// Only allow URL segments that match known app pages
 export function getViewForRouteSegment(segment: string): View | null {
-  // Dynamic route segments stay constrained to known app views so unknown URLs return Next's 404.
   const route = `/${segment}`;
   return routeViews[route] || null;
 }

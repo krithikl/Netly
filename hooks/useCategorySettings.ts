@@ -13,6 +13,7 @@ import { readCategoryColors, readCategoryOverrides, readCustomCategories, readDe
 import { getTransactionCategory } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
+// Manages saved category edits, custom categories, removed categories, and colors
 export function useCategorySettings(
   transactions: Transaction[],
   categories: { category: string; amount: number }[]
@@ -81,13 +82,13 @@ export function useCategorySettings(
   };
 }
 
+// Builds one sorted category list for filters and category selectors
 function getTransactionCategoryOptions(
   transactions: Transaction[],
   categories: { category: string; amount: number }[],
   customCategories: string[],
   deletedCategories: string[]
 ) {
-  // Merge default, live, and user-created categories so every selector offers the same sorted options.
   const categorySet = new Set<string>();
   defaultTransactionCategories.forEach((category) => categorySet.add(category));
   categories.forEach((item) => categorySet.add(item.category));

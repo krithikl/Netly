@@ -26,6 +26,7 @@ import { useOpenBankingData } from "@/hooks/useOpenBankingData";
 import { useRoutedView } from "@/hooks/useRoutedView";
 import type { PeriodOption } from "@/lib/types";
 
+// Connects banking data, category settings, routing, and screen props for the app
 export function useMoneyFitApp() {
   const { activeView, setActiveView } = useRoutedView();
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
@@ -48,6 +49,7 @@ export function useMoneyFitApp() {
   const recurringTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, "90 days"), [workingTransactions]);
   const categoryTotals = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
 
+  // Saves a pasted or callback Akahu token, then reloads live Akahu data
   const completeOpenBankingConnection = useCallback(async (responseValue?: string) => {
     const response = await fetch("/api/open-banking/complete", {
       method: "POST",
@@ -73,6 +75,7 @@ export function useMoneyFitApp() {
     hasAutoCompletedRef.current = false;
   }, []);
 
+  // Loads saved settings and the first data source when the app starts
   useEffect(() => {
     categories.restoreCategorySettings();
 
@@ -95,6 +98,7 @@ export function useMoneyFitApp() {
     });
   }, []);
 
+  // Submits callback token data once, while still allowing manual token paste
   useEffect(() => {
     if (connectionResponse.trim() && !hasAutoCompletedRef.current) {
       hasAutoCompletedRef.current = true;

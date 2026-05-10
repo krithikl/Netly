@@ -59,8 +59,8 @@ const initialTooltipState: TooltipState = {
 };
 const mobileChartQuery = "(max-width: 768px)";
 
+// Shows the category donut chart with hover tooltips and mobile sizing
 export function DonutChart({ categories, categoryColors, hoveredCategory, onHover }: DonutChartProps) {
-  // Chart.js owns hover geometry, while React stores only the small external tooltip state.
   const [tooltipState, setTooltipState] = useState<TooltipState>(initialTooltipState);
   const [isMobileChart, setIsMobileChart] = useState(false);
   const total = sum(categories.map((item) => item.amount));
@@ -142,6 +142,7 @@ function getChartData(categories: ChartCategory[], categoryColors: Record<string
   };
 }
 
+// Keeps the chart settings in one place
 function getChartOptions(
   onHover: (event: ChartEvent, elements: ActiveElement[]) => void,
   onExternalTooltip: (context: ExternalTooltipContext) => void,
@@ -189,8 +190,8 @@ function getCategoryFromElements(categories: ChartCategory[], elements: ActiveEl
 
 
 
+// Turns Chart.js tooltip data into React state
 function getExternalTooltipState(tooltip: TooltipModel<"doughnut">, currentTooltip: TooltipState): TooltipState {
-  // Convert Chart.js tooltip internals into stable React state without updating when hidden.
   const item = tooltip.dataPoints?.[0];
 
   if (!item || tooltip.opacity === 0) {
@@ -219,8 +220,8 @@ function getTooltipItemElement(item: unknown) {
   return item.element;
 }
 
+// Puts the tooltip near the middle of the hovered slice
 function getTooltipPoint(element: unknown, tooltip: TooltipModel<"doughnut">): TooltipPoint {
-  // Prefer arc midpoint positioning so the custom tooltip follows the hovered slice, not just the cursor.
   if (!isDoughnutArcGeometry(element)) {
     return {
       left: tooltip.caretX,
@@ -251,8 +252,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+// Skips state updates when the tooltip has not changed
 function getNextTooltipState(currentTooltip: TooltipState, nextTooltip: TooltipState) {
-  // Avoid redundant state updates because Chart.js can call the external tooltip handler very frequently.
   if (
     currentTooltip.amount === nextTooltip.amount &&
     currentTooltip.category === nextTooltip.category &&

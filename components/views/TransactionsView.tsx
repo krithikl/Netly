@@ -37,6 +37,7 @@ type TransactionsViewProps = {
 const transactionFilters: TransactionFilter[] = ["All", "Expenses", "Income", "Upcoming"];
 const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount high", "Amount low"];
 
+// Handles transaction search, filters, sorting, and category creation
 export function TransactionsView({
   categoryColors,
   categoryOptions,
@@ -53,7 +54,6 @@ export function TransactionsView({
   transactionSort,
   transactions
 }: TransactionsViewProps) {
-  // Keep transient drawer and new-category state local so global app state only stores active filters.
   const [newCategory, setNewCategory] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -85,8 +85,9 @@ export function TransactionsView({
     setTransactionCategory([]);
   };
   const handleDesktopCategoryChange = (category: string) => setTransactionCategory(category === "All categories" ? [] : [category]);
+
+  // Let mobile users choose multiple categories, or clear them with All categories
   const toggleTransactionCategory = (category: string) => {
-    // In the mobile drawer, category chips are multi-select and All categories acts as a clear action.
     if (category === "All categories") {
       setTransactionCategory([]);
       return;
@@ -199,6 +200,7 @@ type TransactionFilterDialogProps = {
   transactionFilter: TransactionFilter;
 };
 
+// Shows mobile filters in a bottom drawer
 function TransactionFilterDialog({
   categoryOptions,
   onCategoryToggle,
@@ -209,7 +211,6 @@ function TransactionFilterDialog({
   transactionCategory,
   transactionFilter
 }: TransactionFilterDialogProps) {
-  // Vaul Drawer is used here instead of Dialog so mobile filters behave like a native bottom drawer.
   return (
     <Drawer onOpenChange={onOpenChange} open={open}>
       <DrawerContent className="mobile-filter-drawer">
@@ -266,6 +267,7 @@ type TransactionSortDialogProps = {
   transactionSort: TransactionSort;
 };
 
+// Shows mobile sorting in a bottom drawer and applies the choice immediately
 function TransactionSortDialog({
   onApply,
   onOpenChange,
@@ -273,7 +275,6 @@ function TransactionSortDialog({
   open,
   transactionSort
 }: TransactionSortDialogProps) {
-  // Sort stays separate from filters because it is a single-choice action with a smaller drawer.
   const handleSortChange = (sort: TransactionSort) => {
     onSortChange(sort);
     onApply();
@@ -321,8 +322,8 @@ function getMatchingCategory(categories: string[], category: string) {
   return categories.find((currentCategory) => currentCategory.toLowerCase() === category.toLowerCase()) || "";
 }
 
+// Counts hidden mobile filters so the Filters button can show a badge
 function getActiveFilterCount(transactionFilter: TransactionFilter, transactionCategory: string[]) {
-  // Count status plus each selected category so the Filters button reflects multi-select state.
   let count = 0;
 
   if (transactionFilter !== "All") {

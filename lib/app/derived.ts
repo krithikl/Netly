@@ -11,8 +11,8 @@ import {
 } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
+// Applies saved category edits without changing the original Akahu records
 export function applyCategoryOverrides(transactions: Transaction[], categoryOverrides: Record<string, string>) {
-  // Overlay local category edits without mutating the original transaction objects returned by Akahu.
   return transactions.map((transaction) => {
     const override = categoryOverrides[getTransactionId(transaction)];
 
@@ -30,6 +30,7 @@ export function applyCategoryOverrides(transactions: Transaction[], categoryOver
   });
 }
 
+// Filters and sorts transactions for the Transactions page
 export function getVisibleTransactions(
   transactions: Transaction[],
   query: string,
@@ -37,7 +38,6 @@ export function getVisibleTransactions(
   transactionFilter: TransactionFilter,
   transactionSort: TransactionSort
 ) {
-  // Apply search, category, status, and sort in one derived step so the UI list has a single source of truth.
   const normalizedQuery = query.trim().toLowerCase();
 
   return transactions
@@ -45,6 +45,7 @@ export function getVisibleTransactions(
     .sort((first, second) => compareTransactions(first, second, transactionSort));
 }
 
+// Checks whether one transaction matches the active filters and search text
 function matchesTransactionFilters(transaction: Transaction, normalizedQuery: string, transactionCategories: string[], transactionFilter: TransactionFilter) {
   const category = getTransactionCategory(transaction);
   const matchesCategory = transactionCategories.length === 0 || transactionCategories.includes(category);
@@ -57,7 +58,6 @@ function matchesTransactionFilters(transaction: Transaction, normalizedQuery: st
     return true;
   }
 
-  // Search uses display-safe fields so users can find merchant, account, category, or raw bank text.
   const searchableText = `${getTransactionMerchant(transaction)} ${category} ${getTransactionAccountLabel(transaction)} ${getTransactionRawText(transaction)}`.toLowerCase();
   return searchableText.includes(normalizedQuery);
 }
@@ -124,8 +124,8 @@ export function getDataSourceLabel(isLoadingTransactions: boolean, dataMode: Dat
   return isConnected ? "Akahu" : "no connected Akahu data";
 }
 
+// Shows the linked account name, or a simple count when there are multiple accounts
 export function getLinkedAccountLabel(primaryLinkedAccount: LinkedAccount | null, linkedAccountCount: number, isConnected: boolean) {
-  // Prefer the primary account identity, then fall back to a count when Akahu returns multiple accounts.
   if (primaryLinkedAccount) {
     const ownerPrefix = primaryLinkedAccount.ownerName ? `${primaryLinkedAccount.ownerName} · ` : "";
     return `${ownerPrefix}${primaryLinkedAccount.displayName} ${primaryLinkedAccount.identification}`;

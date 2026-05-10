@@ -29,6 +29,7 @@ type AccountsPayload = {
   notice?: string;
 };
 
+// Loads Akahu or demo data and keeps accounts, balances, and transactions together
 export function useOpenBankingData() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
@@ -47,8 +48,8 @@ export function useOpenBankingData() {
     setAvailableBalance(null);
   }, []);
 
+  // Demo mode can fall back to sample data. Akahu mode should show the connection problem
   const applyFallbackState = useCallback((mode: DataMode, error: unknown, fallbackMessage: string) => {
-    // Only demo mode receives sample data; real user mode should make connection failures visible instead.
     const isDemoMode = mode === "demo";
 
     setTransactions(isDemoMode ? fallbackTransactions : []);
@@ -61,8 +62,8 @@ export function useOpenBankingData() {
     setIsLoadingTransactions(false);
   }, []);
 
+  // Load transactions, balances, and accounts together so the screen stays consistent
   const refreshTransactions = useCallback(async (mode: DataMode = dataMode) => {
-    // Load the three banking-dependent slices together so the UI never mixes stale balances with fresh transactions.
     setIsLoadingTransactions(true);
     resetBankData();
 
@@ -90,8 +91,8 @@ export function useOpenBankingData() {
     setIsLoadingTransactions(false);
   }, [dataMode, resetBankData]);
 
+  // Save the selected mode so refreshes keep using Akahu or demo data
   const changeDataMode = useCallback((mode: DataMode) => {
-    // Persist the mode because users often switch to demo data while testing Akahu connection states locally.
     setDataMode(mode);
     window.localStorage.setItem("moneyfit_data_mode", mode);
     setTransactionLoadError("");

@@ -2,8 +2,8 @@ import type { Transaction } from "@/lib/types";
 
 export type TransactionStatus = "Booked" | "Pending" | "Upcoming";
 
+// Returns a stable transaction ID, even when Akahu does not send one
 export function getTransactionId(transaction: Transaction) {
-  // Pending Akahu rows may not have an id, so build a stable fallback from immutable transaction fields.
   if (transaction._id) {
     return transaction._id;
   }
@@ -29,8 +29,8 @@ export function getTransactionStatus(transaction: Transaction): TransactionStatu
   return "Booked";
 }
 
+// Picks the best merchant name available for display
 export function getTransactionMerchant(transaction: Transaction) {
-  // Prefer enriched merchant data, then fall back through bank text fields in order of user usefulness.
   return firstUsefulText([
     transaction.merchant?.name,
     transaction.meta?.particulars,
@@ -39,8 +39,8 @@ export function getTransactionMerchant(transaction: Transaction) {
   ]);
 }
 
+// Picks the category to show, with local edits taking priority
 export function getTransactionCategory(transaction: Transaction) {
-  // Local overrides win, then Akahu personal finance groups, then the raw Akahu category name.
   return firstUsefulText([
     transaction.moneyfit?.categoryOverride,
     transaction.category?.groups?.personal_finance?.name,
@@ -90,8 +90,8 @@ export function getTransactionSummaryMeta(transaction: Transaction) {
   ].join(" · ");
 }
 
+// Builds transaction detail rows and skips empty fields
 export function getTransactionDetailRows(transaction: Transaction) {
-  // Keep the detail sheet data-driven so empty Akahu fields disappear without special UI branches.
   return [
     { label: "Account", value: getTransactionAccountLabel(transaction) },
     { label: "Currency", value: getTransactionCurrency(transaction) },
@@ -110,8 +110,8 @@ export function getTransactionDetailRows(transaction: Transaction) {
   ].filter(hasDetailValue);
 }
 
+// Combines raw bank text into one string for search and details
 export function getTransactionRawText(transaction: Transaction) {
-  // Preserve raw bank and Akahu text in one searchable string for details and transaction filtering.
   return [
     transaction.description,
     transaction.merchant?.name,
@@ -126,8 +126,8 @@ export function getTransactionRawText(transaction: Transaction) {
     .join(" | ");
 }
 
+// Scores how reliable the category looks
 export function getTransactionConfidence(transaction: Transaction) {
-  // Treat overrides as confirmed, Akahu categories as high confidence, and missing categories as reviewable.
   if (transaction.moneyfit?.categoryOverride) {
     return 1;
   }

@@ -30,6 +30,7 @@ type HomeViewProps = {
   isConnected: boolean;
 };
 
+// Shows the dashboard summary, category chart, insights, and recent transactions
 export function HomeView({
   availableBalance,
   categoryColors,
@@ -50,7 +51,6 @@ export function HomeView({
   upcomingTotal,
   isConnected
 }: HomeViewProps) {
-  // The home screen keeps the chart rich on desktop but trims category rows on mobile with local state.
   const [showAllCategories, setShowAllCategories] = useState(false);
   const balanceLabel = getBalanceLabel(availableBalance);
   const safeToSpendLabel = `${formatMoney(safeToSpendAmount)} looks safe after upcoming bills and buffer.`;
@@ -171,13 +171,13 @@ type CategoryLegendProps = {
   isExpanded: boolean;
 };
 
+// CSS hides extra rows on mobile while desktop keeps the full list
 function CategoryLegend({
   categories,
   categoryColors,
   chartTotal,
   isExpanded
 }: CategoryLegendProps) {
-  // Mobile collapse is handled by CSS so desktop can keep the same data and markup.
   if (categories.length === 0) {
     return <div className="empty-state">No spending categories found for this period.</div>;
   }

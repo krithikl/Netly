@@ -48,6 +48,7 @@ const transactionDetailsExpandedSnapPoint = 0.88;
 const transactionDetailsSnapPoints = [transactionDetailsInitialSnapPoint, transactionDetailsExpandedSnapPoint];
 const expandedSnapCloseDragDistance = 56;
 
+// Shows transactions in pages and opens the right detail view for the screen size
 export function TransactionList({
   categoryColors,
   categorySelectOptions = [],
@@ -56,7 +57,6 @@ export function TransactionList({
   onCategoryChange,
   transactions
 }: TransactionListProps) {
-  // Render a small first page of rows to keep the Transactions tab responsive with large Akahu histories.
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [detailsTransaction, setDetailsTransaction] = useState<Transaction | null>(null);
   const [visibleCount, setVisibleCount] = useState(initialVisibleTransactionCount);
@@ -192,6 +192,7 @@ function getTransactionMeta(transaction: Transaction) {
   return getTransactionSummaryMeta(transaction);
 }
 
+// Send category edits upward so saved overrides and filters update together
 function CategorySelect({
   categoryLabel,
   categoryOptions,
@@ -205,7 +206,6 @@ function CategorySelect({
   onClose: () => void;
   transaction: Transaction;
 }) {
-  // Category edits are saved through the parent so localStorage overrides and derived filters update together.
   const handleCategoryChange = (category: string) => {
     onCategoryChange?.(getTransactionId(transaction), category);
     onClose();
@@ -222,6 +222,7 @@ function CategorySelect({
   );
 }
 
+// Use a side sheet on desktop so the list stays visible
 function TransactionDetailsSheet({
   categorySelectOptions,
   categoryColors,
@@ -239,7 +240,6 @@ function TransactionDetailsSheet({
   onClose: () => void;
   transaction: Transaction;
 }) {
-  // Desktop keeps details in a side sheet so the transaction list remains visible for comparison.
   const titleRef = useRef<HTMLHeadingElement>(null);
   const focusTitleOnOpen = (event: Event) => {
     event.preventDefault();
@@ -269,6 +269,7 @@ function TransactionDetailsSheet({
   );
 }
 
+// Handles the mobile drawer positions and close gesture
 function TransactionDetailsDrawer({
   categorySelectOptions,
   categoryColors,
@@ -286,7 +287,6 @@ function TransactionDetailsDrawer({
   onClose: () => void;
   transaction: Transaction;
 }) {
-  // Mobile uses the same drawer pattern as filters and sorting so the list stays mounted behind details.
   const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(transactionDetailsInitialSnapPoint);
   const expandedDragStartYRef = useRef<number | null>(null);
   const expandedDragDistanceRef = useRef(0);
@@ -352,6 +352,7 @@ function TransactionDetailsDrawer({
   );
 }
 
+// Builds the transaction details used by both desktop and mobile views
 function TransactionDetailsContent({
   categorySelectOptions,
   categoryColors,
@@ -365,7 +366,6 @@ function TransactionDetailsContent({
   onCategoryChange?: (transactionId: string, category: string) => void;
   transaction: Transaction;
 }) {
-  // Shared detail body keeps desktop and mobile transaction metadata consistent.
   const merchant = getTransactionMerchant(transaction);
   const category = getTransactionCategory(transaction);
   const avatarStyle = { background: getTransactionColor(category, categoryColors) };
@@ -437,8 +437,8 @@ function TransactionDetailsContent({
   );
 }
 
+// Watches the screen width so details use a sheet on desktop and a drawer on mobile
 function useIsDesktopNavigation() {
-  // Seed from matchMedia so desktop does not render the mobile detail path before correcting itself.
   const [isDesktop, setIsDesktop] = useState(() => getIsDesktopNavigation());
 
   useEffect(() => {

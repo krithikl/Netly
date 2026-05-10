@@ -8,9 +8,13 @@
 4. Netly stores the token in an httpOnly cookie for local development.
 5. Netly fetches Akahu accounts and account transactions.
 
+Personal Apps cannot use Akahu OAuth. Akahu authorizes them when they are created and exposes the User Access Token in the developer dashboard.
+
 Note: Akahu Demo Bank enduring connections support account data, but they do not currently return transaction data. Use Netly demo mode for local transaction UI testing, or connect a transaction-capable real institution when testing Akahu transactions.
 
 ## OAuth Flow
+
+OAuth requires a full Akahu app, `AKAHU_APP_SECRET`, and a redirect URI registered with Akahu that exactly matches `AKAHU_REDIRECT_URI`.
 
 1. User clicks Connect.
 2. Netly redirects to `https://oauth.akahu.nz`.

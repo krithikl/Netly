@@ -1,5 +1,4 @@
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { periods } from "@/lib/app/constants";
+import { TimeRangeTabs } from "@/components/layout/TimeRangeTabs";
 import type { PeriodOption } from "@/lib/types";
 
 type TopbarProps = {
@@ -21,11 +20,14 @@ export function Topbar({
   setPeriod,
   showPeriodControl
 }: TopbarProps) {
+  const dateLabel = formatDateLabel(payday);
+
   return (
     <header className="topbar">
       <div>
-        <p className="eyebrow">Payday {payday}</p>
-        <h1>Good evening{linkedUserName ? `, ${linkedUserName}` : ""}, here is your money picture.</h1>
+        <p className="eyebrow">{dateLabel}</p>
+        <h1>Good evening{linkedUserName ? `, ${linkedUserName}` : ""} 👋</h1>
+        <p className="topbar-subtitle">Here is your money picture.</p>
         <p className="header-note">
           Data source: {dataSourceLabel}
           {linkedAccountLabel ? ` · Linked account: ${linkedAccountLabel}` : ""}
@@ -33,25 +35,23 @@ export function Topbar({
       </div>
       {showPeriodControl && (
         <div className="topbar-controls">
-          <PeriodControl period={period} setPeriod={setPeriod} />
+          <TimeRangeTabs period={period} setPeriod={setPeriod} />
         </div>
       )}
     </header>
   );
 }
 
-function PeriodControl({ period, setPeriod }: { period: PeriodOption; setPeriod: (period: PeriodOption) => void }) {
-  const handlePeriodChange = (value: string) => setPeriod(value as PeriodOption);
+function formatDateLabel(value: string) {
+  const date = new Date(`${value}T12:00:00`);
 
-  return (
-    <Tabs className="period-control" onValueChange={handlePeriodChange} value={period}>
-      <TabsList aria-label="Selected period" className="period-tabs">
-        {periods.map((option) => (
-          <TabsTrigger className="period-tab" key={option} value={option}>
-            {option}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </Tabs>
-  );
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-NZ", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  }).format(date).toUpperCase();
 }

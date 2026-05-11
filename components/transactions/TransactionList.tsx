@@ -63,7 +63,6 @@ export function TransactionList({
   const [detailsTransaction, setDetailsTransaction] = useState<Transaction | null>(null);
   const [visibleCount, setVisibleCount] = useState(initialVisibleTransactionCount);
   const previousTransactionSignatureRef = useRef("");
-  const isDesktop = useIsDesktopNavigation();
   const visibleTransactions = useMemo(() => transactions.slice(0, visibleCount), [transactions, visibleCount]);
   const remainingTransactionCount = Math.max(0, transactions.length - visibleTransactions.length);
   const selectedTransaction = useMemo(
@@ -137,19 +136,8 @@ export function TransactionList({
           </Button>
         )}
       </div>
-      {!isDesktop && detailsTransaction && (
-        <TransactionDetailsDrawer
-          categorySelectOptions={categorySelectOptions}
-          categoryColors={categoryColors}
-          editable={editable}
-          open={Boolean(selectedTransaction)}
-          onCategoryChange={onCategoryChange}
-          onClose={closeDetails}
-          transaction={detailsTransaction}
-        />
-      )}
-      {isDesktop && detailsTransaction && (
-        <TransactionDetailsSheet
+      {detailsTransaction && (
+        <TransactionDetailsOverlay
           categorySelectOptions={categorySelectOptions}
           categoryColors={categoryColors}
           editable={editable}
@@ -160,6 +148,54 @@ export function TransactionList({
         />
       )}
     </div>
+  );
+}
+
+type TransactionDetailsOverlayProps = {
+  categoryColors: Record<string, string>;
+  categorySelectOptions?: SelectOption[];
+  editable?: boolean;
+  onCategoryChange?: (transactionId: string, category: string) => void;
+  onClose: () => void;
+  open: boolean;
+  transaction: Transaction;
+};
+
+export function TransactionDetailsOverlay({
+  categoryColors,
+  categorySelectOptions = [],
+  editable = false,
+  onCategoryChange,
+  onClose,
+  open,
+  transaction
+}: TransactionDetailsOverlayProps) {
+  const isDesktop = useIsDesktopNavigation();
+
+  if (!isDesktop) {
+    return (
+      <TransactionDetailsDrawer
+        categorySelectOptions={categorySelectOptions}
+        categoryColors={categoryColors}
+        editable={editable}
+        open={open}
+        onCategoryChange={onCategoryChange}
+        onClose={onClose}
+        transaction={transaction}
+      />
+    );
+  }
+
+  return (
+    <TransactionDetailsSheet
+      categorySelectOptions={categorySelectOptions}
+      categoryColors={categoryColors}
+      editable={editable}
+      open={open}
+      onCategoryChange={onCategoryChange}
+      onClose={onClose}
+      transaction={transaction}
+    />
   );
 }
 
@@ -280,7 +316,11 @@ function TransactionDetailsSheet({
 
   return (
     <Sheet onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open}>
-      <SheetContent className="transaction-details-shell overflow-hidden p-0" onOpenAutoFocus={focusTitleOnOpen}>
+      <SheetContent
+        className="transaction-details-shell overflow-hidden p-0"
+        overlayClassName="transaction-details-overlay"
+        onOpenAutoFocus={focusTitleOnOpen}
+      >
         <div className="transaction-details-sheet flex h-full flex-col overflow-y-auto">
           <SheetHeader>
             <SheetTitle ref={titleRef} tabIndex={-1}>Transaction Details</SheetTitle>

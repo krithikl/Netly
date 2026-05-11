@@ -44,7 +44,7 @@ export function ConnectView({
             Merchant and category fields come from Akahu enrichment when available.
           </FlowStep>
         </div>
-        <Button onClick={handleAuthorizationStart} type="button">
+        <Button className="connect-auth-button" onClick={handleAuthorizationStart} type="button">
           Open Akahu authorization
         </Button>
         <p aria-live="polite" className="sync-result">

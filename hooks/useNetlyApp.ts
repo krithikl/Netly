@@ -16,7 +16,7 @@ import {
 } from "@/lib/app/derived";
 import type { DataMode, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 import type { ActiveViewProps } from "@/lib/app/view-props";
-import { budgets, cardProducts, payday } from "@/lib/mock-data";
+import { budgets, cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
 import { filterTransactionsByDateRange, filterTransactionsByPeriod, getThisMonthDateRange } from "@/lib/periods";
 import { getTransactionStatus, transactionNeedsReview } from "@/lib/transaction-display";
@@ -27,6 +27,14 @@ import { useRoutedView } from "@/hooks/useRoutedView";
 import type { PeriodOption } from "@/lib/types";
 
 const topCategoryLimit = 5;
+const paydayStorageKey = "netly_payday";
+
+type PaydayRule = {
+  day: number;
+  type: "day";
+} | {
+  type: "last";
+};
 
 // Connects banking data, category settings, routing, and screen props for the app
 export function useNetlyApp() {
@@ -40,6 +48,7 @@ export function useNetlyApp() {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [connectionResponse, setConnectionResponse] = useState("");
   const [syncResult, setSyncResult] = useState("");
+  const [paydayRule, setPaydayRule] = useState<PaydayRule>(() => getPaydayRuleFromDate(defaultPayday));
   const hasAutoCompletedRef = useRef(false);
 
   const banking = useAkahuData();
@@ -108,6 +117,8 @@ export function useNetlyApp() {
       setConnectionResponse(authResponse);
     }
 
+    setPaydayRule(readSavedPaydayRule());
+
     banking.refreshTransactions(initialDataMode, transactionDateRange).catch((error: unknown) => {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
@@ -150,7 +161,21 @@ export function useNetlyApp() {
       banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
     });
   }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage]);
+  const updatePayday = useCallback((nextPayday: string) => {
+    const nextRule = getPaydayRuleFromDate(nextPayday);
+
+    setPaydayRule(nextRule);
+    window.localStorage.setItem(paydayStorageKey, JSON.stringify(nextRule));
+  }, []);
+  const openNeedsReviewTransactions = useCallback(() => {
+    setQuery("");
+    setTransactionCategory(["Needs review"]);
+    setTransactionFilter("All");
+    setActiveView("transactions");
+  }, [setActiveView]);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
+  const payday = useMemo(() => getNextPaydayDate(paydayRule), [paydayRule]);
+  const paydayPatternDate = useMemo(() => getNextPaydayPatternDate(paydayRule), [paydayRule]);
   const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
   const shouldShowPeriodControl = activeView === "home" || activeView === "budgets";
 
@@ -183,12 +208,16 @@ export function useNetlyApp() {
     onConnectionResponseChange: updateConnectionResponse,
     onLoadMoreTransactions: loadMoreUserTransactions,
     onRefreshUserTransactions: refreshUserTransactions,
+    onReviewNeedsReview: openNeedsReviewTransactions,
+    payday,
+    paydayPatternDate,
     query,
     recurring,
     reviewCount,
     safeToSpendAmount,
     setActiveView,
     setHoveredCategory,
+    setPayday: updatePayday,
     setQuery,
     setSyncResult,
     setTransactionCategory,
@@ -252,4 +281,117 @@ function groupCategoriesForChart(categories: { category: string; amount: number 
   const otherAmount = sum(sortedCategories.slice(limit).map((item) => item.amount));
 
   return [...visibleCategories, { category: "Other", amount: otherAmount }];
+}
+
+function readSavedPaydayRule(): PaydayRule {
+  const savedValue = window.localStorage.getItem(paydayStorageKey);
+
+  if (!savedValue) {
+    return getPaydayRuleFromDate(defaultPayday);
+  }
+
+  try {
+    const parsedValue = JSON.parse(savedValue) as Partial<PaydayRule>;
+
+    if (parsedValue.type === "last") {
+      return { type: "last" };
+    }
+
+    if (parsedValue.type === "day" && typeof parsedValue.day === "number") {
+      return { type: "day", day: clampPaydayDay(parsedValue.day) };
+    }
+  } catch {
+    return getPaydayRuleFromDate(savedValue);
+  }
+
+  return getPaydayRuleFromDate(defaultPayday);
+}
+
+function getPaydayRuleFromDate(value: string): PaydayRule {
+  const date = parseLocalDate(value);
+
+  if (!date) {
+    return getPaydayRuleFromDate(defaultPayday);
+  }
+
+  if (date.getDate() === getDaysInMonth(date.getFullYear(), date.getMonth())) {
+    return { type: "last" };
+  }
+
+  return {
+    type: "day",
+    day: clampPaydayDay(date.getDate())
+  };
+}
+
+function getNextPaydayDate(rule: PaydayRule) {
+  const today = new Date();
+  const todayMidday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
+  const thisMonthPayday = getAdjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth());
+  const nextPayday = thisMonthPayday >= todayMidday
+    ? thisMonthPayday
+    : getAdjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth() + 1);
+
+  return formatLocalDate(nextPayday);
+}
+
+function getNextPaydayPatternDate(rule: PaydayRule) {
+  const today = new Date();
+  const todayMidday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
+  const thisMonthPayday = getAdjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth());
+  const patternDate = thisMonthPayday >= todayMidday
+    ? getUnadjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth())
+    : getUnadjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth() + 1);
+
+  return formatLocalDate(patternDate);
+}
+
+function getAdjustedPaydayForMonth(rule: PaydayRule, year: number, monthIndex: number) {
+  return adjustWeekendToPreviousWeekday(getUnadjustedPaydayForMonth(rule, year, monthIndex));
+}
+
+function getUnadjustedPaydayForMonth(rule: PaydayRule, year: number, monthIndex: number) {
+  const normalizedMonthDate = new Date(year, monthIndex, 1, 12);
+  const normalizedYear = normalizedMonthDate.getFullYear();
+  const normalizedMonth = normalizedMonthDate.getMonth();
+  const monthDays = getDaysInMonth(normalizedYear, normalizedMonth);
+  const paydayDay = rule.type === "last" ? monthDays : Math.min(rule.day, monthDays);
+
+  return new Date(normalizedYear, normalizedMonth, paydayDay, 12);
+}
+
+function adjustWeekendToPreviousWeekday(date: Date) {
+  const day = date.getDay();
+
+  if (day === 6) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1, 12);
+  }
+
+  if (day === 0) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - 2, 12);
+  }
+
+  return date;
+}
+
+function parseLocalDate(value: string) {
+  const date = new Date(`${value}T12:00:00`);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getDaysInMonth(year: number, monthIndex: number) {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+function clampPaydayDay(day: number) {
+  return Math.min(31, Math.max(1, Math.round(day)));
 }

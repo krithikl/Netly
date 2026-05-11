@@ -1,6 +1,6 @@
 "use client";
 
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ActiveView } from "@/components/views/ActiveView";
 import { useNetlyApp } from "@/hooks/useNetlyApp";
@@ -10,7 +10,7 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
-      <Sidebar
+      <AppSidebar
         activeView={app.activeView}
         changeDataMode={app.changeDataMode}
         connectionCopy={app.connectionCopy}

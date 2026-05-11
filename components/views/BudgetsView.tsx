@@ -24,7 +24,7 @@ export function BudgetsView({ budgets, categories, categoryColors, recurring }: 
 
       <section className="material-card">
         <PanelTitle title="Recurring payments" subtitle="Repeated merchants and average amounts" />
-        <div className="stack-list">
+        <div className="stack-list recurring-list">
           {recurring.length > 0 ? (
             recurring.map((item) => (
               <InfoRow

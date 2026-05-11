@@ -79,10 +79,14 @@ export function ActiveView(props: ActiveViewProps) {
             isConnected={props.isConnected}
             isLoadingTransactions={props.isLoadingTransactions}
             monthlySpend={props.monthlySpend}
+            onReviewNeedsReview={props.onReviewNeedsReview}
+            payday={props.payday}
+            paydayPatternDate={props.paydayPatternDate}
             reviewCount={props.reviewCount}
             safeToSpendAmount={props.safeToSpendAmount}
             setActiveView={props.setActiveView}
             setHoveredCategory={props.setHoveredCategory}
+            setPayday={props.setPayday}
             transactionPreview={props.transactionPreview}
             upcomingCount={props.upcomingCount}
             upcomingTotal={props.upcomingTotal}

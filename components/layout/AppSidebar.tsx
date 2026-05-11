@@ -1,13 +1,13 @@
 "use client";
 
 import clsx from "clsx";
-import { CreditCard, Home, Link2, List, MoreHorizontal, PieChart, Settings } from "lucide-react";
+import { CreditCard, Database, Home, Link2, List, MoreHorizontal, PieChart, Settings } from "lucide-react";
 import { useState } from "react";
 import { navItems } from "@/lib/app/constants";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { DataMode, View } from "@/lib/app/types";
 
-type SidebarProps = {
+type AppSidebarProps = {
   activeView: View;
   changeDataMode: (mode: DataMode) => void;
   connectionCopy: string;
@@ -16,10 +16,17 @@ type SidebarProps = {
   setActiveView: (view: View) => void;
 };
 
-export function Sidebar({ activeView, changeDataMode, connectionCopy, connectionTitle, dataMode, setActiveView }: SidebarProps) {
+export function AppSidebar({
+  activeView,
+  changeDataMode,
+  connectionCopy,
+  connectionTitle,
+  dataMode,
+  setActiveView
+}: AppSidebarProps) {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const primaryMobileItems = navItems.filter((item) => item.view === "home" || item.view === "transactions" || item.view === "budgets");
-  const moreMobileItems = navItems.filter((item) => !primaryMobileItems.includes(item));
+  const moreMobileItems = navItems.filter((item) => item.view === "connect" || item.view === "cards" || item.view === "settings");
   const moreIsActive = moreMobileItems.some((item) => item.view === activeView);
 
   const handleViewChange = (view: View) => {
@@ -30,7 +37,7 @@ export function Sidebar({ activeView, changeDataMode, connectionCopy, connection
   return (
     <aside className="sidebar" aria-label="Main navigation">
       <div className="brand">
-        <div className="brand-mark">M</div>
+        <div className="brand-mark">N</div>
         <div>
           <div className="brand-name">Netly</div>
           <div className="brand-subtitle">Open banking assistant</div>
@@ -51,17 +58,28 @@ export function Sidebar({ activeView, changeDataMode, connectionCopy, connection
         ))}
       </nav>
 
-      <div className="sidebar-source-control" aria-label="Data source">
-        <span>Data source</span>
-        <DataModeSwitch changeDataMode={changeDataMode} dataMode={dataMode} />
-      </div>
+      <div className="sidebar-bottom">
+        <section className="sidebar-source-card" aria-label="Data source">
+          <span className="sidebar-label">Data source</span>
+          <button className="source-switch" onClick={() => changeDataMode(getNextDataMode(dataMode))} type="button">
+            <span>
+              <strong>{getCurrentDataModeLabel(dataMode)}</strong>
+              <small>{dataMode === "demo" ? "Connected" : "Active source"}</small>
+            </span>
+            <MoreHorizontal aria-hidden="true" size={18} strokeWidth={2.2} />
+          </button>
+        </section>
 
-      <div className="material-card connection-panel">
-        <div className="status-dot" />
-        <div>
-          <div className="connection-title">{connectionTitle}</div>
-          <div className="connection-copy">{connectionCopy}</div>
-        </div>
+        <section className="sidebar-demo-card">
+          <Database aria-hidden="true" size={20} strokeWidth={2.3} />
+          <div>
+            <strong>{connectionTitle}</strong>
+            <p>{connectionCopy}</p>
+            <button onClick={() => changeDataMode(getNextDataMode(dataMode))} type="button">
+              Switch to {getDataModeLabel(getNextDataMode(dataMode))}
+            </button>
+          </div>
+        </section>
       </div>
 
       <nav className="mobile-nav" aria-label="Main mobile navigation">
@@ -100,7 +118,13 @@ export function Sidebar({ activeView, changeDataMode, connectionCopy, connection
             ))}
             <div className="mobile-more-source">
               <span>Data source</span>
-              <DataModeSwitch changeDataMode={changeDataMode} dataMode={dataMode} />
+              <button className="source-switch" onClick={() => changeDataMode(getNextDataMode(dataMode))} type="button">
+                <span>
+                  <strong>{getCurrentDataModeLabel(dataMode)}</strong>
+                  <small>Switch to {getDataModeLabel(getNextDataMode(dataMode))}</small>
+                </span>
+                <MoreHorizontal aria-hidden="true" size={18} strokeWidth={2.2} />
+              </button>
             </div>
           </PopoverContent>
         </Popover>
@@ -109,14 +133,12 @@ export function Sidebar({ activeView, changeDataMode, connectionCopy, connection
   );
 }
 
-function DataModeSwitch({ changeDataMode, dataMode }: { changeDataMode: (mode: DataMode) => void; dataMode: DataMode }) {
-  const nextMode = dataMode === "user" ? "demo" : "user";
+function getNextDataMode(dataMode: DataMode) {
+  return dataMode === "user" ? "demo" : "user";
+}
 
-  return (
-    <button className="source-switch" onClick={() => changeDataMode(nextMode)} type="button">
-      Switch to {getDataModeLabel(nextMode)}
-    </button>
-  );
+function getCurrentDataModeLabel(dataMode: DataMode) {
+  return dataMode === "user" ? "Akahu" : "Demo data";
 }
 
 function getDataModeLabel(mode: DataMode) {

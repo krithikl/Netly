@@ -17,7 +17,7 @@ export function BudgetsView({ budgets, categories, categoryColors, recurring }: 
         <PanelTitle title="Budgets" subtitle="Spend is based on Akahu category data" />
         <div className="budget-grid">
           {budgets.map((budget) => (
-            <BudgetCard budget={budget} categoryColor={categoryColors[budget.category] || budget.color} key={budget.category} spent={getCategorySpend(categories, budget.category)} />
+            <BudgetCard budget={budget} categoryColor={categoryColors[budget.category] || categoryColors.Other || "#D1D5DB"} key={budget.category} spent={getCategorySpend(categories, budget.category)} />
           ))}
         </div>
       </section>

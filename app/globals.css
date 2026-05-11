@@ -1293,6 +1293,13 @@ h2 {
   white-space: nowrap;
 }
 
+.card-fit-disclaimer {
+  margin: -4px 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .card-option {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(210px, auto);

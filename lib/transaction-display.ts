@@ -1,4 +1,5 @@
 import type { Transaction } from "@/lib/types";
+import { mapSourceCategoryToNetlyCategory } from "@/lib/category-mapping";
 
 export type TransactionStatus = "Booked" | "Pending" | "Upcoming";
 
@@ -41,11 +42,16 @@ export function getTransactionMerchant(transaction: Transaction) {
 
 // Picks the category to show, with local edits taking priority
 export function getTransactionCategory(transaction: Transaction) {
-  return firstUsefulText([
-    transaction.netly?.categoryOverride,
-    transaction.category?.groups?.personal_finance?.name,
-    transaction.category?.name
-  ], "Needs review");
+  if (transaction.netly?.categoryOverride) {
+    return transaction.netly.categoryOverride;
+  }
+
+  return mapSourceCategoryToNetlyCategory(
+    firstUsefulText([
+      transaction.category?.groups?.personal_finance?.name,
+      transaction.category?.name
+    ], "")
+  );
 }
 
 export function getTransactionAccountLabel(transaction: Transaction) {
@@ -132,7 +138,7 @@ export function getTransactionConfidence(transaction: Transaction) {
     return 1;
   }
 
-  if (transaction.category?.groups?.personal_finance?.name || transaction.category?.name) {
+  if (getTransactionCategory(transaction) !== "Needs review") {
     return 0.95;
   }
 

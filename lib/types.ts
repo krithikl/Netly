@@ -111,5 +111,4 @@ export type CardFitBasis = {
 export type Budget = {
   category: string;
   limit: number;
-  color: string;
 };

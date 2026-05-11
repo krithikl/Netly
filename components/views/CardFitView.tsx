@@ -19,6 +19,9 @@ export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, car
       <section className="material-card">
         <PanelTitle title="Card fit comparison" subtitle={subtitle} />
         <CardFitBasisSummary basis={basis} cardFitWindowLabel={cardFitWindowLabel} />
+        <p className="card-fit-disclaimer">
+          Rewards are estimated from card-eligible spend. Netly excludes income, transfers, fees, housing, upcoming payments, and needs-review rows.
+        </p>
         {!hasCardEligibleSpend && (
           <div className="status-banner neutral" role="status">
             <strong>No card-eligible spend yet.</strong>
@@ -47,7 +50,7 @@ function CardFitBasisSummary({ basis, cardFitWindowLabel }: { basis: CardFitBasi
         <strong>{formatMoney(basis.eligibleSpend, true)}</strong>
       </div>
       <div>
-        <span>Annual spend</span>
+        <span>Eligible annual spend</span>
         <strong>{formatMoney(basis.eligibleAnnualSpend)}</strong>
       </div>
       <div>
@@ -104,7 +107,7 @@ function CardOption({ card, index }: { card: CardValue; index: number }) {
 }
 
 function getCardFitSubtitle(cardFitSourceLabel: string) {
-  return `Cards are ranked from ${cardFitSourceLabel}: card-eligible spend + estimated perks - annual fee.`;
+  return `Cards are ranked from ${cardFitSourceLabel}: rewards earned + estimated perks - annual fee.`;
 }
 
 function getCardOptionClassName(isWinner: boolean) {
@@ -123,8 +126,12 @@ function getCardBrandLabel(card: CardValue) {
 
 function getCardBreakdown(card: CardValue) {
   return [
-    `Gross rewards ${formatMoney(card.grossRewards)}`,
+    `Rewards earned ${formatMoney(card.grossRewards)}`,
     `Perks estimate ${formatMoney(card.perksValue)}`,
-    `Annual fee -${formatMoney(card.annualFee)}`
+    `Annual fee ${getAnnualFeeLabel(card.annualFee)}`
   ];
+}
+
+function getAnnualFeeLabel(annualFee: number) {
+  return annualFee > 0 ? `-${formatMoney(annualFee)}` : formatMoney(0);
 }

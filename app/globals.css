@@ -1300,6 +1300,22 @@ h2 {
   font-weight: 700;
 }
 
+.card-fit-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 260px));
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.card-fit-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
 .card-option {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(210px, auto);
@@ -1847,7 +1863,8 @@ h2 {
   }
 
   .card-option,
-  .flow-step {
+  .flow-step,
+  .card-fit-controls {
     grid-template-columns: 1fr;
   }
 

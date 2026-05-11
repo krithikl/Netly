@@ -91,6 +91,20 @@ export const cardProducts: CardProduct[] = [
     note: "Useful benchmark for users who may carry a balance or want no annual fee."
   },
   {
+    name: "Sharesies Debit Mastercard",
+    issuer: "Sharesies",
+    network: "Mastercard",
+    tier: "Debit",
+    annualFee: 12,
+    cashbackRate: 0.01,
+    perksValue: 0,
+    rewardProgram: "Investback",
+    earnDescription: "1% Investback on eligible purchases, invested weekly.",
+    sourceUrl: "https://www.sharesies.nz/spend",
+    brandColor: "#ff7ab6",
+    note: "Debit benchmark with $12 annual Spend fee for Sharesies plan customers; fee is $25 if not on a plan. Investback and fees can change."
+  },
+  {
     name: "ASB Visa Rewards",
     issuer: "ASB",
     network: "Visa",

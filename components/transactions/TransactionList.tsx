@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { InfoRow } from "@/components/ui/info-row";
 import { Button } from "@/components/ui/button";
@@ -45,11 +45,7 @@ type TransactionListProps = {
 
 const initialVisibleTransactionCount = 40;
 const visibleTransactionIncrement = 60;
-const transactionDetailsExitAnimationMs = 220;
-const transactionDetailsInitialSnapPoint = 0.52;
-const transactionDetailsExpandedSnapPoint = 0.88;
-const transactionDetailsSnapPoints = [transactionDetailsInitialSnapPoint, transactionDetailsExpandedSnapPoint];
-const expandedSnapCloseDragDistance = 56;
+const transactionDetailsExitAnimationMs = 520;
 
 // Shows transactions in pages and opens the right detail view for the screen size
 export function TransactionList({
@@ -323,52 +319,9 @@ function TransactionDetailsDrawer({
   onClose: () => void;
   transaction: Transaction;
 }) {
-  const [activeSnapPoint, setActiveSnapPoint] = useState<number | string | null>(transactionDetailsInitialSnapPoint);
-  const expandedDragStartYRef = useRef<number | null>(null);
-  const expandedDragDistanceRef = useRef(0);
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) {
-      setActiveSnapPoint(transactionDetailsInitialSnapPoint);
-      return;
-    }
-
-    onClose();
-  };
-  const resetExpandedDrag = () => {
-    expandedDragStartYRef.current = null;
-    expandedDragDistanceRef.current = 0;
-  };
-  const handleDrag = (event: PointerEvent<HTMLDivElement>) => {
-    if (activeSnapPoint !== transactionDetailsExpandedSnapPoint) {
-      resetExpandedDrag();
-      return;
-    }
-
-    expandedDragStartYRef.current ??= event.clientY;
-    expandedDragDistanceRef.current = Math.max(expandedDragDistanceRef.current, event.clientY - expandedDragStartYRef.current);
-  };
-  const handleRelease = () => {
-    const shouldCloseFromExpandedSnap = activeSnapPoint === transactionDetailsExpandedSnapPoint
-      && expandedDragDistanceRef.current >= expandedSnapCloseDragDistance;
-
-    resetExpandedDrag();
-
-    if (shouldCloseFromExpandedSnap) {
-      onClose();
-    }
-  };
-
   return (
-    <Drawer
-      activeSnapPoint={activeSnapPoint}
-      onDrag={handleDrag}
-      onOpenChange={handleOpenChange}
-      onRelease={handleRelease}
-      open={open}
-      setActiveSnapPoint={setActiveSnapPoint}
-      snapPoints={transactionDetailsSnapPoints}
-    >
-      <DrawerContent className="h-dvh !max-h-dvh overflow-hidden after:hidden after:content-none">
+    <Drawer onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open}>
+      <DrawerContent className="transaction-details-mobile-drawer overflow-hidden after:hidden after:content-none">
         <DrawerHeader className="mobile-filter-header">
           <DrawerTitle>Transaction Details</DrawerTitle>
           <DrawerDescription className="sr-only">Selected transaction details.</DrawerDescription>
@@ -466,9 +419,42 @@ function TransactionDetailsContent({
               className={`h-4 w-4 shrink-0 text-[var(--muted)] transition-transform ${rawTextExpanded ? "rotate-180" : ""}`}
             />
           </button>
-          {rawTextExpanded && <p className="text-sm leading-relaxed text-[var(--muted)]">{rawText}</p>}
+          <RawBankTextPanel expanded={rawTextExpanded} rawText={rawText} />
         </section>
       )}
+    </div>
+  );
+}
+
+function RawBankTextPanel({ expanded, rawText }: { expanded: boolean; rawText: string }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [contentHeight, setContentHeight] = useState(0);
+
+  useEffect(() => {
+    if (!contentRef.current) {
+      return;
+    }
+
+    setContentHeight(contentRef.current.scrollHeight);
+  }, [rawText]);
+
+  useEffect(() => {
+    if (!expanded || !contentRef.current) {
+      return;
+    }
+
+    setContentHeight(contentRef.current.scrollHeight);
+  }, [expanded]);
+
+  return (
+    <div
+      aria-hidden={!expanded}
+      className={`raw-bank-text-panel ${expanded ? "expanded" : ""}`}
+      style={{ maxHeight: expanded ? contentHeight : 0 }}
+    >
+      <div ref={contentRef}>
+        <p className="text-sm leading-relaxed text-[var(--muted)]">{rawText}</p>
+      </div>
     </div>
   );
 }

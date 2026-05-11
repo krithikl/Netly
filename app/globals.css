@@ -632,6 +632,24 @@ h2 {
   scrollbar-gutter: stable;
 }
 
+.transaction-details-mobile-drawer.transaction-details-mobile-drawer {
+  height: min(88dvh, 720px);
+  max-height: min(88dvh, 720px);
+}
+
+.raw-bank-text-panel {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-height 220ms ease,
+    opacity 160ms ease;
+}
+
+.raw-bank-text-panel.expanded {
+  opacity: 1;
+}
+
 .is-loading {
   visibility: hidden;
   pointer-events: none;

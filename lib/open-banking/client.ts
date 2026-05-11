@@ -13,6 +13,12 @@ export type AkahuToken = {
   userToken: string;
 };
 
+export type AkahuTransactionQuery = {
+  cursor?: string;
+  end?: string;
+  start?: string;
+};
+
 export class AkahuClient {
   constructor(private readonly config: AkahuConfig) {}
 
@@ -51,8 +57,12 @@ export class AkahuClient {
     return this.getJson<AkahuAccountsResponse>("/accounts", token);
   }
 
-  async getTransactions(token: AkahuToken) {
-    return this.getAllItems<AkahuTransactionsResponse>("/transactions", token);
+  async getTransactions(token: AkahuToken, query: AkahuTransactionQuery = {}) {
+    return this.getAllItems<AkahuTransactionsResponse>(addTransactionQueryToPath("/transactions", query), token);
+  }
+
+  async getTransactionsPage(token: AkahuToken, query: AkahuTransactionQuery = {}) {
+    return this.getJson<AkahuTransactionsResponse>(addTransactionQueryToPath("/transactions", query), token);
   }
 
   async getPendingTransactions(token: AkahuToken) {
@@ -76,6 +86,17 @@ export class AkahuClient {
     ]);
 
     return combineItems(transactionGroups);
+  }
+
+  // Loads one booked page, plus pending transactions on the first page only
+  async getTransactionsPageForAccounts(token: AkahuToken, accounts: AkahuAccount[], query: AkahuTransactionQuery = {}): Promise<AkahuTransactionsResponse> {
+    const transactionGroups: AkahuTransactionsResponse[] = [await this.getTransactionsPage(token, query)];
+
+    if (!query.cursor) {
+      transactionGroups.push(await this.getPendingTransactions(token));
+    }
+
+    return combineItems(transactionGroups, transactionGroups[0].cursor);
   }
 
   private async getJson<T>(path: string, token: AkahuToken) {
@@ -172,10 +193,11 @@ export function createOpenBankingClientFromEnv() {
 }
 
 // Combines several Akahu item lists into one list
-function combineItems<T extends { success?: boolean; items?: unknown[] }>(responses: T[]) {
+function combineItems<T extends { success?: boolean; items?: unknown[]; cursor?: { next?: string } }>(responses: T[], cursor?: { next?: string }) {
   return {
     success: responses.every((response) => response.success !== false),
-    items: responses.flatMap((response) => response.items || [])
+    items: responses.flatMap((response) => response.items || []),
+    cursor
   } as T;
 }
 
@@ -186,6 +208,25 @@ function addCursorToPath(path: string, cursor?: string | null) {
 
   const separator = path.includes("?") ? "&" : "?";
   return `${path}${separator}cursor=${encodeURIComponent(cursor)}`;
+}
+
+function addTransactionQueryToPath(path: string, query: AkahuTransactionQuery) {
+  const params = new URLSearchParams();
+
+  if (query.start) {
+    params.set("start", query.start);
+  }
+
+  if (query.end) {
+    params.set("end", query.end);
+  }
+
+  if (query.cursor) {
+    params.set("cursor", query.cursor);
+  }
+
+  const queryString = params.toString();
+  return queryString ? `${path}?${queryString}` : path;
 }
 
 async function readJsonBody(response: Response) {

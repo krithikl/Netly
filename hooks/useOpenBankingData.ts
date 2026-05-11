@@ -4,12 +4,13 @@ import { useCallback, useState } from "react";
 import { currentBalance as fallbackBalance, transactions as fallbackTransactions } from "@/lib/mock-data";
 import { readInitialDataMode } from "@/lib/app/browser-state";
 import type { DataMode, LinkedAccount } from "@/lib/app/types";
-import type { Transaction } from "@/lib/types";
+import type { Transaction, TransactionDateRange } from "@/lib/types";
 
 type TransactionsPayload = {
   source: "demo" | "akahu";
   connected?: boolean;
   error?: string;
+  nextCursor?: string | null;
   notice?: string;
   transactions: Transaction[];
 };
@@ -32,17 +33,24 @@ type AccountsPayload = {
 // Loads Akahu or demo data and keeps accounts, balances, and transactions together
 export function useOpenBankingData() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactionPageTransactions, setTransactionPageTransactions] = useState<Transaction[]>([]);
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
   const [primaryLinkedAccount, setPrimaryLinkedAccount] = useState<LinkedAccount | null>(null);
   const [availableBalance, setAvailableBalance] = useState<number | null>(null);
   const [dataMode, setDataMode] = useState<DataMode>("user");
   const [isConnected, setIsConnected] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [isLoadingMoreTransactions, setIsLoadingMoreTransactions] = useState(false);
+  const [transactionsNextCursor, setTransactionsNextCursor] = useState<string | null>(null);
+  const [transactionPageNextCursor, setTransactionPageNextCursor] = useState<string | null>(null);
   const [transactionLoadError, setTransactionLoadError] = useState("");
   const [transactionLoadNotice, setTransactionLoadNotice] = useState("");
 
   const resetBankData = useCallback(() => {
     setTransactions([]);
+    setTransactionPageTransactions([]);
+    setTransactionsNextCursor(null);
+    setTransactionPageNextCursor(null);
     setLinkedAccounts([]);
     setPrimaryLinkedAccount(null);
     setAvailableBalance(null);
@@ -53,6 +61,9 @@ export function useOpenBankingData() {
     const isDemoMode = mode === "demo";
 
     setTransactions(isDemoMode ? fallbackTransactions : []);
+    setTransactionPageTransactions(isDemoMode ? fallbackTransactions : []);
+    setTransactionsNextCursor(null);
+    setTransactionPageNextCursor(null);
     setLinkedAccounts([]);
     setPrimaryLinkedAccount(null);
     setAvailableBalance(isDemoMode ? fallbackBalance : null);
@@ -63,25 +74,36 @@ export function useOpenBankingData() {
   }, []);
 
   // Load transactions, balances, and accounts together so the screen stays consistent
-  const refreshTransactions = useCallback(async (mode: DataMode = dataMode) => {
+  const refreshTransactions = useCallback(async (mode: DataMode = dataMode, dateRange?: TransactionDateRange) => {
     setIsLoadingTransactions(true);
     resetBankData();
 
-    const [transactionsResponse, balancesResponse, accountsResponse] = await Promise.all([
-      fetch(`/api/open-banking/transactions?source=${mode}`),
+    const transactionRequest = fetch(getTransactionsUrl(mode));
+    const transactionPageRequest = dateRange ? fetch(getTransactionsUrl(mode, dateRange)) : transactionRequest;
+
+    const [transactionsResponse, transactionPageResponse, balancesResponse, accountsResponse] = await Promise.all([
+      transactionRequest,
+      transactionPageRequest,
       fetch(`/api/open-banking/balances?source=${mode}`),
       fetch(`/api/open-banking/accounts?source=${mode}`)
     ]);
 
     const transactionsPayload = (await transactionsResponse.json()) as TransactionsPayload;
+    const transactionPagePayload = transactionPageResponse === transactionsResponse
+      ? transactionsPayload
+      : (await transactionPageResponse.json()) as TransactionsPayload;
     const balancesPayload = (await balancesResponse.json()) as BalancesPayload;
     const accountsPayload = (await accountsResponse.json()) as AccountsPayload;
 
     assertOpenBankingResponse(transactionsResponse, transactionsPayload.error, "Could not load transactions.");
+    assertOpenBankingResponse(transactionPageResponse, transactionPagePayload.error, "Could not load transactions.");
     assertOpenBankingResponse(balancesResponse, balancesPayload.error, "Could not load balances.");
     assertOpenBankingResponse(accountsResponse, accountsPayload.error, "Could not load accounts.");
 
     setTransactions(transactionsPayload.transactions);
+    setTransactionPageTransactions(transactionPagePayload.transactions);
+    setTransactionsNextCursor(transactionsPayload.nextCursor || null);
+    setTransactionPageNextCursor(transactionPagePayload.nextCursor || null);
     setLinkedAccounts(accountsPayload.accounts || []);
     setPrimaryLinkedAccount(accountsPayload.primaryAccount || null);
     setAvailableBalance(balancesPayload.availableBalance);
@@ -91,14 +113,54 @@ export function useOpenBankingData() {
     setIsLoadingTransactions(false);
   }, [dataMode, resetBankData]);
 
+  const refreshTransactionPage = useCallback(async (mode: DataMode = dataMode, dateRange?: TransactionDateRange) => {
+    setIsLoadingTransactions(true);
+    setTransactionPageTransactions([]);
+    setTransactionPageNextCursor(null);
+
+    try {
+      const response = await fetch(getTransactionsUrl(mode, dateRange));
+      const payload = (await response.json()) as TransactionsPayload;
+
+      assertOpenBankingResponse(response, payload.error, "Could not load transactions.");
+      setTransactionPageTransactions(payload.transactions);
+      setTransactionPageNextCursor(payload.nextCursor || null);
+      setTransactionLoadError(payload.error || "");
+      setTransactionLoadNotice(payload.notice || "");
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  }, [dataMode]);
+
+  const loadMoreTransactions = useCallback(async (dateRange?: TransactionDateRange) => {
+    if (!transactionPageNextCursor) {
+      return;
+    }
+
+    setIsLoadingMoreTransactions(true);
+
+    try {
+      const response = await fetch(getTransactionsUrl(dataMode, dateRange, transactionPageNextCursor));
+      const payload = (await response.json()) as TransactionsPayload;
+
+      assertOpenBankingResponse(response, payload.error, "Could not load more transactions.");
+      setTransactionPageTransactions((currentTransactions) => [...currentTransactions, ...payload.transactions]);
+      setTransactionPageNextCursor(payload.nextCursor || null);
+      setTransactionLoadError(payload.error || "");
+      setTransactionLoadNotice(payload.notice || "");
+    } finally {
+      setIsLoadingMoreTransactions(false);
+    }
+  }, [dataMode, transactionPageNextCursor]);
+
   // Save the selected mode so refreshes keep using Akahu or demo data
-  const changeDataMode = useCallback((mode: DataMode) => {
+  const changeDataMode = useCallback((mode: DataMode, dateRange?: TransactionDateRange) => {
     setDataMode(mode);
     window.localStorage.setItem("netly_data_mode", mode);
     setTransactionLoadError("");
     setTransactionLoadNotice("");
 
-    refreshTransactions(mode).catch((error: unknown) => {
+    refreshTransactions(mode, dateRange).catch((error: unknown) => {
       applyFallbackState(mode, error, "Could not load transactions.");
     });
   }, [applyFallbackState, refreshTransactions]);
@@ -116,8 +178,11 @@ export function useOpenBankingData() {
     dataMode,
     isConnected,
     isLoadingTransactions,
+    isLoadingMoreTransactions,
     linkedAccounts,
+    loadMoreTransactions,
     primaryLinkedAccount,
+    refreshTransactionPage,
     refreshTransactions,
     restoreInitialDataMode,
     setDataMode,
@@ -125,6 +190,9 @@ export function useOpenBankingData() {
     setTransactionLoadNotice,
     transactionLoadError,
     transactionLoadNotice,
+    transactionPageNextCursor,
+    transactionPageTransactions,
+    transactionsNextCursor,
     transactions
   };
 }
@@ -133,4 +201,22 @@ function assertOpenBankingResponse(response: Response, error: string | undefined
   if (!response.ok) {
     throw new Error(error || fallbackMessage);
   }
+}
+
+function getTransactionsUrl(mode: DataMode, dateRange?: TransactionDateRange, cursor?: string) {
+  const params = new URLSearchParams({ source: mode });
+
+  if (dateRange?.from) {
+    params.set("from", dateRange.from);
+  }
+
+  if (dateRange?.to) {
+    params.set("to", dateRange.to);
+  }
+
+  if (cursor) {
+    params.set("cursor", cursor);
+  }
+
+  return `/api/open-banking/transactions?${params.toString()}`;
 }

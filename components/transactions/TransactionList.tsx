@@ -36,7 +36,10 @@ type TransactionListProps = {
   categorySelectOptions?: SelectOption[];
   editable?: boolean;
   emptyMessage?: string;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
   onCategoryChange?: (transactionId: string, category: string) => void;
+  onLoadMore?: () => void;
   transactions: Transaction[];
 };
 
@@ -54,12 +57,16 @@ export function TransactionList({
   categorySelectOptions = [],
   editable = false,
   emptyMessage = "No transactions to show.",
+  hasMore = false,
+  isLoadingMore = false,
   onCategoryChange,
+  onLoadMore,
   transactions
 }: TransactionListProps) {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [detailsTransaction, setDetailsTransaction] = useState<Transaction | null>(null);
   const [visibleCount, setVisibleCount] = useState(initialVisibleTransactionCount);
+  const previousTransactionSignatureRef = useRef("");
   const isDesktop = useIsDesktopNavigation();
   const visibleTransactions = useMemo(() => transactions.slice(0, visibleCount), [transactions, visibleCount]);
   const remainingTransactionCount = Math.max(0, transactions.length - visibleTransactions.length);
@@ -69,10 +76,27 @@ export function TransactionList({
   );
   const closeDetails = useCallback(() => setSelectedTransactionId(null), []);
   const openDetails = useCallback((transactionId: string) => setSelectedTransactionId(transactionId), []);
-  const showMoreTransactions = useCallback(() => setVisibleCount((currentCount) => currentCount + visibleTransactionIncrement), []);
+  const showMoreTransactions = useCallback(() => {
+    if (remainingTransactionCount > 0) {
+      setVisibleCount((currentCount) => currentCount + visibleTransactionIncrement);
+      return;
+    }
+
+    onLoadMore?.();
+  }, [onLoadMore, remainingTransactionCount]);
 
   useEffect(() => {
-    setVisibleCount(initialVisibleTransactionCount);
+    const firstTransactionId = transactions[0] ? getTransactionId(transactions[0]) : "";
+    const transactionSignature = `${firstTransactionId}:${transactions.length}`;
+    const previousSignature = previousTransactionSignatureRef.current;
+    const previousLength = Number.parseInt(previousSignature.split(":").at(-1) || "0", 10);
+    const isAppendedPage = firstTransactionId && previousSignature.startsWith(`${firstTransactionId}:`) && transactions.length > previousLength;
+
+    if (!isAppendedPage) {
+      setVisibleCount(initialVisibleTransactionCount);
+    }
+
+    previousTransactionSignatureRef.current = transactionSignature;
     setSelectedTransactionId(null);
     setDetailsTransaction(null);
   }, [transactions]);
@@ -111,9 +135,9 @@ export function TransactionList({
             );
           })}
         </div>
-        {remainingTransactionCount > 0 && (
-          <Button className="transaction-load-more" onClick={showMoreTransactions} type="button" variant="secondary">
-            Load {Math.min(visibleTransactionIncrement, remainingTransactionCount)} more
+        {(remainingTransactionCount > 0 || hasMore) && (
+          <Button className="transaction-load-more" disabled={isLoadingMore} onClick={showMoreTransactions} type="button" variant="secondary">
+            {getLoadMoreLabel(remainingTransactionCount, hasMore, isLoadingMore)}
           </Button>
         )}
       </div>
@@ -141,6 +165,18 @@ export function TransactionList({
       )}
     </div>
   );
+}
+
+function getLoadMoreLabel(remainingTransactionCount: number, hasMore: boolean, isLoadingMore: boolean) {
+  if (isLoadingMore) {
+    return "Loading more";
+  }
+
+  if (remainingTransactionCount > 0) {
+    return `Load ${Math.min(visibleTransactionIncrement, remainingTransactionCount)} more`;
+  }
+
+  return hasMore ? "Load more from Akahu" : "Load more";
 }
 
 type TransactionRowProps = {

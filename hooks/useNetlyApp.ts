@@ -14,11 +14,11 @@ import {
   getStatusBannerTitle,
   getVisibleTransactions
 } from "@/lib/app/derived";
-import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
+import type { DataMode, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 import type { ActiveViewProps } from "@/lib/app/view-props";
 import { budgets, cardProducts, payday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
-import { filterTransactionsByPeriod } from "@/lib/periods";
+import { filterTransactionsByDateRange, filterTransactionsByPeriod, getThisMonthDateRange } from "@/lib/periods";
 import { getTransactionStatus, transactionNeedsReview } from "@/lib/transaction-display";
 import { periods } from "@/lib/app/constants";
 import { useCategorySettings } from "@/hooks/useCategorySettings";
@@ -36,18 +36,31 @@ export function useNetlyApp() {
   const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("All");
   const [transactionSort, setTransactionSort] = useState<TransactionSort>("Newest");
   const [transactionCategory, setTransactionCategory] = useState<string[]>([]);
+  const [transactionDateRange, setTransactionDateRangeState] = useState(getThisMonthDateRange);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [connectionResponse, setConnectionResponse] = useState("");
   const [syncResult, setSyncResult] = useState("");
   const hasAutoCompletedRef = useRef(false);
 
   const banking = useOpenBankingData();
-  const categories = useCategorySettings(banking.transactions, []);
+  const categorySourceTransactions = useMemo(
+    () => [...banking.transactions, ...banking.transactionPageTransactions],
+    [banking.transactionPageTransactions, banking.transactions]
+  );
+  const categories = useCategorySettings(categorySourceTransactions, []);
   const workingTransactions = useMemo(
     () => applyCategoryOverrides(banking.transactions, categories.categoryOverrides),
     [banking.transactions, categories.categoryOverrides]
   );
+  const transactionPageWorkingTransactions = useMemo(
+    () => applyCategoryOverrides(banking.transactionPageTransactions, categories.categoryOverrides),
+    [banking.transactionPageTransactions, categories.categoryOverrides]
+  );
   const periodTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, period), [workingTransactions, period]);
+  const transactionRangeTransactions = useMemo(
+    () => filterTransactionsByDateRange(transactionPageWorkingTransactions, transactionDateRange),
+    [transactionDateRange, transactionPageWorkingTransactions]
+  );
   const recurringTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, "90 days"), [workingTransactions]);
   const categoryTotals = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
 
@@ -68,9 +81,9 @@ export function useNetlyApp() {
       setConnectionResponse("");
       banking.setDataMode("user");
       window.localStorage.setItem("netly_data_mode", "user");
-      await banking.refreshTransactions("user");
+      await banking.refreshTransactions("user", transactionDateRange);
     }
-  }, [banking.refreshTransactions, banking.setDataMode, connectionResponse]);
+  }, [banking.refreshTransactions, banking.setDataMode, connectionResponse, transactionDateRange]);
 
   const updateConnectionResponse = useCallback((value: string) => {
     setConnectionResponse(value);
@@ -95,7 +108,7 @@ export function useNetlyApp() {
       setConnectionResponse(authResponse);
     }
 
-    banking.refreshTransactions(initialDataMode).catch((error: unknown) => {
+    banking.refreshTransactions(initialDataMode, transactionDateRange).catch((error: unknown) => {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
   }, []);
@@ -124,13 +137,22 @@ export function useNetlyApp() {
   const chartCategories = useMemo(() => groupCategoriesForChart(categoryTotals, topCategoryLimit), [categoryTotals]);
   const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
   const visibleTransactions = useMemo(
-    () => getVisibleTransactions(periodTransactions, query, transactionCategory, transactionFilter, transactionSort),
-    [periodTransactions, query, transactionCategory, transactionFilter, transactionSort]
+    () => getVisibleTransactions(transactionRangeTransactions, query, transactionCategory, transactionFilter, transactionSort),
+    [query, transactionCategory, transactionFilter, transactionRangeTransactions, transactionSort]
   );
-  const refreshUserTransactions = useCallback(() => banking.refreshTransactions("user"), [banking.refreshTransactions]);
+  const refreshUserTransactions = useCallback(() => banking.refreshTransactions("user", transactionDateRange), [banking.refreshTransactions, transactionDateRange]);
+  const loadMoreUserTransactions = useCallback(() => banking.loadMoreTransactions(transactionDateRange), [banking.loadMoreTransactions, transactionDateRange]);
+  const setTransactionDateRange = useCallback((nextDateRange: typeof transactionDateRange) => {
+    setTransactionDateRangeState(nextDateRange);
+    setTransactionCategory([]);
+
+    banking.refreshTransactionPage(banking.dataMode, nextDateRange).catch((error: unknown) => {
+      banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
+    });
+  }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage]);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
   const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
-  const shouldShowPeriodControl = activeView === "home" || activeView === "transactions" || activeView === "budgets";
+  const shouldShowPeriodControl = activeView === "home" || activeView === "budgets";
 
   const viewProps: ActiveViewProps = {
     activeView,
@@ -152,11 +174,13 @@ export function useNetlyApp() {
     income,
     insights,
     isConnected: banking.isConnected,
+    isLoadingMoreTransactions: banking.isLoadingMoreTransactions,
     isLoadingTransactions: banking.isLoadingTransactions,
     monthlySpend,
     onCategoryChange: categories.updateTransactionCategory,
     onCreateCategory: categories.createCustomCategory,
     onConnectionResponseChange: updateConnectionResponse,
+    onLoadMoreTransactions: loadMoreUserTransactions,
     onRefreshUserTransactions: refreshUserTransactions,
     query,
     recurring,
@@ -169,10 +193,13 @@ export function useNetlyApp() {
     setTransactionCategory,
     setTransactionFilter,
     setTransactionSort,
+    setTransactionDateRange,
     syncResult,
     transactionCategory,
     transactionCategoryOptions: categories.transactionCategoryOptions,
+    transactionDateRange,
     transactionFilter,
+    transactionsHasMore: Boolean(banking.transactionPageNextCursor),
     transactionPreview: periodTransactions,
     transactionSort,
     upcomingCount: upcoming.length,
@@ -185,7 +212,7 @@ export function useNetlyApp() {
 
   return {
     activeView,
-    changeDataMode: banking.changeDataMode,
+    changeDataMode: (mode: DataMode) => banking.changeDataMode(mode, transactionDateRange),
     connectionCopy: getConnectionCopy(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
     connectionTitle: getConnectionTitle(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
     dataMode: banking.dataMode,

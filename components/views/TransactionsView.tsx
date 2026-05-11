@@ -1,10 +1,13 @@
 import type { ChangeEvent } from "react";
 import { useMemo, useState } from "react";
-import { ArrowDownUp, SlidersHorizontal } from "lucide-react";
+import { ArrowDownUp, CalendarDays, SlidersHorizontal } from "lucide-react";
+import { format } from "date-fns";
+import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Drawer,
   DrawerContent,
@@ -13,16 +16,23 @@ import {
   DrawerHeaderClose,
   DrawerTitle
 } from "@/components/ui/drawer";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SelectField } from "@/components/ui/select-field";
-import type { Transaction } from "@/lib/types";
+import { formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
+import type { Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionFilter, TransactionSort } from "@/lib/app/types";
 
 type TransactionsViewProps = {
   categoryColors: Record<string, string>;
   categoryOptions: string[];
+  dateRange: TransactionDateRange;
+  hasMoreTransactions: boolean;
+  isLoadingMoreTransactions: boolean;
   isLoadingTransactions: boolean;
   onCategoryChange: (transactionId: string, category: string) => void;
   onCreateCategory: (category: string) => void;
+  onDateRangeChange: (dateRange: TransactionDateRange) => void;
+  onLoadMoreTransactions: () => void;
   query: string;
   setQuery: (query: string) => void;
   setTransactionCategory: (categories: string[]) => void;
@@ -41,9 +51,14 @@ const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount h
 export function TransactionsView({
   categoryColors,
   categoryOptions,
+  dateRange,
+  hasMoreTransactions,
+  isLoadingMoreTransactions,
   isLoadingTransactions,
   onCategoryChange,
   onCreateCategory,
+  onDateRangeChange,
+  onLoadMoreTransactions,
   query,
   setQuery,
   setTransactionCategory,
@@ -111,6 +126,7 @@ export function TransactionsView({
               value={query}
             />
           </label>
+          <TransactionDateRangePicker dateRange={dateRange} onChange={onDateRangeChange} />
           <div className="transaction-mobile-actions">
             <Button onClick={() => setFiltersOpen(true)} type="button" variant="secondary">
               <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
@@ -132,6 +148,7 @@ export function TransactionsView({
               value={query}
             />
           </label>
+          <TransactionDateRangePicker dateRange={dateRange} onChange={onDateRangeChange} />
           <label>
             Status
             <SelectField onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
@@ -182,11 +199,221 @@ export function TransactionsView({
           categorySelectOptions={editableCategorySelectOptions}
           emptyMessage="No transactions match the current filters."
           onCategoryChange={onCategoryChange}
+          hasMore={hasMoreTransactions}
+          isLoadingMore={isLoadingMoreTransactions}
+          onLoadMore={onLoadMoreTransactions}
           transactions={shownTransactions}
         />
       </section>
     </section>
   );
+}
+
+function TransactionDateRangePicker({
+  dateRange,
+  onChange,
+}: {
+  dateRange: TransactionDateRange;
+  onChange: (dateRange: TransactionDateRange) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [isMobilePicker, setIsMobilePicker] = useState(false);
+  const [draftRange, setDraftRange] = useState<DateRange | undefined>(() => toCalendarRange(dateRange));
+  const calendarStartMonth = useMemo(() => new Date(2018, 0, 1), []);
+  const calendarEndMonth = useMemo(() => {
+    const today = new Date();
+    return new Date(today.getFullYear() + 1, 11, 31);
+  }, []);
+  const label = getDateRangeLabel(dateRange);
+
+  const applyDraftRange = () => {
+    if (!draftRange?.from || !draftRange.to) {
+      return;
+    }
+
+    onChange({
+      from: formatDateInputValue(draftRange.from),
+      to: formatDateInputValue(draftRange.to)
+    });
+    setOpen(false);
+  };
+  const selectPreset = (preset: TransactionDatePreset) => setDraftRange(toCalendarRange(getPresetDateRange(preset)));
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+
+    if (nextOpen) {
+      setDraftRange(toCalendarRange(dateRange));
+    }
+  };
+  const pickerContent = (
+    <TransactionDatePickerContent
+      calendarEndMonth={calendarEndMonth}
+      calendarStartMonth={calendarStartMonth}
+      draftRange={draftRange}
+      onApply={applyDraftRange}
+      onDraftRangeChange={setDraftRange}
+      onPresetSelect={selectPreset}
+    />
+  );
+
+  return (
+    <>
+      <Button className="transaction-date-range-trigger mobile" onClick={() => {
+        setIsMobilePicker(true);
+        handleOpenChange(true);
+      }} type="button" variant="secondary">
+        <CalendarDays aria-hidden="true" className="h-4 w-4" />
+        <span>{label}</span>
+      </Button>
+      <Drawer onOpenChange={handleOpenChange} open={open && isMobilePicker}>
+        <DrawerContent className="transaction-date-drawer">
+          <DrawerHeader className="mobile-filter-header">
+            <DrawerTitle>Date range</DrawerTitle>
+            <DrawerDescription className="sr-only">Choose a transaction date range.</DrawerDescription>
+            <DrawerHeaderClose className="mobile-filter-close" />
+          </DrawerHeader>
+          {pickerContent}
+        </DrawerContent>
+      </Drawer>
+      <Popover onOpenChange={handleOpenChange} open={open && !isMobilePicker}>
+        <PopoverTrigger asChild>
+          <Button className="transaction-date-range-trigger desktop" onClick={() => setIsMobilePicker(false)} type="button" variant="secondary">
+            <CalendarDays aria-hidden="true" className="h-4 w-4" />
+            <span>{label}</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="transaction-date-popover">
+          {pickerContent}
+        </PopoverContent>
+      </Popover>
+    </>
+  );
+}
+
+function TransactionDatePickerContent({
+  calendarEndMonth,
+  calendarStartMonth,
+  draftRange,
+  onApply,
+  onDraftRangeChange,
+  onPresetSelect
+}: {
+  calendarEndMonth: Date;
+  calendarStartMonth: Date;
+  draftRange: DateRange | undefined;
+  onApply: () => void;
+  onDraftRangeChange: (range: DateRange | undefined) => void;
+  onPresetSelect: (preset: TransactionDatePreset) => void;
+}) {
+  return (
+    <div className="transaction-date-picker">
+      <div className="transaction-date-presets">
+        {datePresets.map((preset) => (
+          <button key={preset} onClick={() => onPresetSelect(preset)} type="button">
+            {preset}
+          </button>
+        ))}
+      </div>
+      <Calendar
+        captionLayout="dropdown"
+        defaultMonth={draftRange?.from}
+        endMonth={calendarEndMonth}
+        fixedWeeks
+        mode="range"
+        navLayout="after"
+        numberOfMonths={1}
+        onSelect={onDraftRangeChange}
+        selected={draftRange}
+        startMonth={calendarStartMonth}
+      />
+      <div className="transaction-date-popover-footer">
+        <span>{getDraftRangeLabel(draftRange)}</span>
+        <Button disabled={!draftRange?.from || !draftRange.to} onClick={onApply} type="button">
+          Apply
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+type TransactionDatePreset = "This month" | "Last 30 days" | "Last 90 days" | "This year";
+
+const datePresets: TransactionDatePreset[] = ["This month", "Last 30 days", "Last 90 days", "This year"];
+
+function getPresetDateRange(preset: TransactionDatePreset) {
+  const today = new Date();
+
+  if (preset === "This month") {
+    return getThisMonthDateRange(today);
+  }
+
+  if (preset === "This year") {
+    return {
+      from: formatDateInputValue(new Date(today.getFullYear(), 0, 1)),
+      to: formatDateInputValue(today)
+    };
+  }
+
+  const days = preset === "Last 30 days" ? 30 : 90;
+  const from = new Date(today);
+  from.setDate(today.getDate() - days + 1);
+
+  return {
+    from: formatDateInputValue(from),
+    to: formatDateInputValue(today)
+  };
+}
+
+function toCalendarRange(dateRange: TransactionDateRange): DateRange | undefined {
+  const from = parseInputDate(dateRange.from);
+  const to = parseInputDate(dateRange.to);
+
+  if (!from && !to) {
+    return undefined;
+  }
+
+  return { from, to };
+}
+
+function parseInputDate(value: string) {
+  if (!value) {
+    return undefined;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return undefined;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function getDateRangeLabel(dateRange: TransactionDateRange) {
+  const from = parseInputDate(dateRange.from);
+  const to = parseInputDate(dateRange.to);
+
+  if (!from && !to) {
+    return "Choose dates";
+  }
+
+  if (!from || !to) {
+    return from ? `From ${format(from, "d MMM yyyy")}` : `To ${format(to as Date, "d MMM yyyy")}`;
+  }
+
+  return `${format(from, "d MMM yyyy")} - ${format(to, "d MMM yyyy")}`;
+}
+
+function getDraftRangeLabel(dateRange: DateRange | undefined) {
+  if (!dateRange?.from) {
+    return "Select start and end";
+  }
+
+  if (!dateRange.to) {
+    return `From ${format(dateRange.from, "d MMM yyyy")}`;
+  }
+
+  return `${format(dateRange.from, "d MMM yyyy")} - ${format(dateRange.to, "d MMM yyyy")}`;
 }
 
 type TransactionFilterDialogProps = {

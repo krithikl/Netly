@@ -1,4 +1,4 @@
-import type { Budget, CardFitBasis, CardValue, RecurringMerchant, Transaction } from "@/lib/types";
+import type { Budget, CardFitBasis, CardValue, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 
 export type ActiveViewProps = {
@@ -20,11 +20,13 @@ export type ActiveViewProps = {
   income: number;
   insights: string[];
   isConnected: boolean;
+  isLoadingMoreTransactions: boolean;
   isLoadingTransactions: boolean;
   monthlySpend: number;
   onCreateCategory: (category: string) => void;
   onCategoryChange: (transactionId: string, category: string) => void;
   onConnectionResponseChange: (value: string) => void;
+  onLoadMoreTransactions: () => void;
   onRefreshUserTransactions: () => void;
   query: string;
   recurring: RecurringMerchant[];
@@ -35,12 +37,15 @@ export type ActiveViewProps = {
   setQuery: (query: string) => void;
   setSyncResult: (value: string) => void;
   setTransactionCategory: (categories: string[]) => void;
+  setTransactionDateRange: (dateRange: TransactionDateRange) => void;
   setTransactionFilter: (filter: TransactionFilter) => void;
   setTransactionSort: (sort: TransactionSort) => void;
   syncResult: string;
   transactionCategory: string[];
   transactionCategoryOptions: string[];
+  transactionDateRange: TransactionDateRange;
   transactionFilter: TransactionFilter;
+  transactionsHasMore: boolean;
   transactionPreview: Transaction[];
   transactionSort: TransactionSort;
   upcomingCount: number;

@@ -64,6 +64,11 @@ export type RawBankTransaction = {
 
 export type PeriodOption = "This month" | "30 days" | "90 days" | "All";
 
+export type TransactionDateRange = {
+  from: string;
+  to: string;
+};
+
 export type CardProduct = {
   name: string;
   issuer: string;

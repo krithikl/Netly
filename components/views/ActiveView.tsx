@@ -13,9 +13,14 @@ export function ActiveView(props: ActiveViewProps) {
         <TransactionsView
           categoryColors={props.categoryColors}
           categoryOptions={props.transactionCategoryOptions}
+          dateRange={props.transactionDateRange}
+          hasMoreTransactions={props.transactionsHasMore}
+          isLoadingMoreTransactions={props.isLoadingMoreTransactions}
           isLoadingTransactions={props.isLoadingTransactions}
           onCategoryChange={props.onCategoryChange}
           onCreateCategory={props.onCreateCategory}
+          onDateRangeChange={props.setTransactionDateRange}
+          onLoadMoreTransactions={props.onLoadMoreTransactions}
           query={props.query}
           setQuery={props.setQuery}
           setTransactionCategory={props.setTransactionCategory}

@@ -816,9 +816,10 @@ h2 {
 
 .transaction-controls {
   display: grid;
-  grid-template-columns: minmax(240px, 1.4fr) repeat(3, minmax(170px, 0.8fr));
+  grid-template-columns: minmax(220px, 1.35fr) minmax(230px, 1fr) repeat(3, minmax(150px, 0.75fr));
   gap: 12px;
   margin: 14px 0;
+  align-items: end;
 }
 
 .transaction-mobile-controls {
@@ -845,6 +846,341 @@ h2 {
   color: var(--ink);
   font: inherit;
   text-transform: none;
+}
+
+.transaction-date-range-trigger {
+  min-height: 44px;
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+  border: 1px solid var(--outline);
+  background: rgba(255, 251, 255, 0.9);
+  color: var(--ink);
+  box-shadow: 0 8px 20px rgba(29, 27, 32, 0.06);
+}
+
+.transaction-date-range-trigger.mobile {
+  display: none;
+}
+
+.transaction-date-range-trigger span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transaction-date-popover {
+  width: min(94vw, 430px);
+  padding: 0;
+  overflow: hidden;
+}
+
+.transaction-date-picker {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.transaction-date-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.transaction-date-presets button {
+  min-width: 0;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  padding: 9px 10px;
+  background: rgba(255, 251, 255, 0.9);
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+  line-height: 1.1;
+}
+
+.transaction-date-presets button:hover {
+  background: var(--surface-2);
+}
+
+.transaction-date-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--outline);
+  padding-top: 12px;
+}
+
+.transaction-date-popover-footer span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.transaction-date-drawer.transaction-date-drawer {
+  max-height: min(88dvh, 720px);
+  overflow: hidden;
+  padding: 0;
+}
+
+.transaction-date-drawer .transaction-date-picker {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 16px calc(18px + env(safe-area-inset-bottom));
+}
+
+.transaction-date-drawer .transaction-date-popover-footer {
+  position: sticky;
+  bottom: 0;
+  margin-inline: -16px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--surface);
+}
+
+.transaction-date-drawer .calendar-month-caption {
+  padding-inline: 46px;
+}
+
+.transaction-date-drawer .calendar-dropdowns {
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 0.62fr);
+  max-width: min(100%, 620px);
+  margin-inline: auto;
+}
+
+.transaction-date-drawer .calendar-nav {
+  inset-inline: 0;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+}
+
+.transaction-date-drawer .calendar-nav-button {
+  width: 40px;
+  height: 40px;
+}
+
+.calendar-root {
+  --calendar-day-size: 36px;
+  position: relative;
+  display: grid;
+  gap: 10px;
+  color: var(--ink);
+}
+
+.calendar-months,
+.calendar-month {
+  width: 100%;
+}
+
+.calendar-month-caption {
+  min-height: 42px;
+  margin-bottom: 8px;
+  padding-inline: 46px;
+}
+
+.calendar-month-caption > span {
+  display: none;
+}
+
+.calendar-dropdowns {
+  display: grid;
+  grid-template-columns: minmax(0, 190px) minmax(0, 128px);
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  min-width: 0;
+}
+
+.calendar-dropdown-root {
+  position: relative;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.calendar-dropdown-root .calendar-caption-label,
+.calendar-dropdown-root .calendar-chevron {
+  display: none;
+}
+
+.calendar-dropdown {
+  width: 100%;
+  height: 40px;
+  box-sizing: border-box;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  padding: 6px 28px 6px 12px;
+  background: rgba(255, 251, 255, 0.94);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-nav {
+  position: absolute;
+  inset: 0 0 auto 0;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  align-items: center;
+  min-height: 42px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.calendar-nav-button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  place-items: center;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  background: rgba(255, 251, 255, 0.9);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+  padding: 0;
+  pointer-events: auto;
+}
+
+.calendar-nav-button:first-child {
+  grid-column: 1;
+}
+
+.calendar-nav-button:last-child {
+  grid-column: 3;
+}
+
+.calendar-chevron {
+  width: 17px;
+  height: 17px;
+  display: block;
+  fill: currentColor;
+}
+
+.calendar-month-grid {
+  width: 100%;
+  max-width: 100%;
+  min-height: 264px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 3px;
+}
+
+.calendar-weekdays,
+.calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-weekday {
+  display: grid;
+  height: 30px;
+  place-items: center;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.calendar-day {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  isolation: isolate;
+}
+
+.calendar-day-button {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: var(--calendar-day-size);
+  height: var(--calendar-day-size);
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.calendar-day-button:hover {
+  background: var(--surface-2);
+}
+
+.calendar-day[data-outside="true"] .calendar-day-button {
+  color: rgba(98, 87, 97, 0.62);
+}
+
+.calendar-day[data-disabled="true"] .calendar-day-button {
+  cursor: default;
+  opacity: 0.42;
+}
+
+.calendar-today .calendar-day-button {
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.calendar-range-middle {
+  background: rgba(0, 166, 147, 0.08);
+}
+
+.calendar-range-start {
+  border-radius: 999px 0 0 999px;
+  background: rgba(0, 166, 147, 0.08);
+}
+
+.calendar-range-end {
+  border-radius: 0 999px 999px 0;
+  background: rgba(0, 166, 147, 0.08);
+}
+
+.calendar-range-start.calendar-range-end {
+  border-radius: 999px;
+}
+
+.calendar-range-start .calendar-day-button,
+.calendar-range-end .calendar-day-button {
+  background: var(--primary);
+  color: white;
+  box-shadow: none;
+}
+
+.calendar-range-middle .calendar-day-button {
+  color: var(--ink);
+}
+
+.calendar-range-middle.calendar-day[data-outside="true"] .calendar-day-button {
+  color: #6f6670;
+}
+
+.calendar-day[data-outside="true"].calendar-range-start,
+.calendar-day[data-outside="true"].calendar-range-end,
+.calendar-day[data-outside="true"].calendar-range-middle {
+  background: rgba(0, 166, 147, 0.05);
+}
+
+.calendar-day[data-outside="true"].calendar-range-start .calendar-day-button,
+.calendar-day[data-outside="true"].calendar-range-end .calendar-day-button {
+  background: #c7ede7;
+  color: #123b36;
+}
+
+.calendar-day.calendar-selected:not(.calendar-range-start):not(.calendar-range-end) .calendar-day-button {
+  background: transparent;
+  color: var(--ink);
 }
 
 .category-create-row input:focus,
@@ -1300,6 +1636,14 @@ h2 {
     margin: 12px 0 14px;
   }
 
+  .transaction-date-range-trigger.desktop {
+    display: none;
+  }
+
+  .transaction-date-range-trigger.mobile {
+    display: inline-flex;
+  }
+
   .transaction-mobile-search {
     display: grid;
     gap: 6px;
@@ -1640,7 +1984,7 @@ h2 {
   }
 
   .transaction-controls {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .transaction-controls label {
@@ -1649,6 +1993,33 @@ h2 {
 
   .category-create-row button {
     justify-self: start;
+  }
+
+  .calendar-month-caption {
+    padding-inline: 38px;
+  }
+
+  .calendar-dropdowns {
+    grid-template-columns: minmax(0, 1fr) minmax(78px, 0.62fr);
+    gap: 6px;
+  }
+
+  .calendar-dropdown {
+    height: 38px;
+    padding: 5px 24px 5px 10px;
+    border-radius: 17px;
+    font-size: 12px;
+  }
+
+  .calendar-nav {
+    inset-inline: 0;
+    grid-template-columns: 38px minmax(0, 1fr) 38px;
+  }
+
+  .calendar-nav-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 17px;
   }
 
 }

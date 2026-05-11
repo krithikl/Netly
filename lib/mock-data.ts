@@ -1,4 +1,5 @@
 import { categorizeTransactions } from "./categorization";
+import dummyTransactions from "@/lib/open-banking/dummy-transactions.json";
 import type { Budget, CardProduct, RawBankTransaction, Transaction } from "./types";
 
 export const payday = "2026-05-15";
@@ -306,7 +307,7 @@ const demoMerchantWebsites: Record<string, string> = {
   "Chemist Warehouse": "https://www.chemistwarehouse.co.nz/"
 };
 
-export const transactions: Transaction[] = categorizeTransactions(rawBankTransactions).map(toAkahuDemoTransaction);
+export const transactions: Transaction[] = (dummyTransactions as { items?: Transaction[] }).items || [];
 
 function toAkahuDemoTransaction(txn: ReturnType<typeof categorizeTransactions>[number], index: number): Transaction {
   const account = getDemoAccount(txn.account);

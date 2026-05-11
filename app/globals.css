@@ -21,6 +21,7 @@
   --outline: #d8cfd6;
   --primary: #006b5f;
   --primary-soft: #cde8e2;
+  --focus-ring: rgba(0, 166, 147, 0.32);
   --secondary: #5c5f00;
   --danger: #ba1a1a;
   --success: #146c2e;
@@ -770,7 +771,7 @@ h2 {
 }
 
 .info-row.clickable:focus-visible {
-  outline: 3px solid rgba(0, 166, 147, 0.32);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -888,7 +889,7 @@ h2 {
 
 .transaction-select-trigger:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 166, 147, 0.28);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .transaction-select-trigger span {
@@ -1315,7 +1316,7 @@ h2 {
 
 .category-create-row input:focus,
 .transaction-controls input:focus {
-  outline: 2px solid rgba(0, 107, 95, 0.24);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 

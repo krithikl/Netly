@@ -88,7 +88,7 @@ function CategoryColorRow({
 }: CategoryColorRowProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const colorToggleClassName = cn(
-    "h-7 w-7 rounded-full border-2 border-transparent p-0 shadow-sm transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+    "h-7 w-7 rounded-full border-2 border-transparent p-0 shadow-sm transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]",
     isActive && "border-[var(--ink)]"
   );
   const handleDelete = () => {
@@ -174,7 +174,7 @@ type ColorOptionButtonProps = {
 function ColorOptionButton({ category, color, currentColor, updateCategoryColor }: ColorOptionButtonProps) {
   const isSelected = currentColor === color;
   const buttonClassName = cn(
-    "h-8 w-8 rounded-full border-2 border-transparent p-0 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
+    "h-8 w-8 rounded-full border-2 border-transparent p-0 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]",
     isSelected && "border-[var(--ink)]"
   );
   

@@ -56,7 +56,7 @@ const DrawerHeaderClose = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Close>
 >(({ className, children, ...props }, ref) => (
   <DrawerPrimitive.Close
-    className={cn("inline-grid h-10 w-10 place-items-center rounded-full text-[var(--muted)] hover:text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]", className)}
+    className={cn("inline-grid h-10 w-10 place-items-center rounded-full text-[var(--muted)] hover:text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]", className)}
     ref={ref}
     {...props}
   >

@@ -24,49 +24,40 @@ export const defaultTransactionCategories = [
   "Groceries",
   "Eating out",
   "Transport",
-  "Fuel",
   "Housing",
   "Utilities",
-  "Bills",
   "Shopping",
-  "Subscriptions",
   "Health",
   "Lifestyle",
-  "Insurance",
   "Education",
   "Entertainment",
   "Travel",
-  "Transfers",
   "Fees",
   "Income",
+  "Other",
   "Needs review"
 ];
 
 export const netlyPalette = [
-  "#ef5350", "#d84315", "#f57c00", "#ffb300", "#43a047",
-  "#26a69a", "#00a693", "#4285f4", "#5e97f6", "#7e57c2",
-  "#ab47bc", "#ec407a", "#8d6e63", "#78909c", "#607d8b"
+  "#ef5350", "#ec407a", "#ab47bc", "#7e57c2", "#5c6bc0",
+  "#4285f4", "#039be5", "#26c6da", "#43a047", "#7cb342",
+  "#c0ca33", "#ffb300", "#f57c00", "#8d6e63", "#607d8b"
 ];
 
 export const defaultCategoryColors: Record<string, string> = {
-  Groceries: "#00a693",
-  "Eating out": "#f57c00",
-  Transport: "#4285f4",
-  Fuel: "#5e97f6",
-  Subscriptions: "#ab47bc",
-  Utilities: "#ffb300",
-  Bills: "#ffb300",
-  Housing: "#78909c",
   Shopping: "#ef5350",
-  Health: "#26a69a",
-  Lifestyle: "#d84315",
-  Insurance: "#7e57c2",
-  Education: "#43a047",
+  "Eating out": "#d84315",
+  Housing: "#f57c00",
+  Utilities: "#ffb300",
   Income: "#43a047",
+  Groceries: "#26a69a",
+  Health: "#00acc1",
+  Transport: "#4285f4",
+  Education: "#5e97f6",
   Travel: "#7e57c2",
+  Lifestyle: "#ab47bc",
   Entertainment: "#ec407a",
-  Transfers: "#8d6e63",
-  Fees: "#d84315",
-  Other: "#9e9e9e",
+  Other: "#8d6e63",
+  Fees: "#78909c",
   "Needs review": "#607d8b"
 };

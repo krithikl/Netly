@@ -7,13 +7,17 @@ export const payday = "2026-05-15";
 export const currentBalance = 3268.42;
 
 export const budgets: Budget[] = [
-  { category: "Groceries", limit: 760, color: "#00a693" },
-  { category: "Eating out", limit: 340, color: "#f57c00" },
-  { category: "Transport", limit: 260, color: "#4285f4" },
-  { category: "Subscriptions", limit: 120, color: "#ab47bc" },
+  { category: "Housing", limit: 1200, color: "#f57c00" },
+  { category: "Groceries", limit: 760, color: "#26a69a" },
+  { category: "Travel", limit: 450, color: "#7e57c2" },
+  { category: "Eating out", limit: 340, color: "#d84315" },
+  { category: "Lifestyle", limit: 320, color: "#ab47bc" },
   { category: "Shopping", limit: 280, color: "#ef5350" },
-  { category: "Health", limit: 180, color: "#26a69a" },
-  { category: "Needs review", limit: 200, color: "#607d8b" }
+  { category: "Transport", limit: 260, color: "#4285f4" },
+  { category: "Entertainment", limit: 240, color: "#ec407a" },
+  { category: "Utilities", limit: 220, color: "#ffb300" },
+  { category: "Needs review", limit: 200, color: "#607d8b" },
+  { category: "Health", limit: 180, color: "#00acc1" }
 ];
 
 export const cardProducts: CardProduct[] = [

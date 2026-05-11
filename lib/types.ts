@@ -97,6 +97,23 @@ export type CardValue = CardProduct & {
   eligibleAnnualSpend: number;
 };
 
+export type CardFitDriver = {
+  category: string;
+  annualSpend: number;
+  estimatedRewardValue: number;
+  shareOfEligibleSpend: number;
+};
+
+export type CardFitExplanation = {
+  recommendedCardName: string;
+  comparisonCardName: string;
+  annualDelta: number;
+  grossRewardsDelta: number;
+  perksDelta: number;
+  annualFeeDelta: number;
+  drivers: CardFitDriver[];
+};
+
 export type CardFitBasis = {
   windowDays: number;
   transactionCount: number;

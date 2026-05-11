@@ -1,22 +1,41 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerHeaderClose,
+  DrawerTitle,
+  DrawerTrigger
+} from "@/components/ui/drawer";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger
+} from "@/components/ui/sheet";
 import { formatMoney } from "@/lib/insights";
-import type { CardFitBasis, CardValue } from "@/lib/types";
+import type { CardFitBasis, CardFitExplanation, CardValue } from "@/lib/types";
 
 type CardFitViewProps = {
   cards: CardValue[];
   cardFitSourceLabel: string;
   cardFitWindowLabel: string;
+  explanation: CardFitExplanation | null;
   hasCardEligibleSpend: boolean;
   basis: CardFitBasis;
 };
 
-export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, cards, hasCardEligibleSpend }: CardFitViewProps) {
+export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, cards, explanation, hasCardEligibleSpend }: CardFitViewProps) {
   const subtitle = getCardFitSubtitle(cardFitSourceLabel);
   const [issuerFilter, setIssuerFilter] = useState(allIssuersFilter);
   const [typeFilter, setTypeFilter] = useState<CardTypeFilter>(allTypesFilter);
+  const isBottomNavigation = useIsBottomNavigation();
   const issuerOptions = useMemo(() => getIssuerOptions(cards), [cards]);
   const typeOptions = useMemo(() => getCardTypeOptions(), []);
   const filteredCards = useMemo(
@@ -50,7 +69,13 @@ export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, car
         )}
         <div className="card-list">
           {filteredCards.map((card, index) => (
-            <CardOption card={card} index={index} key={card.name} />
+            <CardOption
+              card={card}
+              explanation={hasCardEligibleSpend && index === 0 ? explanation : null}
+              index={index}
+              isBottomNavigation={isBottomNavigation}
+              key={card.name}
+            />
           ))}
           {filteredCards.length === 0 && (
             <div className="empty-state">No cards match the current filters.</div>
@@ -117,7 +142,60 @@ function CardFitBasisSummary({ basis, cardFitWindowLabel }: { basis: CardFitBasi
   );
 }
 
-function CardOption({ card, index }: { card: CardValue; index: number }) {
+function CardFitExplanationPanel({ explanation }: { explanation: CardFitExplanation }) {
+  const deltaLabel = getDeltaLabel(explanation);
+  const breakdown = getExplanationBreakdown(explanation);
+
+  return (
+    <div className="card-fit-explanation" aria-label="Why this card wins">
+      <section className="card-fit-explanation-summary">
+        <span>Best fit</span>
+        <strong>{explanation.recommendedCardName}</strong>
+        <p>{deltaLabel}</p>
+      </section>
+      <section className="card-fit-explanation-section">
+        <h3>Annual value difference</h3>
+        <div className="card-fit-explanation-rows">
+          {breakdown.map((item) => (
+            <div key={item.label}>
+              <span>{item.label}</span>
+              <strong className={getSignedAmountClassName(item.value)}>{formatSignedMoney(item.value)}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+      {explanation.drivers.length > 0 && (
+        <section className="card-fit-explanation-section">
+          <h3>Top eligible spend drivers</h3>
+          <div className="card-fit-driver-rows">
+            {explanation.drivers.map((driver) => (
+              <div key={driver.category}>
+                <span>
+                  <strong>{driver.category}</strong>
+                  {formatPercent(driver.shareOfEligibleSpend)}
+                </span>
+                <strong>{formatMoney(driver.estimatedRewardValue)}</strong>
+                <small>{formatMoney(driver.annualSpend)} eligible spend</small>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function CardOption({
+  card,
+  explanation,
+  index,
+  isBottomNavigation
+}: {
+  card: CardValue;
+  explanation: CardFitExplanation | null;
+  index: number;
+  isBottomNavigation: boolean;
+}) {
   const isWinner = index === 0;
   const cardOptionClassName = getCardOptionClassName(isWinner);
   const cardOptionStyle = getCardOptionStyle(card, isWinner);
@@ -155,13 +233,118 @@ function CardOption({ card, index }: { card: CardValue; index: number }) {
         <span>Estimated annual net value</span>
         <strong>{formatMoney(card.annualValue)}</strong>
         <small>{eligibleSpendLabel}</small>
+        {explanation && (
+          <CardFitExplanationTrigger explanation={explanation} isBottomNavigation={isBottomNavigation} />
+        )}
       </div>
     </article>
   );
 }
 
+function CardFitExplanationTrigger({
+  explanation,
+  isBottomNavigation
+}: {
+  explanation: CardFitExplanation;
+  isBottomNavigation: boolean;
+}) {
+  const trigger = (
+    <button className="card-fit-explanation-trigger" type="button">
+      Why this wins
+    </button>
+  );
+
+  if (isBottomNavigation) {
+    return (
+      <Drawer>
+        <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+        <DrawerContent className="card-fit-explanation-drawer">
+          <DrawerHeader className="mobile-filter-header">
+            <DrawerTitle>Why this wins</DrawerTitle>
+            <DrawerDescription className="sr-only">Card fit recommendation explanation.</DrawerDescription>
+            <DrawerHeaderClose className="mobile-filter-close" />
+          </DrawerHeader>
+          <div className="card-fit-explanation-drawer-body">
+            <CardFitExplanationPanel explanation={explanation} />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>{trigger}</SheetTrigger>
+      <SheetContent className="card-fit-explanation-sheet overflow-hidden p-0">
+        <div className="card-fit-explanation-sheet-body flex h-full flex-col overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Why this wins</SheetTitle>
+            <SheetDescription>How Netly estimated the top card from your eligible spend.</SheetDescription>
+          </SheetHeader>
+          <CardFitExplanationPanel explanation={explanation} />
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 function getCardFitSubtitle(cardFitSourceLabel: string) {
   return `Cards are ranked from ${cardFitSourceLabel}: rewards earned + estimated perks - annual fee.`;
+}
+
+function getDeltaLabel(explanation: CardFitExplanation) {
+  if (explanation.annualDelta > 0) {
+    return `About ${formatMoney(explanation.annualDelta)} per year more than ${explanation.comparisonCardName}.`;
+  }
+
+  return `This card is closest on estimated annual value compared with ${explanation.comparisonCardName}.`;
+}
+
+function getExplanationBreakdown(explanation: CardFitExplanation) {
+  return [
+    { label: "Rewards", value: explanation.grossRewardsDelta },
+    { label: "Perks", value: explanation.perksDelta },
+    { label: "Fee impact", value: explanation.annualFeeDelta }
+  ];
+}
+
+function formatSignedMoney(amount: number) {
+  if (amount > 0) {
+    return `+${formatMoney(amount)}`;
+  }
+
+  return formatMoney(amount);
+}
+
+function formatPercent(value: number) {
+  return new Intl.NumberFormat("en-NZ", {
+    maximumFractionDigits: 0,
+    style: "percent"
+  }).format(value);
+}
+
+function getSignedAmountClassName(amount: number) {
+  return clsx(amount > 0 && "positive", amount < 0 && "negative");
+}
+
+function useIsBottomNavigation() {
+  const [isBottomNavigation, setIsBottomNavigation] = useState(() => getIsBottomNavigation());
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 1024px)");
+    const handleChange = () => setIsBottomNavigation(mediaQuery.matches);
+
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  return isBottomNavigation;
+}
+
+function getIsBottomNavigation() {
+  return typeof window === "undefined" ? false : window.matchMedia("(max-width: 1024px)").matches;
 }
 
 function getCardOptionClassName(isWinner: boolean) {

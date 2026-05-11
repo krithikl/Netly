@@ -1,4 +1,4 @@
-import type { Budget, CardFitBasis, CardValue, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
+import type { Budget, CardFitBasis, CardFitExplanation, CardValue, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 
 export type ActiveViewProps = {
@@ -8,6 +8,7 @@ export type ActiveViewProps = {
   cardBasis: CardFitBasis;
   cardFitSourceLabel: string;
   cardFitWindowLabel: string;
+  cardFitExplanation: CardFitExplanation | null;
   cards: CardValue[];
   categories: { category: string; amount: number }[];
   chartCategories: { category: string; amount: number }[];

@@ -38,6 +38,7 @@ export function ActiveView(props: ActiveViewProps) {
       return (
         <CardFitView
           basis={props.cardBasis}
+          explanation={props.cardFitExplanation}
           cardFitSourceLabel={props.cardFitSourceLabel}
           cardFitWindowLabel={props.cardFitWindowLabel}
           cards={props.cards}

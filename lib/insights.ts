@@ -1,4 +1,4 @@
-import type { CardFitBasis, CardProduct, CardValue, RecurringMerchant, Transaction } from "./types";
+import type { CardFitBasis, CardFitDriver, CardFitExplanation, CardProduct, CardValue, RecurringMerchant, Transaction } from "./types";
 import {
   getTransactionCategory,
   getTransactionDate,
@@ -8,6 +8,8 @@ import {
 
 const cardExcludedCategories = new Set(["Housing", "Income", "Transfers", "Fees", "Needs review"]);
 const cardFitWindowDays = 365;
+const defaultComparisonCardName = "Current debit card baseline";
+const cardFitDriverLimit = 3;
 
 export function formatMoney(amount: number, exact = false) {
   return new Intl.NumberFormat("en-NZ", {
@@ -108,25 +110,77 @@ export function annualCardValues(transactions: Transaction[], cardProducts: Card
   const eligibleAnnualSpend = basis.eligibleAnnualSpend;
 
   return cardProducts
-    .map((card) => {
-      const grossRewards = eligibleAnnualSpend * card.cashbackRate;
-
-      return {
-        ...card,
-        grossRewards,
-        eligibleAnnualSpend,
-        annualValue: grossRewards + card.perksValue - card.annualFee
-      };
-    })
+    .map((card) => getAnnualCardValue(card, eligibleAnnualSpend))
     .sort((a, b) => b.annualValue - a.annualValue);
 }
 
 // Returns the card spend estimate and ranked card list together
-export function calculateCardFit(transactions: Transaction[], cardProducts: CardProduct[]) {
+export function calculateCardFit(transactions: Transaction[], cardProducts: CardProduct[], comparisonCard?: CardProduct) {
+  const basis = cardFitBasis(transactions);
+  const cards = annualCardValues(transactions, cardProducts);
+  const comparisonCardValue = comparisonCard
+    ? getAnnualCardValue(comparisonCard, basis.eligibleAnnualSpend)
+    : getDefaultComparisonCard(cards);
+
   return {
-    basis: cardFitBasis(transactions),
-    cards: annualCardValues(transactions, cardProducts)
+    basis,
+    cards,
+    explanation: buildCardFitExplanation(basis, cards, comparisonCardValue)
   };
+}
+
+function getAnnualCardValue(card: CardProduct, eligibleAnnualSpend: number): CardValue {
+  const grossRewards = eligibleAnnualSpend * card.cashbackRate;
+
+  return {
+    ...card,
+    grossRewards,
+    eligibleAnnualSpend,
+    annualValue: grossRewards + card.perksValue - card.annualFee
+  };
+}
+
+function buildCardFitExplanation(
+  basis: CardFitBasis,
+  cards: CardValue[],
+  comparisonCard: CardValue | undefined
+): CardFitExplanation | null {
+  const recommendedCard = cards[0];
+
+  if (!recommendedCard || !comparisonCard || basis.eligibleAnnualSpend <= 0 || basis.eligibleTransactionCount <= 0) {
+    return null;
+  }
+
+  const grossRewardsDelta = recommendedCard.grossRewards - comparisonCard.grossRewards;
+  const perksDelta = recommendedCard.perksValue - comparisonCard.perksValue;
+  const annualFeeDelta = comparisonCard.annualFee - recommendedCard.annualFee;
+
+  return {
+    recommendedCardName: recommendedCard.name,
+    comparisonCardName: comparisonCard.name,
+    annualDelta: recommendedCard.annualValue - comparisonCard.annualValue,
+    grossRewardsDelta,
+    perksDelta,
+    annualFeeDelta,
+    drivers: getCardFitDrivers(basis, recommendedCard)
+  };
+}
+
+function getDefaultComparisonCard(cards: CardValue[]) {
+  return cards.find((card) => card.name === defaultComparisonCardName)
+    || cards.find((card) => card.tier === "Debit" && card.cashbackRate === 0 && card.annualFee === 0)
+    || cards[0];
+}
+
+function getCardFitDrivers(basis: CardFitBasis, recommendedCard: CardValue): CardFitDriver[] {
+  return basis.categories
+    .slice(0, cardFitDriverLimit)
+    .map((item) => ({
+      category: item.category,
+      annualSpend: item.amount,
+      estimatedRewardValue: item.amount * recommendedCard.cashbackRate,
+      shareOfEligibleSpend: basis.eligibleAnnualSpend > 0 ? item.amount / basis.eligibleAnnualSpend : 0
+    }));
 }
 
 // Builds the short insight messages shown on the dashboard

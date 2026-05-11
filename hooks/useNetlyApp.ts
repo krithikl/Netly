@@ -159,6 +159,7 @@ export function useNetlyApp() {
     availableBalance: banking.availableBalance,
     budgets,
     cardBasis: cardFit.basis,
+    cardFitExplanation: cardFit.explanation,
     cardFitSourceLabel: getCardFitSourceLabel(banking.dataMode, banking.isConnected),
     cardFitWindowLabel: getCardFitWindowLabel(cardFit.basis),
     cards: cardFit.cards,

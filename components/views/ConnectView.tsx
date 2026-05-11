@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 type ConnectViewProps = {
   connectionResponse: string;
-  completeOpenBankingConnection: (responseValue?: string) => Promise<void>;
+  completeAkahuConnection: (responseValue?: string) => Promise<void>;
   onConnectionResponseChange: (value: string) => void;
   setSyncResult: (value: string) => void;
   syncResult: string;
@@ -13,7 +13,7 @@ type ConnectViewProps = {
 
 export function ConnectView({
   connectionResponse,
-  completeOpenBankingConnection,
+  completeAkahuConnection,
   onConnectionResponseChange,
   setSyncResult,
   syncResult
@@ -21,10 +21,10 @@ export function ConnectView({
   const canCompleteConnection = connectionResponse.trim().length > 0;
   const handleAuthorizationStart = () => {
     setSyncResult("Opening Akahu authorization...");
-    window.location.href = "/api/open-banking/start";
+    window.location.href = "/api/akahu/start";
   };
   const handleConnectionResponseChange = (event: ChangeEvent<HTMLTextAreaElement>) => onConnectionResponseChange(event.target.value);
-  const handleConnectionComplete = () => completeOpenBankingConnection(connectionResponse);
+  const handleConnectionComplete = () => completeAkahuConnection(connectionResponse);
 
   return (
     <section className="view-stack">

@@ -31,7 +31,7 @@ type AccountsPayload = {
 };
 
 // Loads Akahu or demo data and keeps accounts, balances, and transactions together
-export function useOpenBankingData() {
+export function useAkahuData() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionPageTransactions, setTransactionPageTransactions] = useState<Transaction[]>([]);
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
@@ -84,8 +84,8 @@ export function useOpenBankingData() {
     const [transactionsResponse, transactionPageResponse, balancesResponse, accountsResponse] = await Promise.all([
       transactionRequest,
       transactionPageRequest,
-      fetch(`/api/open-banking/balances?source=${mode}`),
-      fetch(`/api/open-banking/accounts?source=${mode}`)
+      fetch(`/api/akahu/balances?source=${mode}`),
+      fetch(`/api/akahu/accounts?source=${mode}`)
     ]);
 
     const transactionsPayload = (await transactionsResponse.json()) as TransactionsPayload;
@@ -95,10 +95,10 @@ export function useOpenBankingData() {
     const balancesPayload = (await balancesResponse.json()) as BalancesPayload;
     const accountsPayload = (await accountsResponse.json()) as AccountsPayload;
 
-    assertOpenBankingResponse(transactionsResponse, transactionsPayload.error, "Could not load transactions.");
-    assertOpenBankingResponse(transactionPageResponse, transactionPagePayload.error, "Could not load transactions.");
-    assertOpenBankingResponse(balancesResponse, balancesPayload.error, "Could not load balances.");
-    assertOpenBankingResponse(accountsResponse, accountsPayload.error, "Could not load accounts.");
+    assertAkahuResponse(transactionsResponse, transactionsPayload.error, "Could not load transactions.");
+    assertAkahuResponse(transactionPageResponse, transactionPagePayload.error, "Could not load transactions.");
+    assertAkahuResponse(balancesResponse, balancesPayload.error, "Could not load balances.");
+    assertAkahuResponse(accountsResponse, accountsPayload.error, "Could not load accounts.");
 
     setTransactions(transactionsPayload.transactions);
     setTransactionPageTransactions(transactionPagePayload.transactions);
@@ -122,7 +122,7 @@ export function useOpenBankingData() {
       const response = await fetch(getTransactionsUrl(mode, dateRange));
       const payload = (await response.json()) as TransactionsPayload;
 
-      assertOpenBankingResponse(response, payload.error, "Could not load transactions.");
+      assertAkahuResponse(response, payload.error, "Could not load transactions.");
       setTransactionPageTransactions(payload.transactions);
       setTransactionPageNextCursor(payload.nextCursor || null);
       setTransactionLoadError(payload.error || "");
@@ -143,7 +143,7 @@ export function useOpenBankingData() {
       const response = await fetch(getTransactionsUrl(dataMode, dateRange, transactionPageNextCursor));
       const payload = (await response.json()) as TransactionsPayload;
 
-      assertOpenBankingResponse(response, payload.error, "Could not load more transactions.");
+      assertAkahuResponse(response, payload.error, "Could not load more transactions.");
       setTransactionPageTransactions((currentTransactions) => [...currentTransactions, ...payload.transactions]);
       setTransactionPageNextCursor(payload.nextCursor || null);
       setTransactionLoadError(payload.error || "");
@@ -197,7 +197,7 @@ export function useOpenBankingData() {
   };
 }
 
-function assertOpenBankingResponse(response: Response, error: string | undefined, fallbackMessage: string) {
+function assertAkahuResponse(response: Response, error: string | undefined, fallbackMessage: string) {
   if (!response.ok) {
     throw new Error(error || fallbackMessage);
   }
@@ -218,5 +218,5 @@ function getTransactionsUrl(mode: DataMode, dateRange?: TransactionDateRange, cu
     params.set("cursor", cursor);
   }
 
-  return `/api/open-banking/transactions?${params.toString()}`;
+  return `/api/akahu/transactions?${params.toString()}`;
 }

@@ -1,5 +1,5 @@
 import { categorizeTransactions } from "./categorization";
-import dummyTransactions from "@/lib/open-banking/dummy-transactions.json";
+import dummyTransactions from "@/lib/akahu/dummy-transactions.json";
 import type { Budget, CardProduct, RawBankTransaction, Transaction } from "./types";
 
 export const payday = "2026-05-15";

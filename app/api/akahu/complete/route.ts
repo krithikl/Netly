@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { akahuUserTokenCookieName } from "@/lib/open-banking/token";
+import { akahuAccessTokenCookieName } from "@/lib/akahu/token";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => ({}))) as { response?: string; userToken?: string };
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.json({ message: "Akahu user token saved. Transactions will now load from Akahu." });
-  response.cookies.set(akahuUserTokenCookieName, userToken, {
+  response.cookies.set(akahuAccessTokenCookieName, userToken, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

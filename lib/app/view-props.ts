@@ -12,7 +12,7 @@ export type ActiveViewProps = {
   categories: { category: string; amount: number }[];
   chartCategories: { category: string; amount: number }[];
   chartTotal: number;
-  completeOpenBankingConnection: (responseValue?: string) => Promise<void>;
+  completeAkahuConnection: (responseValue?: string) => Promise<void>;
   connectionResponse: string;
   expensesCount: number;
   hasCardEligibleSpend: boolean;

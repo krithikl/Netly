@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
-import { akahuUserTokenCookieName } from "@/lib/open-banking/token";
+import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
+import { akahuAccessTokenCookieName } from "@/lib/akahu/token";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -21,16 +21,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const client = createOpenBankingClientFromEnv();
-    const token = await client.exchangeAuthorizationCode(code);
-
-    if (!token.access_token) {
-      const description = token.error_description || token.error || "missing_access_token";
-      return redirectWithStatus(request, `connect_error=${encodeURIComponent(description)}`);
-    }
+    const provider = createAkahuProviderFromEnv();
+    const accessToken = await provider.exchangeAuthorizationCode(code);
 
     const response = redirectWithStatus(request, "connected=1");
-    response.cookies.set(akahuUserTokenCookieName, token.access_token, {
+    response.cookies.set(akahuAccessTokenCookieName, accessToken, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

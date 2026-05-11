@@ -1,9 +1,13 @@
 import type { NextRequest, NextResponse } from "next/server";
 
 export const akahuUserTokenCookieName = "netly_akahu_user_token";
+export const akahuAccessTokenCookieName = "netly_akahu_access_token";
 
 export function getValidAccessToken(request: NextRequest) {
-  const userToken = request.cookies.get(akahuUserTokenCookieName)?.value || process.env.AKAHU_USER_TOKEN || "";
+  const userToken = request.cookies.get(akahuAccessTokenCookieName)?.value
+    || request.cookies.get(akahuUserTokenCookieName)?.value
+    || process.env.AKAHU_USER_TOKEN
+    || "";
 
   return {
     accessToken: userToken,

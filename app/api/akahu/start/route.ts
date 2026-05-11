@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
+import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 
 export async function GET() {
   try {
-    const client = createOpenBankingClientFromEnv();
+    const provider = createAkahuProviderFromEnv();
     const state = crypto.randomUUID();
-    const response = NextResponse.redirect(client.getAuthorizationUrl(state));
+    const response = NextResponse.redirect(provider.getAuthorizationUrl(state));
 
     response.cookies.set("netly_akahu_state", state, {
       httpOnly: true,

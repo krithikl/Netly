@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import type { View } from "@/lib/app/types";
 
 export const viewRoutes: Record<View, string> = {
@@ -13,8 +14,8 @@ export const routeViews: Record<string, View> = Object.fromEntries(
   Object.entries(viewRoutes).map(([view, route]) => [route, view])
 ) as Record<string, View>;
 
-export function getRouteForView(view: View) {
-  return viewRoutes[view];
+export function getRouteForView(view: View): Route {
+  return viewRoutes[view] as Route;
 }
 
 export function getViewForPathname(pathname: string): View {

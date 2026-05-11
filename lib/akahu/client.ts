@@ -1,5 +1,5 @@
-import type { AkahuAccount, AkahuAccountsResponse } from "@/lib/open-banking/accounts";
-import type { AkahuTransactionsResponse } from "@/lib/open-banking/normalize";
+import type { AkahuAccount, AkahuAccountsResponse } from "@/lib/akahu/accounts";
+import type { AkahuTransactionsResponse } from "@/lib/akahu/normalize";
 
 type AkahuConfig = {
   baseUrl: string;
@@ -176,7 +176,7 @@ export class AkahuClient {
 }
 
 // Creates an Akahu client from environment variables
-export function createOpenBankingClientFromEnv() {
+export function createAkahuClientFromEnv() {
   const appToken = process.env.AKAHU_APP_TOKEN;
 
   if (!appToken) {
@@ -187,7 +187,7 @@ export function createOpenBankingClientFromEnv() {
     baseUrl: process.env.AKAHU_BASE_URL || "https://api.akahu.io/v1",
     appToken,
     appSecret: process.env.AKAHU_APP_SECRET,
-    redirectUri: process.env.AKAHU_REDIRECT_URI || `${process.env.APP_BASE_URL || "http://localhost:3000"}/api/open-banking/callback`,
+    redirectUri: process.env.AKAHU_REDIRECT_URI || `${process.env.APP_BASE_URL || "http://localhost:3000"}/api/akahu/callback`,
     oauthUrl: process.env.AKAHU_OAUTH_URL || "https://oauth.akahu.nz"
   });
 }

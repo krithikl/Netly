@@ -1,6 +1,6 @@
 import type { ChangeEvent } from "react";
-import { useMemo, useState } from "react";
-import { ArrowDownUp, CalendarDays, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowDownUp, CalendarDays, Check, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
@@ -87,20 +87,17 @@ export function TransactionsView({
     setNewCategory("");
   };
   const editableCategoryOptions = useMemo(() => categoryOptions.filter((category) => category !== "All categories"), [categoryOptions]);
-  const categorySelectOptions = useMemo(() => getStringOptions(categoryOptions), [categoryOptions]);
   const editableCategorySelectOptions = useMemo(() => getStringOptions(editableCategoryOptions), [editableCategoryOptions]);
   const filterSelectOptions = useMemo(() => getStringOptions(transactionFilters), []);
   const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
   const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
   const shownTransactions = isLoadingTransactions ? [] : transactions;
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionCategory);
-  const desktopCategoryValue = getDesktopCategoryValue(transactionCategory);
+  const isBottomNavigation = useIsBottomNavigation();
   const resetFilters = () => {
     setTransactionFilter("All");
     setTransactionCategory([]);
   };
-  const handleDesktopCategoryChange = (category: string) => setTransactionCategory(category === "All categories" ? [] : [category]);
-
   // Let mobile users choose multiple categories, or clear them with All categories
   const toggleTransactionCategory = (category: string) => {
     if (category === "All categories") {
@@ -126,17 +123,38 @@ export function TransactionsView({
               value={query}
             />
           </label>
-          <TransactionDateRangePicker dateRange={dateRange} onChange={onDateRangeChange} />
-          <div className="transaction-mobile-actions">
-            <Button onClick={() => setFiltersOpen(true)} type="button" variant="secondary">
-              <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
-              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-            </Button>
-            <Button onClick={() => setSortOpen(true)} type="button" variant="secondary">
-              <ArrowDownUp aria-hidden="true" className="h-4 w-4" />
-              Sort
-            </Button>
-          </div>
+          <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
+          {isBottomNavigation ? (
+            <div className="transaction-mobile-actions">
+              <Button onClick={() => setFiltersOpen(true)} type="button" variant="secondary">
+                <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+                Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+              </Button>
+              <Button onClick={() => setSortOpen(true)} type="button" variant="secondary">
+                <ArrowDownUp aria-hidden="true" className="h-4 w-4" />
+                Sort
+              </Button>
+            </div>
+          ) : (
+            <div className="transaction-compact-selects">
+              <label>
+                Status
+                <SelectField className="transaction-select-trigger" onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
+              </label>
+              <label>
+                Category
+                <CategoryMultiSelect
+                  categoryOptions={categoryOptions}
+                  onCategoryToggle={toggleTransactionCategory}
+                  selectedCategories={transactionCategory}
+                />
+              </label>
+              <label>
+                Sort
+                <SelectField className="transaction-select-trigger" onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
+              </label>
+            </div>
+          )}
         </div>
         <div className="transaction-controls transaction-desktop-controls">
           <label>
@@ -151,15 +169,19 @@ export function TransactionsView({
           <TransactionDateRangePicker dateRange={dateRange} onChange={onDateRangeChange} />
           <label>
             Status
-            <SelectField onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
+            <SelectField className="transaction-select-trigger" onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
           </label>
           <label>
             Category
-            <SelectField onChange={handleDesktopCategoryChange} options={categorySelectOptions} value={desktopCategoryValue} />
+            <CategoryMultiSelect
+              categoryOptions={categoryOptions}
+              onCategoryToggle={toggleTransactionCategory}
+              selectedCategories={transactionCategory}
+            />
           </label>
           <label>
             Sort
-            <SelectField onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
+            <SelectField className="transaction-select-trigger" onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
           </label>
         </div>
         <TransactionFilterDialog
@@ -211,13 +233,16 @@ export function TransactionsView({
 
 function TransactionDateRangePicker({
   dateRange,
+  mode = "desktop",
   onChange,
 }: {
   dateRange: TransactionDateRange;
+  mode?: "compact" | "desktop";
   onChange: (dateRange: TransactionDateRange) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [isMobilePicker, setIsMobilePicker] = useState(false);
+  const isBottomNavigation = useIsBottomNavigation();
   const [draftRange, setDraftRange] = useState<DateRange | undefined>(() => toCalendarRange(dateRange));
   const calendarStartMonth = useMemo(() => new Date(2018, 0, 1), []);
   const calendarEndMonth = useMemo(() => {
@@ -255,17 +280,23 @@ function TransactionDateRangePicker({
       onPresetSelect={selectPreset}
     />
   );
+  const triggerClassName = mode === "compact"
+    ? `transaction-date-range-trigger ${isBottomNavigation ? "mobile" : "compact"}`
+    : "transaction-date-range-trigger desktop";
+  const triggerButton = (
+    <Button className={triggerClassName} onClick={() => {
+      setIsMobilePicker(mode === "compact" && isBottomNavigation);
+      handleOpenChange(true);
+    }} type="button" variant="secondary">
+      <CalendarDays aria-hidden="true" className="h-4 w-4" />
+      <span>{label}</span>
+    </Button>
+  );
 
   return (
     <>
-      <Button className="transaction-date-range-trigger mobile" onClick={() => {
-        setIsMobilePicker(true);
-        handleOpenChange(true);
-      }} type="button" variant="secondary">
-        <CalendarDays aria-hidden="true" className="h-4 w-4" />
-        <span>{label}</span>
-      </Button>
-      <Drawer onOpenChange={handleOpenChange} open={open && isMobilePicker}>
+      {mode === "compact" && isBottomNavigation && triggerButton}
+      <Drawer onOpenChange={handleOpenChange} open={open && isMobilePicker && isBottomNavigation}>
         <DrawerContent className="transaction-date-drawer">
           <DrawerHeader className="mobile-filter-header">
             <DrawerTitle>Date range</DrawerTitle>
@@ -275,17 +306,16 @@ function TransactionDateRangePicker({
           {pickerContent}
         </DrawerContent>
       </Drawer>
-      <Popover onOpenChange={handleOpenChange} open={open && !isMobilePicker}>
-        <PopoverTrigger asChild>
-          <Button className="transaction-date-range-trigger desktop" onClick={() => setIsMobilePicker(false)} type="button" variant="secondary">
-            <CalendarDays aria-hidden="true" className="h-4 w-4" />
-            <span>{label}</span>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="transaction-date-popover">
-          {pickerContent}
-        </PopoverContent>
-      </Popover>
+      {(mode === "desktop" || !isBottomNavigation) && (
+        <Popover onOpenChange={handleOpenChange} open={open && !isMobilePicker}>
+          <PopoverTrigger asChild>
+            {triggerButton}
+          </PopoverTrigger>
+          <PopoverContent align="start" className="transaction-date-popover">
+            {pickerContent}
+          </PopoverContent>
+        </Popover>
+      )}
     </>
   );
 }
@@ -438,6 +468,41 @@ function TransactionFilterDialog({
   transactionCategory,
   transactionFilter
 }: TransactionFilterDialogProps) {
+  const filterBody = (
+    <div className="mobile-filter-drawer-body">
+      <div className="mobile-filter-section">
+        <h3>Status</h3>
+        <div className="mobile-filter-chips">
+          {transactionFilters.map((filter) => (
+            <button
+              className={filter === transactionFilter ? "active" : undefined}
+              key={filter}
+              onClick={() => onStatusChange(filter)}
+              type="button"
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mobile-filter-section">
+        <h3>Category</h3>
+        <div className="mobile-filter-chips category">
+          {categoryOptions.map((category) => (
+            <button
+              className={getFilterCategoryIsActive(category, transactionCategory) ? "active" : undefined}
+              key={category}
+              onClick={() => onCategoryToggle(category)}
+              type="button"
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <Drawer onOpenChange={onOpenChange} open={open}>
       <DrawerContent className="mobile-filter-drawer">
@@ -449,38 +514,7 @@ function TransactionFilterDialog({
           <DrawerDescription className="sr-only">Filter transactions by status and one or more categories.</DrawerDescription>
           <DrawerHeaderClose className="mobile-filter-close" />
         </DrawerHeader>
-        <div className="mobile-filter-drawer-body">
-          <div className="mobile-filter-section">
-            <h3>Status</h3>
-            <div className="mobile-filter-chips">
-              {transactionFilters.map((filter) => (
-                <button
-                  className={filter === transactionFilter ? "active" : undefined}
-                  key={filter}
-                  onClick={() => onStatusChange(filter)}
-                  type="button"
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="mobile-filter-section">
-            <h3>Category</h3>
-            <div className="mobile-filter-chips category">
-              {categoryOptions.map((category) => (
-                <button
-                  className={getFilterCategoryIsActive(category, transactionCategory) ? "active" : undefined}
-                  key={category}
-                  onClick={() => onCategoryToggle(category)}
-                  type="button"
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        {filterBody}
       </DrawerContent>
     </Drawer>
   );
@@ -506,6 +540,18 @@ function TransactionSortDialog({
     onSortChange(sort);
     onApply();
   };
+  const sortBody = (
+    <div className="mobile-filter-drawer-body">
+      <div className="mobile-sort-options">
+        {transactionSortOptions.map((sort) => (
+          <button key={sort} onClick={() => handleSortChange(sort)} type="button">
+            <span>{sort}</span>
+            <span aria-hidden="true" className={sort === transactionSort ? "radio active" : "radio"} />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <Drawer onOpenChange={onOpenChange} open={open}>
@@ -515,19 +561,30 @@ function TransactionSortDialog({
           <DrawerDescription className="sr-only">Choose the order for the transactions list.</DrawerDescription>
           <DrawerHeaderClose className="mobile-filter-close" />
         </DrawerHeader>
-        <div className="mobile-filter-drawer-body">
-          <div className="mobile-sort-options">
-            {transactionSortOptions.map((sort) => (
-              <button key={sort} onClick={() => handleSortChange(sort)} type="button">
-                <span>{sort}</span>
-                <span aria-hidden="true" className={sort === transactionSort ? "radio active" : "radio"} />
-              </button>
-            ))}
-          </div>
-        </div>
+        {sortBody}
       </DrawerContent>
     </Drawer>
   );
+}
+
+function useIsBottomNavigation() {
+  const [isBottomNavigation, setIsBottomNavigation] = useState(() => getIsBottomNavigation());
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 1024px)");
+    const handleChange = () => setIsBottomNavigation(mediaQuery.matches);
+
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  return isBottomNavigation;
+}
+
+function getIsBottomNavigation() {
+  return typeof window === "undefined" ? false : window.matchMedia("(max-width: 1024px)").matches;
 }
 
 function getStringOptions<T extends string>(values: T[]) {
@@ -535,6 +592,49 @@ function getStringOptions<T extends string>(values: T[]) {
     label: value,
     value
   }));
+}
+
+function CategoryMultiSelect({
+  categoryOptions,
+  onCategoryToggle,
+  selectedCategories
+}: {
+  categoryOptions: string[];
+  onCategoryToggle: (category: string) => void;
+  selectedCategories: string[];
+}) {
+  const label = getCategoryMultiSelectLabel(selectedCategories);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button aria-haspopup="listbox" className="category-multi-select-trigger transaction-select-trigger" role="combobox" type="button">
+          <span>{label}</span>
+          <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="category-multi-select-content">
+        {categoryOptions.map((category) => {
+          const isActive = getFilterCategoryIsActive(category, selectedCategories);
+
+          return (
+            <button
+              aria-pressed={isActive}
+              className={isActive ? "active" : undefined}
+              key={category}
+              onClick={() => onCategoryToggle(category)}
+              type="button"
+            >
+              <span className="category-multi-select-check">
+                {isActive && <Check aria-hidden="true" className="h-4 w-4" />}
+              </span>
+              <span>{category}</span>
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 function normalizeCategoryName(category: string) {
@@ -562,12 +662,20 @@ function getActiveFilterCount(transactionFilter: TransactionFilter, transactionC
   return count;
 }
 
-function getDesktopCategoryValue(transactionCategory: string[]) {
-  return transactionCategory.length === 1 ? transactionCategory[0] : "All categories";
-}
-
 function getFilterCategoryIsActive(category: string, transactionCategory: string[]) {
   return category === "All categories" ? transactionCategory.length === 0 : transactionCategory.includes(category);
+}
+
+function getCategoryMultiSelectLabel(selectedCategories: string[]) {
+  if (selectedCategories.length === 0) {
+    return "All categories";
+  }
+
+  if (selectedCategories.length === 1) {
+    return selectedCategories[0];
+  }
+
+  return `${selectedCategories.length} categories`;
 }
 
 function toggleCategorySelection(selectedCategories: string[], category: string) {

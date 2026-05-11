@@ -22,7 +22,7 @@ import { filterTransactionsByDateRange, filterTransactionsByPeriod, getThisMonth
 import { getTransactionStatus, transactionNeedsReview } from "@/lib/transaction-display";
 import { periods } from "@/lib/app/constants";
 import { useCategorySettings } from "@/hooks/useCategorySettings";
-import { useOpenBankingData } from "@/hooks/useOpenBankingData";
+import { useAkahuData } from "@/hooks/useAkahuData";
 import { useRoutedView } from "@/hooks/useRoutedView";
 import type { PeriodOption } from "@/lib/types";
 
@@ -42,7 +42,7 @@ export function useNetlyApp() {
   const [syncResult, setSyncResult] = useState("");
   const hasAutoCompletedRef = useRef(false);
 
-  const banking = useOpenBankingData();
+  const banking = useAkahuData();
   const categorySourceTransactions = useMemo(
     () => [...banking.transactions, ...banking.transactionPageTransactions],
     [banking.transactionPageTransactions, banking.transactions]
@@ -65,8 +65,8 @@ export function useNetlyApp() {
   const categoryTotals = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
 
   // Saves a pasted or callback Akahu token, then reloads live Akahu data
-  const completeOpenBankingConnection = useCallback(async (responseValue?: string) => {
-    const response = await fetch("/api/open-banking/complete", {
+  const completeAkahuConnection = useCallback(async (responseValue?: string) => {
+    const response = await fetch("/api/akahu/complete", {
       method: "POST",
       headers: {
         "content-type": "application/json"
@@ -118,9 +118,9 @@ export function useNetlyApp() {
     if (connectionResponse.trim() && !hasAutoCompletedRef.current) {
       hasAutoCompletedRef.current = true;
       setSyncResult("Completing Akahu connection...");
-      completeOpenBankingConnection(connectionResponse);
+      completeAkahuConnection(connectionResponse);
     }
-  }, [completeOpenBankingConnection, connectionResponse]);
+  }, [completeAkahuConnection, connectionResponse]);
 
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
   const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
@@ -166,7 +166,7 @@ export function useNetlyApp() {
     categoryColors: categories.categoryColors,
     chartCategories,
     chartTotal,
-    completeOpenBankingConnection,
+    completeAkahuConnection,
     connectionResponse,
     expensesCount: expenses.length,
     hasCardEligibleSpend: cardFit.basis.eligibleTransactionCount > 0 && cardFit.basis.eligibleAnnualSpend > 0,

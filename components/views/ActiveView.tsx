@@ -47,7 +47,7 @@ export function ActiveView(props: ActiveViewProps) {
     case "connect":
       return (
         <ConnectView
-          completeOpenBankingConnection={props.completeOpenBankingConnection}
+          completeAkahuConnection={props.completeAkahuConnection}
           connectionResponse={props.connectionResponse}
           onConnectionResponseChange={props.onConnectionResponseChange}
           setSyncResult={props.setSyncResult}

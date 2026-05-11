@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAkahuAccounts, getAvailableBalance } from "@/lib/open-banking/accounts";
-import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
-import { getValidAccessToken } from "@/lib/open-banking/token";
+import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
+import { getValidAccessToken } from "@/lib/akahu/token";
 import { currentBalance } from "@/lib/mock-data";
 
 export async function GET(request: NextRequest) {
@@ -28,18 +27,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const client = createOpenBankingClientFromEnv();
-    const response = await client.getAccounts({ userToken: accessToken });
-    const accounts = getAkahuAccounts(response);
-    const availableBalance = getAvailableBalance(accounts);
-    const notice = availableBalance === null ? "Akahu connected, but no account balances were returned." : "";
+    const provider = createAkahuProviderFromEnv();
+    const balance = await provider.getBalance({ accessToken });
 
     return NextResponse.json({
-      source: "akahu",
+      source: provider.id,
       connected: true,
-      availableBalance,
-      rawAccounts: accounts,
-      notice
+      availableBalance: balance.availableBalance,
+      rawAccounts: balance.rawAccounts,
+      notice: balance.notice
     });
   } catch (error) {
     return NextResponse.json({

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
-import { getAkahuAccounts } from "@/lib/open-banking/accounts";
-import { dedupeAkahuTransactions, getAkahuTransactions } from "@/lib/open-banking/normalize";
-import { getValidAccessToken } from "@/lib/open-banking/token";
+import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
+import { getValidAccessToken } from "@/lib/akahu/token";
 import { transactions as demoTransactions } from "@/lib/mock-data";
 import { getTransactionDate, getTransactionStatus } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
@@ -42,30 +40,22 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const client = createOpenBankingClientFromEnv();
-    const accountsResponse = await client.getAccounts({ userToken: accessToken });
-    const accounts = getAkahuAccounts(accountsResponse);
-    const transactionsResponse = await client.getTransactionsPageForAccounts({ userToken: accessToken }, accounts, {
+    const provider = createAkahuProviderFromEnv();
+    const transactionPage = await provider.getTransactions({ accessToken }, {
       cursor,
-      end: toAkahuEndDate(toDate),
-      start: toAkahuStartDate(fromDate)
-    });
-    const transactions = filterTransactionsByDateRange(
-      dedupeAkahuTransactions(getAkahuTransactions(transactionsResponse, accounts)),
       fromDate,
       toDate
-    );
-    const notice = transactions.length === 0 ? getEmptyTransactionsNotice(accounts) : "";
+    });
 
     return NextResponse.json({
-      source: "akahu",
+      source: provider.id,
       connected: true,
-      rawCount: transactionsResponse.items?.length || 0,
-      nextCursor: transactionsResponse.cursor?.next || null,
-      accountCount: accounts.length,
-      rawAccounts: accounts,
-      transactions,
-      notice
+      rawCount: transactionPage.rawCount,
+      nextCursor: transactionPage.nextCursor,
+      accountCount: transactionPage.accountCount,
+      rawAccounts: transactionPage.rawAccounts,
+      transactions: transactionPage.transactions,
+      notice: transactionPage.notice
     });
   } catch (error) {
     return NextResponse.json({
@@ -106,41 +96,4 @@ function filterTransactionsByDateRange(transactions: Transaction[], fromDate: st
     const transactionDate = getTransactionDate(transaction);
     return (!fromDate || transactionDate >= fromDate) && (!toDate || transactionDate <= toDate);
   });
-}
-
-function toAkahuStartDate(date: string | undefined) {
-  if (!date) {
-    return undefined;
-  }
-
-  const utcStart = getUtcDateTime(date, 0, 0, 0, 0) - 1;
-  return new Date(utcStart).toISOString();
-}
-
-function toAkahuEndDate(date: string | undefined) {
-  if (!date) {
-    return undefined;
-  }
-
-  return new Date(getUtcDateTime(date, 23, 59, 59, 999)).toISOString();
-}
-
-function getUtcDateTime(date: string, hours: number, minutes: number, seconds: number, milliseconds: number) {
-  const [year, month, day] = date.split("-").map(Number);
-  return Date.UTC(year, month - 1, day, hours, minutes, seconds, milliseconds);
-}
-
-function getEmptyTransactionsNotice(accounts: Array<{ attributes?: string[]; connection?: { name?: string }; name?: string }>) {
-  const hasDemoBankAccount = accounts.some((account) => /demo bank/i.test(account.connection?.name || account.name || ""));
-  const hasTransactionCapableAccount = accounts.some((account) => account.attributes?.includes("TRANSACTIONS"));
-
-  if (hasDemoBankAccount && !hasTransactionCapableAccount) {
-    return "Akahu Demo Bank connected successfully, but Demo Bank enduring connections do not return transaction data. Use Netly demo mode or connect a real transaction-capable account for transaction testing.";
-  }
-
-  if (!hasTransactionCapableAccount) {
-    return "Akahu connected successfully, but none of the shared accounts expose transaction data. In Akahu, share an account with the TRANSACTIONS attribute or connect a transaction-capable account.";
-  }
-
-  return "Akahu connected successfully, but no transactions were returned for the shared accounts yet.";
 }

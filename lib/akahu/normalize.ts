@@ -1,4 +1,4 @@
-import type { AkahuAccount } from "@/lib/open-banking/accounts";
+import type { AkahuAccount } from "@/lib/akahu/accounts";
 import type { Transaction } from "@/lib/types";
 
 export type AkahuTransactionsResponse = {

@@ -181,7 +181,7 @@ button {
 .material-card {
   border: 1px solid rgba(216, 207, 214, 0.8);
   border-radius: var(--radius);
-  background: rgba(255, 251, 255, 0.86);
+  background: rgba(255, 251, 255, 0.9);
   box-shadow: var(--shadow);
   backdrop-filter: blur(16px);
 }
@@ -844,6 +844,114 @@ h2 {
   display: none;
 }
 
+.transaction-compact-selects {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.transaction-compact-selects label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.transaction-select-trigger.transaction-select-trigger {
+  display: flex;
+  width: 100%;
+  height: 40px;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 251, 255, 0.86);
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: left;
+  text-transform: none;
+  box-shadow: 0 8px 20px rgba(29, 27, 32, 0.06);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.transaction-select-trigger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 166, 147, 0.28);
+}
+
+.transaction-select-trigger span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-select-trigger svg {
+  opacity: 0.6;
+}
+
+.category-multi-select-content {
+  display: grid;
+  min-width: var(--radix-popover-trigger-width);
+  width: min(280px, calc(100vw - 32px));
+  max-height: min(420px, calc(100vh - 80px));
+  gap: 0;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.category-multi-select-content button {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 12px;
+  padding: 8px 12px 8px 36px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.category-multi-select-content button:hover,
+.category-multi-select-content button.active {
+  background: var(--surface-2);
+}
+
+.category-multi-select-check {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  width: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-multi-select-content button > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .transaction-controls label {
   display: grid;
   gap: 6px;
@@ -879,6 +987,10 @@ h2 {
 
 .transaction-date-range-trigger.mobile {
   display: none;
+}
+
+.transaction-date-range-trigger.compact {
+  display: inline-flex;
 }
 
 .transaction-date-range-trigger span {
@@ -1605,68 +1717,7 @@ h2 {
   }
 }
 
-@media (max-width: 768px) {
-  html,
-  body {
-    overflow-x: hidden;
-  }
-
-  .view-stack,
-  .material-card,
-  .transaction-list-layout,
-  .transaction-list-panel,
-  .stack-list,
-  .info-row {
-    min-width: 0;
-  }
-
-  .main {
-    padding: 18px 18px calc(104px + env(safe-area-inset-bottom));
-  }
-
-  .topbar,
-  .hero-card {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .topbar-controls {
-    min-width: 0;
-    justify-content: flex-start;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .topbar-controls::-webkit-scrollbar {
-    display: none;
-  }
-
-  .period-control {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .period-tabs.period-tabs {
-    width: 100%;
-    height: 38px;
-  }
-
-  .period-tab.period-tab {
-    flex: 1;
-    min-width: 0;
-    height: 30px;
-    padding-inline: 8px;
-    font-size: 12px;
-  }
-
-  .metric-grid,
-  .dashboard-grid,
-  .chart-layout,
-  .card-fit-basis,
-  .budget-grid {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 1280px) {
   .transaction-desktop-controls {
     display: none;
   }
@@ -1685,8 +1736,13 @@ h2 {
     display: inline-flex;
   }
 
+  .transaction-date-range-trigger.compact {
+    display: inline-flex;
+  }
+
   .transaction-mobile-search {
     display: grid;
+    min-width: 0;
     gap: 6px;
     color: var(--muted);
     font-size: 11px;
@@ -1718,6 +1774,29 @@ h2 {
     border: 1px solid var(--outline);
     background: rgba(255, 251, 255, 0.9);
     box-shadow: 0 8px 20px rgba(29, 27, 32, 0.06);
+  }
+
+  .transaction-compact-selects {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .category-create-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 10px;
+  }
+
+  .category-create-row label {
+    min-width: 0;
+  }
+
+  .category-create-row input {
+    min-width: 0;
+  }
+
+  .category-error-message {
+    grid-column: 1 / -1;
+    min-height: 0;
   }
 
   .mobile-filter-drawer.mobile-filter-drawer {
@@ -1859,25 +1938,76 @@ h2 {
     min-width: 0;
   }
 
-  .category-create-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: end;
-    gap: 10px;
-  }
-
-  .category-create-row label {
-    min-width: 0;
-  }
-
   .category-create-row input {
-    min-width: 0;
     min-height: 42px;
     padding: 9px 13px;
   }
+}
 
-  .category-error-message {
-    grid-column: 1 / -1;
-    min-height: 0;
+@media (max-width: 768px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .view-stack,
+  .material-card,
+  .transaction-list-layout,
+  .transaction-list-panel,
+  .stack-list,
+  .info-row {
+    min-width: 0;
+  }
+
+  .main {
+    padding: 18px 18px calc(104px + env(safe-area-inset-bottom));
+  }
+
+  .topbar,
+  .hero-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-controls {
+    min-width: 0;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .topbar-controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  .period-control {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .period-tabs.period-tabs {
+    width: 100%;
+    height: 38px;
+  }
+
+  .period-tab.period-tab {
+    flex: 1;
+    min-width: 0;
+    height: 30px;
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+
+  .metric-grid,
+  .dashboard-grid,
+  .chart-layout,
+  .card-fit-basis,
+  .budget-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .transaction-compact-selects {
+    grid-template-columns: 1fr;
   }
 
   .card-option,

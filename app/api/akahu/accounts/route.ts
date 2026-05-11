@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAkahuAccounts, toLinkedAccount, type AkahuAccount } from "@/lib/open-banking/accounts";
-import { createOpenBankingClientFromEnv } from "@/lib/open-banking/client";
-import { getValidAccessToken } from "@/lib/open-banking/token";
+import { toLinkedAccount, type AkahuAccount } from "@/lib/akahu/accounts";
+import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
+import { getValidAccessToken } from "@/lib/akahu/token";
 
 const demoAccounts: AkahuAccount[] = [
   {
@@ -56,12 +56,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const client = createOpenBankingClientFromEnv();
-    const response = await client.getAccounts({ userToken: accessToken });
-    const accounts = getAkahuAccounts(response);
-    const notice = accounts.length === 0 ? "Akahu connected, but no accounts were returned." : "";
+    const provider = createAkahuProviderFromEnv();
+    const accounts = await provider.getAccounts({ accessToken });
 
-    return NextResponse.json(toAccountsPayload(accounts, true, "akahu", notice));
+    return NextResponse.json({
+      source: provider.id,
+      connected: true,
+      rawAccounts: accounts.rawAccounts,
+      accounts: accounts.accounts,
+      primaryAccount: accounts.primaryAccount,
+      notice: accounts.notice
+    });
   } catch (error) {
     return NextResponse.json({
       source: "akahu",

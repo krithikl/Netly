@@ -18,7 +18,7 @@ OAuth requires a full Akahu app, `AKAHU_APP_SECRET`, and a redirect URI register
 
 1. User clicks Connect.
 2. Netly redirects to `https://oauth.akahu.nz`.
-3. Akahu returns to `/api/open-banking/callback` with an authorization code.
+3. Akahu returns to `/api/akahu/callback` with an authorization code.
 4. Netly exchanges the code at Akahu's `/token` endpoint.
 5. The returned User Access Token is stored server-side.
 

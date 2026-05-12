@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+// Placeholder sync endpoint kept for future Akahu background sync behaviour.
 export function POST() {
   return NextResponse.json({
     mode: "akahu",

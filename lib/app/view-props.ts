@@ -79,6 +79,7 @@ export type SettingsViewStateProps = {
   deleteCategory: (category: string) => void;
 };
 
+// Complete view model passed from useNetlyApp into ActiveView and its child screens.
 export type ActiveViewProps = SharedViewProps
   & HomeViewStateProps
   & TransactionsViewStateProps

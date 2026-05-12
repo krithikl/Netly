@@ -11,6 +11,7 @@ type ConnectViewProps = {
   syncResult: string;
 };
 
+// Akahu connection screen for starting OAuth or saving a returned user token.
 export function ConnectView({
   connectionResponse,
   completeAkahuConnection,

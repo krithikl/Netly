@@ -60,6 +60,7 @@ const initialTooltipState: TooltipState = {
 const mobileChartQuery = "(max-width: 768px)";
 
 // Shows the category donut chart with hover tooltips and mobile sizing
+// Reusable Chart.js doughnut chart used for category spend visualisation.
 export function DonutChart({ categories, categoryColors, hoveredCategory, onHover }: DonutChartProps) {
   const [tooltipState, setTooltipState] = useState<TooltipState>(initialTooltipState);
   const [isMobileChart, setIsMobileChart] = useState(false);

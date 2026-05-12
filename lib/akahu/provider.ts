@@ -35,6 +35,7 @@ export type AkahuTransactionResult = {
   transactions: Transaction[];
 };
 
+// Contract used by API routes so Akahu calls stay behind one provider layer.
 export interface AkahuProvider {
   id: AkahuProviderId;
   displayName: string;
@@ -45,6 +46,7 @@ export interface AkahuProvider {
   getTransactions(token: AkahuAccessToken, query?: AkahuTransactionRequest): Promise<AkahuTransactionResult>;
 }
 
+// Default provider implementation that talks to the real Akahu API.
 class DefaultAkahuProvider implements AkahuProvider {
   readonly id = "akahu";
   readonly displayName = "Akahu";
@@ -113,6 +115,7 @@ class DefaultAkahuProvider implements AkahuProvider {
   }
 }
 
+// Builds the Akahu provider from environment variables used by API routes.
 export function createAkahuProviderFromEnv(): AkahuProvider {
   return new DefaultAkahuProvider();
 }

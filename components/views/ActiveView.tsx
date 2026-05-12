@@ -6,6 +6,7 @@ import { SettingsView } from "@/components/views/SettingsView";
 import { TransactionsView } from "@/components/views/TransactionsView";
 import type { ActiveViewProps } from "@/lib/app/view-props";
 
+// Chooses the live page component from the active view value produced by routing/sidebar state.
 export function ActiveView(props: ActiveViewProps) {
   switch (props.activeView) {
     case "transactions":

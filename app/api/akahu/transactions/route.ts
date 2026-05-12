@@ -7,6 +7,7 @@ import type { Transaction } from "@/lib/types";
 
 const demoPageSize = 100;
 
+// Returns paginated transactions from Akahu or demo data for the app data hooks.
 export async function GET(request: NextRequest) {
   const source = request.nextUrl.searchParams.get("source");
   const cursor = request.nextUrl.searchParams.get("cursor") || undefined;
@@ -68,6 +69,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Applies pagination/date filtering to demo transactions so UI paths match Akahu mode.
 function getDemoTransactionPage(transactions: Transaction[], cursor: string | undefined, fromDate: string | undefined, toDate: string | undefined) {
   const offset = Number.parseInt(cursor || "0", 10);
   const startIndex = Number.isFinite(offset) && offset > 0 ? offset : 0;
@@ -82,6 +84,7 @@ function getDemoTransactionPage(transactions: Transaction[], cursor: string | un
   };
 }
 
+// Shared date range filter for the demo transaction endpoint.
 function filterTransactionsByDateRange(transactions: Transaction[], fromDate: string | undefined, toDate: string | undefined) {
   if (!fromDate && !toDate) {
     return transactions;

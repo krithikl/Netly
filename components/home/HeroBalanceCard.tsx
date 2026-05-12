@@ -17,6 +17,7 @@ type HeroBalanceCardProps = {
   setPayday: (payday: string) => void;
 };
 
+// Home hero card for available balance, safe-to-spend, and payday controls.
 export function HeroBalanceCard({
   availableBalance,
   isConnected,

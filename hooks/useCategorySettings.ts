@@ -13,6 +13,7 @@ import { getTransactionCategory } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
 // Manages saved category edits, custom categories, removed categories, and colors
+// Manages saved category overrides, custom categories, hidden categories, and colours.
 export function useCategorySettings(
   transactions: Transaction[],
   categories: { category: string; amount: number }[]
@@ -82,6 +83,7 @@ export function useCategorySettings(
 }
 
 // Builds one sorted category list for filters and category selectors
+// Builds the category dropdown options from defaults, custom values, and live transactions.
 function getTransactionCategoryOptions(
   transactions: Transaction[],
   categories: { category: string; amount: number }[],

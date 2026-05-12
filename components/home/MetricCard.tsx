@@ -12,6 +12,7 @@ type MetricCardProps = {
   value: string;
 };
 
+// Small reusable metric card used on the Home dashboard.
 export function MetricCard({ actionLabel, icon: Icon, label, note, onAction, tone, value }: MetricCardProps) {
   return (
     <Card className="home-metric-card">

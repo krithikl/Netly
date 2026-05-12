@@ -31,6 +31,7 @@ type AccountsPayload = {
 };
 
 // Loads Akahu or demo data and keeps accounts, balances, and transactions together
+// Central data hook for Akahu/demo transactions, balances, accounts, and pagination.
 export function useAkahuData() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionPageTransactions, setTransactionPageTransactions] = useState<Transaction[]>([]);
@@ -192,12 +193,14 @@ export function useAkahuData() {
   };
 }
 
+// Normalises failed API responses into thrown errors for the app fallback path.
 function assertAkahuResponse(response: Response, error: string | undefined, fallbackMessage: string) {
   if (!response.ok) {
     throw new Error(error || fallbackMessage);
   }
 }
 
+// Builds the transactions endpoint URL with source, date range, and cursor filters.
 function getTransactionsUrl(mode: DataMode, dateRange?: TransactionDateRange, cursor?: string) {
   const params = new URLSearchParams({ source: mode });
 

@@ -45,6 +45,7 @@ export function getVisibleTransactions(
 }
 
 // Checks whether one transaction matches the active filters and search text
+// Applies the top-level All/Expenses/Income filter.
 function matchesTransactionFilters(transaction: Transaction, normalizedQuery: string, transactionCategories: string[], transactionFilter: TransactionFilter) {
   const category = getTransactionCategory(transaction);
   const matchesCategory = transactionCategories.length === 0 || transactionCategories.includes(category);
@@ -72,6 +73,7 @@ function matchesTransactionFilter(transaction: Transaction, transactionFilter: T
   }
 }
 
+// Sorts transaction rows according to the active Transactions page sort option.
 function compareTransactions(first: Transaction, second: Transaction, transactionSort: TransactionSort) {
   switch (transactionSort) {
     case "Oldest":

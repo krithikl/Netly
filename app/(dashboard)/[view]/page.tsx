@@ -9,10 +9,12 @@ type RoutedViewPageProps = {
 
 export const dynamicParams = false;
 
+// Prebuild the supported vanity routes such as /transactions and /card-fit.
 export function generateStaticParams() {
   return getRoutedViewSegments().map((view) => ({ view }));
 }
 
+// Validates routed views while AppShell handles the actual client-side rendering.
 export default async function RoutedViewPage({ params }: RoutedViewPageProps) {
   const { view } = await params;
 

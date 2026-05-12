@@ -7,6 +7,7 @@ type TimeRangeTabsProps = {
   setPeriod: (period: PeriodOption) => void;
 };
 
+// Shared period selector used by topbar-controlled dashboard views.
 export function TimeRangeTabs({ period, setPeriod }: TimeRangeTabsProps) {
   const handlePeriodChange = (value: string) => setPeriod(value as PeriodOption);
 

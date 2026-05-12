@@ -23,6 +23,7 @@ type CardFitDetailSelection = {
   rank: number;
 };
 
+// Card Fit screen for ranking card products against detected eligible spend.
 export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, cards, explanation: _explanation, hasCardEligibleSpend }: CardFitViewProps) {
   const subtitle = getCardFitSubtitle(cardFitSourceLabel);
   const [issuerFilter, setIssuerFilter] = useState(allIssuersFilter);
@@ -134,6 +135,7 @@ function getCardType(card: CardValue): Exclude<CardTypeFilter, "All types"> {
   return card.tier === "Debit" ? "Debit" : "Credit";
 }
 
+// Explains the spend window and data basis used for the card ranking.
 function CardFitBasisSummary({ basis, cardFitWindowLabel }: { basis: CardFitBasis; cardFitWindowLabel: string }) {
   return (
     <div className="card-fit-basis" aria-label="Card fit calculation basis">
@@ -159,6 +161,7 @@ function CardFitBasisSummary({ basis, cardFitWindowLabel }: { basis: CardFitBasi
   );
 }
 
+// One ranked card result row/card rendered in the Card Fit list.
 function CardOption({
   card,
   index,

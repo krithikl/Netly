@@ -10,6 +10,7 @@ type UseAkahuConnectionOptions = {
   transactionDateRange: TransactionDateRange;
 };
 
+// Owns Akahu connection form state and calls the complete/start connection endpoints.
 export function useAkahuConnection({
   refreshTransactions,
   setDataMode,
@@ -62,6 +63,7 @@ export function useAkahuConnection({
   };
 }
 
+// Converts connection API results into user-facing status text.
 function getCompletionMessage(isComplete: boolean, payload: { error?: string; message?: string }) {
   if (!isComplete) {
     return payload.error || "Could not complete authorization.";

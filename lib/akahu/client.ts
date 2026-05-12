@@ -19,6 +19,7 @@ export type AkahuTransactionQuery = {
   start?: string;
 };
 
+// Low-level Akahu HTTP client used only by the provider/server routes.
 export class AkahuClient {
   constructor(private readonly config: AkahuConfig) {}
 

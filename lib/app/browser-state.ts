@@ -24,11 +24,13 @@ export function readInitialDataMode(): DataMode {
   return window.localStorage.getItem("netly_data_mode") === "demo" ? "demo" : "user";
 }
 
+// Reads the OAuth response cookie used by the Connect screen fallback flow.
 export function readAuthResponseCookie() {
   return "";
 }
 
 // Reads Akahu callback URL params, shows a status message, then cleans the URL
+// Reads Akahu callback query params, cleans the URL, and returns connection state.
 export function handleCallbackParams({
   setSyncResult
 }: {

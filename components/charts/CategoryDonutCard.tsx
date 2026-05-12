@@ -13,6 +13,7 @@ type CategoryDonutCardProps = {
   onViewBreakdown: () => void;
 };
 
+// Dashboard card that wraps the category donut chart and hover/category summary.
 export function CategoryDonutCard({
   categories,
   categoryColors,

@@ -49,6 +49,7 @@ const visibleTransactionIncrement = 60;
 const transactionDetailsExitAnimationMs = 520;
 
 // Shows transactions in pages and opens the right detail view for the screen size
+// Transaction list/table used by TransactionsView for rendered results.
 export function TransactionList({
   categoryColors,
   categorySelectOptions = [],

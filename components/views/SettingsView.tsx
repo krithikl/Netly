@@ -23,6 +23,7 @@ type SettingsViewProps = {
   updateCategoryColor: (category: string, color: string) => void;
 };
 
+// Settings screen for managing category colours and hiding unused categories.
 export function SettingsView({ categoryColors, defaultCategories, deleteCategory, updateCategoryColor }: SettingsViewProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
@@ -78,6 +79,7 @@ type CategoryColorRowProps = {
   updateCategoryColor: (category: string, color: string) => void;
 };
 
+// One editable category row used by SettingsView.
 function CategoryColorRow({
   category,
   currentColor,

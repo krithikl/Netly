@@ -16,6 +16,7 @@ type AppSidebarProps = {
   setActiveView: (view: View) => void;
 };
 
+// Primary navigation and demo/user data toggle used across all app views.
 export function AppSidebar({
   activeView,
   changeDataMode,
@@ -149,6 +150,7 @@ function getNavItemClassName(activeView: View, itemView: View) {
   return clsx("nav-item", activeView === itemView && "active");
 }
 
+// Maps each app view to its sidebar/bottom-nav icon.
 function NavIcon({ view }: { view: View }) {
   const Icon = getIconForView(view);
 

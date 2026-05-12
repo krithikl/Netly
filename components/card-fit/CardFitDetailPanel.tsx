@@ -52,6 +52,7 @@ type BenefitRow = {
 
 const categoryDotColors = ["#6D5EF5", "#3FA26A", "#2563EB", "#F59E0B", "#D84C4C", "#00A3AD"];
 
+// Slide-up/detail panel that explains a selected Card Fit result.
 export function CardFitDetailPanel({
   basis,
   card,

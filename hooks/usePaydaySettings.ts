@@ -11,6 +11,7 @@ type PaydayRule = {
   type: "last";
 };
 
+// Stores payday settings and calculates the next displayed payday date.
 export function usePaydaySettings(defaultPayday: string) {
   const [paydayRule, setPaydayRule] = useState<PaydayRule>(() => getPaydayRuleFromDate(defaultPayday, defaultPayday));
   const payday = useMemo(() => getNextPaydayDate(paydayRule), [paydayRule]);
@@ -77,6 +78,7 @@ function getPaydayRuleFromDate(value: string, defaultPayday: string): PaydayRule
   };
 }
 
+// Calculates the next payday date from the saved rule.
 function getNextPaydayDate(rule: PaydayRule) {
   const today = new Date();
   const todayMidday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);

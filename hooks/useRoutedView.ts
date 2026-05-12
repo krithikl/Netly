@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import { getRouteForView, getViewForPathname } from "@/lib/app/routes";
 import type { View } from "@/lib/app/types";
 
+// Syncs the selected app view with the Next.js route path.
 export function useRoutedView() {
   const pathname = usePathname();
   const router = useRouter();

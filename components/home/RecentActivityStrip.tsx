@@ -20,6 +20,7 @@ type RecentActivityStripProps = {
   transactions: Transaction[];
 };
 
+// Recent transaction preview used on the Home dashboard.
 export function RecentActivityStrip({ categoryColors, onViewAll, transactions }: RecentActivityStripProps) {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [detailsTransaction, setDetailsTransaction] = useState<Transaction | null>(null);

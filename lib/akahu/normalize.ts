@@ -11,6 +11,7 @@ export type AkahuTransactionsResponse = {
 };
 
 // Reads Akahu transactions and adds account names for display
+// Converts Akahu transaction responses into transactions enriched with account display info.
 export function getAkahuTransactions(response: AkahuTransactionsResponse, accounts: AkahuAccount[] = []) {
   const accountNames = new Map(accounts.map((account) => [account._id, account.name || account.formatted_account || account._id]));
   const accountCurrencies = new Map(accounts.map((account) => [account._id, account.balance?.currency || "NZD"]));

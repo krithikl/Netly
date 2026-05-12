@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 import { akahuAccessTokenCookieName } from "@/lib/akahu/token";
 
+// Handles Akahu OAuth redirect, validates state, stores token cookies, and redirects home.
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
@@ -41,6 +42,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Builds the post-OAuth redirect back to the app with a status query string.
 function redirectWithStatus(request: NextRequest, query: string) {
   const baseUrl = process.env.APP_BASE_URL || request.nextUrl.origin;
   return NextResponse.redirect(`${baseUrl}/?${query}`);

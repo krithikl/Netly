@@ -13,6 +13,7 @@ type UseTransactionControlsOptions = {
   transactions: Transaction[];
 };
 
+// Owns Transactions page controls: query, filters, sort, date range, and visible rows.
 export function useTransactionControls({
   applyFallbackState,
   dataMode,

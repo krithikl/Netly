@@ -33,6 +33,7 @@ type HomeViewProps = {
 };
 
 // Shows the dashboard summary, category chart, insights, and recent transactions
+// Home dashboard composed from summary cards, charts, insights, and recent transactions.
 export function HomeView({
   availableBalance,
   categoryColors,

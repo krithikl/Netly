@@ -47,6 +47,7 @@ const categoryAliases = new Map<string, string>([
   ["payroll", "Income"]
 ]);
 
+// Maps bank/provider category labels into Netly’s supported category set.
 export function mapSourceCategoryToNetlyCategory(category: string | undefined) {
   const normalizedCategory = normalizeCategory(category);
 

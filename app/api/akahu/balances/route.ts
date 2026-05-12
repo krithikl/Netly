@@ -3,6 +3,7 @@ import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 import { getValidAccessToken } from "@/lib/akahu/token";
 import { currentBalance } from "@/lib/mock-data";
 
+// Returns available balance for Akahu mode or the demo account balance.
 export async function GET(request: NextRequest) {
   const source = request.nextUrl.searchParams.get("source");
 

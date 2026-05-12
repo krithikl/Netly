@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description: "NZ open banking spend insights and card fit"
 };
 
+// Root Next.js layout that wraps every route and mounts global toast UI.
 export default function RootLayout({
   children
 }: Readonly<{

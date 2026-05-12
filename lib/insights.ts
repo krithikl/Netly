@@ -28,6 +28,7 @@ export function sum(values: number[]) {
 }
 
 // Groups spending by category and puts the biggest categories first
+// Aggregates transaction spend by category for charts and budgets.
 export function spendByCategory(transactions: Transaction[]) {
   const totals = new Map<string, number>();
 
@@ -42,6 +43,7 @@ export function spendByCategory(transactions: Transaction[]) {
 }
 
 // Finds merchants that appear more than once and estimates their average cost
+// Detects recurring merchants for the Budgets view.
 export function detectRecurring(transactions: Transaction[]): RecurringMerchant[] {
   const byMerchant = new Map<string, Transaction[]>();
 
@@ -115,6 +117,7 @@ export function annualCardValues(transactions: Transaction[], cardProducts: Card
 }
 
 // Returns the card spend estimate and ranked card list together
+// Ranks cards by estimated annual value from eligible transaction spend.
 export function calculateCardFit(transactions: Transaction[], cardProducts: CardProduct[], comparisonCard?: CardProduct) {
   const basis = cardFitBasis(transactions);
   const cards = annualCardValues(transactions, cardProducts);
@@ -204,6 +207,7 @@ function getCardFitDrivers(basis: CardFitBasis, recommendedCard: CardValue): Car
 }
 
 // Builds the short insight messages shown on the dashboard
+// Builds the short insight strings shown on the Home dashboard.
 export function generateInsights(transactions: Transaction[], cardProducts: CardProduct[], currentBalance: number) {
   const categories = spendByCategory(transactions);
   const recurring = detectRecurring(transactions);

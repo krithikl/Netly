@@ -3,6 +3,7 @@ import { getTransactionDate } from "@/lib/transaction-display";
 
 const fallbackReferenceDate = new Date("2026-05-04T12:00:00+12:00");
 
+// Filters transactions for Home/Budgets topbar periods.
 export function filterTransactionsByPeriod(transactions: Transaction[], period: PeriodOption) {
   if (period === "All") {
     return transactions;
@@ -31,6 +32,7 @@ export function filterTransactionsByDateRange(transactions: Transaction[], dateR
   });
 }
 
+// Converts a period label into a concrete date range for transaction queries.
 export function getTransactionPeriodDateRange(transactions: Transaction[], period: Exclude<PeriodOption, "All">): TransactionDateRange {
   const referenceDate = getReferenceDate(transactions);
 

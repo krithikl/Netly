@@ -44,6 +44,7 @@ export function getAkahuAccounts(response: AkahuAccountsResponse) {
   return response.items || (response.item ? [response.item] : []);
 }
 
+// Converts an Akahu account object into the smaller account shape used by the UI.
 export function toLinkedAccount(account: AkahuAccount): LinkedAccount {
   return {
     accountId: account._id,

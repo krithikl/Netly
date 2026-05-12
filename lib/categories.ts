@@ -1,3 +1,4 @@
+// Default category list used by filters, settings, charts, and category mapping.
 export const defaultTransactionCategories = [
   "Groceries",
   "Eating out",
@@ -22,6 +23,7 @@ export const netlyPalette = [
   "#c0ca33", "#ffb300", "#f57c00", "#8d6e63", "#607d8b"
 ];
 
+// Default colours used before a user customises category settings.
 export const defaultCategoryColors: Record<string, string> = {
   Shopping: "#ef5350",
   "Eating out": "#d84315",

@@ -5,6 +5,7 @@ import { Topbar } from "@/components/layout/Topbar";
 import { ActiveView } from "@/components/views/ActiveView";
 import { useNetlyApp } from "@/hooks/useNetlyApp";
 
+// Main client shell: wires global app state into sidebar, topbar, and active page view.
 export function AppShell() {
   const app = useNetlyApp();
 

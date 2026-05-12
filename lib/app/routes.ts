@@ -1,6 +1,7 @@
 import type { Route } from "next";
 import type { View } from "@/lib/app/types";
 
+// Source of truth for mapping sidebar views to public app routes.
 export const viewRoutes: Record<View, string> = {
   home: "/",
   transactions: "/transactions",
@@ -14,10 +15,12 @@ export const routeViews: Record<string, View> = Object.fromEntries(
   Object.entries(viewRoutes).map(([view, route]) => [route, view])
 ) as Record<string, View>;
 
+// Converts an internal view name into the Next.js route used by navigation.
 export function getRouteForView(view: View): Route {
   return viewRoutes[view] as Route;
 }
 
+// Converts the current browser path into the active view rendered by ActiveView.
 export function getViewForPathname(pathname: string): View {
   return routeViews[pathname] || "home";
 }

@@ -13,6 +13,7 @@ type TopbarProps = {
   showPeriodControl: boolean;
 };
 
+// Header area that shows the active page copy, account context, and period selector.
 export function Topbar({
   activeView,
   dataSourceLabel,

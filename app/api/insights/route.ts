@@ -8,6 +8,7 @@ import {
   spendByCategory
 } from "@/lib/insights";
 
+// Legacy/demo insights endpoint that returns mock-derived dashboard data.
 export function GET() {
   return NextResponse.json({
     categories: spendByCategory(transactions),

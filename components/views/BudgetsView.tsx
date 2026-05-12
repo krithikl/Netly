@@ -11,6 +11,7 @@ type BudgetsViewProps = {
   recurring: RecurringMerchant[];
 };
 
+// Budget screen composed from category spend totals and recurring merchant insights.
 export function BudgetsView({ budgets, categories, categoryColors, onRecurringClick, recurring }: BudgetsViewProps) {
   return (
     <section className="view-stack">
@@ -46,6 +47,7 @@ export function BudgetsView({ budgets, categories, categoryColors, onRecurringCl
   );
 }
 
+// Individual budget progress card rendered inside BudgetsView.
 function BudgetCard({ budget, categoryColor, spent }: { budget: Budget; categoryColor: string; spent: number }) {
   const progress = Math.min((spent / budget.limit) * 100, 100);
   const avatarStyle = getBudgetAvatarStyle(categoryColor);

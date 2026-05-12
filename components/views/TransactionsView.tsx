@@ -49,6 +49,7 @@ const transactionFilters: TransactionFilter[] = ["All", "Expenses", "Income"];
 const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount high", "Amount low"];
 
 // Handles transaction search, filters, sorting, and category creation
+// Full transactions screen: search, filters, date range, category editing, and pagination.
 export function TransactionsView({
   categoryColors,
   categoryOptions,
@@ -259,6 +260,7 @@ type TransactionAnalytics = {
   totalSpending: number;
 };
 
+// Compact KPI strip shown above the transaction table/list.
 function TransactionAnalyticsSummary({
   analytics,
   onReviewNeedsReview
@@ -337,6 +339,7 @@ function TransactionAnalyticsCard({
   );
 }
 
+// Derives transaction totals for the current Transactions page filter/date range.
 function getTransactionAnalytics(transactions: Transaction[], dateRange: TransactionDateRange): TransactionAnalytics {
   const spendingTransactions = transactions.filter((transaction) => transaction.amount < 0);
   const totalSpending = spendingTransactions.reduce((total, transaction) => total + Math.abs(transaction.amount), 0);

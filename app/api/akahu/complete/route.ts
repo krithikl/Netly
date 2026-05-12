@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { akahuAccessTokenCookieName } from "@/lib/akahu/token";
 
+// Saves a pasted/manual Akahu user token for local development connection flows.
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => ({}))) as { response?: string; userToken?: string };
   const userToken = (body.userToken || body.response || "").trim();

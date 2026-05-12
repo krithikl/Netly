@@ -36,6 +36,7 @@ const demoAccounts: AkahuAccount[] = [
   }
 ];
 
+// Returns linked Akahu accounts, or demo accounts when the app is in demo mode.
 export async function GET(request: NextRequest) {
   const source = request.nextUrl.searchParams.get("source");
 
@@ -78,6 +79,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Formats Akahu/demo accounts into the payload expected by useAkahuData.
 function toAccountsPayload(accounts: AkahuAccount[], connected: boolean, source: "akahu" | "demo", notice = "") {
   const linkedAccounts = accounts.map(toLinkedAccount);
 

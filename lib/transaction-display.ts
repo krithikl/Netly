@@ -31,6 +31,7 @@ export function getTransactionStatus(transaction: Transaction): TransactionStatu
 }
 
 // Picks the best merchant name available for display
+// Chooses the best merchant label for transaction rows and search.
 export function getTransactionMerchant(transaction: Transaction) {
   return firstUsefulText([
     transaction.merchant?.name,
@@ -41,6 +42,7 @@ export function getTransactionMerchant(transaction: Transaction) {
 }
 
 // Picks the category to show, with local edits taking priority
+// Resolves a transaction category, preferring user overrides.
 export function getTransactionCategory(transaction: Transaction) {
   if (transaction.netly?.categoryOverride) {
     return transaction.netly.categoryOverride;
@@ -145,6 +147,7 @@ export function getTransactionConfidence(transaction: Transaction) {
   return 0.35;
 }
 
+// Flags transactions whose inferred category should be checked by a user.
 export function transactionNeedsReview(transaction: Transaction) {
   return getTransactionCategory(transaction) === "Needs review";
 }

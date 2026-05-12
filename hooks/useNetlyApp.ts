@@ -37,11 +37,13 @@ export function useNetlyApp() {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
   const banking = useAkahuData();
+  // Use all loaded transaction sets so category options stay consistent across pages.
   const categorySourceTransactions = useMemo(
     () => [...banking.transactions, ...banking.transactionPageTransactions],
     [banking.transactionPageTransactions, banking.transactions]
   );
   const categories = useCategorySettings(categorySourceTransactions, []);
+  // Apply saved category overrides before deriving dashboard metrics.
   const workingTransactions = useMemo(
     () => applyCategoryOverrides(banking.transactions, categories.categoryOverrides),
     [banking.transactions, categories.categoryOverrides]
@@ -50,6 +52,7 @@ export function useNetlyApp() {
     () => applyCategoryOverrides(banking.transactionPageTransactions, categories.categoryOverrides),
     [banking.transactionPageTransactions, categories.categoryOverrides]
   );
+  // Transactions page owns its own search/filter/date state but receives app data here.
   const transactionControls = useTransactionControls({
     applyFallbackState: banking.applyFallbackState,
     dataMode: banking.dataMode,
@@ -124,6 +127,7 @@ export function useNetlyApp() {
   const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
   const shouldShowPeriodControl = activeView === "home" || activeView === "budgets";
 
+  // Single prop bundle passed into ActiveView, then split into each screen component.
   const viewProps: ActiveViewProps = {
     activeView,
     availableBalance: banking.availableBalance,
@@ -204,6 +208,7 @@ export function useNetlyApp() {
   };
 }
 
+// Keeps the donut chart readable by grouping small categories into “Other”.
 function groupCategoriesForChart(categories: { category: string; amount: number }[], limit: number) {
   const sortedCategories = categories
     .filter((item) => item.category !== "Income")

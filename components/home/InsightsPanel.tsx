@@ -9,6 +9,7 @@ type InsightsPanelProps = {
 
 const insightIcons = [TrendingUp, ShieldCheck, CreditCard, Sparkles];
 
+// Home sidebar panel showing generated spend insights.
 export function InsightsPanel({ insights, onViewInsights }: InsightsPanelProps) {
   return (
     <Card className="insights-panel">

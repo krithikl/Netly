@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 
+// Starts Akahu OAuth and stores a state cookie for callback validation.
 export async function GET() {
   try {
     const provider = createAkahuProviderFromEnv();

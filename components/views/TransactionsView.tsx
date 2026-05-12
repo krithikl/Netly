@@ -740,7 +740,7 @@ function useIsBottomNavigation() {
   const [isBottomNavigation, setIsBottomNavigation] = useState(() => getIsBottomNavigation());
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 1024px)");
+    const mediaQuery = window.matchMedia("(max-width: 1180px)");
     const handleChange = () => setIsBottomNavigation(mediaQuery.matches);
 
     handleChange();
@@ -753,7 +753,7 @@ function useIsBottomNavigation() {
 }
 
 function getIsBottomNavigation() {
-  return typeof window === "undefined" ? false : window.matchMedia("(max-width: 1024px)").matches;
+  return typeof window === "undefined" ? false : window.matchMedia("(max-width: 1180px)").matches;
 }
 
 function getStringOptions<T extends string>(values: T[]) {

@@ -33,7 +33,7 @@ export function ActiveView(props: ActiveViewProps) {
         />
       );
     case "budgets":
-      return <BudgetsView budgets={props.budgets} categories={props.categories} categoryColors={props.categoryColors} recurring={props.recurring} />;
+      return <BudgetsView budgets={props.budgets} categories={props.categories} categoryColors={props.categoryColors} onRecurringClick={props.onRecurringClick} recurring={props.recurring} />;
     case "cards":
       return (
         <CardFitView

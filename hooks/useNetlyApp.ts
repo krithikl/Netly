@@ -17,7 +17,7 @@ import type { DataMode } from "@/lib/app/types";
 import type { ActiveViewProps } from "@/lib/app/view-props";
 import { budgets, cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
-import { filterTransactionsByPeriod } from "@/lib/periods";
+import { filterTransactionsByPeriod, getTransactionPeriodDateRange } from "@/lib/periods";
 import { transactionNeedsReview } from "@/lib/transaction-display";
 import { periods } from "@/lib/app/constants";
 import { useAkahuConnection } from "@/hooks/useAkahuConnection";
@@ -111,6 +111,15 @@ export function useNetlyApp() {
     transactionControls.setTransactionFilter("All");
     setActiveView("transactions");
   }, [setActiveView, transactionControls]);
+  const openRecurringTransactions = useCallback((merchant: string) => {
+    const recurringDateRange = getTransactionPeriodDateRange(workingTransactions, "90 days");
+
+    transactionControls.setQuery(merchant);
+    transactionControls.setTransactionCategory([]);
+    transactionControls.setTransactionFilter("All");
+    transactionControls.setTransactionDateRange(recurringDateRange);
+    setActiveView("transactions");
+  }, [setActiveView, transactionControls, workingTransactions]);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
   const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
   const shouldShowPeriodControl = activeView === "home" || activeView === "budgets";
@@ -144,6 +153,7 @@ export function useNetlyApp() {
     onConnectionResponseChange: connection.updateConnectionResponse,
     onLoadMoreTransactions: loadMoreUserTransactions,
     onRefreshUserTransactions: refreshUserTransactions,
+    onRecurringClick: openRecurringTransactions,
     onReviewNeedsReview: openNeedsReviewTransactions,
     payday: paydaySettings.payday,
     paydayPatternDate: paydaySettings.paydayPatternDate,

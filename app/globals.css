@@ -111,7 +111,6 @@ button {
 .hero-card p,
 .info-row p,
 .flow-step p,
-.budget-card p,
 .card-option p,
 .card-option small {
   color: var(--muted);
@@ -121,7 +120,6 @@ button {
 .metric-note,
 .title-block p,
 .info-row p,
-.budget-card p,
 .card-option small {
   font-size: 13px;
 }
@@ -1785,37 +1783,6 @@ h2 {
 
 .budget-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.budget-card {
-  display: grid;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 22px;
-  background: var(--surface-2);
-}
-
-.recurring-list {
-  margin-top: 18px;
-}
-
-.budget-card-top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.progress-track {
-  height: 10px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(29, 27, 32, 0.08);
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: inherit;
-  animation: grow-bar 520ms ease both;
 }
 
 .card-fit-basis {

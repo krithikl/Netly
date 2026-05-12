@@ -53,6 +53,7 @@ export type TransactionsViewStateProps = {
 export type BudgetsViewStateProps = {
   budgets: Budget[];
   categories: { category: string; amount: number }[];
+  onRecurringClick: (merchant: string) => void;
   recurring: RecurringMerchant[];
 };
 

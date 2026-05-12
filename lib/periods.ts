@@ -31,6 +31,23 @@ export function filterTransactionsByDateRange(transactions: Transaction[], dateR
   });
 }
 
+export function getTransactionPeriodDateRange(transactions: Transaction[], period: Exclude<PeriodOption, "All">): TransactionDateRange {
+  const referenceDate = getReferenceDate(transactions);
+
+  if (period === "This month") {
+    return getThisMonthDateRange(referenceDate);
+  }
+
+  const days = period === "30 days" ? 30 : 90;
+  const from = new Date(referenceDate);
+  from.setDate(referenceDate.getDate() - days);
+
+  return {
+    from: formatDateInputValue(from),
+    to: formatDateInputValue(referenceDate)
+  };
+}
+
 export function isTransactionInDateRange(transaction: Transaction, fromDate?: string, toDate?: string) {
   const txnDate = getTransactionDate(transaction);
   return (!fromDate || txnDate >= fromDate) && (!toDate || txnDate <= toDate);

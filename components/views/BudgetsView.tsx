@@ -7,10 +7,11 @@ type BudgetsViewProps = {
   budgets: Budget[];
   categories: { category: string; amount: number }[];
   categoryColors: Record<string, string>;
+  onRecurringClick: (merchant: string) => void;
   recurring: RecurringMerchant[];
 };
 
-export function BudgetsView({ budgets, categories, categoryColors, recurring }: BudgetsViewProps) {
+export function BudgetsView({ budgets, categories, categoryColors, onRecurringClick, recurring }: BudgetsViewProps) {
   return (
     <section className="view-stack">
       <section className="material-card">
@@ -24,13 +25,14 @@ export function BudgetsView({ budgets, categories, categoryColors, recurring }: 
 
       <section className="material-card">
         <PanelTitle title="Recurring payments" subtitle="Repeated merchants and average amounts" />
-        <div className="stack-list recurring-list">
+        <div className="stack-list mt-[18px]">
           {recurring.length > 0 ? (
             recurring.map((item) => (
               <InfoRow
                 color={categoryColors[item.category] || "#607d8b"}
                 key={item.merchant}
                 meta={getRecurringMeta(item)}
+                onClick={() => onRecurringClick(item.merchant)}
                 title={item.merchant}
                 value={formatMoney(item.average, true)}
               />
@@ -50,20 +52,20 @@ function BudgetCard({ budget, categoryColor, spent }: { budget: Budget; category
   const progressStyle = getBudgetProgressStyle(progress, categoryColor);
 
   return (
-    <article className="budget-card">
-      <div className="budget-card-top">
+    <article className="grid gap-3.5 rounded-[22px] bg-[var(--surface-2)] p-4">
+      <div className="flex items-center gap-3">
         <span className="category-avatar" style={avatarStyle}>
           {budget.category.slice(0, 1)}
         </span>
         <div>
           <strong>{budget.category}</strong>
-          <p>
+          <p className="text-[13px] text-[var(--muted)]">
             {formatMoney(spent)} of {formatMoney(budget.limit)}
           </p>
         </div>
       </div>
-      <div className="progress-track">
-        <div className="progress-fill" style={progressStyle} />
+      <div className="h-2.5 overflow-hidden rounded-full bg-[rgba(29,27,32,0.08)]">
+        <div className="h-full rounded-[inherit] animate-[grow-bar_520ms_ease_both]" style={progressStyle} />
       </div>
     </article>
   );

@@ -44,7 +44,7 @@ type TransactionsViewProps = {
   transactions: Transaction[];
 };
 
-const transactionFilters: TransactionFilter[] = ["All", "Expenses", "Income", "Upcoming"];
+const transactionFilters: TransactionFilter[] = ["All", "Expenses", "Income"];
 const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount high", "Amount low"];
 
 // Handles transaction search, filters, sorting, and category creation

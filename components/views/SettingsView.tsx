@@ -13,7 +13,7 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { netlyPalette } from "@/lib/app/constants";
+import { netlyPalette } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 
 type SettingsViewProps = {

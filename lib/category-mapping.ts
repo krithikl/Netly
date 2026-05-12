@@ -1,4 +1,4 @@
-import { defaultTransactionCategories } from "@/lib/app/constants";
+import { defaultTransactionCategories } from "@/lib/categories";
 
 const needsReviewCategory = "Needs review";
 const knownCategories = new Set(defaultTransactionCategories.map(normalizeCategory));

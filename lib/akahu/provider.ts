@@ -1,7 +1,7 @@
-import { getAkahuAccounts, getAvailableBalance, toLinkedAccount, type AkahuAccount } from "@/lib/akahu/accounts";
+import { getAkahuAccounts, getAvailableBalance, type AkahuAccount } from "@/lib/akahu/accounts";
 import { createAkahuClientFromEnv, type AkahuTransactionQuery as AkahuClientTransactionQuery } from "@/lib/akahu/client";
 import { dedupeAkahuTransactions, getAkahuTransactions } from "@/lib/akahu/normalize";
-import type { LinkedAccount } from "@/lib/app/types";
+import { isTransactionInDateRange } from "@/lib/periods";
 import type { Transaction } from "@/lib/types";
 
 export type AkahuProviderId = "akahu";
@@ -11,16 +11,14 @@ export type AkahuAccessToken = {
 };
 
 export type AkahuAccountResult = {
-  accounts: LinkedAccount[];
+  accounts: AkahuAccount[];
   notice: string;
-  primaryAccount: LinkedAccount | null;
-  rawAccounts: unknown[];
+  primaryAccount: AkahuAccount | null;
 };
 
 export type AkahuBalanceResult = {
   availableBalance: number | null;
   notice: string;
-  rawAccounts: unknown[];
 };
 
 export type AkahuTransactionRequest = {
@@ -33,7 +31,6 @@ export type AkahuTransactionResult = {
   accountCount: number;
   nextCursor: string | null;
   notice: string;
-  rawAccounts: unknown[];
   rawCount: number;
   transactions: Transaction[];
 };
@@ -69,14 +66,12 @@ class DefaultAkahuProvider implements AkahuProvider {
   }
 
   async getAccounts(token: AkahuAccessToken): Promise<AkahuAccountResult> {
-    const rawAccounts = await this.getRawAccounts(token);
-    const accounts = rawAccounts.map(toLinkedAccount);
+    const accounts = await this.getRawAccounts(token);
 
     return {
-      rawAccounts,
       accounts,
       primaryAccount: accounts[0] || null,
-      notice: rawAccounts.length === 0 ? "Akahu connected, but no accounts were returned." : ""
+      notice: accounts.length === 0 ? "Akahu connected, but no accounts were returned." : ""
     };
   }
 
@@ -85,7 +80,6 @@ class DefaultAkahuProvider implements AkahuProvider {
     const availableBalance = getAvailableBalance(rawAccounts);
 
     return {
-      rawAccounts,
       availableBalance,
       notice: availableBalance === null ? "Akahu connected, but no account balances were returned." : ""
     };
@@ -105,7 +99,6 @@ class DefaultAkahuProvider implements AkahuProvider {
     );
 
     return {
-      rawAccounts,
       accountCount: rawAccounts.length,
       rawCount: transactionsResponse.items?.length || 0,
       nextCursor: transactionsResponse.cursor?.next || null,
@@ -133,17 +126,7 @@ function toAkahuTransactionQuery(query: AkahuTransactionRequest): AkahuClientTra
 }
 
 function filterTransactionsByDateRange(transactions: Transaction[], fromDate: string | undefined, toDate: string | undefined) {
-  if (!fromDate && !toDate) {
-    return transactions;
-  }
-
-  return transactions.filter((transaction) => {
-    if (transaction.pending) {
-      return true;
-    }
-
-    return (!fromDate || transaction.date >= fromDate) && (!toDate || transaction.date <= toDate);
-  });
+  return transactions.filter((transaction) => isTransactionInDateRange(transaction, fromDate, toDate));
 }
 
 function toAkahuStartDate(date: string | undefined) {

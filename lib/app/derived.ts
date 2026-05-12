@@ -6,8 +6,7 @@ import {
   getTransactionId,
   getTransactionMerchant,
   getTransactionRawText,
-  getTransactionStatus,
-  isUpcomingTransaction
+  getTransactionStatus
 } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
@@ -65,11 +64,9 @@ function matchesTransactionFilters(transaction: Transaction, normalizedQuery: st
 function matchesTransactionFilter(transaction: Transaction, transactionFilter: TransactionFilter) {
   switch (transactionFilter) {
     case "Expenses":
-      return transaction.amount < 0 && !isUpcomingTransaction(transaction);
+      return transaction.amount < 0;
     case "Income":
       return transaction.amount > 0;
-    case "Upcoming":
-      return getTransactionStatus(transaction) === "Upcoming";
     default:
       return true;
   }

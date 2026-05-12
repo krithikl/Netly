@@ -1,7 +1,7 @@
 import type { Transaction } from "@/lib/types";
 import { mapSourceCategoryToNetlyCategory } from "@/lib/category-mapping";
 
-export type TransactionStatus = "Booked" | "Pending" | "Upcoming";
+export type TransactionStatus = "Booked" | "Pending";
 
 // Returns a stable transaction ID, even when Akahu does not send one
 export function getTransactionId(transaction: Transaction) {
@@ -147,10 +147,6 @@ export function getTransactionConfidence(transaction: Transaction) {
 
 export function transactionNeedsReview(transaction: Transaction) {
   return getTransactionCategory(transaction) === "Needs review";
-}
-
-export function isUpcomingTransaction(_transaction: Transaction) {
-  return false;
 }
 
 function firstUsefulText(values: Array<unknown>, fallback = "Unknown transaction") {

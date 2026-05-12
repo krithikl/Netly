@@ -88,8 +88,6 @@ export function ActiveView(props: ActiveViewProps) {
             setHoveredCategory={props.setHoveredCategory}
             setPayday={props.setPayday}
             transactionPreview={props.transactionPreview}
-            upcomingCount={props.upcomingCount}
-            upcomingTotal={props.upcomingTotal}
           />
         </section>
       );

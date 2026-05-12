@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 import { getValidAccessToken } from "@/lib/akahu/token";
 import { transactions as demoTransactions } from "@/lib/mock-data";
-import { getTransactionDate, getTransactionStatus } from "@/lib/transaction-display";
+import { isTransactionInDateRange } from "@/lib/periods";
 import type { Transaction } from "@/lib/types";
 
 const demoPageSize = 100;
@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
       rawCount: transactionPage.rawCount,
       nextCursor: transactionPage.nextCursor,
       accountCount: transactionPage.accountCount,
-      rawAccounts: transactionPage.rawAccounts,
       transactions: transactionPage.transactions,
       notice: transactionPage.notice
     });
@@ -89,11 +88,6 @@ function filterTransactionsByDateRange(transactions: Transaction[], fromDate: st
   }
 
   return transactions.filter((transaction) => {
-    if (getTransactionStatus(transaction) === "Upcoming") {
-      return true;
-    }
-
-    const transactionDate = getTransactionDate(transaction);
-    return (!fromDate || transactionDate >= fromDate) && (!toDate || transactionDate <= toDate);
+    return isTransactionInDateRange(transaction, fromDate, toDate);
   });
 }

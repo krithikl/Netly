@@ -10,8 +10,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       source: "demo",
       connected: true,
-      availableBalance: currentBalance,
-      rawAccounts: []
+      availableBalance: currentBalance
     });
   }
 
@@ -34,7 +33,6 @@ export async function GET(request: NextRequest) {
       source: provider.id,
       connected: true,
       availableBalance: balance.availableBalance,
-      rawAccounts: balance.rawAccounts,
       notice: balance.notice
     });
   } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { handleCallbackParams, readAuthResponseCookie } from "@/lib/app/browser-state";
 import {
   applyCategoryOverrides,
@@ -11,45 +11,30 @@ import {
   getDataSourceLabel,
   getLinkedAccountLabel,
   getLinkedUserName,
-  getStatusBannerTitle,
-  getVisibleTransactions
+  getStatusBannerTitle
 } from "@/lib/app/derived";
-import type { DataMode, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
+import type { DataMode } from "@/lib/app/types";
 import type { ActiveViewProps } from "@/lib/app/view-props";
 import { budgets, cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
-import { filterTransactionsByDateRange, filterTransactionsByPeriod, getThisMonthDateRange } from "@/lib/periods";
-import { getTransactionStatus, transactionNeedsReview } from "@/lib/transaction-display";
+import { filterTransactionsByPeriod } from "@/lib/periods";
+import { transactionNeedsReview } from "@/lib/transaction-display";
 import { periods } from "@/lib/app/constants";
+import { useAkahuConnection } from "@/hooks/useAkahuConnection";
 import { useCategorySettings } from "@/hooks/useCategorySettings";
 import { useAkahuData } from "@/hooks/useAkahuData";
+import { usePaydaySettings } from "@/hooks/usePaydaySettings";
 import { useRoutedView } from "@/hooks/useRoutedView";
+import { useTransactionControls } from "@/hooks/useTransactionControls";
 import type { PeriodOption } from "@/lib/types";
 
 const topCategoryLimit = 5;
-const paydayStorageKey = "netly_payday";
-
-type PaydayRule = {
-  day: number;
-  type: "day";
-} | {
-  type: "last";
-};
 
 // Connects banking data, category settings, routing, and screen props for the app
 export function useNetlyApp() {
   const { activeView, setActiveView } = useRoutedView();
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
-  const [query, setQuery] = useState("");
-  const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("All");
-  const [transactionSort, setTransactionSort] = useState<TransactionSort>("Newest");
-  const [transactionCategory, setTransactionCategory] = useState<string[]>([]);
-  const [transactionDateRange, setTransactionDateRangeState] = useState(getThisMonthDateRange);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-  const [connectionResponse, setConnectionResponse] = useState("");
-  const [syncResult, setSyncResult] = useState("");
-  const [paydayRule, setPaydayRule] = useState<PaydayRule>(() => getPaydayRuleFromDate(defaultPayday));
-  const hasAutoCompletedRef = useRef(false);
 
   const banking = useAkahuData();
   const categorySourceTransactions = useMemo(
@@ -65,39 +50,21 @@ export function useNetlyApp() {
     () => applyCategoryOverrides(banking.transactionPageTransactions, categories.categoryOverrides),
     [banking.transactionPageTransactions, categories.categoryOverrides]
   );
+  const transactionControls = useTransactionControls({
+    applyFallbackState: banking.applyFallbackState,
+    dataMode: banking.dataMode,
+    refreshTransactionPage: banking.refreshTransactionPage,
+    transactions: transactionPageWorkingTransactions
+  });
+  const connection = useAkahuConnection({
+    refreshTransactions: banking.refreshTransactions,
+    setDataMode: banking.setDataMode,
+    transactionDateRange: transactionControls.transactionDateRange
+  });
+  const paydaySettings = usePaydaySettings(defaultPayday);
   const periodTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, period), [workingTransactions, period]);
-  const transactionRangeTransactions = useMemo(
-    () => filterTransactionsByDateRange(transactionPageWorkingTransactions, transactionDateRange),
-    [transactionDateRange, transactionPageWorkingTransactions]
-  );
   const recurringTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, "90 days"), [workingTransactions]);
   const categoryTotals = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
-
-  // Saves a pasted or callback Akahu token, then reloads live Akahu data
-  const completeAkahuConnection = useCallback(async (responseValue?: string) => {
-    const response = await fetch("/api/akahu/complete", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({ response: responseValue || connectionResponse })
-    });
-    const payload = (await response.json()) as { error?: string; message?: string };
-
-    setSyncResult(getCompletionMessage(response.ok, payload));
-
-    if (response.ok) {
-      setConnectionResponse("");
-      banking.setDataMode("user");
-      window.localStorage.setItem("netly_data_mode", "user");
-      await banking.refreshTransactions("user", transactionDateRange);
-    }
-  }, [banking.refreshTransactions, banking.setDataMode, connectionResponse, transactionDateRange]);
-
-  const updateConnectionResponse = useCallback((value: string) => {
-    setConnectionResponse(value);
-    hasAutoCompletedRef.current = false;
-  }, []);
 
   // Loads saved settings and the first data source when the app starts
   useEffect(() => {
@@ -105,7 +72,7 @@ export function useNetlyApp() {
 
     let initialDataMode = banking.restoreInitialDataMode();
     const callbackResult = handleCallbackParams({
-      setSyncResult
+      setSyncResult: connection.setSyncResult
     });
 
     if (callbackResult.forceUserMode) {
@@ -114,24 +81,15 @@ export function useNetlyApp() {
 
     const authResponse = readAuthResponseCookie();
     if (authResponse) {
-      setConnectionResponse(authResponse);
+      connection.setConnectionResponse(authResponse);
     }
 
-    setPaydayRule(readSavedPaydayRule());
+    paydaySettings.restorePaydaySettings();
 
-    banking.refreshTransactions(initialDataMode, transactionDateRange).catch((error: unknown) => {
+    banking.refreshTransactions(initialDataMode, transactionControls.transactionDateRange).catch((error: unknown) => {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
   }, []);
-
-  // Submits callback token data once, while still allowing manual token paste
-  useEffect(() => {
-    if (connectionResponse.trim() && !hasAutoCompletedRef.current) {
-      hasAutoCompletedRef.current = true;
-      setSyncResult("Completing Akahu connection...");
-      completeAkahuConnection(connectionResponse);
-    }
-  }, [completeAkahuConnection, connectionResponse]);
 
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
   const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
@@ -142,40 +100,18 @@ export function useNetlyApp() {
   const expenses = useMemo(() => debitTransactions(periodTransactions), [periodTransactions]);
   const monthlySpend = useMemo(() => sum(expenses.map((transaction) => Math.abs(transaction.amount))), [expenses]);
   const income = useMemo(() => sum(periodTransactions.filter((transaction) => transaction.amount > 0).map((transaction) => transaction.amount)), [periodTransactions]);
-  const upcoming = useMemo(() => periodTransactions.filter((transaction) => getTransactionStatus(transaction) === "Upcoming"), [periodTransactions]);
-  const upcomingTotal = useMemo(() => sum(upcoming.map((transaction) => Math.abs(transaction.amount))), [upcoming]);
   const reviewCount = useMemo(() => periodTransactions.filter(transactionNeedsReview).length, [periodTransactions]);
   const chartCategories = useMemo(() => groupCategoriesForChart(categoryTotals, topCategoryLimit), [categoryTotals]);
   const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
-  const visibleTransactions = useMemo(
-    () => getVisibleTransactions(transactionRangeTransactions, query, transactionCategory, transactionFilter, transactionSort),
-    [query, transactionCategory, transactionFilter, transactionRangeTransactions, transactionSort]
-  );
-  const refreshUserTransactions = useCallback(() => banking.refreshTransactions("user", transactionDateRange), [banking.refreshTransactions, transactionDateRange]);
-  const loadMoreUserTransactions = useCallback(() => banking.loadMoreTransactions(transactionDateRange), [banking.loadMoreTransactions, transactionDateRange]);
-  const setTransactionDateRange = useCallback((nextDateRange: typeof transactionDateRange) => {
-    setTransactionDateRangeState(nextDateRange);
-    setTransactionCategory([]);
-
-    banking.refreshTransactionPage(banking.dataMode, nextDateRange).catch((error: unknown) => {
-      banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
-    });
-  }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage]);
-  const updatePayday = useCallback((nextPayday: string) => {
-    const nextRule = getPaydayRuleFromDate(nextPayday);
-
-    setPaydayRule(nextRule);
-    window.localStorage.setItem(paydayStorageKey, JSON.stringify(nextRule));
-  }, []);
+  const refreshUserTransactions = useCallback(() => banking.refreshTransactions("user", transactionControls.transactionDateRange), [banking.refreshTransactions, transactionControls.transactionDateRange]);
+  const loadMoreUserTransactions = useCallback(() => banking.loadMoreTransactions(transactionControls.transactionDateRange), [banking.loadMoreTransactions, transactionControls.transactionDateRange]);
   const openNeedsReviewTransactions = useCallback(() => {
-    setQuery("");
-    setTransactionCategory(["Needs review"]);
-    setTransactionFilter("All");
+    transactionControls.setQuery("");
+    transactionControls.setTransactionCategory(["Needs review"]);
+    transactionControls.setTransactionFilter("All");
     setActiveView("transactions");
-  }, [setActiveView]);
+  }, [setActiveView, transactionControls]);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
-  const payday = useMemo(() => getNextPaydayDate(paydayRule), [paydayRule]);
-  const paydayPatternDate = useMemo(() => getNextPaydayPatternDate(paydayRule), [paydayRule]);
   const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
   const shouldShowPeriodControl = activeView === "home" || activeView === "budgets";
 
@@ -192,8 +128,8 @@ export function useNetlyApp() {
     categoryColors: categories.categoryColors,
     chartCategories,
     chartTotal,
-    completeAkahuConnection,
-    connectionResponse,
+    completeAkahuConnection: connection.completeAkahuConnection,
+    connectionResponse: connection.connectionResponse,
     expensesCount: expenses.length,
     hasCardEligibleSpend: cardFit.basis.eligibleTransactionCount > 0 && cardFit.basis.eligibleAnnualSpend > 0,
     hoveredCategory,
@@ -205,36 +141,34 @@ export function useNetlyApp() {
     monthlySpend,
     onCategoryChange: categories.updateTransactionCategory,
     onCreateCategory: categories.createCustomCategory,
-    onConnectionResponseChange: updateConnectionResponse,
+    onConnectionResponseChange: connection.updateConnectionResponse,
     onLoadMoreTransactions: loadMoreUserTransactions,
     onRefreshUserTransactions: refreshUserTransactions,
     onReviewNeedsReview: openNeedsReviewTransactions,
-    payday,
-    paydayPatternDate,
-    query,
+    payday: paydaySettings.payday,
+    paydayPatternDate: paydaySettings.paydayPatternDate,
+    query: transactionControls.query,
     recurring,
     reviewCount,
     safeToSpendAmount,
     setActiveView,
     setHoveredCategory,
-    setPayday: updatePayday,
-    setQuery,
-    setSyncResult,
-    setTransactionCategory,
-    setTransactionFilter,
-    setTransactionSort,
-    setTransactionDateRange,
-    syncResult,
-    transactionCategory,
+    setPayday: paydaySettings.updatePayday,
+    setQuery: transactionControls.setQuery,
+    setSyncResult: connection.setSyncResult,
+    setTransactionCategory: transactionControls.setTransactionCategory,
+    setTransactionFilter: transactionControls.setTransactionFilter,
+    setTransactionSort: transactionControls.setTransactionSort,
+    setTransactionDateRange: transactionControls.setTransactionDateRange,
+    syncResult: connection.syncResult,
+    transactionCategory: transactionControls.transactionCategory,
     transactionCategoryOptions: categories.transactionCategoryOptions,
-    transactionDateRange,
-    transactionFilter,
+    transactionDateRange: transactionControls.transactionDateRange,
+    transactionFilter: transactionControls.transactionFilter,
     transactionsHasMore: Boolean(banking.transactionPageNextCursor),
     transactionPreview: periodTransactions,
-    transactionSort,
-    upcomingCount: upcoming.length,
-    upcomingTotal,
-    visibleTransactions,
+    transactionSort: transactionControls.transactionSort,
+    visibleTransactions: transactionControls.visibleTransactions,
     workingTransactions,
     updateCategoryColor: categories.updateCategoryColor,
     deleteCategory: categories.deleteCategory
@@ -242,14 +176,14 @@ export function useNetlyApp() {
 
   return {
     activeView,
-    changeDataMode: (mode: DataMode) => banking.changeDataMode(mode, transactionDateRange),
+    changeDataMode: (mode: DataMode) => banking.changeDataMode(mode, transactionControls.transactionDateRange),
     connectionCopy: getConnectionCopy(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
     connectionTitle: getConnectionTitle(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
     dataMode: banking.dataMode,
     dataSourceLabel: getDataSourceLabel(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
     linkedAccountLabel: getLinkedAccountLabel(banking.primaryLinkedAccount, banking.linkedAccounts.length, banking.isConnected),
     linkedUserName,
-    payday,
+    payday: paydaySettings.payday,
     period,
     setActiveView,
     setPeriod,
@@ -258,14 +192,6 @@ export function useNetlyApp() {
     statusBannerTitle: getStatusBannerTitle(banking.transactionLoadError, banking.dataMode),
     viewProps
   };
-}
-
-function getCompletionMessage(isComplete: boolean, payload: { error?: string; message?: string }) {
-  if (!isComplete) {
-    return payload.error || "Could not complete authorization.";
-  }
-
-  return payload.message || "Connected.";
 }
 
 function groupCategoriesForChart(categories: { category: string; amount: number }[], limit: number) {
@@ -281,117 +207,4 @@ function groupCategoriesForChart(categories: { category: string; amount: number 
   const otherAmount = sum(sortedCategories.slice(limit).map((item) => item.amount));
 
   return [...visibleCategories, { category: "Other", amount: otherAmount }];
-}
-
-function readSavedPaydayRule(): PaydayRule {
-  const savedValue = window.localStorage.getItem(paydayStorageKey);
-
-  if (!savedValue) {
-    return getPaydayRuleFromDate(defaultPayday);
-  }
-
-  try {
-    const parsedValue = JSON.parse(savedValue) as Partial<PaydayRule>;
-
-    if (parsedValue.type === "last") {
-      return { type: "last" };
-    }
-
-    if (parsedValue.type === "day" && typeof parsedValue.day === "number") {
-      return { type: "day", day: clampPaydayDay(parsedValue.day) };
-    }
-  } catch {
-    return getPaydayRuleFromDate(savedValue);
-  }
-
-  return getPaydayRuleFromDate(defaultPayday);
-}
-
-function getPaydayRuleFromDate(value: string): PaydayRule {
-  const date = parseLocalDate(value);
-
-  if (!date) {
-    return getPaydayRuleFromDate(defaultPayday);
-  }
-
-  if (date.getDate() === getDaysInMonth(date.getFullYear(), date.getMonth())) {
-    return { type: "last" };
-  }
-
-  return {
-    type: "day",
-    day: clampPaydayDay(date.getDate())
-  };
-}
-
-function getNextPaydayDate(rule: PaydayRule) {
-  const today = new Date();
-  const todayMidday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
-  const thisMonthPayday = getAdjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth());
-  const nextPayday = thisMonthPayday >= todayMidday
-    ? thisMonthPayday
-    : getAdjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth() + 1);
-
-  return formatLocalDate(nextPayday);
-}
-
-function getNextPaydayPatternDate(rule: PaydayRule) {
-  const today = new Date();
-  const todayMidday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
-  const thisMonthPayday = getAdjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth());
-  const patternDate = thisMonthPayday >= todayMidday
-    ? getUnadjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth())
-    : getUnadjustedPaydayForMonth(rule, today.getFullYear(), today.getMonth() + 1);
-
-  return formatLocalDate(patternDate);
-}
-
-function getAdjustedPaydayForMonth(rule: PaydayRule, year: number, monthIndex: number) {
-  return adjustWeekendToPreviousWeekday(getUnadjustedPaydayForMonth(rule, year, monthIndex));
-}
-
-function getUnadjustedPaydayForMonth(rule: PaydayRule, year: number, monthIndex: number) {
-  const normalizedMonthDate = new Date(year, monthIndex, 1, 12);
-  const normalizedYear = normalizedMonthDate.getFullYear();
-  const normalizedMonth = normalizedMonthDate.getMonth();
-  const monthDays = getDaysInMonth(normalizedYear, normalizedMonth);
-  const paydayDay = rule.type === "last" ? monthDays : Math.min(rule.day, monthDays);
-
-  return new Date(normalizedYear, normalizedMonth, paydayDay, 12);
-}
-
-function adjustWeekendToPreviousWeekday(date: Date) {
-  const day = date.getDay();
-
-  if (day === 6) {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1, 12);
-  }
-
-  if (day === 0) {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - 2, 12);
-  }
-
-  return date;
-}
-
-function parseLocalDate(value: string) {
-  const date = new Date(`${value}T12:00:00`);
-
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function formatLocalDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function getDaysInMonth(year: number, monthIndex: number) {
-  return new Date(year, monthIndex + 1, 0).getDate();
-}
-
-function clampPaydayDay(day: number) {
-  return Math.min(31, Math.max(1, Math.round(day)));
 }

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { CalendarDays, Sparkles, TrendingUp, WalletCards } from "lucide-react";
+import { Sparkles, TrendingUp, WalletCards } from "lucide-react";
 import { CategoryDonutCard } from "@/components/charts/CategoryDonutCard";
 import { HeroBalanceCard } from "@/components/home/HeroBalanceCard";
 import { InsightsPanel } from "@/components/home/InsightsPanel";
@@ -30,8 +30,6 @@ type HomeViewProps = {
   setHoveredCategory: (category: string | null) => void;
   setPayday: (payday: string) => void;
   transactionPreview: Transaction[];
-  upcomingCount: number;
-  upcomingTotal: number;
 };
 
 // Shows the dashboard summary, category chart, insights, and recent transactions
@@ -55,9 +53,7 @@ export function HomeView({
   setActiveView,
   setHoveredCategory,
   setPayday,
-  transactionPreview,
-  upcomingCount,
-  upcomingTotal
+  transactionPreview
 }: HomeViewProps) {
   const metricGridClassName = getLoadingClassName("metric-grid", isLoadingTransactions);
   const dashboardGridClassName = getLoadingClassName("dashboard-grid", isLoadingTransactions);
@@ -89,7 +85,6 @@ export function HomeView({
       <div className={metricGridClassName} aria-busy={isLoadingTransactions}>
         <MetricCard icon={TrendingUp} label="Spent" note={`${expensesCount} outgoing transactions`} tone="blue" value={formatMoney(monthlySpend)} />
         <MetricCard icon={WalletCards} label="Income" note="Salary and credits detected" tone="green" value={formatMoney(income)} />
-        <MetricCard icon={CalendarDays} label="Upcoming" note={`${upcomingCount} scheduled items`} tone="orange" value={formatMoney(upcomingTotal)} />
         <MetricCard actionLabel="Review" icon={Sparkles} label="Needs review" note="Low-confidence matches" onAction={onReviewNeedsReview} tone="red" value={reviewCount.toString()} />
       </div>
 

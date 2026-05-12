@@ -26,6 +26,17 @@ Netly now treats Akahu as the open banking provider for this branch. The UI shou
 5. App shows safe-to-spend, top categories, recurring payments, and card/reward comparison.
 6. User can override categories and customise colours.
 
+## Current Routing Pattern
+
+The dashboard currently uses a client-shell App Router pattern. `app/(dashboard)/layout.tsx`
+renders `AppShell`, while the route pages under `app/(dashboard)` return `null` and exist
+to provide stable URLs for the active client view. `useRoutedView` maps those URLs to the
+active Netly view.
+
+Keep this pattern until auth, server-loaded page data, or per-route metadata require a
+route-specific server component. When that happens, convert the affected pages to render
+children instead of adding more route state to `useNetlyApp`.
+
 ## Recommended Production Stack
 
 - Next.js App Router

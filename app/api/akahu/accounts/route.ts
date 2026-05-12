@@ -57,15 +57,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const provider = createAkahuProviderFromEnv();
-    const accounts = await provider.getAccounts({ accessToken });
+    const accountResult = await provider.getAccounts({ accessToken });
+    const accounts = accountResult.accounts.map(toLinkedAccount);
 
     return NextResponse.json({
       source: provider.id,
       connected: true,
-      rawAccounts: accounts.rawAccounts,
-      accounts: accounts.accounts,
-      primaryAccount: accounts.primaryAccount,
-      notice: accounts.notice
+      accounts,
+      primaryAccount: accounts[0] || null,
+      notice: accountResult.notice
     });
   } catch (error) {
     return NextResponse.json({
@@ -84,7 +84,6 @@ function toAccountsPayload(accounts: AkahuAccount[], connected: boolean, source:
   return {
     source,
     connected,
-    rawAccounts: accounts,
     accounts: linkedAccounts,
     primaryAccount: linkedAccounts[0] || null,
     notice

@@ -41,7 +41,6 @@ export function useAkahuData() {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [isLoadingMoreTransactions, setIsLoadingMoreTransactions] = useState(false);
-  const [transactionsNextCursor, setTransactionsNextCursor] = useState<string | null>(null);
   const [transactionPageNextCursor, setTransactionPageNextCursor] = useState<string | null>(null);
   const [transactionLoadError, setTransactionLoadError] = useState("");
   const [transactionLoadNotice, setTransactionLoadNotice] = useState("");
@@ -49,7 +48,6 @@ export function useAkahuData() {
   const resetBankData = useCallback(() => {
     setTransactions([]);
     setTransactionPageTransactions([]);
-    setTransactionsNextCursor(null);
     setTransactionPageNextCursor(null);
     setLinkedAccounts([]);
     setPrimaryLinkedAccount(null);
@@ -62,7 +60,6 @@ export function useAkahuData() {
 
     setTransactions(isDemoMode ? fallbackTransactions : []);
     setTransactionPageTransactions(isDemoMode ? fallbackTransactions : []);
-    setTransactionsNextCursor(null);
     setTransactionPageNextCursor(null);
     setLinkedAccounts([]);
     setPrimaryLinkedAccount(null);
@@ -102,7 +99,6 @@ export function useAkahuData() {
 
     setTransactions(transactionsPayload.transactions);
     setTransactionPageTransactions(transactionPagePayload.transactions);
-    setTransactionsNextCursor(transactionsPayload.nextCursor || null);
     setTransactionPageNextCursor(transactionPagePayload.nextCursor || null);
     setLinkedAccounts(accountsPayload.accounts || []);
     setPrimaryLinkedAccount(accountsPayload.primaryAccount || null);
@@ -192,7 +188,6 @@ export function useAkahuData() {
     transactionLoadNotice,
     transactionPageNextCursor,
     transactionPageTransactions,
-    transactionsNextCursor,
     transactions
   };
 }

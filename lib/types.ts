@@ -53,15 +53,6 @@ export type Transaction = {
   };
 };
 
-export type RawBankTransaction = {
-  id: string;
-  date: string;
-  description: string;
-  account: string;
-  amount: number;
-  status: "Booked" | "Pending" | "Upcoming";
-};
-
 export type PeriodOption = "This month" | "30 days" | "90 days" | "All";
 
 export type TransactionDateRange = {

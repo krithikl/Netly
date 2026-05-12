@@ -1,4 +1,5 @@
-import { categoryColorsStorageKey, categoryOverridesStorageKey, customCategoriesStorageKey, deletedCategoriesStorageKey, defaultCategoryColors } from "@/lib/app/constants";
+import { categoryColorsStorageKey, categoryOverridesStorageKey, customCategoriesStorageKey, deletedCategoriesStorageKey } from "@/lib/app/constants";
+import { defaultCategoryColors } from "@/lib/categories";
 import { parseStoredJson } from "@/lib/app/storage";
 import type { DataMode } from "@/lib/app/types";
 

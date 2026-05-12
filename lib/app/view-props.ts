@@ -1,46 +1,40 @@
 import type { Budget, CardFitBasis, CardFitExplanation, CardValue, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 
-export type ActiveViewProps = {
+export type SharedViewProps = {
   activeView: View;
+  categoryColors: Record<string, string>;
+  isConnected: boolean;
+  isLoadingTransactions: boolean;
+  setActiveView: (view: View) => void;
+};
+
+export type HomeViewStateProps = {
   availableBalance: number | null;
-  budgets: Budget[];
-  cardBasis: CardFitBasis;
-  cardFitSourceLabel: string;
-  cardFitWindowLabel: string;
-  cardFitExplanation: CardFitExplanation | null;
-  cards: CardValue[];
-  categories: { category: string; amount: number }[];
   chartCategories: { category: string; amount: number }[];
   chartTotal: number;
-  completeAkahuConnection: (responseValue?: string) => Promise<void>;
-  connectionResponse: string;
   expensesCount: number;
-  hasCardEligibleSpend: boolean;
   hoveredCategory: string | null;
   income: number;
   insights: string[];
-  isConnected: boolean;
-  isLoadingMoreTransactions: boolean;
-  isLoadingTransactions: boolean;
   monthlySpend: number;
   payday: string;
   paydayPatternDate: string;
-  onCreateCategory: (category: string) => void;
-  onCategoryChange: (transactionId: string, category: string) => void;
-  onConnectionResponseChange: (value: string) => void;
-  onLoadMoreTransactions: () => void;
-  onRefreshUserTransactions: () => void;
-  onReviewNeedsReview: () => void;
-  query: string;
-  recurring: RecurringMerchant[];
   reviewCount: number;
   safeToSpendAmount: number;
-  setActiveView: (view: View) => void;
   setHoveredCategory: (category: string | null) => void;
   setPayday: (payday: string) => void;
+  transactionPreview: Transaction[];
+};
+
+export type TransactionsViewStateProps = {
+  isLoadingMoreTransactions: boolean;
+  onCreateCategory: (category: string) => void;
+  onCategoryChange: (transactionId: string, category: string) => void;
+  onLoadMoreTransactions: () => void;
+  onRefreshUserTransactions: () => void;
+  query: string;
   setQuery: (query: string) => void;
-  setSyncResult: (value: string) => void;
   setTransactionCategory: (categories: string[]) => void;
   setTransactionDateRange: (dateRange: TransactionDateRange) => void;
   setTransactionFilter: (filter: TransactionFilter) => void;
@@ -51,13 +45,46 @@ export type ActiveViewProps = {
   transactionDateRange: TransactionDateRange;
   transactionFilter: TransactionFilter;
   transactionsHasMore: boolean;
-  transactionPreview: Transaction[];
   transactionSort: TransactionSort;
-  upcomingCount: number;
-  upcomingTotal: number;
   visibleTransactions: Transaction[];
   workingTransactions: Transaction[];
-  categoryColors: Record<string, string>;
+};
+
+export type BudgetsViewStateProps = {
+  budgets: Budget[];
+  categories: { category: string; amount: number }[];
+  recurring: RecurringMerchant[];
+};
+
+export type CardFitViewStateProps = {
+  cardBasis: CardFitBasis;
+  cardFitSourceLabel: string;
+  cardFitWindowLabel: string;
+  cardFitExplanation: CardFitExplanation | null;
+  cards: CardValue[];
+  hasCardEligibleSpend: boolean;
+};
+
+export type ConnectViewStateProps = {
+  completeAkahuConnection: (responseValue?: string) => Promise<void>;
+  connectionResponse: string;
+  onConnectionResponseChange: (value: string) => void;
+  setSyncResult: (value: string) => void;
+  syncResult: string;
+};
+
+export type SettingsViewStateProps = {
   updateCategoryColor: (category: string, color: string) => void;
   deleteCategory: (category: string) => void;
 };
+
+export type ActiveViewProps = SharedViewProps
+  & HomeViewStateProps
+  & TransactionsViewStateProps
+  & BudgetsViewStateProps
+  & CardFitViewStateProps
+  & ConnectViewStateProps
+  & SettingsViewStateProps
+  & {
+    onReviewNeedsReview: () => void;
+  };

@@ -2,7 +2,7 @@ export type View = "home" | "transactions" | "budgets" | "cards" | "connect" | "
 
 export type DataMode = "user" | "demo";
 
-export type TransactionFilter = "All" | "Expenses" | "Income" | "Upcoming";
+export type TransactionFilter = "All" | "Expenses" | "Income";
 
 export type TransactionSort = "Newest" | "Oldest" | "Amount high" | "Amount low";
 

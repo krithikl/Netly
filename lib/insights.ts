@@ -73,7 +73,7 @@ export function safeToSpend(transactions: Transaction[], currentBalance: number)
 // Works out the spend that can count toward card rewards
 export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWindowDays): CardFitBasis {
   const debits = debitTransactions(transactions)
-    .filter((txn) => getTransactionStatus(txn) !== "Upcoming")
+    .filter((txn) => getTransactionStatus(txn) === "Booked")
     .filter((txn) => !Number.isNaN(Date.parse(getTransactionDate(txn))));
   const latestTime = Math.max(...debits.map((txn) => Date.parse(getTransactionDate(txn))));
   const latestTransactionDate = Number.isFinite(latestTime) ? new Date(latestTime).toISOString().slice(0, 10) : null;

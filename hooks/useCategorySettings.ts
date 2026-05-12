@@ -5,11 +5,10 @@ import {
   categoryColorsStorageKey,
   categoryOverridesStorageKey,
   customCategoriesStorageKey,
-  defaultCategoryColors,
-  defaultTransactionCategories,
   deletedCategoriesStorageKey
 } from "@/lib/app/constants";
 import { readCategoryColors, readCategoryOverrides, readCustomCategories, readDeletedCategories } from "@/lib/app/browser-state";
+import { defaultCategoryColors, defaultTransactionCategories } from "@/lib/categories";
 import { getTransactionCategory } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 

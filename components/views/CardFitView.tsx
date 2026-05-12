@@ -174,13 +174,14 @@ function CardOption({
   const isWinner = index === 0;
   const isUnavailable = card.availability === "unavailable";
   const cardOptionClassName = getCardOptionClassName(isWinner);
+  const cardOptionStyle = getCardOptionStyle(card, isWinner);
   const rankLabel = `#${index + 1}`;
   const cardBrandLabel = getCardBrandLabel(card);
   const cardBreakdown = getCardBreakdown(card);
   const eligibleSpendLabel = `Based on ${formatMoney(card.eligibleAnnualSpend)} eligible annual spend`;
 
   return (
-    <article className={cardOptionClassName}>
+    <article className={cardOptionClassName} style={cardOptionStyle}>
       <div>
         <div className="card-heading">
           <span className="rank-pill" style={{ background: card.brandColor }}>
@@ -238,7 +239,7 @@ function CardOption({
             Why this wins
           </Button>
           <Button
-            className="rounded-xl px-3 text-xs font-black"
+            className="card-fit-benefits-trigger rounded-xl px-3 text-xs font-black"
             onClick={() => onOpenDetail("benefits", card, index)}
             size="sm"
             type="button"
@@ -279,6 +280,12 @@ function getIsBottomNavigation() {
 
 function getCardOptionClassName(isWinner: boolean) {
   return clsx("card-option", isWinner && "winner");
+}
+
+function getCardOptionStyle(card: CardValue, isWinner: boolean) {
+  return {
+    borderColor: isWinner ? card.brandColor : undefined
+  };
 }
 
 function getCardBrandLabel(card: CardValue) {

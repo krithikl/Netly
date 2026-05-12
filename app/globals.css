@@ -1538,7 +1538,7 @@ h2 {
 
 .transaction-page {
   gap: 18px;
-  padding-inline-end: 18px;
+  /* padding-inline-end: 18px; */
 }
 
 .transaction-analytics-grid {
@@ -2445,6 +2445,14 @@ h2 {
   background: var(--primary-soft);
 }
 
+.card-fit-benefits-trigger.card-fit-benefits-trigger {
+  background: white;
+}
+
+.card-fit-benefits-trigger.card-fit-benefits-trigger:hover {
+  background: var(--surface-2);
+}
+
 .card-fit-explanation-sheet {
   width: min(460px, calc(100vw - 36px));
 }
@@ -2494,8 +2502,9 @@ h2 {
 }
 
 .card-option.winner {
+  border-width: 2px;
   border-color: var(--primary-border);
-  background: var(--surface);
+  background: var(--primary-soft);
   box-shadow: 0 14px 34px rgba(109, 94, 245, 0.1);
 }
 
@@ -2870,7 +2879,7 @@ h2 {
     min-height: 88px;
     border: 0;
     border-top: 1px solid var(--outline);
-    border-radius: 0;
+    border-radius: 18px;
     padding: 12px;
     background: var(--surface);
   }

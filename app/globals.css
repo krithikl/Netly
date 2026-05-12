@@ -1958,19 +1958,18 @@ h2 {
 
 .card-fit-explanation-trigger {
   min-height: 34px;
-  margin-top: 4px;
-  border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--outline));
-  border-radius: 999px;
+  margin-top: 0;
+  border-color: var(--primary-border);
+  border-radius: 12px;
   padding: 7px 12px;
-  background: rgba(255, 251, 255, 0.78);
-  color: var(--primary);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--secondary);
   font-size: 12px;
   font-weight: 900;
-  cursor: pointer;
 }
 
 .card-fit-explanation-trigger:hover {
-  background: rgba(255, 251, 255, 0.96);
+  background: var(--primary-soft);
 }
 
 .card-fit-explanation-sheet {
@@ -2015,13 +2014,16 @@ h2 {
   gap: 18px;
   align-items: start;
   padding: 18px;
-  border: 2px solid transparent;
-  border-radius: 24px;
-  background: var(--surface-2);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .card-option.winner {
-  background: var(--primary-soft);
+  border-color: var(--primary-border);
+  background: var(--surface);
+  box-shadow: 0 14px 34px rgba(109, 94, 245, 0.1);
 }
 
 .card-option h2 {
@@ -2048,9 +2050,9 @@ h2 {
 }
 
 .card-breakdown span {
-  border-radius: 999px;
+  border-radius: 10px;
   padding: 7px 10px;
-  background: rgba(255, 251, 255, 0.76);
+  background: var(--surface-2);
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;

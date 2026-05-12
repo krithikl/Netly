@@ -18,7 +18,7 @@ import type { ActiveViewProps } from "@/lib/app/view-props";
 import { budgets, cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
 import { filterTransactionsByPeriod, getTransactionPeriodDateRange } from "@/lib/periods";
-import { transactionNeedsReview } from "@/lib/transaction-display";
+import { getTransactionDate, transactionNeedsReview } from "@/lib/transaction-display";
 import { periods } from "@/lib/app/constants";
 import { useAkahuConnection } from "@/hooks/useAkahuConnection";
 import { useCategorySettings } from "@/hooks/useCategorySettings";
@@ -102,6 +102,7 @@ export function useNetlyApp() {
   );
   const expenses = useMemo(() => debitTransactions(periodTransactions), [periodTransactions]);
   const monthlySpend = useMemo(() => sum(expenses.map((transaction) => Math.abs(transaction.amount))), [expenses]);
+  const averageDailySpend = useMemo(() => getAverageDailySpend(expenses, monthlySpend), [expenses, monthlySpend]);
   const income = useMemo(() => sum(periodTransactions.filter((transaction) => transaction.amount > 0).map((transaction) => transaction.amount)), [periodTransactions]);
   const reviewCount = useMemo(() => periodTransactions.filter(transactionNeedsReview).length, [periodTransactions]);
   const chartCategories = useMemo(() => groupCategoriesForChart(categoryTotals, topCategoryLimit), [categoryTotals]);
@@ -130,6 +131,7 @@ export function useNetlyApp() {
   // Single prop bundle passed into ActiveView, then split into each screen component.
   const viewProps: ActiveViewProps = {
     activeView,
+    averageDailySpend,
     availableBalance: banking.availableBalance,
     budgets,
     cardBasis: cardFit.basis,
@@ -206,6 +208,27 @@ export function useNetlyApp() {
     statusBannerTitle: getStatusBannerTitle(banking.transactionLoadError, banking.dataMode),
     viewProps
   };
+}
+
+function getAverageDailySpend(expenses: ReturnType<typeof debitTransactions>, totalSpend: number) {
+  if (expenses.length === 0 || totalSpend <= 0) {
+    return 0;
+  }
+
+  const timestamps = expenses
+    .map((transaction) => Date.parse(getTransactionDate(transaction)))
+    .filter(Number.isFinite);
+
+  if (timestamps.length === 0) {
+    return 0;
+  }
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const firstDay = Math.min(...timestamps);
+  const lastDay = Math.max(...timestamps);
+  const dayCount = Math.max(1, Math.round((lastDay - firstDay) / dayMs) + 1);
+
+  return totalSpend / dayCount;
 }
 
 // Keeps the donut chart readable by grouping small categories into “Other”.

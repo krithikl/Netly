@@ -10,6 +10,7 @@ export type SharedViewProps = {
 };
 
 export type HomeViewStateProps = {
+  averageDailySpend: number;
   availableBalance: number | null;
   chartCategories: { category: string; amount: number }[];
   chartTotal: number;

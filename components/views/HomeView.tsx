@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Sparkles, TrendingUp, WalletCards } from "lucide-react";
+import { CalendarDays, Sparkles, TrendingUp, WalletCards } from "lucide-react";
 import { CategoryDonutCard } from "@/components/charts/CategoryDonutCard";
 import { HeroBalanceCard } from "@/components/home/HeroBalanceCard";
 import { InsightsPanel } from "@/components/home/InsightsPanel";
@@ -20,6 +20,7 @@ type HomeViewProps = {
   insights: string[];
   isConnected: boolean;
   isLoadingTransactions: boolean;
+  averageDailySpend: number;
   monthlySpend: number;
   onReviewNeedsReview: () => void;
   payday: string;
@@ -45,6 +46,7 @@ export function HomeView({
   insights,
   isConnected,
   isLoadingTransactions,
+  averageDailySpend,
   monthlySpend,
   onReviewNeedsReview,
   payday,
@@ -85,7 +87,8 @@ export function HomeView({
 
       <div className={metricGridClassName} aria-busy={isLoadingTransactions}>
         <MetricCard icon={TrendingUp} label="Spent" note={`${expensesCount} outgoing transactions`} tone="blue" value={formatMoney(monthlySpend)} />
-        <MetricCard icon={WalletCards} label="Income" note="Salary and credits detected" tone="green" value={formatMoney(income)} />
+        <MetricCard icon={CalendarDays} label="Average per day" note="Estimated daily spend" tone="orange" value={formatMoney(averageDailySpend, true)} />
+        <MetricCard icon={WalletCards} label="Income" note="Credits in this period" tone="green" value={formatMoney(income)} />
         <MetricCard actionLabel="Review" icon={Sparkles} label="Needs review" note="Low-confidence matches" onAction={onReviewNeedsReview} tone="red" value={reviewCount.toString()} />
       </div>
 

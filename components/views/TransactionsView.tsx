@@ -137,7 +137,7 @@ export function TransactionsView({
               </span>
             </label>
             <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
-            {isBottomNavigation ? (
+            {isBottomNavigation && (
               <div className="transaction-mobile-actions">
                 <Button onClick={() => setFiltersOpen(true)} type="button" variant="secondary">
                   <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
@@ -147,25 +147,6 @@ export function TransactionsView({
                   <ArrowDownUp aria-hidden="true" className="h-4 w-4" />
                   Sort
                 </Button>
-              </div>
-            ) : (
-              <div className="transaction-compact-selects">
-                <label>
-                  Status
-                  <SelectField className="transaction-select-trigger" onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
-                </label>
-                <label>
-                  Category
-                  <CategoryMultiSelect
-                    categoryOptions={categoryOptions}
-                    onCategoryToggle={toggleTransactionCategory}
-                    selectedCategories={transactionCategory}
-                  />
-                </label>
-                <label>
-                  Sort
-                  <SelectField className="transaction-select-trigger" onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
-                </label>
               </div>
             )}
           </div>
@@ -183,17 +164,22 @@ export function TransactionsView({
               </span>
             </label>
             <TransactionDateRangePicker dateRange={dateRange} onChange={onDateRangeChange} />
-            <label>
-              Status
-              <SelectField className="transaction-select-trigger" onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
-            </label>
-            <label>
-              Category
-              <CategoryMultiSelect
-                categoryOptions={categoryOptions}
-                onCategoryToggle={toggleTransactionCategory}
-                selectedCategories={transactionCategory}
-              />
+            <TransactionDesktopFilterPopover
+              activeFilterCount={activeFilterCount}
+              categoryOptions={categoryOptions}
+              categorySelectValue={transactionCategory}
+              filterSelectOptions={filterSelectOptions}
+              onCategoryToggle={toggleTransactionCategory}
+              onReset={resetFilters}
+              onStatusChange={setTransactionFilter}
+              transactionFilter={transactionFilter}
+            />
+            <label className="transaction-sort-control">
+              Sort
+              <span className="transaction-sort-select-wrap">
+                <ArrowDownUp aria-hidden="true" className="h-4 w-4" />
+                <SelectField className="transaction-select-trigger transaction-sort-select-trigger" onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
+              </span>
             </label>
           </div>
           <div className="transaction-filter-actions">
@@ -212,12 +198,6 @@ export function TransactionsView({
                 </p>
               )}
             </div>
-            {!isBottomNavigation && (
-              <label className="transaction-sort-inline">
-                Sort
-                <SelectField className="transaction-select-trigger" onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
-              </label>
-            )}
           </div>
         </div>
         <TransactionFilterDialog
@@ -290,7 +270,7 @@ function TransactionAnalyticsSummary({
         value={analytics.activeCategoryCount.toString()}
       />
       <TransactionAnalyticsCard
-        actionLabel="Review now"
+        actionLabel="Review"
         icon={AlertCircle}
         label="Needs review"
         onAction={onReviewNeedsReview}
@@ -327,15 +307,69 @@ function TransactionAnalyticsCard({
         <span>{label}</span>
         <strong>{value}</strong>
         {actionLabel && onAction ? (
-          <button onClick={onAction} type="button">
+          <button className="metric-action transaction-analytics-action" onClick={onAction} type="button">
             {actionLabel}
-            <span aria-hidden="true">→</span>
           </button>
         ) : (
           <small>{note}</small>
         )}
       </div>
     </article>
+  );
+}
+
+function TransactionDesktopFilterPopover({
+  activeFilterCount,
+  categoryOptions,
+  categorySelectValue,
+  filterSelectOptions,
+  onCategoryToggle,
+  onReset,
+  onStatusChange,
+  transactionFilter
+}: {
+  activeFilterCount: number;
+  categoryOptions: string[];
+  categorySelectValue: string[];
+  filterSelectOptions: { label: string; value: TransactionFilter }[];
+  onCategoryToggle: (category: string) => void;
+  onReset: () => void;
+  onStatusChange: (filter: TransactionFilter) => void;
+  transactionFilter: TransactionFilter;
+}) {
+  const filterLabel = activeFilterCount > 0 ? `Filters (${activeFilterCount})` : "Filters";
+
+  return (
+    <div className="transaction-filter-popover-field">
+      <span>Filters</span>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button className="transaction-filter-trigger" type="button" variant="outline">
+            <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+            {filterLabel}
+            <ChevronDown aria-hidden="true" className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="transaction-filter-popover">
+          <div className="transaction-filter-popover-header">
+            <strong>Filters</strong>
+            <button onClick={onReset} type="button">Reset</button>
+          </div>
+          <label>
+            Status
+            <SelectField className="transaction-select-trigger" onChange={onStatusChange} options={filterSelectOptions} value={transactionFilter} />
+          </label>
+          <label>
+            Category
+            <CategoryMultiSelect
+              categoryOptions={categoryOptions}
+              onCategoryToggle={onCategoryToggle}
+              selectedCategories={categorySelectValue}
+            />
+          </label>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
 

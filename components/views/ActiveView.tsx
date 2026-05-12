@@ -69,6 +69,7 @@ export function ActiveView(props: ActiveViewProps) {
       return (
         <section className="view-stack">
           <HomeView
+            averageDailySpend={props.averageDailySpend}
             availableBalance={props.availableBalance}
             categoryColors={props.categoryColors}
             chartCategories={props.chartCategories}

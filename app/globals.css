@@ -871,6 +871,7 @@ h2 {
 
 .transaction-ledger {
   display: grid;
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--outline);
@@ -881,14 +882,15 @@ h2 {
 .transaction-ledger-header,
 .transaction-ledger-row {
   display: grid;
-  grid-template-columns: minmax(110px, 0.72fr) minmax(220px, 1.65fr) minmax(150px, 1fr) minmax(150px, 0.95fr) minmax(120px, 0.72fr) 28px;
+  grid-template-columns: minmax(88px, 0.7fr) minmax(178px, 1.7fr) minmax(112px, 0.88fr) minmax(112px, 0.82fr) minmax(82px, 0.62fr) 14px;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
+  min-width: 0;
 }
 
 .transaction-ledger-header {
   min-height: 42px;
-  padding: 0 16px;
+  padding: 0 12px;
   background: var(--surface-2);
   color: var(--muted);
   font-size: 0.72rem;
@@ -907,7 +909,7 @@ h2 {
   min-height: 68px;
   border: 0;
   border-top: 1px solid var(--outline);
-  padding: 11px 16px;
+  padding: 11px 12px;
   background: var(--surface);
   color: var(--ink);
   cursor: pointer;
@@ -940,9 +942,9 @@ h2 {
 
 .transaction-ledger-merchant {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-columns: 38px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -994,9 +996,9 @@ h2 {
   max-width: 100%;
   min-width: 0;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   border-radius: 10px;
-  padding: 6px 9px;
+  padding: 6px 8px;
   font-size: 0.76rem;
   font-weight: 800;
   line-height: 1.1;
@@ -1536,6 +1538,7 @@ h2 {
 
 .transaction-page {
   gap: 18px;
+  padding-inline-end: 18px;
 }
 
 .transaction-analytics-grid {
@@ -1609,18 +1612,8 @@ h2 {
   font-weight: 750;
 }
 
-.transaction-analytics-card button {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  gap: 6px;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: var(--secondary);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 850;
+.transaction-analytics-card .transaction-analytics-action {
+  margin-top: 4px;
 }
 
 .transaction-workspace {
@@ -1648,7 +1641,7 @@ h2 {
 
 .transaction-controls {
   display: grid;
-  grid-template-columns: minmax(240px, 1.45fr) minmax(230px, 1fr) repeat(2, minmax(150px, 0.72fr));
+  grid-template-columns: minmax(240px, 1.55fr) minmax(220px, 1fr) minmax(140px, 0.66fr) minmax(150px, 0.7fr);
   gap: 12px;
   align-items: end;
 }
@@ -1670,22 +1663,6 @@ h2 {
 
 .transaction-mobile-controls {
   display: none;
-}
-
-.transaction-compact-selects {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.transaction-compact-selects label {
-  display: grid;
-  min-width: 0;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 850;
-  text-transform: uppercase;
 }
 
 .transaction-select-trigger.transaction-select-trigger {
@@ -1788,6 +1765,86 @@ h2 {
   text-transform: uppercase;
 }
 
+.transaction-filter-popover-field,
+.transaction-sort-control {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.transaction-filter-trigger.transaction-filter-trigger {
+  height: 44px;
+  min-width: 0;
+  justify-content: space-between;
+  border-color: var(--outline);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: none;
+}
+
+.transaction-filter-popover {
+  display: grid;
+  width: min(320px, calc(100vw - 32px));
+  gap: 14px;
+}
+
+.transaction-filter-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.transaction-filter-popover-header strong {
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.transaction-filter-popover-header button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.transaction-filter-popover label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.transaction-sort-select-wrap {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.transaction-sort-select-wrap > svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  z-index: 1;
+  color: var(--muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.transaction-sort-select-trigger.transaction-sort-select-trigger {
+  padding-left: 36px;
+}
+
 .transaction-controls input {
   width: 100%;
   min-height: 44px;
@@ -1862,23 +1919,11 @@ h2 {
 }
 
 .transaction-filter-actions {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.transaction-sort-inline {
   display: grid;
-  width: min(170px, 100%);
-  gap: 6px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 850;
-  text-transform: uppercase;
 }
 
 .transaction-add-category-button.transaction-add-category-button {
+  min-height: 44px;
   border-color: var(--primary-border);
   color: var(--secondary);
 }
@@ -2722,7 +2767,11 @@ h2 {
   }
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1024px) {
+  .transaction-page {
+    padding-inline-end: 0;
+  }
+
   .transaction-desktop-controls {
     display: none;
   }
@@ -2779,8 +2828,93 @@ h2 {
     background: var(--surface);
   }
 
-  .transaction-compact-selects {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .transaction-analytics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .transaction-analytics-card {
+    grid-template-columns: 40px minmax(0, 1fr);
+    min-height: 116px;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .transaction-analytics-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .transaction-analytics-card strong {
+    font-size: 1.08rem;
+  }
+
+  .transaction-ledger {
+    gap: 8px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .transaction-ledger-header {
+    display: none;
+  }
+
+  .transaction-ledger-row {
+    grid-template-columns: 40px minmax(0, 1fr) auto 16px;
+    grid-template-areas:
+      "merchant merchant amount chevron"
+      "merchant merchant amount chevron";
+    gap: 6px 10px;
+    min-height: 88px;
+    border: 0;
+    border-top: 1px solid var(--outline);
+    border-radius: 0;
+    padding: 12px;
+    background: var(--surface);
+  }
+
+  .transaction-ledger-row:first-of-type {
+    border-top: 0;
+  }
+
+  .transaction-ledger-date {
+    display: none;
+  }
+
+  .transaction-ledger-merchant {
+    grid-area: merchant;
+  }
+
+  .transaction-ledger-row > .transaction-desktop-category-cell {
+    display: none;
+  }
+
+  .transaction-ledger-row .transaction-account-chip {
+    display: none;
+  }
+
+  .transaction-merchant-copy .transaction-row-status {
+    display: none;
+  }
+
+  .transaction-mobile-row-meta {
+    display: block;
+  }
+
+  .transaction-mobile-category-chip.transaction-mobile-category-chip {
+    display: inline-flex;
+  }
+
+  .transaction-ledger-amount {
+    grid-area: amount;
+    align-self: center;
+  }
+
+  .transaction-ledger-chevron {
+    grid-area: chevron;
+    align-self: center;
   }
 
   .category-create-row {
@@ -2791,10 +2925,6 @@ h2 {
 
   .transaction-filter-actions {
     display: grid;
-  }
-
-  .transaction-sort-inline {
-    display: none;
   }
 
   .category-create-row label {
@@ -3022,7 +3152,6 @@ h2 {
   .chart-layout,
   .card-fit-basis,
   .card-fit-explanation,
-  .transaction-analytics-grid,
   .budget-grid {
     grid-template-columns: 1fr;
   }
@@ -3076,99 +3205,6 @@ h2 {
   .metric-icon-badge {
     width: 40px;
     height: 40px;
-  }
-
-  .transaction-compact-selects {
-    grid-template-columns: 1fr;
-  }
-
-  .transaction-analytics-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .transaction-analytics-card {
-    grid-template-columns: 40px minmax(0, 1fr);
-    min-height: 116px;
-    gap: 12px;
-    padding: 14px;
-  }
-
-  .transaction-analytics-icon {
-    width: 40px;
-    height: 40px;
-  }
-
-  .transaction-analytics-card strong {
-    font-size: 1.08rem;
-  }
-
-  .transaction-ledger {
-    gap: 8px;
-    overflow: visible;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-  }
-
-  .transaction-ledger-header {
-    display: none;
-  }
-
-  .transaction-ledger-row {
-    grid-template-columns: 40px minmax(0, 1fr) auto 16px;
-    grid-template-areas:
-      "merchant merchant amount chevron"
-      "merchant merchant amount chevron";
-    gap: 6px 10px;
-    min-height: 88px;
-    border: 0;
-    border-top: 1px solid var(--outline);
-    border-radius: 0;
-    padding: 12px;
-    background: var(--surface);
-  }
-
-  .transaction-ledger-row:first-of-type {
-    border-top: 0;
-  }
-
-  .transaction-ledger-date {
-    display: none;
-  }
-
-  .transaction-ledger-merchant {
-    grid-area: merchant;
-  }
-
-  .transaction-ledger-row > .transaction-desktop-category-cell {
-    display: none;
-  }
-
-  .transaction-ledger-row .transaction-account-chip {
-    display: none;
-  }
-
-  .transaction-merchant-copy .transaction-row-status {
-    display: none;
-  }
-
-  .transaction-mobile-row-meta {
-    display: block;
-  }
-
-  .transaction-mobile-category-chip.transaction-mobile-category-chip {
-    display: inline-flex;
-  }
-
-  .transaction-ledger-amount {
-    grid-area: amount;
-    align-self: center;
-  }
-
-  .transaction-ledger-chevron {
-    grid-area: chevron;
-    align-self: center;
   }
 
   .card-option,

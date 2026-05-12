@@ -1,47 +1,190 @@
 # Netly
 
-Netly helps New Zealanders see where their money is going, spot repeat spending, and compare whether a different card could give better value.
+Netly helps New Zealanders understand where their money is going, track repeat spending, and compare whether another card could provide better value based on real spending behaviour.
 
-It connects to Akahu for account and transaction data, uses Akahu merchant/category enrichment where available, and falls back to demo data while you are building locally.
+The app connects to Akahu for account and transaction data, uses Akahu merchant/category enrichment where available, and falls back to demo data during local development.
 
-## Features
+Main features:
+- Spending dashboard with balances, safe-to-spend calculations, income tracking, and review signals
+- Transaction feed with merchant/category enrichment
+- Budget and recurring payment tracking
+- Card comparison and rewards-fit analysis
+- Custom category overrides and colour settings
+- Demo mode for local testing without live bank connections
 
-- Spending dashboard with balance, safe-to-spend, income, and review signals
-- Akahu-shaped transaction feed with merchant and category enrichment
-- Budget and recurring-payment views
-- Card fit comparison for annual eligible spend
-- Custom category overrides and category colour settings
-- Demo mode for no-cost local testing
-
-## Tech Stack
-
+Tech stack:
 - Next.js App Router
 - React
 - TypeScript
-- Vanilla CSS
+- TailwindCSS
 - Chart.js
 - Akahu API
 
-## Run Locally
+## Running Locally
 
-```powershell
+```bash
 npm install
+npm run build
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open:
 
-Copy `.env.example` to `.env.local` and add Akahu values when testing real data. You can also paste a Personal App User Access Token in the Connect page during development.
+```text
+http://localhost:3000
+```
 
-## Akahu Schemas
+Copy `.env.example` to `.env.local` and add Akahu credentials if testing against real data.
 
-Akahu documents the account and transaction response models here:
+The app also supports demo/local fallback data so most UI work can be done without connecting accounts.
 
+---
+
+## Project Structure
+
+```text
+app/
+components/
+hooks/
+services/
+lib/
+styles/
+public/
+```
+
+A simple way to think about the structure:
+
+- `app/` → routes and layouts
+- `components/` → UI and feature sections
+- `hooks/` → state + orchestration
+- `services/` → API/integration logic
+- `lib/` → shared helpers/utilities
+
+Most pages are built by composing smaller components together.
+
+Usually the flow is:
+
+```text
+Route/Page
+  → AppShell/Layout
+    → Feature Components
+      → Shared Components
+        → Hooks/Services
+```
+
+---
+
+## Main Files Worth Understanding
+
+| File | Purpose |
+|---|---|
+| `app/page.tsx` | Main dashboard/homepage entry |
+| `app/layout.tsx` | Root layout and providers |
+| `components/AppShell/*` | Sidebar, navigation, app layout |
+| `hooks/useNetlyApp.ts` | Main app orchestration/state layer |
+| `services/*` | Akahu integrations and API logic |
+| `app/api/*` | Server-side API handlers |
+
+If you are new to the project, these files give the quickest understanding of how the app fits together.
+
+---
+
+## Where To Edit Things
+
+| If you want to... | Start here |
+|---|---|
+| Edit homepage/dashboard content | `app/page.tsx` |
+| Edit navigation/sidebar | `components/AppShell/` |
+| Edit shared UI | `components/ui/` |
+| Edit dashboard widgets | dashboard-related component folders |
+| Change app-wide behaviour | `hooks/useNetlyApp.ts` |
+| Update Akahu/API logic | `services/` or `app/api/` |
+| Add a new route/page | `app/` |
+
+A lot of the app is composed through imported sections/components, so the actual editable UI is usually one or two layers below the route itself.
+
+---
+
+## Akahu Notes
+
+Akahu response shapes can vary depending on:
+- permissions
+- institution integrations
+- account type
+- enrichment availability
+
+Keep local transaction/account types reasonably permissive.
+
+Fields like these may not always exist:
+- `merchant`
+- `category`
+- `meta`
+- `balance`
+- `refreshed`
+- enrichment fields
+- pending transaction flags
+
+Useful docs:
 - Transaction model: `https://developers.akahu.nz/docs/the-transaction-model`
 - Account model: `https://developers.akahu.nz/me/docs/the-account-model`
 
-Akahu fields can vary by app permissions, account type, and integration type. Keep local transaction types permissive for optional `merchant`, `category`, `meta`, pending rows, and enrichment data. Keep account types permissive for optional `balance`, `formatted_account`, `meta`, `refreshed`, and connection/provider fields.
+---
 
-## Cost
+## Shared Patterns
 
-This MVP is designed to build and test for free locally. Keep using demo mode, Akahu Personal App development access, and free hosting/database tiers until the product value is proven.
+Before adding new code:
+- check existing hooks/components first
+- reuse shared UI where possible
+- avoid duplicate fetch helpers/utilities
+- keep API logic inside `services/`
+- keep presentational components mostly UI-focused
+
+Common pattern:
+
+```text
+services → hooks → feature components → shared UI
+```
+
+---
+
+## Config Files
+
+| File | Purpose |
+|---|---|
+| `.env.local` | Environment variables |
+| `next.config.*` | Next.js configuration |
+| `tailwind.config.*` | Tailwind configuration |
+| `tsconfig.json` | TypeScript config |
+| `package.json` | Scripts and dependencies |
+
+Do not commit secrets from `.env.local`.
+
+---
+
+## Development Notes
+
+This MVP is intentionally designed to run cheaply during development.
+
+Recommended approach:
+- use demo mode for most UI work
+- use Akahu personal app access for integration testing
+- avoid introducing unnecessary paid infrastructure early
+
+Most frontend work should still function without live banking connections.
+
+---
+
+## Recommended Onboarding Path
+
+1. Read this file
+2. Read `onboarding.md`
+3. Open:
+   - `app/page.tsx`
+   - `app/layout.tsx`
+   - `components/AppShell/*`
+   - `hooks/useNetlyApp.ts`
+4. Run the app locally
+5. Trace one feature end-to-end
+
+That is usually enough context to start making changes safely and understand how the app is structured.
+

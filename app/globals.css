@@ -2047,25 +2047,13 @@ h2 {
   margin-top: 12px;
 }
 
-.card-breakdown span,
-.card-link {
+.card-breakdown span {
   border-radius: 999px;
   padding: 7px 10px;
   background: rgba(255, 251, 255, 0.76);
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
-}
-
-.card-link {
-  display: inline-block;
-  margin-top: 10px;
-  color: var(--primary);
-  text-decoration: none;
-}
-
-.card-link:hover {
-  text-decoration: underline;
 }
 
 .card-value-block {

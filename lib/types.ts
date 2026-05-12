@@ -60,18 +60,39 @@ export type TransactionDateRange = {
   to: string;
 };
 
+export type CardAvailability = "available" | "unavailable";
+
+export type CardPerk = {
+  name: string;
+  description: string;
+  counted: boolean;
+  estimatedAnnualValue?: number;
+  valueLabel?: string;
+  valuationNote: string;
+  sourceUrl?: string;
+};
+
+export type CardSourceLink = {
+  label: string;
+  url: string;
+};
+
 export type CardProduct = {
   name: string;
   issuer: string;
   network: "American Express" | "Visa" | "Mastercard";
   tier: string;
+  availability?: CardAvailability;
+  availabilityNote?: string;
   annualFee: number;
   cashbackRate: number;
-  perksValue: number;
+  perks: CardPerk[];
   rewardProgram: string;
   earnDescription: string;
   note: string;
   sourceUrl: string;
+  sourceLinks?: CardSourceLink[];
+  lastVerified: string;
   brandColor: string;
 };
 
@@ -86,6 +107,7 @@ export type CardValue = CardProduct & {
   annualValue: number;
   grossRewards: number;
   eligibleAnnualSpend: number;
+  perksValue: number;
 };
 
 export type CardFitDriver = {

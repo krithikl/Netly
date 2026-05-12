@@ -111,7 +111,7 @@ export function annualCardValues(transactions: Transaction[], cardProducts: Card
 
   return cardProducts
     .map((card) => getAnnualCardValue(card, eligibleAnnualSpend))
-    .sort((a, b) => b.annualValue - a.annualValue);
+    .sort(compareCardValues);
 }
 
 // Returns the card spend estimate and ranked card list together
@@ -131,13 +131,33 @@ export function calculateCardFit(transactions: Transaction[], cardProducts: Card
 
 function getAnnualCardValue(card: CardProduct, eligibleAnnualSpend: number): CardValue {
   const grossRewards = eligibleAnnualSpend * card.cashbackRate;
+  const perksValue = getCardPerksValue(card);
 
   return {
     ...card,
+    perksValue,
     grossRewards,
     eligibleAnnualSpend,
-    annualValue: grossRewards + card.perksValue - card.annualFee
+    annualValue: grossRewards + perksValue - card.annualFee
   };
+}
+
+function compareCardValues(a: CardValue, b: CardValue) {
+  if (isCardAvailable(a) !== isCardAvailable(b)) {
+    return isCardAvailable(a) ? -1 : 1;
+  }
+
+  return b.annualValue - a.annualValue;
+}
+
+function isCardAvailable(card: CardProduct) {
+  return card.availability !== "unavailable";
+}
+
+function getCardPerksValue(card: CardProduct) {
+  return sum(card.perks
+    .filter((perk) => perk.counted)
+    .map((perk) => perk.estimatedAnnualValue ?? 0));
 }
 
 function buildCardFitExplanation(

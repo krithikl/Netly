@@ -26,12 +26,13 @@ export const cardProducts: CardProduct[] = [
     tier: "Debit",
     annualFee: 0,
     cashbackRate: 0,
-    perksValue: 0,
+    perks: [],
     rewardProgram: "None",
     earnDescription: "No credit-card rewards.",
     sourceUrl: "https://www.sorted.org.nz/guides/debt/credit-cards/",
+    lastVerified: "May 2026",
     brandColor: "#455a64",
-    note: "Baseline with no rewards or annual fee."
+    note: "Baseline with no rewards, perks, or annual fee."
   },
   {
     name: "American Express Airpoints Card",
@@ -40,10 +41,26 @@ export const cardProducts: CardProduct[] = [
     tier: "No annual fee",
     annualFee: 0,
     cashbackRate: 1 / 100,
-    perksValue: 0,
+    perks: [
+      {
+        name: "Welcome offer",
+        description: "50 bonus Airpoints Dollars when eligible new card members meet the spend requirement.",
+        counted: false,
+        valueLabel: "50 Airpoints Dollars",
+        valuationNote: "Not counted because it is one-time and eligibility-dependent."
+      },
+      {
+        name: "Additional cards",
+        description: "Up to 4 additional cards with no extra annual card fee.",
+        counted: false,
+        valueLabel: "$0 additional card fee",
+        valuationNote: "Shown as a feature only because value depends on household card use."
+      }
+    ],
     rewardProgram: "Airpoints Dollars",
     earnDescription: "$100 eligible spend = 1 Airpoints Dollar.",
-    sourceUrl: "https://www.americanexpress.com/nz/credit-cards/airnz-base-credit-card/index.shtml",
+    sourceUrl: "https://www.americanexpress.com/amex/nz/credit-cards/airnz-base-credit-card/",
+    lastVerified: "May 2026",
     brandColor: "#006fcf",
     note: "No annual fee Airpoints option; Amex acceptance may vary by merchant."
   },
@@ -54,26 +71,96 @@ export const cardProducts: CardProduct[] = [
     tier: "Platinum",
     annualFee: 195,
     cashbackRate: 1 / 70,
-    perksValue: 120,
+    perks: [
+      {
+        name: "Welcome offer",
+        description: "300 bonus Airpoints Dollars when eligible new card members meet the spend requirement.",
+        counted: false,
+        valueLabel: "300 Airpoints Dollars",
+        valuationNote: "Not counted because it is one-time and eligibility-dependent."
+      },
+      {
+        name: "Priority Pass lounge passes",
+        description: "2 complimentary Priority Pass visits per 12-month membership period.",
+        counted: false,
+        valuationNote: "No dollar estimate because Netly is not using third-party lounge prices for perk value."
+      },
+      {
+        name: "Centurion Lounge entries",
+        description: "2 complimentary entries per calendar year at the Sydney or Melbourne Centurion Lounge.",
+        counted: false,
+        valuationNote: "No dollar estimate because the value depends on travel route and usage."
+      },
+      {
+        name: "Koru membership discount",
+        description: "Discounts on the Koru joining fee and annual membership fee while holding the card.",
+        counted: false,
+        valueLabel: "Save $255 joining fee and $145 p.a.",
+        valuationNote: "Not counted because it only applies if the user buys Koru membership."
+      },
+      {
+        name: "Travel insurance",
+        description: "Complimentary domestic and international travel insurance when trip payment conditions are met.",
+        counted: false,
+        valuationNote: "No dollar estimate because the issuer does not state a cash value."
+      },
+      {
+        name: "Smartphone screen cover",
+        description: "Screen repair cover when the card payment conditions are met.",
+        counted: false,
+        valueLabel: "Up to $500 per claim",
+        valuationNote: "Not counted because claims are conditional and subject to excess, limits, and exclusions."
+      }
+    ],
     rewardProgram: "Airpoints Dollars",
     earnDescription: "$70 eligible spend = 1 Airpoints Dollar.",
     sourceUrl: "https://www.americanexpress.com/nz/credit-cards/airpoints-cards/airpoints-platinum-card/",
+    sourceLinks: [
+      {
+        label: "Additional card benefits",
+        url: "https://www.americanexpress.com/nz/credit-cards/manage-your-card/additional-card/"
+      }
+    ],
+    lastVerified: "May 2026",
     brandColor: "#006fcf",
-    note: "High Airpoints earn rate plus estimated value for travel insurance and lounge/status benefits."
+    note: "High Airpoints earn rate with travel, lounge, Koru, and protection benefits listed separately."
   },
   {
     name: "American Express Airpoints Platinum Reserve",
     issuer: "American Express",
     network: "American Express",
     tier: "Platinum Reserve",
+    availability: "unavailable",
+    availabilityNote: "No current public application/product page was found. Kept for legacy comparison only.",
     annualFee: 395,
     cashbackRate: 1 / 70,
-    perksValue: 210,
+    perks: [
+      {
+        name: "Limited public benefit detail",
+        description: "Amex rates and additional-card pages still mention this card, but a current product page was not found.",
+        counted: false,
+        valuationNote: "Not counted because benefits cannot be cleanly verified from a current public product page."
+      },
+      {
+        name: "Smartphone screen cover",
+        description: "Screen repair cover is listed for additional-card benefits when card payment conditions are met.",
+        counted: false,
+        valueLabel: "Up to $500 per claim",
+        valuationNote: "Not counted because this card is marked unavailable and claims are conditional."
+      }
+    ],
     rewardProgram: "Airpoints Dollars",
-    earnDescription: "Premium Airpoints card; fee and perks are higher than Platinum.",
+    earnDescription: "$70 eligible spend = 1 Airpoints Dollar.",
     sourceUrl: "https://www.americanexpress.com/nz/content/credit-cards/rates-and-fees/",
+    sourceLinks: [
+      {
+        label: "Additional card benefits",
+        url: "https://www.americanexpress.com/nz/credit-cards/manage-your-card/additional-card/"
+      }
+    ],
+    lastVerified: "May 2026",
     brandColor: "#1f4f7a",
-    note: "Premium option included to test high-fee/high-perk comparison behaviour."
+    note: "Legacy/off-market Amex option. It is excluded from default recommendations."
   },
   {
     name: "ASB Visa Light",
@@ -82,10 +169,18 @@ export const cardProducts: CardProduct[] = [
     tier: "Low rate",
     annualFee: 0,
     cashbackRate: 0,
-    perksValue: 0,
+    perks: [
+      {
+        name: "Smart Rate",
+        description: "0% p.a. fixed interest for 6 months can apply to eligible single purchases of $1,000 or more.",
+        counted: false,
+        valuationNote: "Not counted because it is an interest feature, not a card reward or automatic perk."
+      }
+    ],
     rewardProgram: "None",
-    earnDescription: "No rewards; designed around low/no fees and lower purchase rate.",
+    earnDescription: "No rewards; designed around no account fee and a lower purchase rate.",
     sourceUrl: "https://www.asb.co.nz/credit-cards/visa-light.html",
+    lastVerified: "May 2026",
     brandColor: "#f9b000",
     note: "Useful benchmark for users who may carry a balance or want no annual fee."
   },
@@ -96,24 +191,40 @@ export const cardProducts: CardProduct[] = [
     tier: "Debit",
     annualFee: 12,
     cashbackRate: 0.01,
-    perksValue: 0,
+    perks: [
+      {
+        name: "Plan-linked Spend fee",
+        description: "Spend costs $12 annually for Sharesies plan customers, or $25 annually without a plan.",
+        counted: false,
+        valueLabel: "$12 on plan, $25 without plan",
+        valuationNote: "The card model uses the lower annual fee as the default but does not count this as a perk."
+      }
+    ],
     rewardProgram: "Investback",
     earnDescription: "1% Investback on eligible purchases, invested weekly.",
     sourceUrl: "https://www.sharesies.nz/spend",
+    sourceLinks: [
+      {
+        label: "Sharesies pricing",
+        url: "https://www.sharesies.nz/pricing"
+      }
+    ],
+    lastVerified: "May 2026",
     brandColor: "#ff7ab6",
-    note: "Debit benchmark with $12 annual Spend fee for Sharesies plan customers; fee is $25 if not on a plan. Investback and fees can change."
+    note: "Debit benchmark with 1% Investback and a $12 annual Spend fee for Sharesies plan customers."
   },
   {
     name: "ASB Visa Rewards",
     issuer: "ASB",
     network: "Visa",
     tier: "Rewards",
-    annualFee: 45,
+    annualFee: 40,
     cashbackRate: 1 / 150,
-    perksValue: 0,
+    perks: [],
     rewardProgram: "True Rewards",
     earnDescription: "$150 eligible spend = 1 True Rewards dollar.",
     sourceUrl: "https://www.asb.co.nz/credit-cards/visa-rewards.html",
+    lastVerified: "May 2026",
     brandColor: "#f9b000",
     note: "Low-fee Visa rewards card with broad acceptance."
   },
@@ -124,12 +235,20 @@ export const cardProducts: CardProduct[] = [
     tier: "Platinum",
     annualFee: 80,
     cashbackRate: 1 / 100,
-    perksValue: 80,
+    perks: [
+      {
+        name: "Overseas travel insurance",
+        description: "Access to overseas travel insurance, subject to policy terms and eligibility.",
+        counted: false,
+        valuationNote: "No dollar estimate because the issuer does not state a cash value."
+      }
+    ],
     rewardProgram: "True Rewards",
     earnDescription: "$100 eligible spend = 1 True Rewards dollar.",
     sourceUrl: "https://www.asb.co.nz/credit-cards/visa-platinum-rewards.html",
+    lastVerified: "May 2026",
     brandColor: "#f9b000",
-    note: "Higher earn rate with estimated travel-insurance value."
+    note: "Higher ASB earn rate with overseas travel insurance listed but not dollar-valued."
   },
   {
     name: "ANZ Airpoints Visa Platinum",
@@ -138,12 +257,33 @@ export const cardProducts: CardProduct[] = [
     tier: "Platinum",
     annualFee: 150,
     cashbackRate: 1 / 110,
-    perksValue: 70,
+    perks: [
+      {
+        name: "Overseas travel insurance",
+        description: "Overseas travel insurance when at least half of prepaid travel expenses are paid with the card.",
+        counted: false,
+        valuationNote: "No dollar estimate because the issuer does not state a cash value."
+      },
+      {
+        name: "Koru membership benefit",
+        description: "No Koru joining fee and a discount off standard 12-month individual Koru membership.",
+        counted: false,
+        valueLabel: "Save $270 joining fee and $145 annual fee",
+        valuationNote: "Not counted because it only applies if the user buys Koru membership."
+      },
+      {
+        name: "Status points and Visa privileges",
+        description: "50% bonus Status Points on qualifying Air New Zealand flights, plus Visa Concierge and Visa offers.",
+        counted: false,
+        valuationNote: "No dollar estimate because value depends on flight and offer usage."
+      }
+    ],
     rewardProgram: "Airpoints Dollars",
     earnDescription: "$110 eligible spend = 1 Airpoints Dollar.",
-    sourceUrl: "https://www.anz.co.nz/personal/credit-cards/",
+    sourceUrl: "https://www.anz.co.nz/personal/credit-cards/airpoints-visa-platinum/",
+    lastVerified: "May 2026",
     brandColor: "#0073cf",
-    note: "Airpoints Visa with estimated travel-insurance value; exact terms should be verified."
+    note: "Airpoints Visa with travel insurance, Koru, and status benefits listed separately."
   },
   {
     name: "Westpac Airpoints Mastercard",
@@ -152,10 +292,31 @@ export const cardProducts: CardProduct[] = [
     tier: "Standard",
     annualFee: 70,
     cashbackRate: 1 / 150,
-    perksValue: 0,
+    perks: [
+      {
+        name: "Airpoints Dollars Advance",
+        description: "Access to 50 Airpoints Dollars Advance when short of a reward.",
+        counted: false,
+        valueLabel: "50 Airpoints Dollars Advance",
+        valuationNote: "Not counted because it is an advance, not extra annual value."
+      },
+      {
+        name: "Mastercard experiences",
+        description: "Access to Mastercard Presale, Preferred tickets, and Priceless Experiences.",
+        counted: false,
+        valuationNote: "No dollar estimate because value depends on event availability and usage."
+      }
+    ],
     rewardProgram: "Airpoints Dollars",
     earnDescription: "$150 eligible spend = 1 Airpoints Dollar up to monthly tier cap.",
     sourceUrl: "https://www.westpac.co.nz/credit-cards/airpoints/westpac-airpoints-mastercard/",
+    sourceLinks: [
+      {
+        label: "Westpac fees",
+        url: "https://www.westpac.co.nz/assets/About-us/legal-information-privacy/documents/Transaction-and-service-fees-Personal-Banking-Westpac-NZ.pdf?vanity=%2Ftransactionandservicefees"
+      }
+    ],
+    lastVerified: "May 2026",
     brandColor: "#d50000",
     note: "Lower-fee Airpoints Mastercard; earn rate is tiered by monthly spend."
   },
@@ -164,42 +325,146 @@ export const cardProducts: CardProduct[] = [
     issuer: "Westpac",
     network: "Mastercard",
     tier: "Platinum",
-    annualFee: 145,
+    annualFee: 125,
     cashbackRate: 1 / 110,
-    perksValue: 85,
+    perks: [
+      {
+        name: "Koru membership benefit",
+        description: "Koru joining fee waived and discount off a 12-month individual membership.",
+        counted: false,
+        valueLabel: "Joining fee waived and $145 discount",
+        valuationNote: "Not counted because it only applies if the user buys Koru membership."
+      },
+      {
+        name: "Travel insurance",
+        description: "Up to 35 days of overseas travel insurance per round trip.",
+        counted: false,
+        valuationNote: "No dollar estimate because the issuer does not state a cash value."
+      },
+      {
+        name: "Purchase and warranty protection",
+        description: "Extended warranty insurance up to 12 months and 90 days purchase protection.",
+        counted: false,
+        valuationNote: "No dollar estimate because claims are conditional and subject to policy terms."
+      }
+    ],
     rewardProgram: "Airpoints Dollars",
     earnDescription: "$110 eligible spend = 1 Airpoints Dollar up to monthly tier cap.",
     sourceUrl: "https://www.westpac.co.nz/credit-cards/airpoints/westpac-airpoints-platinum-mastercard/",
+    sourceLinks: [
+      {
+        label: "Westpac fees",
+        url: "https://www.westpac.co.nz/assets/About-us/legal-information-privacy/documents/Transaction-and-service-fees-Personal-Banking-Westpac-NZ.pdf?vanity=%2Ftransactionandservicefees"
+      }
+    ],
+    lastVerified: "May 2026",
     brandColor: "#d50000",
-    note: "Airpoints Platinum Mastercard with estimated Koru/travel benefit value."
+    note: "Airpoints Platinum Mastercard with Koru, travel, and purchase protection benefits listed separately."
   },
   {
     name: "Westpac Airpoints World Mastercard",
     issuer: "Westpac",
     network: "Mastercard",
     tier: "World",
-    annualFee: 390,
+    annualFee: 310,
     cashbackRate: 1 / 95,
-    perksValue: 210,
+    perks: [
+      {
+        name: "Valet parking vouchers",
+        description: "2 complimentary valet parking eVouchers each year.",
+        counted: false,
+        valueLabel: "2 eVouchers",
+        valuationNote: "No dollar estimate because the issuer does not state a cash value."
+      },
+      {
+        name: "Koru membership benefit",
+        description: "Koru joining fee waived and discount off a 12-month individual membership.",
+        counted: false,
+        valueLabel: "Joining fee waived and $145 discount",
+        valuationNote: "Not counted because it only applies if the user buys Koru membership."
+      },
+      {
+        name: "Priority Pass lounge access",
+        description: "Priority Pass lounge access to participating airport lounges.",
+        counted: false,
+        valuationNote: "No dollar estimate because access and visit costs depend on usage and lounge terms."
+      },
+      {
+        name: "Travel insurance",
+        description: "Up to 120 days of overseas travel insurance per round trip.",
+        counted: false,
+        valuationNote: "No dollar estimate because the issuer does not state a cash value."
+      },
+      {
+        name: "Purchase and warranty protection",
+        description: "Extended warranty insurance up to 12 months and 90 days purchase protection.",
+        counted: false,
+        valuationNote: "No dollar estimate because claims are conditional and subject to policy terms."
+      },
+      {
+        name: "Account fee waiver",
+        description: "Annual fee is refunded if the spend requirement is met between fee charges.",
+        counted: false,
+        valueLabel: "$310 p.a. if $50,000 spend condition is met",
+        valuationNote: "Not counted because it depends on reaching the issuer spend threshold."
+      }
+    ],
     rewardProgram: "Airpoints Dollars",
     earnDescription: "$95 eligible spend = 1 Airpoints Dollar up to monthly tier cap.",
     sourceUrl: "https://www.westpac.co.nz/credit-cards/airpoints/westpac-airpoints-world-mastercard/",
+    sourceLinks: [
+      {
+        label: "Westpac fees",
+        url: "https://www.westpac.co.nz/assets/About-us/legal-information-privacy/documents/Transaction-and-service-fees-Personal-Banking-Westpac-NZ.pdf?vanity=%2Ftransactionandservicefees"
+      }
+    ],
+    lastVerified: "May 2026",
     brandColor: "#b00020",
-    note: "Premium Airpoints Mastercard with estimated valet/Koru/travel benefit value."
+    note: "Premium Airpoints Mastercard with travel, lounge, valet, Koru, and protection benefits listed separately."
   },
   {
     name: "Westpac hotpoints Platinum Mastercard",
     issuer: "Westpac",
     network: "Mastercard",
     tier: "Platinum",
-    annualFee: 145,
-    cashbackRate: 0.006,
-    perksValue: 80,
+    annualFee: 70,
+    cashbackRate: 0,
+    perks: [
+      {
+        name: "Travel insurance",
+        description: "Overseas travel insurance for up to 35 days per round trip.",
+        counted: false,
+        valuationNote: "No dollar estimate because the issuer does not state a cash value."
+      },
+      {
+        name: "Purchase and warranty protection",
+        description: "Extended warranty insurance up to 12 months and 90 days purchase protection.",
+        counted: false,
+        valuationNote: "No dollar estimate because claims are conditional and subject to policy terms."
+      },
+      {
+        name: "Mastercard experiences",
+        description: "Access to Mastercard Travel and Lifestyle Services, Presale, Preferred tickets, and Priceless Experiences.",
+        counted: false,
+        valuationNote: "No dollar estimate because value depends on offer availability and usage."
+      }
+    ],
     rewardProgram: "hotpoints",
-    earnDescription: "1.5 hotpoints per $1 up to monthly tier cap; cash value estimated.",
+    earnDescription: "1.5 hotpoints per $1 up to monthly tier cap; dollar conversion not publicly modelled.",
     sourceUrl: "https://www.westpac.co.nz/credit-cards/hotpoints/hotpoints-platinum-mastercard/",
+    sourceLinks: [
+      {
+        label: "Westpac fees",
+        url: "https://www.westpac.co.nz/assets/About-us/legal-information-privacy/documents/Transaction-and-service-fees-Personal-Banking-Westpac-NZ.pdf?vanity=%2Ftransactionandservicefees"
+      },
+      {
+        label: "hotpoints help",
+        url: "https://www.westpac.co.nz/help/how-do-i-know-how-many-hotpoints-ive-earned/"
+      }
+    ],
+    lastVerified: "May 2026",
     brandColor: "#d50000",
-    note: "Included with a conservative cash-equivalent placeholder until hotpoints redemption tables are modelled."
+    note: "Earns hotpoints, but Netly does not estimate a cash reward rate until the public dollar conversion is modelled."
   },
   {
     name: "TSB Platinum Mastercard",
@@ -208,12 +473,38 @@ export const cardProducts: CardProduct[] = [
     tier: "Platinum",
     annualFee: 90,
     cashbackRate: 1 / 100,
-    perksValue: 70,
+    perks: [
+      {
+        name: "Mobile phone insurance",
+        description: "Mobile phone insurance under the card insurance terms.",
+        counted: false,
+        valuationNote: "No dollar estimate because claims are conditional and subject to policy terms."
+      },
+      {
+        name: "Price and purchase protection",
+        description: "Price Protection Insurance and Purchase Protection Insurance under the card insurance terms.",
+        counted: false,
+        valuationNote: "No dollar estimate because claims are conditional and subject to policy terms."
+      },
+      {
+        name: "Travel insurance",
+        description: "Domestic and international travel insurance under the card insurance terms.",
+        counted: false,
+        valuationNote: "No dollar estimate because the issuer does not state a cash value."
+      },
+      {
+        name: "Mastercard experiences",
+        description: "Access to Mastercard cardholder offers and Priceless experiences.",
+        counted: false,
+        valuationNote: "No dollar estimate because value depends on offer availability and usage."
+      }
+    ],
     rewardProgram: "Cashback",
     earnDescription: "$1 cashback per $100 eligible spend.",
-    sourceUrl: "https://www.tsb.co.nz/cards/platinum-mastercard",
+    sourceUrl: "https://www.tsb.co.nz/accounts-and-cards/cards/platinum-mastercard",
+    lastVerified: "May 2026",
     brandColor: "#00a3ad",
-    note: "Straightforward cashback card with estimated insurance benefit value."
+    note: "Straightforward cashback card with insurance and Mastercard benefits listed separately."
   }
 ];
 

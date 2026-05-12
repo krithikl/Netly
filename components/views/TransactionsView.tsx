@@ -1,11 +1,10 @@
 import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownUp, CalendarDays, Check, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, ArrowDownUp, CalendarDays, Check, ChevronDown, Plus, ReceiptText, Search, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { TransactionList } from "@/components/transactions/TransactionList";
-import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -18,7 +17,9 @@ import {
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SelectField } from "@/components/ui/select-field";
+import { formatMoney } from "@/lib/insights";
 import { formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
+import { getTransactionCategory, transactionNeedsReview } from "@/lib/transaction-display";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionFilter, TransactionSort } from "@/lib/app/types";
 
@@ -92,6 +93,7 @@ export function TransactionsView({
   const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
   const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
   const shownTransactions = isLoadingTransactions ? [] : transactions;
+  const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionCategory);
   const isBottomNavigation = useIsBottomNavigation();
   const resetFilters = () => {
@@ -108,81 +110,114 @@ export function TransactionsView({
     setTransactionCategory(toggleCategorySelection(transactionCategory, category));
   };
   const closeSort = () => setSortOpen(false);
+  const reviewNeedsReview = () => {
+    setQuery("");
+    setTransactionFilter("All");
+    setTransactionCategory(["Needs review"]);
+  };
 
   return (
-    <section className="view-stack">
-      <section className="material-card">
-        <PanelTitle title="Transactions" subtitle="Akahu merchant and category enrichment where available" />
-        <div className="transaction-mobile-controls">
-          <label className="transaction-mobile-search">
-            Search
-            <input
-              className="search"
-              onChange={handleSearchChange}
-              placeholder="Search transactions"
-              value={query}
-            />
-          </label>
-          <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
-          {isBottomNavigation ? (
-            <div className="transaction-mobile-actions">
-              <Button onClick={() => setFiltersOpen(true)} type="button" variant="secondary">
-                <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
-                Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-              </Button>
-              <Button onClick={() => setSortOpen(true)} type="button" variant="secondary">
-                <ArrowDownUp aria-hidden="true" className="h-4 w-4" />
-                Sort
-              </Button>
-            </div>
-          ) : (
-            <div className="transaction-compact-selects">
-              <label>
-                Status
-                <SelectField className="transaction-select-trigger" onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
-              </label>
-              <label>
-                Category
-                <CategoryMultiSelect
-                  categoryOptions={categoryOptions}
-                  onCategoryToggle={toggleTransactionCategory}
-                  selectedCategories={transactionCategory}
+    <section className="transaction-page view-stack">
+      <TransactionAnalyticsSummary analytics={analytics} onReviewNeedsReview={reviewNeedsReview} />
+
+      <section className="transaction-workspace">
+        <div className="transaction-filter-panel">
+          <div className="transaction-mobile-controls">
+            <label className="transaction-mobile-search">
+              Search
+              <span className="transaction-search-field">
+                <Search aria-hidden="true" className="h-4 w-4" />
+                <input
+                  className="search"
+                  onChange={handleSearchChange}
+                  placeholder="Search merchant, bank text, category"
+                  value={query}
                 />
-              </label>
+              </span>
+            </label>
+            <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
+            {isBottomNavigation ? (
+              <div className="transaction-mobile-actions">
+                <Button onClick={() => setFiltersOpen(true)} type="button" variant="secondary">
+                  <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
+                  Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+                </Button>
+                <Button onClick={() => setSortOpen(true)} type="button" variant="secondary">
+                  <ArrowDownUp aria-hidden="true" className="h-4 w-4" />
+                  Sort
+                </Button>
+              </div>
+            ) : (
+              <div className="transaction-compact-selects">
+                <label>
+                  Status
+                  <SelectField className="transaction-select-trigger" onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
+                </label>
+                <label>
+                  Category
+                  <CategoryMultiSelect
+                    categoryOptions={categoryOptions}
+                    onCategoryToggle={toggleTransactionCategory}
+                    selectedCategories={transactionCategory}
+                  />
+                </label>
+                <label>
+                  Sort
+                  <SelectField className="transaction-select-trigger" onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
+                </label>
+              </div>
+            )}
+          </div>
+          <div className="transaction-controls transaction-desktop-controls">
+            <label className="transaction-search-label">
+              Search
+              <span className="transaction-search-field">
+                <Search aria-hidden="true" className="h-4 w-4" />
+                <input
+                  className="search"
+                  onChange={handleSearchChange}
+                  placeholder="Search merchant, bank text, category"
+                  value={query}
+                />
+              </span>
+            </label>
+            <TransactionDateRangePicker dateRange={dateRange} onChange={onDateRangeChange} />
+            <label>
+              Status
+              <SelectField className="transaction-select-trigger" onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
+            </label>
+            <label>
+              Category
+              <CategoryMultiSelect
+                categoryOptions={categoryOptions}
+                onCategoryToggle={toggleTransactionCategory}
+                selectedCategories={transactionCategory}
+              />
+            </label>
+          </div>
+          <div className="transaction-filter-actions">
+            <div className="category-create-row">
               <label>
+                New category
+                <input onChange={handleNewCategoryChange} placeholder="e.g. Kids, Pets, Travel" value={newCategory} />
+              </label>
+              <Button className="transaction-add-category-button" disabled={!canCreateCategory} onClick={handleCreateCategory} type="button" variant="outline">
+                <Plus aria-hidden="true" className="h-4 w-4" />
+                Add new category
+              </Button>
+              {categoryErrorMessage && (
+                <p aria-live="polite" className="category-error-message">
+                  {categoryErrorMessage}
+                </p>
+              )}
+            </div>
+            {!isBottomNavigation && (
+              <label className="transaction-sort-inline">
                 Sort
                 <SelectField className="transaction-select-trigger" onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
               </label>
-            </div>
-          )}
-        </div>
-        <div className="transaction-controls transaction-desktop-controls">
-          <label>
-            Search
-            <input
-              className="search"
-              onChange={handleSearchChange}
-              placeholder="Search merchant, bank text, category"
-              value={query}
-            />
-          </label>
-          <TransactionDateRangePicker dateRange={dateRange} onChange={onDateRangeChange} />
-          <label>
-            Status
-            <SelectField className="transaction-select-trigger" onChange={setTransactionFilter} options={filterSelectOptions} value={transactionFilter} />
-          </label>
-          <label>
-            Category
-            <CategoryMultiSelect
-              categoryOptions={categoryOptions}
-              onCategoryToggle={toggleTransactionCategory}
-              selectedCategories={transactionCategory}
-            />
-          </label>
-          <label>
-            Sort
-            <SelectField className="transaction-select-trigger" onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
-          </label>
+            )}
+          </div>
         </div>
         <TransactionFilterDialog
           categoryOptions={categoryOptions}
@@ -201,20 +236,6 @@ export function TransactionsView({
           open={sortOpen}
           transactionSort={transactionSort}
         />
-        <div className="category-create-row">
-          <label>
-            New category
-            <input onChange={handleNewCategoryChange} placeholder="e.g. Kids, Pets, Travel" value={newCategory} />
-          </label>
-          <Button disabled={!canCreateCategory} onClick={handleCreateCategory} type="button" variant="secondary">
-            Add category
-          </Button>
-          {categoryErrorMessage && (
-            <p aria-live="polite" className="category-error-message">
-              {categoryErrorMessage}
-            </p>
-          )}
-        </div>
         <TransactionList
           categoryColors={categoryColors}
           editable
@@ -229,6 +250,117 @@ export function TransactionsView({
       </section>
     </section>
   );
+}
+
+type TransactionAnalytics = {
+  activeCategoryCount: number;
+  averagePerDay: number;
+  needsReviewCount: number;
+  totalSpending: number;
+};
+
+function TransactionAnalyticsSummary({
+  analytics,
+  onReviewNeedsReview
+}: {
+  analytics: TransactionAnalytics;
+  onReviewNeedsReview: () => void;
+}) {
+  return (
+    <div className="transaction-analytics-grid">
+      <TransactionAnalyticsCard
+        icon={ReceiptText}
+        label="Total spending"
+        tone="purple"
+        value={formatMoney(analytics.totalSpending, true)}
+      />
+      <TransactionAnalyticsCard
+        icon={CalendarDays}
+        label="Average per day"
+        tone="purple"
+        value={formatMoney(analytics.averagePerDay, true)}
+      />
+      <TransactionAnalyticsCard
+        icon={Shapes}
+        label="Categories"
+        note="Active"
+        tone="green"
+        value={analytics.activeCategoryCount.toString()}
+      />
+      <TransactionAnalyticsCard
+        actionLabel="Review now"
+        icon={AlertCircle}
+        label="Needs review"
+        onAction={onReviewNeedsReview}
+        tone="red"
+        value={analytics.needsReviewCount.toString()}
+      />
+    </div>
+  );
+}
+
+function TransactionAnalyticsCard({
+  actionLabel,
+  icon: Icon,
+  label,
+  note = "This period",
+  onAction,
+  tone,
+  value
+}: {
+  actionLabel?: string;
+  icon: LucideIcon;
+  label: string;
+  note?: string;
+  onAction?: () => void;
+  tone: "green" | "purple" | "red";
+  value: string;
+}) {
+  return (
+    <article className="transaction-analytics-card">
+      <span className={`transaction-analytics-icon transaction-analytics-icon-${tone}`}>
+        <Icon aria-hidden="true" className="h-5 w-5" />
+      </span>
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+        {actionLabel && onAction ? (
+          <button onClick={onAction} type="button">
+            {actionLabel}
+            <span aria-hidden="true">→</span>
+          </button>
+        ) : (
+          <small>{note}</small>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function getTransactionAnalytics(transactions: Transaction[], dateRange: TransactionDateRange): TransactionAnalytics {
+  const spendingTransactions = transactions.filter((transaction) => transaction.amount < 0);
+  const totalSpending = spendingTransactions.reduce((total, transaction) => total + Math.abs(transaction.amount), 0);
+  const activeCategories = new Set(spendingTransactions.map(getTransactionCategory));
+  const rangeDays = getDateRangeDayCount(dateRange);
+
+  return {
+    activeCategoryCount: activeCategories.size,
+    averagePerDay: rangeDays > 0 ? totalSpending / rangeDays : 0,
+    needsReviewCount: transactions.filter(transactionNeedsReview).length,
+    totalSpending
+  };
+}
+
+function getDateRangeDayCount(dateRange: TransactionDateRange) {
+  const from = parseInputDate(dateRange.from);
+  const to = parseInputDate(dateRange.to);
+
+  if (!from || !to) {
+    return 0;
+  }
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  return Math.max(1, Math.round((to.getTime() - from.getTime()) / dayMs) + 1);
 }
 
 function TransactionDateRangePicker({

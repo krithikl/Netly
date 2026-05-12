@@ -21,6 +21,7 @@ export function AppShell() {
 
       <main className="main">
         <Topbar
+          activeView={app.activeView}
           dataSourceLabel={app.dataSourceLabel}
           linkedAccountLabel={app.linkedAccountLabel}
           linkedUserName={app.linkedUserName}

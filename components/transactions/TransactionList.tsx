@@ -1,8 +1,7 @@
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { InfoRow } from "@/components/ui/info-row";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { ChevronDown, ChevronRight, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import {
@@ -21,13 +20,15 @@ import {
   SheetTitle
 } from "@/components/ui/sheet";
 import {
+  getTransactionAccountLabel,
   getTransactionAmountLabel,
   getTransactionCategory,
+  getTransactionDate,
   getTransactionDetailRows,
   getTransactionId,
   getTransactionMerchant,
   getTransactionRawText,
-  getTransactionSummaryMeta
+  getTransactionStatus
 } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
@@ -116,7 +117,15 @@ export function TransactionList({
   return (
     <div className="transaction-list-layout">
       <div className="transaction-list-panel">
-        <div className="stack-list">
+        <div className="transaction-ledger" role="table" aria-label="Transactions">
+          <div className="transaction-ledger-header" role="row">
+            <span role="columnheader">Date</span>
+            <span role="columnheader">Merchant</span>
+            <span role="columnheader">Category</span>
+            <span role="columnheader">Account</span>
+            <span role="columnheader">Amount</span>
+            <span aria-hidden="true" />
+          </div>
           {visibleTransactions.map((transaction) => {
             const transactionId = getTransactionId(transaction);
 
@@ -223,41 +232,58 @@ const TransactionRow = memo(function TransactionRow({
   transaction
 }: TransactionRowProps) {
   const transactionId = getTransactionId(transaction);
-  const row = getTransactionRow(transaction, categoryColors);
+  const row = getTransactionRowModel(transaction, categoryColors);
   const openDetails = useCallback(() => onOpenDetails(transactionId), [onOpenDetails, transactionId]);
 
   return (
-    <InfoRow
-      color={row.color}
-      meta={row.meta}
-      onClick={openDetails}
-      title={row.title}
-      value={row.value}
-      valueTone={row.valueTone}
-      warning={row.warning}
-    />
+    <button className="transaction-ledger-row" onClick={openDetails} role="row" type="button">
+      <span className="transaction-ledger-date" role="cell">{row.date}</span>
+      <span className="transaction-ledger-merchant" role="cell">
+        <span className="transaction-merchant-avatar" style={row.colorStyle}>{row.initial}</span>
+        <span className="transaction-merchant-copy">
+          <strong>{row.merchant}</strong>
+          <small className="transaction-row-status">{row.status}</small>
+          <span className="transaction-category-chip transaction-mobile-category-chip" style={row.colorStyle}>
+            <span aria-hidden="true" />
+            {row.category}
+          </span>
+          <small className="transaction-mobile-row-meta">{row.date} · {row.account}</small>
+        </span>
+      </span>
+      <span className="transaction-category-chip transaction-desktop-category-cell" role="cell" style={row.colorStyle}>
+        <span aria-hidden="true" />
+        {row.category}
+      </span>
+      <span className="transaction-account-chip" role="cell">
+        <CreditCard aria-hidden="true" className="h-3.5 w-3.5" />
+        {row.account}
+      </span>
+      <strong className={`transaction-ledger-amount ${row.valueTone}`} role="cell">{row.amount}</strong>
+      <ChevronRight aria-hidden="true" className="transaction-ledger-chevron h-4 w-4" />
+    </button>
   );
 });
 
-function getTransactionRow(transaction: Transaction, categoryColors: Record<string, string>) {
+function getTransactionRowModel(transaction: Transaction, categoryColors: Record<string, string>) {
   const category = getTransactionCategory(transaction);
+  const merchant = getTransactionMerchant(transaction);
+  const color = getTransactionColor(category, categoryColors);
 
   return {
-    color: getTransactionColor(category, categoryColors),
-    meta: getTransactionMeta(transaction),
-    title: getTransactionMerchant(transaction),
-    value: getTransactionAmountLabel(transaction),
-    valueTone: transaction.amount < 0 ? "negative" : "positive",
-    warning: undefined
+    account: getTransactionAccountLabel(transaction),
+    amount: getTransactionAmountLabel(transaction),
+    category,
+    colorStyle: { "--transaction-color": color } as CSSProperties,
+    date: formatTransactionDate(getTransactionDate(transaction)),
+    initial: merchant.slice(0, 1).toUpperCase(),
+    merchant,
+    status: getTransactionStatus(transaction),
+    valueTone: transaction.amount < 0 ? "negative" : "positive"
   };
 }
 
 function getTransactionColor(category: string, categoryColors: Record<string, string>) {
   return categoryColors[category] || "#607d8b";
-}
-
-function getTransactionMeta(transaction: Transaction) {
-  return getTransactionSummaryMeta(transaction);
 }
 
 // Send category edits upward so saved overrides and filters update together
@@ -282,7 +308,7 @@ function CategorySelect({
   return (
     <SelectField
       ariaLabel={categoryLabel}
-      className="min-h-9 w-[min(220px,100%)] px-3 py-2 text-[13px] font-bold"
+      className="transaction-detail-category-select"
       onChange={handleCategoryChange}
       options={categoryOptions}
       value={getTransactionCategory(transaction)}
@@ -323,7 +349,7 @@ function TransactionDetailsSheet({
       >
         <div className="transaction-details-sheet flex h-full flex-col overflow-y-auto">
           <SheetHeader>
-            <SheetTitle ref={titleRef} tabIndex={-1}>Transaction Details</SheetTitle>
+            <SheetTitle className="focus:outline-none" ref={titleRef} tabIndex={-1}>Transaction details</SheetTitle>
             <SheetDescription className="sr-only">Selected transaction details.</SheetDescription>
           </SheetHeader>
           <div>
@@ -363,7 +389,7 @@ function TransactionDetailsDrawer({
     <Drawer onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open}>
       <DrawerContent className="transaction-details-mobile-drawer overflow-hidden after:hidden after:content-none">
         <DrawerHeader className="mobile-filter-header">
-          <DrawerTitle>Transaction Details</DrawerTitle>
+          <DrawerTitle>Transaction details</DrawerTitle>
           <DrawerDescription className="sr-only">Selected transaction details.</DrawerDescription>
           <DrawerHeaderClose className="mobile-filter-close" />
         </DrawerHeader>
@@ -397,7 +423,7 @@ function TransactionDetailsContent({
 }) {
   const merchant = getTransactionMerchant(transaction);
   const category = getTransactionCategory(transaction);
-  const avatarStyle = { background: getTransactionColor(category, categoryColors) };
+  const colorStyle = { "--transaction-color": getTransactionColor(category, categoryColors) } as CSSProperties;
   const amountClassName = transaction.amount < 0 ? "negative" : "positive";
   const rawText = getTransactionRawText(transaction);
   const transactionId = getTransactionId(transaction);
@@ -408,21 +434,31 @@ function TransactionDetailsContent({
   }, [transactionId]);
 
   return (
-    <div className="grid gap-5">
-      <div className="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-[rgba(119,106,116,0.14)] bg-white/90 p-3">
-        <div className="grid h-10 w-10 place-items-center rounded-full text-sm font-black text-white" style={avatarStyle}>
-          {merchant.slice(0, 1)}
-        </div>
+    <div className="transaction-detail-content">
+      <section className="transaction-detail-summary-card">
+        <span className="transaction-merchant-avatar large" style={colorStyle}>
+          {merchant.slice(0, 1).toUpperCase()}
+        </span>
         <div className="min-w-0">
           <strong className="block truncate">{merchant}</strong>
-          <p className="mt-1 text-sm font-semibold text-[var(--muted)]">{getTransactionSummaryMeta(transaction)}</p>
+          <p>{formatTransactionDate(getTransactionDate(transaction))} · {getTransactionStatus(transaction)}</p>
+          <div className="transaction-detail-summary-meta">
+            <span className="transaction-category-chip" style={colorStyle}>
+              <span aria-hidden="true" />
+              {category}
+            </span>
+            <span className="transaction-account-chip">
+              <CreditCard aria-hidden="true" className="h-3.5 w-3.5" />
+              {getTransactionAccountLabel(transaction)}
+            </span>
+          </div>
         </div>
-        <strong className={amountClassName}>{getTransactionAmountLabel(transaction)}</strong>
-      </div>
+        <strong className={`transaction-detail-amount ${amountClassName}`}>{getTransactionAmountLabel(transaction)}</strong>
+      </section>
 
       {editable && (
-        <section className="grid gap-2">
-          <h3 className="text-sm font-bold">Category</h3>
+        <section className="transaction-detail-section">
+          <h3>Category</h3>
           <CategorySelect
             categoryLabel={`Set category for ${merchant}`}
             categoryOptions={categorySelectOptions}
@@ -433,32 +469,33 @@ function TransactionDetailsContent({
         </section>
       )}
 
-      <section className="grid gap-3">
-        <h3 className="text-sm font-bold">Details</h3>
-        <div className="grid gap-2">
+      <section className="transaction-detail-section">
+        <h3>Details</h3>
+        <div className="transaction-detail-rows">
           {getTransactionDetailRows(transaction).map((row) => (
-            <div className="flex justify-between gap-5 text-sm" key={row.label}>
-              <span className="text-[var(--muted)]">{row.label}</span>
-              <strong className="max-w-[62%] text-right [overflow-wrap:anywhere]">{row.value}</strong>
+            <div key={row.label}>
+              <span>{row.label}</span>
+              <strong>{row.value}</strong>
             </div>
           ))}
         </div>
       </section>
 
       {rawText && (
-        <section className="grid gap-2">
-          <button
+        <section className="transaction-detail-section">
+          <Button
             aria-expanded={rawTextExpanded}
-            className="flex items-center justify-between gap-3 rounded-xl border border-[var(--outline)] bg-white/70 px-3 py-2 text-left text-sm font-bold text-[var(--ink)]"
+            className="transaction-raw-bank-toggle"
             onClick={() => setRawTextExpanded((isExpanded) => !isExpanded)}
             type="button"
+            variant="outline"
           >
             <span>Raw bank text</span>
             <ChevronDown
               aria-hidden="true"
               className={`h-4 w-4 shrink-0 text-[var(--muted)] transition-transform ${rawTextExpanded ? "rotate-180" : ""}`}
             />
-          </button>
+          </Button>
           <RawBankTextPanel expanded={rawTextExpanded} rawText={rawText} />
         </section>
       )}
@@ -493,10 +530,24 @@ function RawBankTextPanel({ expanded, rawText }: { expanded: boolean; rawText: s
       style={{ maxHeight: expanded ? contentHeight : 0 }}
     >
       <div ref={contentRef}>
-        <p className="text-sm leading-relaxed text-[var(--muted)]">{rawText}</p>
+        <p>{rawText}</p>
       </div>
     </div>
   );
+}
+
+function formatTransactionDate(value: string) {
+  const date = new Date(`${value}T12:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-NZ", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(date);
 }
 
 // Watches the screen width so details use a sheet on desktop and a drawer on mobile

@@ -1,7 +1,9 @@
 import { TimeRangeTabs } from "@/components/layout/TimeRangeTabs";
+import type { View } from "@/lib/app/types";
 import type { PeriodOption } from "@/lib/types";
 
 type TopbarProps = {
+  activeView: View;
   dataSourceLabel: string;
   linkedAccountLabel: string;
   linkedUserName: string;
@@ -12,6 +14,7 @@ type TopbarProps = {
 };
 
 export function Topbar({
+  activeView,
   dataSourceLabel,
   linkedAccountLabel,
   linkedUserName,
@@ -21,13 +24,14 @@ export function Topbar({
   showPeriodControl
 }: TopbarProps) {
   const dateLabel = formatDateLabel(payday);
+  const pageCopy = getPageCopy(activeView, linkedUserName);
 
   return (
     <header className="topbar">
       <div>
         <p className="eyebrow">{dateLabel}</p>
-        <h1>Good evening{linkedUserName ? `, ${linkedUserName}` : ""} 👋</h1>
-        <p className="topbar-subtitle">Here is your money picture.</p>
+        <h1>{pageCopy.title}</h1>
+        <p className="topbar-subtitle">{pageCopy.subtitle}</p>
         <p className="header-note">
           Data source: {dataSourceLabel}
           {linkedAccountLabel ? ` · Linked account: ${linkedAccountLabel}` : ""}
@@ -40,6 +44,20 @@ export function Topbar({
       )}
     </header>
   );
+}
+
+function getPageCopy(activeView: View, linkedUserName: string) {
+  if (activeView === "transactions") {
+    return {
+      title: "Transactions",
+      subtitle: "All your transactions in one place."
+    };
+  }
+
+  return {
+    title: `Good evening${linkedUserName ? `, ${linkedUserName}` : ""}`,
+    subtitle: "Here is your money picture."
+  };
 }
 
 function formatDateLabel(value: string) {

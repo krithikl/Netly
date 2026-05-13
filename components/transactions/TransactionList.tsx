@@ -47,6 +47,11 @@ type TransactionListProps = {
 const initialVisibleTransactionCount = 40;
 const visibleTransactionIncrement = 60;
 const transactionDetailsExitAnimationMs = 520;
+const transactionDateFormatter = new Intl.DateTimeFormat("en-NZ", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric"
+});
 
 // Shows transactions in pages and opens the right detail view for the screen size
 // Transaction list/table used by TransactionsView for rendered results.
@@ -544,11 +549,7 @@ function formatTransactionDate(value: string) {
     return value;
   }
 
-  return new Intl.DateTimeFormat("en-NZ", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).format(date);
+  return transactionDateFormatter.format(date);
 }
 
 // Watches the screen width so details use a sheet on desktop and a drawer on mobile

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SelectField } from "@/components/ui/select-field";
+import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
 import { formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
 import { getTransactionCategory, transactionNeedsReview } from "@/lib/transaction-display";
@@ -390,15 +391,27 @@ function TransactionDesktopFilterPopover({
 
 // Derives transaction totals for the current Transactions page filter/date range.
 function getTransactionAnalytics(transactions: Transaction[], dateRange: TransactionDateRange): TransactionAnalytics {
-  const spendingTransactions = transactions.filter((transaction) => transaction.amount < 0);
-  const totalSpending = spendingTransactions.reduce((total, transaction) => total + Math.abs(transaction.amount), 0);
-  const activeCategories = new Set(spendingTransactions.map(getTransactionCategory));
+  const activeCategories = new Set<string>();
+  let needsReviewCount = 0;
+  let totalSpending = 0;
+
+  transactions.forEach((transaction) => {
+    if (transactionNeedsReview(transaction)) {
+      needsReviewCount += 1;
+    }
+
+    if (transaction.amount < 0) {
+      totalSpending += Math.abs(transaction.amount);
+      activeCategories.add(getTransactionCategory(transaction));
+    }
+  });
+
   const rangeDays = getDateRangeDayCount(dateRange);
 
   return {
     activeCategoryCount: activeCategories.size,
     averagePerDay: rangeDays > 0 ? totalSpending / rangeDays : 0,
-    needsReviewCount: transactions.filter(transactionNeedsReview).length,
+    needsReviewCount,
     totalSpending
   };
 }
@@ -806,26 +819,6 @@ function TransactionSortDialog({
       </DrawerContent>
     </Drawer>
   );
-}
-
-function useIsBottomNavigation() {
-  const [isBottomNavigation, setIsBottomNavigation] = useState(() => getIsBottomNavigation());
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 1180px)");
-    const handleChange = () => setIsBottomNavigation(mediaQuery.matches);
-
-    handleChange();
-    mediaQuery.addEventListener("change", handleChange);
-
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
-  return isBottomNavigation;
-}
-
-function getIsBottomNavigation() {
-  return typeof window === "undefined" ? false : window.matchMedia("(max-width: 1180px)").matches;
 }
 
 function getStringOptions<T extends string>(values: T[]) {

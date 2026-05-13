@@ -24,6 +24,7 @@ import { useAkahuConnection } from "@/hooks/useAkahuConnection";
 import { useCategorySettings } from "@/hooks/useCategorySettings";
 import { useAkahuData } from "@/hooks/useAkahuData";
 import { useDashboardPeriodSettings } from "@/hooks/useDashboardPeriodSettings";
+import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { usePaydaySettings } from "@/hooks/usePaydaySettings";
 import { useRoutedView } from "@/hooks/useRoutedView";
 import { useTransactionControls } from "@/hooks/useTransactionControls";
@@ -35,7 +36,7 @@ const topCategoryLimit = 5;
 export function useNetlyApp() {
   const { activeView, setActiveView } = useRoutedView();
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
-  const [isBottomNavigation, setIsBottomNavigation] = useState(() => getIsBottomNavigation());
+  const isBottomNavigation = useIsBottomNavigation();
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
   const banking = useAkahuData();
@@ -97,16 +98,6 @@ export function useNetlyApp() {
     banking.refreshTransactions(initialDataMode, transactionControls.transactionDateRange).catch((error: unknown) => {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
-  }, []);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 1180px)");
-    const handleChange = () => setIsBottomNavigation(mediaQuery.matches);
-
-    handleChange();
-    mediaQuery.addEventListener("change", handleChange);
-
-    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
@@ -225,10 +216,6 @@ export function useNetlyApp() {
     statusBannerTitle: getStatusBannerTitle(banking.transactionLoadError, banking.dataMode),
     viewProps
   };
-}
-
-function getIsBottomNavigation() {
-  return typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
 }
 
 function getAverageDailySpend(expenses: ReturnType<typeof debitTransactions>, totalSpend: number) {

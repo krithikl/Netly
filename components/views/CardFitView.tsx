@@ -5,6 +5,7 @@ import { CardFitDetailPanel, type CardFitDetailPanelMode } from "@/components/ca
 import { Button } from "@/components/ui/button";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
+import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
 import type { CardFitBasis, CardFitExplanation, CardValue } from "@/lib/types";
 
@@ -256,26 +257,6 @@ function CardOption({
 
 function getCardFitSubtitle(cardFitSourceLabel: string) {
   return `Cards are ranked from ${cardFitSourceLabel}: rewards earned + counted perks - annual fee.`;
-}
-
-function useIsBottomNavigation() {
-  const [isBottomNavigation, setIsBottomNavigation] = useState(() => getIsBottomNavigation());
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 1180px)");
-    const handleChange = () => setIsBottomNavigation(mediaQuery.matches);
-
-    handleChange();
-    mediaQuery.addEventListener("change", handleChange);
-
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
-  return isBottomNavigation;
-}
-
-function getIsBottomNavigation() {
-  return typeof window === "undefined" ? false : window.matchMedia("(max-width: 1180px)").matches;
 }
 
 function getCardOptionClassName(isWinner: boolean) {

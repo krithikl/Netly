@@ -3,6 +3,8 @@ import { mapSourceCategoryToNetlyCategory } from "@/lib/category-mapping";
 
 export type TransactionStatus = "Booked" | "Pending";
 
+const currencyFormatters = new Map<string, Intl.NumberFormat>();
+
 // Returns a stable transaction ID, even when Akahu does not send one
 export function getTransactionId(transaction: Transaction) {
   if (transaction._id) {
@@ -69,11 +71,7 @@ export function getTransactionCurrency(transaction: Transaction) {
 }
 
 export function getTransactionAmountLabel(transaction: Transaction) {
-  return new Intl.NumberFormat("en-NZ", {
-    style: "currency",
-    currency: getTransactionCurrency(transaction),
-    maximumFractionDigits: 2
-  }).format(transaction.amount);
+  return formatTransactionMoney(transaction.amount, getTransactionCurrency(transaction));
 }
 
 export function getTransactionDetailText(transaction: Transaction) {
@@ -206,11 +204,28 @@ function getBalanceValue(transaction: Transaction) {
     return "";
   }
 
-  return new Intl.NumberFormat("en-NZ", {
+  return formatTransactionMoney(transaction.balance, getTransactionCurrency(transaction));
+}
+
+function formatTransactionMoney(amount: number, currency: string) {
+  return getCurrencyFormatter(currency).format(amount);
+}
+
+function getCurrencyFormatter(currency: string) {
+  const formatter = currencyFormatters.get(currency);
+
+  if (formatter) {
+    return formatter;
+  }
+
+  const nextFormatter = new Intl.NumberFormat("en-NZ", {
     style: "currency",
-    currency: getTransactionCurrency(transaction),
+    currency,
     maximumFractionDigits: 2
-  }).format(transaction.balance);
+  });
+
+  currencyFormatters.set(currency, nextFormatter);
+  return nextFormatter;
 }
 
 function getConversionValue(transaction: Transaction) {

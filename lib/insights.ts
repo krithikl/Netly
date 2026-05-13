@@ -10,13 +10,10 @@ const cardExcludedCategories = new Set(["Housing", "Income", "Transfers", "Fees"
 const cardFitWindowDays = 365;
 const defaultComparisonCardName = "Current debit card baseline";
 const cardFitDriverLimit = 3;
+const moneyFormatters = new Map<string, Intl.NumberFormat>();
 
 export function formatMoney(amount: number, exact = false) {
-  return new Intl.NumberFormat("en-NZ", {
-    style: "currency",
-    currency: "NZD",
-    maximumFractionDigits: exact ? 2 : 0
-  }).format(amount);
+  return getMoneyFormatter(exact).format(amount);
 }
 
 export function debitTransactions(transactions: Transaction[]) {
@@ -49,7 +46,13 @@ export function detectRecurring(transactions: Transaction[]): RecurringMerchant[
 
   debitTransactions(transactions).forEach((txn) => {
     const merchant = getTransactionMerchant(txn);
-    byMerchant.set(merchant, [...(byMerchant.get(merchant) || []), txn]);
+    const merchantTransactions = byMerchant.get(merchant);
+
+    if (merchantTransactions) {
+      merchantTransactions.push(txn);
+    } else {
+      byMerchant.set(merchant, [txn]);
+    }
   });
 
   return [...byMerchant.entries()]
@@ -74,29 +77,47 @@ export function safeToSpend(transactions: Transaction[], currentBalance: number)
 
 // Works out the spend that can count toward card rewards
 export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWindowDays): CardFitBasis {
-  const debits = debitTransactions(transactions)
-    .filter((txn) => getTransactionStatus(txn) === "Booked")
-    .filter((txn) => !Number.isNaN(Date.parse(getTransactionDate(txn))));
-  const latestTime = Math.max(...debits.map((txn) => Date.parse(getTransactionDate(txn))));
+  const debitEntries = transactions.reduce<Array<{ transaction: Transaction; time: number }>>((entries, transaction) => {
+    if (transaction.amount >= 0 || getTransactionStatus(transaction) !== "Booked") {
+      return entries;
+    }
+
+    const time = Date.parse(getTransactionDate(transaction));
+
+    if (Number.isFinite(time)) {
+      entries.push({ transaction, time });
+    }
+
+    return entries;
+  }, []);
+  const latestTime = Math.max(...debitEntries.map((entry) => entry.time));
   const latestTransactionDate = Number.isFinite(latestTime) ? new Date(latestTime).toISOString().slice(0, 10) : null;
   const windowStart = Number.isFinite(latestTime) ? latestTime - (windowDays - 1) * 24 * 60 * 60 * 1000 : 0;
-  const windowTransactions = Number.isFinite(latestTime) ? debits.filter((txn) => Date.parse(getTransactionDate(txn)) >= windowStart) : [];
-  const eligibleTransactions = windowTransactions.filter((txn) => !cardExcludedCategories.has(getTransactionCategory(txn)));
-  const eligibleSpend = sum(eligibleTransactions.map((txn) => Math.abs(txn.amount)));
+  const windowEntries = Number.isFinite(latestTime) ? debitEntries.filter((entry) => entry.time >= windowStart) : [];
   const categoryTotals = new Map<string, number>();
+  let eligibleTransactionCount = 0;
+  let eligibleSpend = 0;
 
-  eligibleTransactions.forEach((txn) => {
-    const category = getTransactionCategory(txn);
-    categoryTotals.set(category, (categoryTotals.get(category) || 0) + Math.abs(txn.amount));
+  windowEntries.forEach(({ transaction }) => {
+    const category = getTransactionCategory(transaction);
+
+    if (cardExcludedCategories.has(category)) {
+      return;
+    }
+
+    const amount = Math.abs(transaction.amount);
+    eligibleTransactionCount += 1;
+    eligibleSpend += amount;
+    categoryTotals.set(category, (categoryTotals.get(category) || 0) + amount);
   });
 
   const eligibleAnnualSpend = eligibleSpend;
 
   return {
     windowDays,
-    transactionCount: windowTransactions.length,
-    eligibleTransactionCount: eligibleTransactions.length,
-    excludedTransactionCount: windowTransactions.length - eligibleTransactions.length,
+    transactionCount: windowEntries.length,
+    eligibleTransactionCount,
+    excludedTransactionCount: windowEntries.length - eligibleTransactionCount,
     eligibleSpend,
     eligibleAnnualSpend,
     latestTransactionDate,
@@ -109,10 +130,13 @@ export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWi
 // Ranks cards by rewards, perks, and fees
 export function annualCardValues(transactions: Transaction[], cardProducts: CardProduct[]): CardValue[] {
   const basis = cardFitBasis(transactions);
-  const eligibleAnnualSpend = basis.eligibleAnnualSpend;
 
+  return annualCardValuesForBasis(basis, cardProducts);
+}
+
+function annualCardValuesForBasis(basis: CardFitBasis, cardProducts: CardProduct[]): CardValue[] {
   return cardProducts
-    .map((card) => getAnnualCardValue(card, eligibleAnnualSpend))
+    .map((card) => getAnnualCardValue(card, basis.eligibleAnnualSpend))
     .sort(compareCardValues);
 }
 
@@ -120,7 +144,7 @@ export function annualCardValues(transactions: Transaction[], cardProducts: Card
 // Ranks cards by estimated annual value from eligible transaction spend.
 export function calculateCardFit(transactions: Transaction[], cardProducts: CardProduct[], comparisonCard?: CardProduct) {
   const basis = cardFitBasis(transactions);
-  const cards = annualCardValues(transactions, cardProducts);
+  const cards = annualCardValuesForBasis(basis, cardProducts);
   const comparisonCardValue = comparisonCard
     ? getAnnualCardValue(comparisonCard, basis.eligibleAnnualSpend)
     : getDefaultComparisonCard(cards);
@@ -232,4 +256,22 @@ export function generateInsights(transactions: Transaction[], cardProducts: Card
     cardInsight,
     `${formatMoney(safeToSpend(transactions, currentBalance))} looks safe to spend after likely bills and a buffer.`
   ];
+}
+
+function getMoneyFormatter(exact: boolean) {
+  const key = exact ? "exact" : "rounded";
+  const formatter = moneyFormatters.get(key);
+
+  if (formatter) {
+    return formatter;
+  }
+
+  const nextFormatter = new Intl.NumberFormat("en-NZ", {
+    style: "currency",
+    currency: "NZD",
+    maximumFractionDigits: exact ? 2 : 0
+  });
+
+  moneyFormatters.set(key, nextFormatter);
+  return nextFormatter;
 }

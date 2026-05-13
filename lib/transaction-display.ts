@@ -235,13 +235,7 @@ function getConversionValue(transaction: Transaction) {
     return "";
   }
 
-  const convertedAmount = new Intl.NumberFormat("en-NZ", {
-    style: "currency",
-    currency: conversion.currency,
-    maximumFractionDigits: 2
-  }).format(conversion.amount);
-
-  return convertedAmount;
+  return formatTransactionMoney(conversion.amount, conversion.currency);
 }
 
 function getPaymentReferenceValue(transaction: Transaction) {

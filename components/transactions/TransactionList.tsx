@@ -392,7 +392,7 @@ function TransactionDetailsDrawer({
   transaction: Transaction;
 }) {
   return (
-    <Drawer onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open} scrollLockTimeout={0}>
+    <Drawer onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open}>
       <DrawerContent className="transaction-details-mobile-drawer overflow-hidden after:hidden after:content-none">
         <DrawerHeader className="mobile-filter-header">
           <DrawerTitle>Transaction details</DrawerTitle>

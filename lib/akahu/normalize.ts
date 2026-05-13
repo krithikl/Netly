@@ -1,10 +1,14 @@
 import type { AkahuAccount } from "@/lib/akahu/accounts";
 import type { AkahuTransaction, Transaction } from "@/lib/types";
 
+type AkahuTransactionPayload = AkahuTransaction & {
+  pending?: boolean;
+};
+
 export type AkahuTransactionsResponse = {
   success?: boolean;
-  items?: AkahuTransaction[];
-  item?: AkahuTransaction;
+  items?: AkahuTransactionPayload[];
+  item?: AkahuTransactionPayload;
   cursor?: {
     next?: string;
   };
@@ -27,7 +31,7 @@ export function getAkahuTransactions(response: AkahuTransactionsResponse, accoun
 }
 
 // Keeps Akahu-owned values at the top level and leaves app-owned data under transaction.netly.
-export function normalizeAkahuTransaction(transaction: AkahuTransaction & { pending?: boolean }): Transaction {
+export function normalizeAkahuTransaction(transaction: AkahuTransactionPayload): Transaction {
   return {
     _account: transaction._account,
     _connection: transaction._connection,

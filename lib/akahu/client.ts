@@ -68,7 +68,7 @@ export class AkahuClient {
   }
 
   async getPendingTransactions(token: AkahuToken) {
-    return this.getAllItems<AkahuTransactionsResponse>("/transactions/pending", token);
+    return markPendingTransactions(await this.getAllItems<AkahuTransactionsResponse>("/transactions/pending", token));
   }
 
   async getAccountTransactions(token: AkahuToken, accountId: string) {
@@ -76,7 +76,7 @@ export class AkahuClient {
   }
 
   async getAccountPendingTransactions(token: AkahuToken, accountId: string) {
-    return this.getAllItems<AkahuTransactionsResponse>(`/accounts/${encodeURIComponent(accountId)}/transactions/pending`, token);
+    return markPendingTransactions(await this.getAllItems<AkahuTransactionsResponse>(`/accounts/${encodeURIComponent(accountId)}/transactions/pending`, token));
   }
 
   // Loads booked and pending transactions together
@@ -230,6 +230,14 @@ function addTransactionQueryToPath(path: string, query: AkahuTransactionQuery) {
 
   const queryString = params.toString();
   return queryString ? `${path}?${queryString}` : path;
+}
+
+function markPendingTransactions(response: AkahuTransactionsResponse): AkahuTransactionsResponse {
+  return {
+    ...response,
+    item: response.item ? { ...response.item, pending: true } : undefined,
+    items: response.items?.map((transaction) => ({ ...transaction, pending: true }))
+  };
 }
 
 async function readJsonBody(response: Response) {

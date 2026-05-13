@@ -392,14 +392,14 @@ function TransactionDetailsDrawer({
   transaction: Transaction;
 }) {
   return (
-    <Drawer onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open}>
-      <DrawerContent className="transaction-details-mobile-drawer overflow-hidden after:hidden after:content-none">
+    <Drawer onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open} shouldScaleBackground={false}>
+      <DrawerContent className="transaction-details-mobile-drawer overflow-hidden">
         <DrawerHeader className="mobile-filter-header">
           <DrawerTitle>Transaction details</DrawerTitle>
           <DrawerDescription className="sr-only">Selected transaction details.</DrawerDescription>
           <DrawerHeaderClose className="mobile-filter-close" />
         </DrawerHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(20px+env(safe-area-inset-bottom))]">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 overscroll-y-none [touch-action:pan-y] pb-[calc(20px+env(safe-area-inset-bottom))]">
           <TransactionDetailsContent
             categorySelectOptions={categorySelectOptions}
             categoryColors={categoryColors}

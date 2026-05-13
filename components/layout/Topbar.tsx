@@ -55,6 +55,34 @@ function getPageCopy(activeView: View, linkedUserName: string) {
     };
   }
 
+  if (activeView === "budgets") {
+    return {
+      title: "Budgets",
+      subtitle: "Track category budgets and recurring payments."
+    };
+  }
+
+  if (activeView === "cards") {
+    return {
+      title: "Card fit",
+      subtitle: "Compare cards against your eligible spend."
+    };
+  }
+
+  if (activeView === "connect") {
+    return {
+      title: "Connect",
+      subtitle: "Manage Akahu connection options."
+    };
+  }
+
+  if (activeView === "settings") {
+    return {
+      title: "Settings",
+      subtitle: "Manage your Netly preferences."
+    };
+  }
+
   return {
     title: `Good evening${linkedUserName ? `, ${linkedUserName}` : ""}`,
     subtitle: "Here is your money picture."

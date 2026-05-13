@@ -2255,6 +2255,50 @@ h2 {
   color: var(--danger);
 }
 
+.settings-period-control {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-period-control h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.settings-period-control p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.settings-period-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-period-options button {
+  min-height: 38px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  padding: 8px 12px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.settings-period-options button.active {
+  border-color: var(--primary-border);
+  background: var(--primary-soft);
+  color: var(--secondary);
+}
+
 .budget-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -2791,12 +2835,24 @@ h2 {
     gap: 10px;
   }
 
+  .transaction-mobile-search-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: end;
+    gap: 10px;
+  }
+
   .transaction-date-range-trigger.desktop {
     display: none;
   }
 
   .transaction-date-range-trigger.mobile {
     display: inline-flex;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
   }
 
   .transaction-date-range-trigger.compact {
@@ -2828,7 +2884,7 @@ h2 {
 
   .transaction-mobile-actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
     gap: 10px;
   }
 
@@ -2934,7 +2990,7 @@ h2 {
   }
 
   .transaction-filter-actions {
-    display: grid;
+    display: none;
   }
 
   .category-create-row label {
@@ -3049,6 +3105,29 @@ h2 {
     border-color: var(--primary-border);
     background: var(--primary-soft);
     color: var(--secondary);
+  }
+
+  .mobile-category-create-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .mobile-category-create-row input {
+    min-width: 0;
+    min-height: 44px;
+    border: 1px solid var(--outline);
+    border-radius: 12px;
+    padding: 10px 13px;
+    background: var(--surface);
+    color: var(--ink);
+    font: inherit;
+  }
+
+  .mobile-category-create-row input:focus {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
   }
 
   .mobile-sort-options {

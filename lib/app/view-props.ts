@@ -1,4 +1,4 @@
-import type { Budget, CardFitBasis, CardFitExplanation, CardValue, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
+import type { Budget, CardFitBasis, CardFitExplanation, CardValue, PeriodOption, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 
 export type SharedViewProps = {
@@ -76,6 +76,8 @@ export type ConnectViewStateProps = {
 };
 
 export type SettingsViewStateProps = {
+  dashboardPeriod: PeriodOption;
+  setDashboardPeriod: (period: PeriodOption) => void;
   updateCategoryColor: (category: string, color: string) => void;
   deleteCategory: (category: string) => void;
 };

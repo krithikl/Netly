@@ -23,6 +23,7 @@ import { periods } from "@/lib/app/constants";
 import { useAkahuConnection } from "@/hooks/useAkahuConnection";
 import { useCategorySettings } from "@/hooks/useCategorySettings";
 import { useAkahuData } from "@/hooks/useAkahuData";
+import { useDashboardPeriodSettings } from "@/hooks/useDashboardPeriodSettings";
 import { usePaydaySettings } from "@/hooks/usePaydaySettings";
 import { useRoutedView } from "@/hooks/useRoutedView";
 import { useTransactionControls } from "@/hooks/useTransactionControls";
@@ -34,6 +35,7 @@ const topCategoryLimit = 5;
 export function useNetlyApp() {
   const { activeView, setActiveView } = useRoutedView();
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
+  const [isBottomNavigation, setIsBottomNavigation] = useState(() => getIsBottomNavigation());
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
   const banking = useAkahuData();
@@ -65,7 +67,9 @@ export function useNetlyApp() {
     transactionDateRange: transactionControls.transactionDateRange
   });
   const paydaySettings = usePaydaySettings(defaultPayday);
-  const periodTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, period), [workingTransactions, period]);
+  const dashboardPeriodSettings = useDashboardPeriodSettings(periods[0]);
+  const activeDashboardPeriod = isBottomNavigation ? dashboardPeriodSettings.dashboardPeriod : period;
+  const periodTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, activeDashboardPeriod), [activeDashboardPeriod, workingTransactions]);
   const recurringTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, "90 days"), [workingTransactions]);
   const categoryTotals = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
 
@@ -88,10 +92,21 @@ export function useNetlyApp() {
     }
 
     paydaySettings.restorePaydaySettings();
+    dashboardPeriodSettings.restoreDashboardPeriod();
 
     banking.refreshTransactions(initialDataMode, transactionControls.transactionDateRange).catch((error: unknown) => {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 1180px)");
+    const handleChange = () => setIsBottomNavigation(mediaQuery.matches);
+
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
@@ -126,7 +141,7 @@ export function useNetlyApp() {
   }, [setActiveView, transactionControls, workingTransactions]);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
   const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
-  const shouldShowPeriodControl = activeView === "home" || activeView === "budgets";
+  const shouldShowPeriodControl = (activeView === "home" || activeView === "budgets") && !isBottomNavigation;
 
   // Single prop bundle passed into ActiveView, then split into each screen component.
   const viewProps: ActiveViewProps = {
@@ -186,6 +201,8 @@ export function useNetlyApp() {
     transactionSort: transactionControls.transactionSort,
     visibleTransactions: transactionControls.visibleTransactions,
     workingTransactions,
+    dashboardPeriod: dashboardPeriodSettings.dashboardPeriod,
+    setDashboardPeriod: dashboardPeriodSettings.updateDashboardPeriod,
     updateCategoryColor: categories.updateCategoryColor,
     deleteCategory: categories.deleteCategory
   };
@@ -208,6 +225,10 @@ export function useNetlyApp() {
     statusBannerTitle: getStatusBannerTitle(banking.transactionLoadError, banking.dataMode),
     viewProps
   };
+}
+
+function getIsBottomNavigation() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 1180px)").matches;
 }
 
 function getAverageDailySpend(expenses: ReturnType<typeof debitTransactions>, totalSpend: number) {

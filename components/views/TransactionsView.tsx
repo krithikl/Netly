@@ -73,6 +73,7 @@ export function TransactionsView({
 }: TransactionsViewProps) {
   const [newCategory, setNewCategory] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const normalizedNewCategory = normalizeCategoryName(newCategory);
   const duplicateCategory = getMatchingCategory(categoryOptions, normalizedNewCategory);
@@ -124,19 +125,21 @@ export function TransactionsView({
       <section className="transaction-workspace">
         <div className="transaction-filter-panel">
           <div className="transaction-mobile-controls">
-            <label className="transaction-mobile-search">
-              Search
-              <span className="transaction-search-field">
-                <Search aria-hidden="true" className="h-4 w-4" />
-                <input
-                  className="search"
-                  onChange={handleSearchChange}
-                  placeholder="Search merchant, bank text, category"
-                  value={query}
-                />
-              </span>
-            </label>
-            <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
+            <div className="transaction-mobile-search-row">
+              <label className="transaction-mobile-search">
+                Search
+                <span className="transaction-search-field">
+                  <Search aria-hidden="true" className="h-4 w-4" />
+                  <input
+                    className="search"
+                    onChange={handleSearchChange}
+                    placeholder="Search merchant, bank text, category"
+                    value={query}
+                  />
+                </span>
+              </label>
+              <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
+            </div>
             {isBottomNavigation && (
               <div className="transaction-mobile-actions">
                 <Button onClick={() => setFiltersOpen(true)} type="button" variant="secondary">
@@ -146,6 +149,9 @@ export function TransactionsView({
                 <Button onClick={() => setSortOpen(true)} type="button" variant="secondary">
                   <ArrowDownUp aria-hidden="true" className="h-4 w-4" />
                   Sort
+                </Button>
+                <Button aria-label="Categories" onClick={() => setCategoryOpen(true)} title="Categories" type="button" variant="secondary">
+                  <Plus aria-hidden="true" className="h-4 w-4" />
                 </Button>
               </div>
             )}
@@ -209,6 +215,15 @@ export function TransactionsView({
           open={filtersOpen}
           transactionCategory={transactionCategory}
           transactionFilter={transactionFilter}
+        />
+        <TransactionCategoryDialog
+          canCreateCategory={canCreateCategory}
+          categoryErrorMessage={categoryErrorMessage}
+          newCategory={newCategory}
+          onCreateCategory={handleCreateCategory}
+          onNewCategoryChange={handleNewCategoryChange}
+          onOpenChange={setCategoryOpen}
+          open={categoryOpen}
         />
         <TransactionSortDialog
           onApply={closeSort}
@@ -452,13 +467,14 @@ function TransactionDateRangePicker({
   const triggerClassName = mode === "compact"
     ? `transaction-date-range-trigger ${isBottomNavigation ? "mobile" : "compact"}`
     : "transaction-date-range-trigger desktop";
+  const isMobileIconOnly = mode === "compact" && isBottomNavigation;
   const triggerButton = (
     <Button className={triggerClassName} onClick={() => {
       setIsMobilePicker(mode === "compact" && isBottomNavigation);
       handleOpenChange(true);
-    }} type="button" variant="secondary">
+    }} type="button" variant="secondary" aria-label={isMobileIconOnly ? `Date range: ${label}` : undefined} title={isMobileIconOnly ? label : undefined}>
       <CalendarDays aria-hidden="true" className="h-4 w-4" />
-      <span>{label}</span>
+      <span className={isMobileIconOnly ? "sr-only" : undefined}>{label}</span>
     </Button>
   );
 
@@ -613,6 +629,62 @@ function getDraftRangeLabel(dateRange: DateRange | undefined) {
   }
 
   return `${format(dateRange.from, "d MMM yyyy")} - ${format(dateRange.to, "d MMM yyyy")}`;
+}
+
+type TransactionCategoryDialogProps = {
+  canCreateCategory: boolean;
+  categoryErrorMessage: string;
+  newCategory: string;
+  onCreateCategory: () => void;
+  onNewCategoryChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+};
+
+function TransactionCategoryDialog({
+  canCreateCategory,
+  categoryErrorMessage,
+  newCategory,
+  onCreateCategory,
+  onNewCategoryChange,
+  onOpenChange,
+  open
+}: TransactionCategoryDialogProps) {
+  const handleCreateCategory = () => {
+    if (!canCreateCategory) {
+      return;
+    }
+
+    onCreateCategory();
+  };
+
+  return (
+    <Drawer onOpenChange={onOpenChange} open={open}>
+      <DrawerContent className="mobile-filter-drawer mobile-category-drawer">
+        <DrawerHeader className="mobile-filter-header centered">
+          <DrawerTitle>New category</DrawerTitle>
+          <DrawerDescription className="sr-only">Create a transaction category.</DrawerDescription>
+          <DrawerHeaderClose className="mobile-filter-close" />
+        </DrawerHeader>
+        <div className="mobile-filter-drawer-body">
+          <div className="mobile-filter-section">
+            <div className="mobile-category-create-row">
+              <input onChange={onNewCategoryChange} placeholder="e.g. Kids, Pets, Travel" value={newCategory} />
+              <Button disabled={!canCreateCategory} onClick={handleCreateCategory} type="button" variant="outline">
+                <Plus aria-hidden="true" className="h-4 w-4" />
+                Add
+              </Button>
+            </div>
+            {categoryErrorMessage && (
+              <p aria-live="polite" className="category-error-message">
+                {categoryErrorMessage}
+              </p>
+            )}
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
 }
 
 type TransactionFilterDialogProps = {

@@ -118,8 +118,8 @@ export function getTransactionDetailRows(transaction: Transaction) {
   ].filter(hasDetailValue);
 }
 
-// Combines raw bank text into one string for search and details
-export function getTransactionRawText(transaction: Transaction) {
+// Combines bank-provided text into one string for search and details
+export function getTransactionSearchText(transaction: Transaction) {
   return [
     transaction.description,
     transaction.merchant?.name,

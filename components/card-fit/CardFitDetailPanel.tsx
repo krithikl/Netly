@@ -68,13 +68,13 @@ export function CardFitDetailPanel({
     return (
       <Drawer onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open}>
         <DrawerContent className="transaction-details-mobile-drawer overflow-hidden after:hidden after:content-none">
-          <DrawerHeader className="flex items-center justify-between gap-3 px-5 pb-3 pt-2 text-left">
+          <DrawerHeader className="mobile-filter-header">
             <DrawerTitle className="flex min-w-0 items-center gap-3">
               <PanelIcon icon={panel.icon} />
               <span className="truncate">{panel.title}</span>
             </DrawerTitle>
             <DrawerDescription className="sr-only">{panel.description}</DrawerDescription>
-            <DrawerHeaderClose className="shrink-0" />
+            <DrawerHeaderClose className="mobile-filter-close" />
           </DrawerHeader>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
             <CardFitDetailContent basis={basis} card={card} mode={mode} rank={rank} />

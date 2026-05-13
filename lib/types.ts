@@ -31,7 +31,7 @@ export type AkahuTransactionMeta = {
   [key: string]: unknown;
 };
 
-export type Transaction = {
+export type AkahuTransaction = {
   _id?: string;
   _account?: string;
   _connection?: string;
@@ -45,6 +45,9 @@ export type Transaction = {
   merchant?: AkahuMerchant;
   category?: AkahuCategory;
   meta?: AkahuTransactionMeta;
+};
+
+export type Transaction = AkahuTransaction & {
   pending?: boolean;
   netly?: {
     accountName?: string;

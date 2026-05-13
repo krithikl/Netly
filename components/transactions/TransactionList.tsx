@@ -27,7 +27,7 @@ import {
   getTransactionDetailRows,
   getTransactionId,
   getTransactionMerchant,
-  getTransactionRawText,
+  getTransactionSearchText,
   getTransactionStatus
 } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
@@ -426,7 +426,7 @@ function TransactionDetailsContent({
   const category = getTransactionCategory(transaction);
   const colorStyle = { "--transaction-color": getTransactionColor(category, categoryColors) } as CSSProperties;
   const amountClassName = transaction.amount < 0 ? "negative" : "positive";
-  const rawText = getTransactionRawText(transaction);
+  const rawText = getTransactionSearchText(transaction);
   const transactionId = getTransactionId(transaction);
   const [rawTextExpanded, setRawTextExpanded] = useState(false);
 

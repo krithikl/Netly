@@ -5,6 +5,7 @@ type AkahuConfig = {
   baseUrl: string;
   appToken: string;
   appSecret?: string;
+  oauthScope: string;
   redirectUri: string;
   oauthUrl: string;
 };
@@ -32,7 +33,7 @@ export class AkahuClient {
     url.searchParams.set("response_type", "code");
     url.searchParams.set("client_id", this.config.appToken);
     url.searchParams.set("redirect_uri", this.config.redirectUri);
-    url.searchParams.set("scope", "ENDURING_CONSENT");
+    url.searchParams.set("scope", this.config.oauthScope);
     url.searchParams.set("state", state);
 
     if (email) {
@@ -188,6 +189,7 @@ export function createAkahuClientFromEnv() {
     baseUrl: process.env.AKAHU_BASE_URL || "https://api.akahu.io/v1",
     appToken,
     appSecret: process.env.AKAHU_APP_SECRET,
+    oauthScope: process.env.AKAHU_OAUTH_SCOPE || "ONEOFF TRANSACTIONS ACCOUNT",
     redirectUri: process.env.AKAHU_REDIRECT_URI || `${process.env.APP_BASE_URL || "http://localhost:3000"}/api/akahu/callback`,
     oauthUrl: process.env.AKAHU_OAUTH_URL || "https://oauth.akahu.nz"
   });

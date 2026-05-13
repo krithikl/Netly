@@ -5,7 +5,7 @@ import {
   getTransactionDate,
   getTransactionId,
   getTransactionMerchant,
-  getTransactionRawText,
+  getTransactionSearchText,
   getTransactionStatus
 } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
@@ -58,7 +58,7 @@ function matchesTransactionFilters(transaction: Transaction, normalizedQuery: st
     return true;
   }
 
-  const searchableText = `${getTransactionMerchant(transaction)} ${category} ${getTransactionAccountLabel(transaction)} ${getTransactionRawText(transaction)}`.toLowerCase();
+  const searchableText = `${getTransactionMerchant(transaction)} ${category} ${getTransactionAccountLabel(transaction)} ${getTransactionSearchText(transaction)}`.toLowerCase();
   return searchableText.includes(normalizedQuery);
 }
 

@@ -14,17 +14,28 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { netlyPalette } from "@/lib/categories";
+import { periods } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
+import type { PeriodOption } from "@/lib/types";
 
 type SettingsViewProps = {
   categoryColors: Record<string, string>;
+  dashboardPeriod: PeriodOption;
   defaultCategories: string[];
   deleteCategory: (category: string) => void;
+  setDashboardPeriod: (period: PeriodOption) => void;
   updateCategoryColor: (category: string, color: string) => void;
 };
 
 // Settings screen for managing category colours and hiding unused categories.
-export function SettingsView({ categoryColors, defaultCategories, deleteCategory, updateCategoryColor }: SettingsViewProps) {
+export function SettingsView({
+  categoryColors,
+  dashboardPeriod,
+  defaultCategories,
+  deleteCategory,
+  setDashboardPeriod,
+  updateCategoryColor
+}: SettingsViewProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
 
@@ -36,9 +47,25 @@ export function SettingsView({ categoryColors, defaultCategories, deleteCategory
     <section className="view-stack">
       <section className="material-card">
         <PanelTitle title="Settings" subtitle="Manage your preferences" />
-        <p className="text-sm text-[var(--muted)]">
-          Additional app settings and preferences will appear here.
-        </p>
+        <div className="settings-period-control">
+          <div>
+            <h3>Default dashboard period</h3>
+            <p>Used by Home and Budgets on mobile.</p>
+          </div>
+          <div className="settings-period-options" role="group" aria-label="Default dashboard period">
+            {periods.map((period) => (
+              <button
+                aria-pressed={period === dashboardPeriod}
+                className={period === dashboardPeriod ? "active" : undefined}
+                key={period}
+                onClick={() => setDashboardPeriod(period)}
+                type="button"
+              >
+                {period}
+              </button>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="material-card">

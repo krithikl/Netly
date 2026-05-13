@@ -19,3 +19,5 @@ export const customCategoriesStorageKey = "netly_custom_categories";
 export const deletedCategoriesStorageKey = "netly_deleted_categories";
 
 export const categoryColorsStorageKey = "netly_category_colors";
+
+export const dashboardPeriodStorageKey = "netly_dashboard_period";

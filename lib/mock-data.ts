@@ -131,7 +131,6 @@ export const cardProducts: CardProduct[] = [
     network: "American Express",
     tier: "Platinum Reserve",
     availability: "unavailable",
-    availabilityNote: "No current public application/product page was found. Kept for legacy comparison only.",
     annualFee: 395,
     cashbackRate: 1 / 70,
     perks: [
@@ -508,4 +507,16 @@ export const cardProducts: CardProduct[] = [
   }
 ];
 
-export const transactions: Transaction[] = (dummyTransactions as { items?: Transaction[] }).items || [];
+export const transactions: Transaction[] = getDemoTransactions(dummyTransactions);
+
+function getDemoTransactions(payload: unknown) {
+  if (!isRecord(payload) || !Array.isArray(payload.items)) {
+    throw new Error("Invalid demo transaction data: expected lib/akahu/dummy-transactions.json to contain an items array.");
+  }
+
+  return payload.items as Transaction[];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}

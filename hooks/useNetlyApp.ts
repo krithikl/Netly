@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { handleCallbackParams, readAuthResponseCookie } from "@/lib/app/browser-state";
+import { handleCallbackParams } from "@/lib/app/browser-state";
 import {
   applyCategoryOverrides,
   getCardFitSourceLabel,
@@ -85,11 +85,6 @@ export function useNetlyApp() {
 
     if (callbackResult.forceUserMode) {
       initialDataMode = "user";
-    }
-
-    const authResponse = readAuthResponseCookie();
-    if (authResponse) {
-      connection.setConnectionResponse(authResponse);
     }
 
     paydaySettings.restorePaydaySettings();

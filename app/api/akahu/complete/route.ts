@@ -3,8 +3,23 @@ import { akahuAccessTokenCookieName } from "@/lib/akahu/token";
 
 // Saves a pasted/manual Akahu user token for local development connection flows.
 export async function POST(request: NextRequest) {
-  const body = (await request.json().catch(() => ({}))) as { response?: string; userToken?: string };
-  const userToken = (body.userToken || body.response || "").trim();
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch (error) {
+    return NextResponse.json({
+      error: "Invalid JSON body. Send { \"userToken\": \"...\" }."
+    }, { status: 400 });
+  }
+
+  if (!isRecord(body) || typeof body.userToken !== "string") {
+    return NextResponse.json({
+      error: "Missing userToken. Send { \"userToken\": \"...\" }."
+    }, { status: 400 });
+  }
+
+  const userToken = body.userToken.trim();
 
   if (!userToken) {
     return NextResponse.json({ error: "Paste an Akahu User Access Token to complete the dev connection." }, { status: 400 });
@@ -20,4 +35,8 @@ export async function POST(request: NextRequest) {
   });
 
   return response;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

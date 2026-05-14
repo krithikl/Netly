@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { dashboardPeriodStorageKey, periods } from "@/lib/app/constants";
+import { parseStoredJson } from "@/lib/app/storage";
 import type { PeriodOption } from "@/lib/types";
 
 export function useDashboardPeriodSettings(defaultPeriod: PeriodOption) {
@@ -30,10 +31,11 @@ function readSavedDashboardPeriod(defaultPeriod: PeriodOption) {
     return defaultPeriod;
   }
 
-  try {
-    const parsedValue = JSON.parse(value) as PeriodOption;
-    return periods.includes(parsedValue) ? parsedValue : defaultPeriod;
-  } catch {
-    return periods.includes(value as PeriodOption) ? value as PeriodOption : defaultPeriod;
+  const parsedValue = parseStoredJson<unknown>(dashboardPeriodStorageKey, value);
+
+  if (periods.includes(parsedValue as PeriodOption)) {
+    return parsedValue as PeriodOption;
   }
+
+  throw new Error(`Invalid localStorage key "${dashboardPeriodStorageKey}": expected one of ${periods.join(", ")}.`);
 }

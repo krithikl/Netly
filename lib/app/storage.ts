@@ -1,12 +1,8 @@
-// Safe localStorage JSON parser used by settings hooks.
-export function parseStoredJson<T>(value: string | null) {
-  if (!value) {
-    return null;
-  }
-
+// Parses persisted app settings. Callers handle missing values before parsing.
+export function parseStoredJson<T>(storageKey: string, value: string) {
   try {
     return JSON.parse(value) as T;
-  } catch {
-    return null;
+  } catch (error) {
+    throw new Error(`Invalid JSON in localStorage key "${storageKey}". Clear or repair this setting.`, { cause: error });
   }
 }

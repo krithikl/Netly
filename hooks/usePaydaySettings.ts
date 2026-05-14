@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { parseStoredJson } from "@/lib/app/storage";
 
 const paydayStorageKey = "netly_payday";
 
@@ -13,7 +14,7 @@ type PaydayRule = {
 
 // Stores payday settings and calculates the next displayed payday date.
 export function usePaydaySettings(defaultPayday: string) {
-  const [paydayRule, setPaydayRule] = useState<PaydayRule>(() => getPaydayRuleFromDate(defaultPayday, defaultPayday));
+  const [paydayRule, setPaydayRule] = useState<PaydayRule>(() => getPaydayRuleFromDate(defaultPayday));
   const payday = useMemo(() => getNextPaydayDate(paydayRule), [paydayRule]);
   const paydayPatternDate = useMemo(() => getNextPaydayPatternDate(paydayRule), [paydayRule]);
 
@@ -22,11 +23,11 @@ export function usePaydaySettings(defaultPayday: string) {
   }, [defaultPayday]);
 
   const updatePayday = useCallback((nextPayday: string) => {
-    const nextRule = getPaydayRuleFromDate(nextPayday, defaultPayday);
+    const nextRule = getPaydayRuleFromDate(nextPayday);
 
     setPaydayRule(nextRule);
     window.localStorage.setItem(paydayStorageKey, JSON.stringify(nextRule));
-  }, [defaultPayday]);
+  }, []);
 
   return {
     payday,
@@ -40,32 +41,31 @@ function readSavedPaydayRule(defaultPayday: string): PaydayRule {
   const savedValue = window.localStorage.getItem(paydayStorageKey);
 
   if (!savedValue) {
-    return getPaydayRuleFromDate(defaultPayday, defaultPayday);
+    return getPaydayRuleFromDate(defaultPayday);
   }
 
-  try {
-    const parsedValue = JSON.parse(savedValue) as Partial<PaydayRule>;
+  const parsedValue = parseStoredJson<unknown>(paydayStorageKey, savedValue);
 
-    if (parsedValue.type === "last") {
-      return { type: "last" };
-    }
-
-    if (parsedValue.type === "day" && typeof parsedValue.day === "number") {
-      return { type: "day", day: clampPaydayDay(parsedValue.day) };
-    }
-  } catch {
-    return getPaydayRuleFromDate(savedValue, defaultPayday);
+  if (!isRecord(parsedValue)) {
+    throw new Error(`Invalid localStorage key "${paydayStorageKey}": expected a payday rule object.`);
   }
 
-  return getPaydayRuleFromDate(defaultPayday, defaultPayday);
+  if (parsedValue.type === "last") {
+    return { type: "last" };
+  }
+
+  if (parsedValue.type === "day" && typeof parsedValue.day === "number" && Number.isFinite(parsedValue.day)) {
+    return { type: "day", day: clampPaydayDay(parsedValue.day) };
+  }
+
+  throw new Error(`Invalid localStorage key "${paydayStorageKey}": expected { "type": "last" } or { "type": "day", "day": number }.`);
 }
 
-function getPaydayRuleFromDate(value: string, defaultPayday: string): PaydayRule {
+function getPaydayRuleFromDate(value: string): PaydayRule {
   const date = parseLocalDate(value);
 
   if (!date) {
-    const fallbackDate = parseLocalDate(defaultPayday);
-    return fallbackDate ? getPaydayRuleFromDate(defaultPayday, "") : { type: "day", day: 15 };
+    throw new Error(`Invalid payday date "${value}". Expected YYYY-MM-DD.`);
   }
 
   if (date.getDate() === getDaysInMonth(date.getFullYear(), date.getMonth())) {
@@ -149,4 +149,8 @@ function getDaysInMonth(year: number, monthIndex: number) {
 
 function clampPaydayDay(day: number) {
   return Math.min(31, Math.max(1, Math.round(day)));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

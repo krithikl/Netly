@@ -20,13 +20,13 @@ export function useAkahuConnection({
   const [syncResult, setSyncResult] = useState("");
   const hasAutoCompletedRef = useRef(false);
 
-  const completeAkahuConnection = useCallback(async (responseValue?: string) => {
+  const completeAkahuConnection = useCallback(async (userTokenValue?: string) => {
     const response = await fetch("/api/akahu/complete", {
       method: "POST",
       headers: {
         "content-type": "application/json"
       },
-      body: JSON.stringify({ response: responseValue || connectionResponse })
+      body: JSON.stringify({ userToken: userTokenValue || connectionResponse })
     });
     const payload = (await response.json()) as { error?: string; message?: string };
 

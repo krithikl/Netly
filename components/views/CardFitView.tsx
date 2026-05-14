@@ -201,11 +201,6 @@ function CardOption({
           </div>
         </div>
         <p>{card.note}</p>
-        {card.availabilityNote && (
-          <p className="mt-2 rounded-xl border border-[var(--outline)] bg-white/70 px-3 py-2 text-xs font-bold text-[var(--muted)]">
-            {card.availabilityNote}
-          </p>
-        )}
         <small>
           {card.rewardProgram} · {card.earnDescription}
         </small>

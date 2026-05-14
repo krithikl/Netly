@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 type ConnectViewProps = {
   connectionResponse: string;
-  completeAkahuConnection: (responseValue?: string) => Promise<void>;
+  completeAkahuConnection: (userTokenValue?: string) => Promise<void>;
   onConnectionResponseChange: (value: string) => void;
   setSyncResult: (value: string) => void;
   syncResult: string;

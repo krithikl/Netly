@@ -86,7 +86,6 @@ export type CardProduct = {
   network: "American Express" | "Visa" | "Mastercard";
   tier: string;
   availability?: CardAvailability;
-  availabilityNote?: string;
   annualFee: number;
   cashbackRate: number;
   perks: CardPerk[];

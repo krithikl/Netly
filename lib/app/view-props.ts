@@ -68,7 +68,7 @@ export type CardFitViewStateProps = {
 };
 
 export type ConnectViewStateProps = {
-  completeAkahuConnection: (responseValue?: string) => Promise<void>;
+  completeAkahuConnection: (userTokenValue?: string) => Promise<void>;
   connectionResponse: string;
   onConnectionResponseChange: (value: string) => void;
   setSyncResult: (value: string) => void;

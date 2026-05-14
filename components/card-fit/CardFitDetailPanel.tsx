@@ -294,11 +294,6 @@ function CardFitBenefitsContent({ card }: { card: CardValue }) {
         <span className="text-xs font-black uppercase text-[var(--muted)]">{card.issuer}</span>
         <h3 className="m-0 text-xl font-black leading-tight text-[var(--ink)]">{card.name}</h3>
         <p className="text-sm font-semibold leading-relaxed text-[var(--muted)]">Key benefits and features listed for this card.</p>
-        {card.availabilityNote && (
-          <p className="rounded-xl border border-[var(--outline)] bg-[var(--surface-2)] px-3 py-2 text-xs font-bold leading-relaxed text-[var(--muted)]">
-            {card.availabilityNote}
-          </p>
-        )}
       </section>
 
       <section className="grid gap-3">

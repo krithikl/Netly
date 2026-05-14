@@ -23,6 +23,7 @@ type SettingsViewProps = {
   dashboardPeriod: PeriodOption;
   defaultCategories: string[];
   deleteCategory: (category: string) => void;
+  showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
   updateCategoryColor: (category: string, color: string) => void;
 };
@@ -33,6 +34,7 @@ export function SettingsView({
   dashboardPeriod,
   defaultCategories,
   deleteCategory,
+  showDashboardPeriodSetting,
   setDashboardPeriod,
   updateCategoryColor
 }: SettingsViewProps) {
@@ -47,25 +49,27 @@ export function SettingsView({
     <section className="view-stack">
       <section className="material-card">
         <PanelTitle title="Settings" subtitle="Manage your preferences" />
-        <div className="settings-period-control">
-          <div>
-            <h3>Default dashboard period</h3>
-            <p>Used by Home and Budgets on mobile.</p>
+        {showDashboardPeriodSetting && (
+          <div className="settings-period-control">
+            <div>
+              <h3>Default dashboard period</h3>
+              <p>Used by Home and Budgets on mobile.</p>
+            </div>
+            <div className="settings-period-options" role="group" aria-label="Default dashboard period">
+              {periods.map((period) => (
+                <button
+                  aria-pressed={period === dashboardPeriod}
+                  className={period === dashboardPeriod ? "active" : undefined}
+                  key={period}
+                  onClick={() => setDashboardPeriod(period)}
+                  type="button"
+                >
+                  {period}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="settings-period-options" role="group" aria-label="Default dashboard period">
-            {periods.map((period) => (
-              <button
-                aria-pressed={period === dashboardPeriod}
-                className={period === dashboardPeriod ? "active" : undefined}
-                key={period}
-                onClick={() => setDashboardPeriod(period)}
-                type="button"
-              >
-                {period}
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
       </section>
 
       <section className="material-card">

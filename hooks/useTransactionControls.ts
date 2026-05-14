@@ -43,8 +43,26 @@ export function useTransactionControls({
     });
   }, [applyFallbackState, dataMode, refreshTransactionPage]);
 
+  const resetTransactionControls = useCallback(() => {
+    const defaultDateRange = getThisMonthDateRange();
+    const shouldRefreshDateRange = transactionDateRange.from !== defaultDateRange.from || transactionDateRange.to !== defaultDateRange.to;
+
+    setQuery("");
+    setTransactionFilter("All");
+    setTransactionSort("Newest");
+    setTransactionCategory([]);
+    setTransactionDateRangeState(defaultDateRange);
+
+    if (shouldRefreshDateRange) {
+      refreshTransactionPage(dataMode, defaultDateRange).catch((error: unknown) => {
+        applyFallbackState(dataMode, error, "Could not load transactions.");
+      });
+    }
+  }, [applyFallbackState, dataMode, refreshTransactionPage, transactionDateRange]);
+
   return {
     query,
+    resetTransactionControls,
     setQuery,
     setTransactionCategory,
     setTransactionDateRange,

@@ -77,6 +77,7 @@ export type ConnectViewStateProps = {
 
 export type SettingsViewStateProps = {
   dashboardPeriod: PeriodOption;
+  showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
   updateCategoryColor: (category: string, color: string) => void;
   deleteCategory: (category: string) => void;

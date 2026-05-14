@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { handleCallbackParams } from "@/lib/app/browser-state";
 import {
   applyCategoryOverrides,
@@ -37,6 +37,7 @@ export function useNetlyApp() {
   const { activeView, setActiveView } = useRoutedView();
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
   const isBottomNavigation = useIsBottomNavigation();
+  const previousActiveViewRef = useRef(activeView);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
   const banking = useAkahuData();
@@ -94,6 +95,16 @@ export function useNetlyApp() {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
   }, []);
+
+  useEffect(() => {
+    const previousActiveView = previousActiveViewRef.current;
+
+    if (previousActiveView === "transactions" && activeView !== "transactions") {
+      transactionControls.resetTransactionControls();
+    }
+
+    previousActiveViewRef.current = activeView;
+  }, [activeView, transactionControls.resetTransactionControls]);
 
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
   const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
@@ -188,6 +199,7 @@ export function useNetlyApp() {
     visibleTransactions: transactionControls.visibleTransactions,
     workingTransactions,
     dashboardPeriod: dashboardPeriodSettings.dashboardPeriod,
+    showDashboardPeriodSetting: isBottomNavigation,
     setDashboardPeriod: dashboardPeriodSettings.updateDashboardPeriod,
     updateCategoryColor: categories.updateCategoryColor,
     deleteCategory: categories.deleteCategory

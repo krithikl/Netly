@@ -17,23 +17,23 @@ export const defaultTransactionCategories = [
 ];
 
 export const netlyPalette = [
-  "#ef5350", "#ec407a", "#ab47bc", "#7e57c2", "#5c6bc0",
-  "#4285f4", "#039be5", "#26c6da", "#43a047", "#7cb342",
-  "#c0ca33", "#ffb300", "#f57c00", "#8d6e63", "#607d8b"
+  "#D81B60", "#8E24AA", "#3949AB", "#1E88E5", "#00ACC1",
+  "#00897B", "#43A047", "#7CB342", "#FDD835", "#FB8C00",
+  "#E53935", "#6D4C41", "#546E7A", "#C0CA33", "#5E35B1"
 ];
 
 // Default colours used before a user customises category settings.
 export const defaultCategoryColors: Record<string, string> = {
-  Appearance: "#ec407a",
-  Education: "#5c6bc0",
-  Food: "#43a047",
-  Health: "#26c6da",
-  Household: "#f57c00",
-  Housing: "#8d6e63",
-  Lifestyle: "#ab47bc",
-  "Professional Services": "#607d8b",
-  [categoryRollupCategory]: "#7cb342",
-  Transport: "#4285f4",
-  Utilities: "#ffb300",
-  [needsReviewCategory]: "#ef5350"
+  Appearance: "#D81B60",
+  Education: "#3949AB",
+  Food: "#43A047",
+  Health: "#00ACC1",
+  Household: "#FB8C00",
+  Housing: "#6D4C41",
+  Lifestyle: "#8E24AA",
+  "Professional Services": "#546E7A",
+  [categoryRollupCategory]: "#7CB342",
+  Transport: "#1E88E5",
+  Utilities: "#FDD835",
+  [needsReviewCategory]: "#E53935"
 };

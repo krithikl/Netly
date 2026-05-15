@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { archiveAndMergeTransactions, readArchivedTransactions } from "@/lib/app/transaction-archive";
+import { archiveAndMergeTransactions, readArchivedAccountSnapshot, readArchivedTransactions, writeArchivedAccountSnapshot } from "@/lib/app/transaction-archive";
 import { currentBalance as fallbackBalance, transactions as fallbackTransactions } from "@/lib/mock-data";
 import { readInitialDataMode } from "@/lib/app/browser-state";
 import type { AccountDataFreshness, AkahuDataFreshness, DataMode, LinkedAccount } from "@/lib/app/types";
@@ -106,7 +106,7 @@ export function useAkahuData() {
 
     try {
       if (mode === "user") {
-        const { archivedTransactions, archivedTransactionPageTransactions, hasArchivedTransactions } = await readArchiveHydration(dateRange);
+        const { archivedAccountSnapshot, archivedTransactions, archivedTransactionPageTransactions, hasArchivedTransactions } = await readArchiveHydration(dateRange);
 
         if (!isCurrentRequest()) {
           return;
@@ -115,9 +115,24 @@ export function useAkahuData() {
         setTransactions(archivedTransactions);
         setTransactionPageTransactions(archivedTransactionPageTransactions);
 
-        if (hasArchivedTransactions) {
+        if (archivedAccountSnapshot) {
+          setAvailableBalance(archivedAccountSnapshot.availableBalance);
+          setLinkedAccounts(archivedAccountSnapshot.accounts);
+          setPrimaryLinkedAccount(archivedAccountSnapshot.primaryAccount);
+          setAkahuDataFreshness({
+            accounts: archivedAccountSnapshot.accountFreshness,
+            balanceRefreshedAt: archivedAccountSnapshot.balanceRefreshedAt,
+            error: "",
+            isStale: archivedAccountSnapshot.isStale,
+            retrievedAt: archivedAccountSnapshot.retrievedAt,
+            status: "loading",
+            transactionsRefreshedAt: archivedAccountSnapshot.transactionsRefreshedAt
+          });
+        }
+
+        if (hasArchivedTransactions || archivedAccountSnapshot) {
           setIsLoadingTransactions(false);
-          // setTransactionLoadNotice("Showing encrypted archived transactions while checking Akahu for fresh data.");
+          // setTransactionLoadNotice("Showing encrypted archived data while checking Akahu for fresh data.");
         }
       }
 
@@ -292,12 +307,14 @@ export function useAkahuData() {
 
 // Reads archived Akahu data so only the active request applies it to state.
 async function readArchiveHydration(dateRange: TransactionDateRange | undefined) {
-  const [archivedTransactions, archivedTransactionPageTransactions] = await Promise.all([
+  const [archivedAccountSnapshot, archivedTransactions, archivedTransactionPageTransactions] = await Promise.all([
+    readArchivedAccountSnapshot(),
     readArchivedTransactions(),
     readArchivedTransactions(dateRange)
   ]);
 
   return {
+    archivedAccountSnapshot,
     archivedTransactions,
     archivedTransactionPageTransactions,
     hasArchivedTransactions: archivedTransactions.length > 0 || archivedTransactionPageTransactions.length > 0
@@ -373,6 +390,21 @@ function applyAccountSnapshot(mode: DataMode, payload: AccountsPayload, status: 
 
   if (mode === "user") {
     setters.setAkahuDataFreshness(getFreshnessState(payload, status));
+
+    if (payload.connected) {
+      writeArchivedAccountSnapshot({
+        accountFreshness: payload.accountFreshness || [],
+        accounts: payload.accounts || [],
+        availableBalance: payload.availableBalance,
+        balanceRefreshedAt: payload.balanceRefreshedAt,
+        isStale: payload.isStale,
+        primaryAccount: payload.primaryAccount || null,
+        retrievedAt: payload.retrievedAt,
+        transactionsRefreshedAt: payload.transactionsRefreshedAt
+      }).catch((error: unknown) => {
+        setters.setTransactionLoadNotice(error instanceof Error ? error.message : "Could not archive account balance snapshot.");
+      });
+    }
   }
 
   if (payload.notice) {

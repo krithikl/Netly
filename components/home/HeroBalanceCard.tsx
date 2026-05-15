@@ -83,26 +83,22 @@ export function HeroBalanceCard({
         <p>{paydayLabel}</p>
       </div>
 
-      <div className="hero-actions items-end">
-        {!isConnected ? (
-          <>
-            <Button className="hero-secondary-action" onClick={onConnect} type="button" variant="outline">
-              Connect bank
-            </Button>
+      <div className="hero-actions !items-end">
+        <Button
+          aria-hidden={isConnected}
+          className={`hero-secondary-action ${isConnected ? "invisible pointer-events-none" : ""}`}
+          onClick={onConnect}
+          tabIndex={isConnected ? -1 : 0}
+          type="button"
+          variant="outline"
+        >
+          Connect bank
+        </Button>
 
-            <Button onClick={onReviewSpend} type="button">
-              Review spend
-              <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
-            </Button>
-          </>
-        ) : (
-          <div className="ml-auto">
-            <Button onClick={onReviewSpend} type="button">
-              Review spend
-              <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
-            </Button>
-          </div>
-        )}
+        <Button onClick={onReviewSpend} type="button">
+          Review spend
+          <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
+        </Button>
       </div>
     </Card>
   );

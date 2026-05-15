@@ -36,6 +36,10 @@ export type AkahuTransactionResult = {
   transactions: Transaction[];
 };
 
+export type AkahuRefreshResult = {
+  notice: string;
+};
+
 // Contract used by API routes so Akahu calls stay behind one provider layer.
 export interface AkahuProvider {
   id: AkahuProviderId;
@@ -45,6 +49,7 @@ export interface AkahuProvider {
   getAccounts(token: AkahuAccessToken): Promise<AkahuAccountResult>;
   getBalance(token: AkahuAccessToken): Promise<AkahuBalanceResult>;
   getTransactions(token: AkahuAccessToken, query?: AkahuTransactionRequest): Promise<AkahuTransactionResult>;
+  requestRefresh(token: AkahuAccessToken): Promise<AkahuRefreshResult>;
 }
 
 // Default provider implementation that talks to the real Akahu API.
@@ -107,6 +112,14 @@ class DefaultAkahuProvider implements AkahuProvider {
       nextCursor: transactionsResponse.cursor?.next || null,
       transactions,
       notice: transactions.length === 0 ? getEmptyAkahuTransactionsNotice(rawAccounts) : ""
+    };
+  }
+
+  async requestRefresh(token: AkahuAccessToken): Promise<AkahuRefreshResult> {
+    await this.client.requestRefresh({ appToken: token.appToken, userToken: token.accessToken });
+
+    return {
+      notice: "Akahu refresh requested. Updated balances and transactions may take a moment to appear."
     };
   }
 

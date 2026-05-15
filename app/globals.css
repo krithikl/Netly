@@ -1616,6 +1616,68 @@ h2 {
   gap: 10px;
 }
 
+.settings-freshness-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-freshness-metric {
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+}
+
+.settings-freshness-metric span,
+.settings-freshness-account-list span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.settings-freshness-metric strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.settings-freshness-details {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.settings-freshness-details summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.settings-freshness-account-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.settings-freshness-account-list div {
+  border: 1px solid var(--outline);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+}
+
+.settings-freshness-account-list strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+  font-size: 0.84rem;
+}
+
 .negative {
   color: var(--danger);
 }
@@ -3532,6 +3594,18 @@ h2 {
 
   .info-row {
     grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .settings-drive-card {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-drive-status {
+    width: fit-content;
+  }
+
+  .settings-freshness-grid {
+    grid-template-columns: 1fr;
   }
 
   .transaction-detail-summary-card {

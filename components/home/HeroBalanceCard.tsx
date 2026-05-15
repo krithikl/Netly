@@ -13,7 +13,7 @@ type HeroBalanceCardProps = {
   onReviewSpend: () => void;
   payday: string;
   paydayPatternDate: string;
-  safeToSpendAmount: number;
+  safeToSpendAmount: number | null;
   setPayday: (payday: string) => void;
 };
 
@@ -46,7 +46,7 @@ export function HeroBalanceCard({
       <div className="hero-card-section hero-balance">
         <span className="eyebrow">Available balance</span>
         <strong>{balanceLabel}</strong>
-        <p>{formatMoney(safeToSpendAmount)} looks safe after upcoming bills and buffer.</p>
+        <p>{getSafeToSpendLabel(safeToSpendAmount)}</p>
       </div>
 
       <div className="hero-card-divider" aria-hidden="true" />
@@ -99,6 +99,14 @@ export function HeroBalanceCard({
       </div>
     </Card>
   );
+}
+
+function getSafeToSpendLabel(safeToSpendAmount: number | null) {
+  if (safeToSpendAmount === null) {
+    return "Safe-to-spend will update after Akahu returns your balance.";
+  }
+
+  return `${formatMoney(safeToSpendAmount)} looks safe after upcoming bills and buffer.`;
 }
 
 function formatPayday(value: string) {

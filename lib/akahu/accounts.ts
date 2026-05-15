@@ -1,4 +1,4 @@
-import type { LinkedAccount } from "@/lib/app/types";
+import type { AccountDataFreshness, LinkedAccount } from "@/lib/app/types";
 
 export type AkahuAccount = {
   _id: string;
@@ -55,6 +55,17 @@ export function toLinkedAccount(account: AkahuAccount): LinkedAccount {
     accountType: account.type || "Account",
     accountSubType: account.status || "Connected",
     ownerName: account.meta?.holder
+  };
+}
+
+// Converts Akahu's account refresh metadata into the UI freshness shape.
+export function toAccountDataFreshness(account: AkahuAccount): AccountDataFreshness {
+  return {
+    accountId: account._id,
+    displayName: account.name || account.connection?.name || account.formatted_account || account._id,
+    status: account.status || "UNKNOWN",
+    balanceRefreshedAt: account.refreshed?.balance || null,
+    transactionsRefreshedAt: account.refreshed?.transactions || null
   };
 }
 

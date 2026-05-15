@@ -20,3 +20,21 @@ export type LinkedAccount = {
   accountSubType: string;
   ownerName?: string;
 };
+
+export type AccountDataFreshness = {
+  accountId: string;
+  displayName: string;
+  status: string;
+  balanceRefreshedAt: string | null;
+  transactionsRefreshedAt: string | null;
+};
+
+export type AkahuDataFreshness = {
+  accounts: AccountDataFreshness[];
+  balanceRefreshedAt: string | null;
+  error: string;
+  isStale: boolean;
+  retrievedAt: string | null;
+  status: "idle" | "loading" | "refreshing" | "refreshed" | "failed";
+  transactionsRefreshedAt: string | null;
+};

@@ -263,7 +263,7 @@ function getCardFitDrivers(basis: CardFitBasis, recommendedCard: CardValue): Car
 
 // Builds the short insight messages shown on the dashboard
 // Builds the short insight strings shown on the Home dashboard.
-export function generateInsights(transactions: Transaction[], cardProducts: CardProduct[], currentBalance: number) {
+export function generateInsights(transactions: Transaction[], cardProducts: CardProduct[], currentBalance: number | null) {
   const categories = spendByCategory(transactions);
   const recurring = detectRecurring(transactions);
   const bestCard = annualCardValues(transactions, cardProducts)[0];
@@ -285,8 +285,16 @@ export function generateInsights(transactions: Transaction[], cardProducts: Card
     topInsight,
     recurringInsight,
     cardInsight,
-    `${formatMoney(safeToSpend(transactions, currentBalance))} looks safe to spend after likely bills and a buffer.`
+    getSafeToSpendInsight(transactions, currentBalance)
   ];
+}
+
+function getSafeToSpendInsight(transactions: Transaction[], currentBalance: number | null) {
+  if (currentBalance === null) {
+    return "Safe-to-spend will update after Akahu returns the current account balance.";
+  }
+
+  return `${formatMoney(safeToSpend(transactions, currentBalance))} looks safe to spend after likely bills and a buffer.`;
 }
 
 function getMoneyFormatter(exact: boolean) {

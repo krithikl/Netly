@@ -65,7 +65,9 @@ export function ActiveView(props: ActiveViewProps) {
     case "settings":
       return (
         <SettingsView
+          akahuDataFreshness={props.akahuDataFreshness}
           categoryColors={props.categoryColors}
+          dataMode={props.dataMode}
           dashboardPeriod={props.dashboardPeriod}
           defaultCategories={props.settingsCategoryOptions}
           deleteCategory={props.deleteCategory}

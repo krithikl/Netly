@@ -17,10 +17,13 @@ import { netlyPalette } from "@/lib/categories";
 import { periods } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
 import type { DriveBackupState } from "@/hooks/useDriveBackup";
+import type { AkahuDataFreshness, DataMode } from "@/lib/app/types";
 import type { PeriodOption } from "@/lib/types";
 
 type SettingsViewProps = {
+  akahuDataFreshness: AkahuDataFreshness;
   categoryColors: Record<string, string>;
+  dataMode: DataMode;
   dashboardPeriod: PeriodOption;
   defaultCategories: string[];
   deleteCategory: (category: string) => void;
@@ -35,7 +38,9 @@ type SettingsViewProps = {
 
 // Settings screen for managing category colours and hiding unused categories.
 export function SettingsView({
+  akahuDataFreshness,
   categoryColors,
+  dataMode,
   dashboardPeriod,
   defaultCategories,
   deleteCategory,
@@ -79,6 +84,10 @@ export function SettingsView({
             </div>
           </div>
         )}
+      </section>
+
+      <section className="material-card">
+        <AkahuFreshnessCard dataMode={dataMode} freshness={akahuDataFreshness} />
       </section>
 
       <section className="material-card">
@@ -146,6 +155,125 @@ export function SettingsView({
       </section>
     </section>
   );
+}
+
+type AkahuFreshnessCardProps = {
+  dataMode: DataMode;
+  freshness: AkahuDataFreshness;
+};
+
+// Shows when Netly last retrieved data from Akahu and when Akahu refreshed it.
+function AkahuFreshnessCard({ dataMode, freshness }: AkahuFreshnessCardProps) {
+  const isDemoMode = dataMode === "demo";
+  const statusLabel = isDemoMode ? "Demo" : getAkahuFreshnessStatusLabel(freshness);
+  const statusClassName = isDemoMode ? "ready" : getAkahuFreshnessStatusClassName(freshness);
+
+  return (
+    <div className="settings-drive-card">
+      <div>
+        <h3>Akahu data freshness</h3>
+        <p>{isDemoMode ? "Demo mode uses local sample data." : "Latest endpoint retrieval and Akahu account refresh timestamps."}</p>
+      </div>
+      <span className={`settings-drive-status ${statusClassName}`}>
+        {statusLabel}
+      </span>
+      {!isDemoMode && (
+        <>
+          <div className="settings-freshness-grid" aria-live="polite">
+            <FreshnessMetric label="Retrieved from Akahu" value={formatAkahuFreshnessTime(freshness.retrievedAt)} />
+            <FreshnessMetric label="Balance data" value={formatAkahuFreshnessTime(freshness.balanceRefreshedAt)} />
+            <FreshnessMetric label="Transactions checked" value={formatAkahuFreshnessTime(freshness.transactionsRefreshedAt)} />
+          </div>
+          {freshness.status === "refreshing" && (
+            <p className="settings-drive-message">Akahu data looked stale, so Netly requested a refresh and is rechecking the account snapshot.</p>
+          )}
+          {freshness.status === "failed" && freshness.error && (
+            <p className="settings-drive-warning">{freshness.error}</p>
+          )}
+          {freshness.status !== "failed" && freshness.isStale && (
+            <p className="settings-drive-message">Some account data is older than 24 hours. Akahu may delay manual refreshes during its refresh rest period.</p>
+          )}
+          {freshness.accounts.length > 1 && (
+            <details className="settings-freshness-details">
+              <summary>Account timestamps</summary>
+              <div className="settings-freshness-account-list">
+                {freshness.accounts.map((account) => (
+                  <div key={account.accountId}>
+                    <strong>{account.displayName}</strong>
+                    <span>{account.status}</span>
+                    <span>Balance {formatAkahuFreshnessTime(account.balanceRefreshedAt)}</span>
+                    <span>Transactions {formatAkahuFreshnessTime(account.transactionsRefreshedAt)}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+type FreshnessMetricProps = {
+  label: string;
+  value: string;
+};
+
+// Renders one compact timestamp field in the Akahu freshness card.
+function FreshnessMetric({ label, value }: FreshnessMetricProps) {
+  return (
+    <div className="settings-freshness-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+// Converts freshness state into a short status chip label.
+function getAkahuFreshnessStatusLabel(freshness: AkahuDataFreshness) {
+  switch (freshness.status) {
+    case "loading":
+      return "Loading";
+    case "refreshing":
+      return "Refreshing";
+    case "failed":
+      return "Failed";
+    case "refreshed":
+      return freshness.isStale ? "Stale" : "Current";
+    default:
+      return "Not loaded";
+  }
+}
+
+// Maps Akahu freshness state onto the existing Settings status chip tones.
+function getAkahuFreshnessStatusClassName(freshness: AkahuDataFreshness) {
+  if (freshness.status === "failed") {
+    return "failed";
+  }
+
+  if (freshness.status === "loading" || freshness.status === "refreshing") {
+    return "syncing";
+  }
+
+  return freshness.isStale ? "syncing" : "synced";
+}
+
+// Formats Akahu ISO timestamps for Settings without adding another date library.
+function formatAkahuFreshnessTime(value: string | null) {
+  if (!value) {
+    return "Not available";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("en-NZ", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
 }
 
 // Formats Drive status into short UI labels.

@@ -26,7 +26,7 @@ type HomeViewProps = {
   payday: string;
   paydayPatternDate: string;
   reviewCount: number;
-  safeToSpendAmount: number;
+  safeToSpendAmount: number | null;
   setActiveView: (view: View) => void;
   setHoveredCategory: (category: string | null) => void;
   setPayday: (payday: string) => void;

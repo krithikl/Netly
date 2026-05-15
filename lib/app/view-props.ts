@@ -1,7 +1,7 @@
 import type { Budget, CardFitBasis, CardFitExplanation, CardValue, PeriodOption, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
 import type { CategoryEditScope } from "@/lib/category-rules";
 import type { DriveBackupState } from "@/hooks/useDriveBackup";
-import type { TransactionAccountOption, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
+import type { AkahuDataFreshness, TransactionAccountOption, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 import type { AkahuManualTokens } from "@/hooks/useAkahuConnection";
 
 export type SharedViewProps = {
@@ -25,7 +25,7 @@ export type HomeViewStateProps = {
   payday: string;
   paydayPatternDate: string;
   reviewCount: number;
-  safeToSpendAmount: number;
+  safeToSpendAmount: number | null;
   setHoveredCategory: (category: string | null) => void;
   setPayday: (payday: string) => void;
   transactionPreview: Transaction[];
@@ -85,6 +85,8 @@ export type ConnectViewStateProps = {
 };
 
 export type SettingsViewStateProps = {
+  akahuDataFreshness: AkahuDataFreshness;
+  dataMode: "user" | "demo";
   dashboardPeriod: PeriodOption;
   driveBackup: DriveBackupState;
   onConnectDriveBackup: () => Promise<void>;

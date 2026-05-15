@@ -113,7 +113,7 @@ export function useNetlyApp() {
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
   const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
   const insights = useMemo(
-    () => generateInsights(periodTransactions, cardProducts, banking.availableBalance ?? 0),
+    () => generateInsights(periodTransactions, cardProducts, banking.availableBalance),
     [banking.availableBalance, periodTransactions]
   );
   const expenses = useMemo(() => debitTransactions(periodTransactions), [periodTransactions]);
@@ -173,12 +173,19 @@ export function useNetlyApp() {
     () => getTransactionAccountOptions(banking.linkedAccounts, transactionPageWorkingTransactions),
     [banking.linkedAccounts, transactionPageWorkingTransactions]
   );
-  const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
+  const safeToSpendAmount = useMemo(() => {
+    if (banking.availableBalance === null) {
+      return null;
+    }
+
+    return safeToSpend(periodTransactions, banking.availableBalance);
+  }, [banking.availableBalance, periodTransactions]);
   const shouldShowPeriodControl = (activeView === "home" || activeView === "budgets") && !isBottomNavigation;
 
   // Single prop bundle passed into ActiveView, then split into each screen component.
   const viewProps: ActiveViewProps = {
     activeView,
+    akahuDataFreshness: banking.akahuDataFreshness,
     averageDailySpend,
     availableBalance: banking.availableBalance,
     budgets,
@@ -241,6 +248,7 @@ export function useNetlyApp() {
     visibleTransactions: transactionControls.visibleTransactions,
     workingTransactions,
     dashboardPeriod: dashboardPeriodSettings.dashboardPeriod,
+    dataMode: banking.dataMode,
     showDashboardPeriodSetting: isBottomNavigation,
     driveBackup: driveBackup.driveBackup,
     onConnectDriveBackup: driveBackup.connectAndBackUp,

@@ -1,4 +1,4 @@
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 import { FlowStep } from "@/components/ui/flow-step";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ type ConnectViewProps = {
   syncResult: string;
 };
 
-// Akahu connection screen for starting OAuth or saving a returned user token.
 export function ConnectView({
   completeAkahuConnection,
   manualTokens,
@@ -25,23 +24,34 @@ export function ConnectView({
     setSyncResult("Opening Akahu authorization...");
     window.location.href = "/api/akahu/start";
   };
+
   const handleAppTokenChange = (event: ChangeEvent<HTMLInputElement>) => {
     onManualTokensChange({
       ...manualTokens,
       appToken: event.target.value
     });
   };
+
   const handleUserTokenChange = (event: ChangeEvent<HTMLInputElement>) => {
     onManualTokensChange({
       ...manualTokens,
       userToken: event.target.value
     });
   };
-  const handleConnectionComplete = () => completeAkahuConnection(manualTokens);
+
+  const handleConnectionComplete = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!canCompleteConnection) {
+      return;
+    }
+
+    void completeAkahuConnection(manualTokens);
+  };
 
   return (
     <section className="view-stack">
-      <section className="material-card">
+      <section className="material-card" suppressHydrationWarning>
         <PanelTitle title="Akahu connection" subtitle="Read-only account and transaction access" />
         <div className="flow">
           <FlowStep number="1" title="Authorize Akahu">
@@ -63,24 +73,35 @@ export function ConnectView({
         <p aria-live="polite" className="sync-result">
           {syncResult}
         </p>
-        <div className="completion-box">
-          <PanelTitle title="Development tokens" subtitle="For Personal Apps, enter both Akahu tokens. Netly stores them in encrypted HTTP-only browser cookies, not environment files." />
+        <form
+          className="completion-box"
+          autoComplete="on"
+          onSubmit={handleConnectionComplete}
+        >
+          <PanelTitle
+            title="Development tokens"
+            subtitle="For Personal Apps, enter both Akahu tokens. Netly stores them in encrypted HTTP-only browser cookies, not environment files."
+          />
           <div className="completion-token-fields">
-            <label className="token-field">
+            <label className="token-field" htmlFor="akahu-app-token">
               <span>AKAHU_APP_TOKEN</span>
               <input
-                autoComplete="off"
+                id="akahu-app-token"
+                name="username"
+                autoComplete="username"
                 onChange={handleAppTokenChange}
                 placeholder="Enter AKAHU_APP_TOKEN"
                 spellCheck={false}
-                type="password"
+                type="text"
                 value={manualTokens.appToken}
               />
             </label>
-            <label className="token-field">
+            <label className="token-field" htmlFor="akahu-user-token">
               <span>AKAHU_USER_TOKEN</span>
               <input
-                autoComplete="off"
+                id="akahu-user-token"
+                name="password"
+                autoComplete="current-password"
                 onChange={handleUserTokenChange}
                 placeholder="Enter AKAHU_USER_TOKEN"
                 spellCheck={false}
@@ -89,10 +110,10 @@ export function ConnectView({
               />
             </label>
           </div>
-          <Button disabled={!canCompleteConnection} onClick={handleConnectionComplete} type="button" variant="secondary">
+          <Button disabled={!canCompleteConnection} type="submit" variant="secondary" >
             Complete connection
           </Button>
-        </div>
+        </form>
       </section>
     </section>
   );

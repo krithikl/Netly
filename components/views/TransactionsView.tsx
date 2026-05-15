@@ -125,7 +125,7 @@ export function TransactionsView({
       <TransactionAnalyticsSummary analytics={analytics} onReviewNeedsReview={reviewNeedsReview} />
 
       <section className="transaction-workspace">
-        <div className="transaction-filter-panel">
+        <div className="transaction-filter-panel" suppressHydrationWarning>
           <div className="transaction-mobile-controls">
             <div className="transaction-mobile-search-row">
               <label className="transaction-mobile-search">

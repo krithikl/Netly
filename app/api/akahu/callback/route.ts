@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 import { akahuAccessTokenCookieName } from "@/lib/akahu/token";
+import { encryptAkahuCookieValue } from "@/lib/akahu/secure-cookie";
 
 // Handles Akahu OAuth redirect, validates state, stores token cookies, and redirects home.
 export async function GET(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     const accessToken = await provider.exchangeAuthorizationCode(code);
 
     const response = redirectWithStatus(request, "connected=1");
-    response.cookies.set(akahuAccessTokenCookieName, accessToken, {
+    response.cookies.set(akahuAccessTokenCookieName, encryptAkahuCookieValue(accessToken), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

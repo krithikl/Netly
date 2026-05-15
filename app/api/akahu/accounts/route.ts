@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { toLinkedAccount, type AkahuAccount } from "@/lib/akahu/accounts";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
-import { getValidAccessToken } from "@/lib/akahu/token";
+import { getMissingAkahuCredentialsNotice, getValidAccessToken } from "@/lib/akahu/token";
 
 const demoAccounts: AkahuAccount[] = [
   {
@@ -44,21 +44,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(toAccountsPayload(demoAccounts, true, "demo"));
   }
 
-  const { accessToken } = getValidAccessToken(request);
+  const { accessToken, appToken } = getValidAccessToken(request);
 
-  if (!accessToken) {
+  if (!accessToken || !appToken) {
     return NextResponse.json({
       source: "akahu",
       connected: false,
       accounts: [],
       primaryAccount: null,
-      notice: "No Akahu user token is connected. Connect Akahu or switch to demo data."
+      notice: getMissingAkahuCredentialsNotice(appToken, accessToken)
     });
   }
 
   try {
     const provider = createAkahuProviderFromEnv();
-    const accountResult = await provider.getAccounts({ accessToken });
+    const accountResult = await provider.getAccounts({ accessToken, appToken });
     const accounts = accountResult.accounts.map(toLinkedAccount);
 
     return NextResponse.json({

@@ -1,8 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import type { DataMode } from "@/lib/app/types";
 import type { TransactionDateRange } from "@/lib/types";
+
+export type AkahuManualTokens = {
+  appToken: string;
+  userToken: string;
+};
 
 type UseAkahuConnectionOptions = {
   refreshTransactions: (mode?: DataMode, dateRange?: TransactionDateRange) => Promise<void>;
@@ -16,50 +21,49 @@ export function useAkahuConnection({
   setDataMode,
   transactionDateRange
 }: UseAkahuConnectionOptions) {
-  const [connectionResponse, setConnectionResponse] = useState("");
+  const [manualTokens, setManualTokens] = useState<AkahuManualTokens>({
+    appToken: "",
+    userToken: ""
+  });
   const [syncResult, setSyncResult] = useState("");
-  const hasAutoCompletedRef = useRef(false);
 
-  const completeAkahuConnection = useCallback(async (userTokenValue?: string) => {
+  const completeAkahuConnection = useCallback(async (tokens?: AkahuManualTokens) => {
+    const submittedTokens = tokens || manualTokens;
     const response = await fetch("/api/akahu/complete", {
       method: "POST",
       headers: {
         "content-type": "application/json"
       },
-      body: JSON.stringify({ userToken: userTokenValue || connectionResponse })
+      body: JSON.stringify({
+        appToken: submittedTokens.appToken,
+        userToken: submittedTokens.userToken
+      })
     });
     const payload = (await response.json()) as { error?: string; message?: string };
 
     setSyncResult(getCompletionMessage(response.ok, payload));
 
     if (response.ok) {
-      setConnectionResponse("");
+      setManualTokens({
+        appToken: "",
+        userToken: ""
+      });
       setDataMode("user");
       window.localStorage.setItem("netly_data_mode", "user");
       await refreshTransactions("user", transactionDateRange);
     }
-  }, [connectionResponse, refreshTransactions, setDataMode, transactionDateRange]);
+  }, [manualTokens, refreshTransactions, setDataMode, transactionDateRange]);
 
-  const updateConnectionResponse = useCallback((value: string) => {
-    setConnectionResponse(value);
-    hasAutoCompletedRef.current = false;
+  const updateManualTokens = useCallback((tokens: AkahuManualTokens) => {
+    setManualTokens(tokens);
   }, []);
-
-  useEffect(() => {
-    if (connectionResponse.trim() && !hasAutoCompletedRef.current) {
-      hasAutoCompletedRef.current = true;
-      setSyncResult("Completing Akahu connection...");
-      completeAkahuConnection(connectionResponse);
-    }
-  }, [completeAkahuConnection, connectionResponse]);
 
   return {
     completeAkahuConnection,
-    connectionResponse,
-    setConnectionResponse,
+    manualTokens,
     setSyncResult,
     syncResult,
-    updateConnectionResponse
+    updateManualTokens
   };
 }
 

@@ -1,6 +1,7 @@
 import type { Budget, CardFitBasis, CardFitExplanation, CardValue, PeriodOption, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
 import type { CategoryEditScope } from "@/lib/category-rules";
 import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
+import type { AkahuManualTokens } from "@/hooks/useAkahuConnection";
 
 export type SharedViewProps = {
   activeView: View;
@@ -69,9 +70,9 @@ export type CardFitViewStateProps = {
 };
 
 export type ConnectViewStateProps = {
-  completeAkahuConnection: (userTokenValue?: string) => Promise<void>;
-  connectionResponse: string;
-  onConnectionResponseChange: (value: string) => void;
+  completeAkahuConnection: (tokens?: AkahuManualTokens) => Promise<void>;
+  manualTokens: AkahuManualTokens;
+  onManualTokensChange: (tokens: AkahuManualTokens) => void;
   setSyncResult: (value: string) => void;
   syncResult: string;
 };

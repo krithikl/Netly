@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
-import { getValidAccessToken } from "@/lib/akahu/token";
+import { getMissingAkahuCredentialsNotice, getValidAccessToken } from "@/lib/akahu/token";
 import { transactions as demoTransactions } from "@/lib/mock-data";
 import { isTransactionInDateRange } from "@/lib/periods";
 import type { Transaction } from "@/lib/types";
@@ -27,22 +27,22 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const { accessToken } = getValidAccessToken(request);
+  const { accessToken, appToken } = getValidAccessToken(request);
 
-  if (!accessToken) {
+  if (!accessToken || !appToken) {
     return NextResponse.json({
       source: "akahu",
       connected: false,
       rawCount: 0,
       nextCursor: null,
       transactions: [],
-      notice: "No Akahu user token is connected. Connect Akahu or switch to demo data."
+      notice: getMissingAkahuCredentialsNotice(appToken, accessToken)
     });
   }
 
   try {
     const provider = createAkahuProviderFromEnv();
-    const transactionPage = await provider.getTransactions({ accessToken }, {
+    const transactionPage = await provider.getTransactions({ accessToken, appToken }, {
       cursor,
       fromDate,
       toDate

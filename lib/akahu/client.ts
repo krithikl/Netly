@@ -3,7 +3,7 @@ import type { AkahuTransactionsResponse } from "@/lib/akahu/normalize";
 
 type AkahuConfig = {
   baseUrl: string;
-  appToken: string;
+  appToken?: string;
   appSecret?: string;
   oauthScope: string;
   redirectUri: string;
@@ -11,6 +11,7 @@ type AkahuConfig = {
 };
 
 export type AkahuToken = {
+  appToken?: string;
   userToken: string;
 };
 
@@ -30,8 +31,10 @@ export class AkahuClient {
 
   getAuthorizationUrl(state: string, email?: string) {
     const url = new URL(this.config.oauthUrl);
+    const appToken = this.getConfiguredAppToken("Akahu OAuth authorization");
+
     url.searchParams.set("response_type", "code");
-    url.searchParams.set("client_id", this.config.appToken);
+    url.searchParams.set("client_id", appToken);
     url.searchParams.set("redirect_uri", this.config.redirectUri);
     url.searchParams.set("scope", this.config.oauthScope);
     url.searchParams.set("state", state);
@@ -45,12 +48,13 @@ export class AkahuClient {
 
   async exchangeAuthorizationCode(code: string) {
     this.assertAppSecret();
+    const appToken = this.getConfiguredAppToken("Akahu OAuth code exchange");
 
     return this.postJson<{ success?: boolean; access_token?: string; error?: string; error_description?: string }>("/token", {
       grant_type: "authorization_code",
       code,
       redirect_uri: this.config.redirectUri,
-      client_id: this.config.appToken,
+      client_id: appToken,
       client_secret: this.config.appSecret
     });
   }
@@ -153,9 +157,11 @@ export class AkahuClient {
   }
 
   private userHeaders(token: AkahuToken) {
+    const appToken = token.appToken || this.getConfiguredAppToken("Akahu API request");
+
     return {
       Authorization: `Bearer ${token.userToken}`,
-      "X-Akahu-Id": this.config.appToken
+      "X-Akahu-Id": appToken
     };
   }
 
@@ -175,15 +181,19 @@ export class AkahuClient {
       throw new Error("AKAHU_APP_SECRET is required for OAuth code exchange.");
     }
   }
+
+  private getConfiguredAppToken(context: string) {
+    if (!this.config.appToken) {
+      throw new Error(`AKAHU_APP_TOKEN is required for ${context}.`);
+    }
+
+    return this.config.appToken;
+  }
 }
 
 // Creates an Akahu client from environment variables
 export function createAkahuClientFromEnv() {
   const appToken = process.env.AKAHU_APP_TOKEN;
-
-  if (!appToken) {
-    throw new Error("Missing required Akahu environment variable: AKAHU_APP_TOKEN");
-  }
 
   return new AkahuClient({
     baseUrl: process.env.AKAHU_BASE_URL || "https://api.akahu.io/v1",

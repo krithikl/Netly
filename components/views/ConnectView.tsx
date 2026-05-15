@@ -2,30 +2,42 @@ import type { ChangeEvent } from "react";
 import { FlowStep } from "@/components/ui/flow-step";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
+import type { AkahuManualTokens } from "@/hooks/useAkahuConnection";
 
 type ConnectViewProps = {
-  connectionResponse: string;
-  completeAkahuConnection: (userTokenValue?: string) => Promise<void>;
-  onConnectionResponseChange: (value: string) => void;
+  completeAkahuConnection: (tokens?: AkahuManualTokens) => Promise<void>;
+  manualTokens: AkahuManualTokens;
+  onManualTokensChange: (tokens: AkahuManualTokens) => void;
   setSyncResult: (value: string) => void;
   syncResult: string;
 };
 
 // Akahu connection screen for starting OAuth or saving a returned user token.
 export function ConnectView({
-  connectionResponse,
   completeAkahuConnection,
-  onConnectionResponseChange,
+  manualTokens,
+  onManualTokensChange,
   setSyncResult,
   syncResult
 }: ConnectViewProps) {
-  const canCompleteConnection = connectionResponse.trim().length > 0;
+  const canCompleteConnection = manualTokens.appToken.trim().length > 0 && manualTokens.userToken.trim().length > 0;
   const handleAuthorizationStart = () => {
     setSyncResult("Opening Akahu authorization...");
     window.location.href = "/api/akahu/start";
   };
-  const handleConnectionResponseChange = (event: ChangeEvent<HTMLTextAreaElement>) => onConnectionResponseChange(event.target.value);
-  const handleConnectionComplete = () => completeAkahuConnection(connectionResponse);
+  const handleAppTokenChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onManualTokensChange({
+      ...manualTokens,
+      appToken: event.target.value
+    });
+  };
+  const handleUserTokenChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onManualTokensChange({
+      ...manualTokens,
+      userToken: event.target.value
+    });
+  };
+  const handleConnectionComplete = () => completeAkahuConnection(manualTokens);
 
   return (
     <section className="view-stack">
@@ -52,12 +64,31 @@ export function ConnectView({
           {syncResult}
         </p>
         <div className="completion-box">
-          <PanelTitle title="Development token" subtitle="For Personal Apps, paste the Akahu User Access Token from my.akahu.nz/developers." />
-          <textarea
-            onChange={handleConnectionResponseChange}
-            placeholder="Paste Akahu User Access Token"
-            value={connectionResponse}
-          />
+          <PanelTitle title="Development tokens" subtitle="For Personal Apps, enter both Akahu tokens. Netly stores them in encrypted HTTP-only browser cookies, not environment files." />
+          <div className="completion-token-fields">
+            <label className="token-field">
+              <span>AKAHU_APP_TOKEN</span>
+              <input
+                autoComplete="off"
+                onChange={handleAppTokenChange}
+                placeholder="Enter AKAHU_APP_TOKEN"
+                spellCheck={false}
+                type="password"
+                value={manualTokens.appToken}
+              />
+            </label>
+            <label className="token-field">
+              <span>AKAHU_USER_TOKEN</span>
+              <input
+                autoComplete="off"
+                onChange={handleUserTokenChange}
+                placeholder="Enter AKAHU_USER_TOKEN"
+                spellCheck={false}
+                type="password"
+                value={manualTokens.userToken}
+              />
+            </label>
+          </div>
           <Button disabled={!canCompleteConnection} onClick={handleConnectionComplete} type="button" variant="secondary">
             Complete connection
           </Button>

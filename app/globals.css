@@ -2662,10 +2662,25 @@ h2 {
   background: var(--surface-2);
 }
 
-.completion-box textarea {
-  min-height: 116px;
+.completion-token-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.token-field {
+  display: grid;
+  gap: 7px;
+}
+
+.token-field span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.completion-box input {
   width: 100%;
-  resize: vertical;
   border: 1px solid var(--outline);
   border-radius: 16px;
   padding: 12px;

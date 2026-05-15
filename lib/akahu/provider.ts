@@ -8,6 +8,7 @@ export type AkahuProviderId = "akahu";
 
 export type AkahuAccessToken = {
   accessToken: string;
+  appToken?: string;
 };
 
 export type AkahuAccountResult = {
@@ -90,7 +91,7 @@ class DefaultAkahuProvider implements AkahuProvider {
   async getTransactions(token: AkahuAccessToken, query: AkahuTransactionRequest = {}): Promise<AkahuTransactionResult> {
     const rawAccounts = await this.getRawAccounts(token);
     const transactionsResponse = await this.client.getTransactionsPageForAccounts(
-      { userToken: token.accessToken },
+      { appToken: token.appToken, userToken: token.accessToken },
       rawAccounts,
       toAkahuTransactionQuery(query)
     );
@@ -110,7 +111,7 @@ class DefaultAkahuProvider implements AkahuProvider {
   }
 
   private async getRawAccounts(token: AkahuAccessToken) {
-    const response = await this.client.getAccounts({ userToken: token.accessToken });
+    const response = await this.client.getAccounts({ appToken: token.appToken, userToken: token.accessToken });
     return getAkahuAccounts(response);
   }
 }

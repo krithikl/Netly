@@ -50,8 +50,8 @@ export function ActiveView(props: ActiveViewProps) {
       return (
         <ConnectView
           completeAkahuConnection={props.completeAkahuConnection}
-          connectionResponse={props.connectionResponse}
-          onConnectionResponseChange={props.onConnectionResponseChange}
+          manualTokens={props.manualTokens}
+          onManualTokensChange={props.onManualTokensChange}
           setSyncResult={props.setSyncResult}
           syncResult={props.syncResult}
         />

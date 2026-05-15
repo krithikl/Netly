@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
-import { getValidAccessToken } from "@/lib/akahu/token";
+import { getMissingAkahuCredentialsNotice, getValidAccessToken } from "@/lib/akahu/token";
 import { currentBalance } from "@/lib/mock-data";
 
 // Returns available balance for Akahu mode or the demo account balance.
@@ -15,20 +15,20 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const { accessToken } = getValidAccessToken(request);
+  const { accessToken, appToken } = getValidAccessToken(request);
 
-  if (!accessToken) {
+  if (!accessToken || !appToken) {
     return NextResponse.json({
       source: "akahu",
       connected: false,
       availableBalance: null,
-      notice: "No Akahu user token is connected. Connect Akahu or switch to demo data."
+      notice: getMissingAkahuCredentialsNotice(appToken, accessToken)
     });
   }
 
   try {
     const provider = createAkahuProviderFromEnv();
-    const balance = await provider.getBalance({ accessToken });
+    const balance = await provider.getBalance({ accessToken, appToken });
 
     return NextResponse.json({
       source: provider.id,

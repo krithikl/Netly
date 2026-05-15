@@ -24,16 +24,16 @@ export const netlyPalette = [
 
 // Default colours used before a user customises category settings.
 export const defaultCategoryColors: Record<string, string> = {
-  Appearance: "#D81B60",
+  Appearance: "#E53935",
   Education: "#3949AB",
   Food: "#43A047",
   Health: "#00ACC1",
   Household: "#FB8C00",
   Housing: "#6D4C41",
   Lifestyle: "#8E24AA",
-  "Professional Services": "#546E7A",
+  "Professional Services": "#00897B",
   [categoryRollupCategory]: "#7CB342",
   Transport: "#1E88E5",
   Utilities: "#FDD835",
-  [needsReviewCategory]: "#E53935"
+  [needsReviewCategory]: "#546E7A"
 };

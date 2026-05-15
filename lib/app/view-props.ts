@@ -25,7 +25,6 @@ export type HomeViewStateProps = {
   payday: string;
   paydayPatternDate: string;
   reviewCount: number;
-  safeToSpendAmount: number | null;
   setHoveredCategory: (category: string | null) => void;
   setPayday: (payday: string) => void;
   transactionPreview: Transaction[];

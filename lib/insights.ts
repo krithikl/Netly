@@ -285,16 +285,7 @@ export function generateInsights(transactions: Transaction[], cardProducts: Card
     topInsight,
     recurringInsight,
     cardInsight,
-    getSafeToSpendInsight(transactions, currentBalance)
   ];
-}
-
-function getSafeToSpendInsight(transactions: Transaction[], currentBalance: number | null) {
-  if (currentBalance === null) {
-    return "Safe-to-spend will update after Akahu returns the current account balance.";
-  }
-
-  return `${formatMoney(safeToSpend(transactions, currentBalance))} looks safe to spend after likely bills and a buffer.`;
 }
 
 function getMoneyFormatter(exact: boolean) {

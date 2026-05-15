@@ -115,6 +115,7 @@ export function TransactionsView({
     setTransactionAccounts([]);
     setTransactionCategory([]);
   };
+  
   // Let mobile users choose multiple categories, or clear them with All categories
   const toggleTransactionCategory = (category: string) => {
     if (category === "All categories") {

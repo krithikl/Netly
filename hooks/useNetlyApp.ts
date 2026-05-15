@@ -173,13 +173,6 @@ export function useNetlyApp() {
     () => getTransactionAccountOptions(banking.linkedAccounts, transactionPageWorkingTransactions),
     [banking.linkedAccounts, transactionPageWorkingTransactions]
   );
-  const safeToSpendAmount = useMemo(() => {
-    if (banking.availableBalance === null) {
-      return null;
-    }
-
-    return safeToSpend(periodTransactions, banking.availableBalance);
-  }, [banking.availableBalance, periodTransactions]);
   const shouldShowPeriodControl = (activeView === "home" || activeView === "budgets") && !isBottomNavigation;
 
   // Single prop bundle passed into ActiveView, then split into each screen component.
@@ -225,7 +218,6 @@ export function useNetlyApp() {
     query: transactionControls.query,
     recurring,
     reviewCount,
-    safeToSpendAmount,
     setActiveView,
     setHoveredCategory,
     setPayday: paydaySettings.updatePayday,

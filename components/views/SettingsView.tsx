@@ -101,7 +101,7 @@ export function SettingsView({
           </span>
           {!driveBackup.clientConfigured && (
             <p className="settings-drive-warning">
-              Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
+              Missing GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
             </p>
           )}
           <p className="settings-drive-message">

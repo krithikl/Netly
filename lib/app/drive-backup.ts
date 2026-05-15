@@ -81,7 +81,7 @@ export async function restoreArchiveFromGoogleDrive(clientId: string) {
 // Requests the narrow Drive appDataFolder scope through Google Identity Services.
 async function requestDriveAccessToken(clientId: string) {
   if (!clientId.trim()) {
-    throw new Error("Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add it before connecting Google Drive backup.");
+    throw new Error("Missing GOOGLE_CLIENT_ID. Add it before connecting Google Drive backup.");
   }
 
   await loadGoogleIdentityScript();

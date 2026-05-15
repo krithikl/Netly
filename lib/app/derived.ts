@@ -1,4 +1,4 @@
-import type { DataMode, LinkedAccount, TransactionFilter, TransactionSort } from "@/lib/app/types";
+import type { DataMode, LinkedAccount, TransactionAccountOption, TransactionFilter, TransactionSort } from "@/lib/app/types";
 import {
   getTransactionAccountLabel,
   getTransactionCategory,
@@ -13,6 +13,7 @@ import type { Transaction } from "@/lib/types";
 export function getVisibleTransactions(
   transactions: Transaction[],
   query: string,
+  transactionAccounts: string[],
   transactionCategories: string[],
   transactionFilter: TransactionFilter,
   transactionSort: TransactionSort
@@ -20,17 +21,18 @@ export function getVisibleTransactions(
   const normalizedQuery = query.trim().toLowerCase();
 
   return transactions
-    .filter((transaction) => matchesTransactionFilters(transaction, normalizedQuery, transactionCategories, transactionFilter))
+    .filter((transaction) => matchesTransactionFilters(transaction, normalizedQuery, transactionAccounts, transactionCategories, transactionFilter))
     .sort((first, second) => compareTransactions(first, second, transactionSort));
 }
 
-// Checks whether one transaction matches the active filters and search text
+// Checks whether one transaction matches the active filters and search text.
 // Applies the top-level All/Expenses/Income filter.
-function matchesTransactionFilters(transaction: Transaction, normalizedQuery: string, transactionCategories: string[], transactionFilter: TransactionFilter) {
+function matchesTransactionFilters(transaction: Transaction, normalizedQuery: string, transactionAccounts: string[], transactionCategories: string[], transactionFilter: TransactionFilter) {
   const category = getTransactionCategory(transaction);
+  const matchesAccount = transactionAccounts.length === 0 || transactionAccounts.includes(transaction._account || "");
   const matchesCategory = transactionCategories.length === 0 || transactionCategories.includes(category);
 
-  if (!matchesCategory || !matchesTransactionFilter(transaction, transactionFilter)) {
+  if (!matchesAccount || !matchesCategory || !matchesTransactionFilter(transaction, transactionFilter)) {
     return false;
   }
 
@@ -123,6 +125,26 @@ export function getLinkedUserName(primaryLinkedAccount: LinkedAccount | null, da
   }
 
   return dataMode === "demo" ? "Demo user" : "";
+}
+
+// Builds account filter options from linked accounts and archived transaction metadata.
+export function getTransactionAccountOptions(linkedAccounts: LinkedAccount[], transactions: Transaction[]): TransactionAccountOption[] {
+  const labelsById = new Map<string, string>();
+
+  linkedAccounts.forEach((account) => {
+    labelsById.set(account.accountId, `${account.displayName} ${account.identification}`.trim());
+  });
+  transactions.forEach((transaction) => {
+    if (!transaction._account) {
+      return;
+    }
+
+    labelsById.set(transaction._account, labelsById.get(transaction._account) || getTransactionAccountLabel(transaction));
+  });
+
+  return [...labelsById.entries()]
+    .map(([value, label]) => ({ label, value }))
+    .sort((first, second) => first.label.localeCompare(second.label));
 }
 
 export function getStatusBannerTitle(transactionLoadError: string, dataMode: DataMode) {

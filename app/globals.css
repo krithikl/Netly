@@ -864,9 +864,16 @@ h2 {
   min-width: 0;
 }
 
+.transaction-load-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px auto 0;
+}
+
 .transaction-load-more {
   width: fit-content;
-  margin: 16px auto 0;
 }
 
 .transaction-ledger {
@@ -1448,6 +1455,20 @@ h2 {
   font-weight: 750;
 }
 
+.transaction-loading-state {
+  display: flex;
+  min-height: 92px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--outline);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .info-row {
   position: relative;
   display: grid;
@@ -1526,6 +1547,94 @@ h2 {
 .row-value {
   font-weight: 900;
   font-variant-numeric: tabular-nums;
+}
+
+.settings-drive-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.settings-drive-card h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.settings-drive-card p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.settings-drive-status {
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.settings-drive-status.syncing {
+  border-color: var(--primary-border);
+  background: var(--primary-soft);
+  color: var(--secondary);
+}
+
+.settings-drive-status.synced {
+  border-color: rgba(63, 162, 106, 0.24);
+  background: #eaf7ef;
+  color: var(--success);
+}
+
+.settings-drive-status.failed {
+  border-color: rgba(216, 76, 76, 0.22);
+  background: #fff1f1;
+  color: var(--danger);
+}
+
+.settings-drive-passphrase {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.settings-drive-passphrase input {
+  min-height: 44px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  padding: 10px 13px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-transform: none;
+}
+
+.settings-drive-warning,
+.settings-drive-message,
+.settings-drive-meta,
+.settings-drive-actions {
+  grid-column: 1 / -1;
+}
+
+.settings-drive-card .settings-drive-warning {
+  color: var(--danger);
+  font-weight: 800;
+}
+
+.settings-drive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .negative {
@@ -1921,6 +2030,19 @@ h2 {
 
 .transaction-filter-actions {
   display: grid;
+}
+
+.transaction-archive-note {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  border: 1px solid rgba(40, 94, 168, 0.16);
+  border-radius: 12px;
+  background: rgba(235, 242, 255, 0.72);
+  padding: 9px 12px;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 750;
 }
 
 .transaction-add-category-button.transaction-add-category-button {

@@ -4,10 +4,10 @@ import { decryptAkahuCookieValue } from "@/lib/akahu/secure-cookie";
 export const akahuAppTokenCookieName = "netly_akahu_app_token";
 export const akahuAccessTokenCookieName = "netly_akahu_access_token";
 
-// Reads the stored Akahu token cookie from API requests.
-export function getValidAccessToken(request: NextRequest) {
-  const appToken = readEncryptedCookieOrEnv(request, akahuAppTokenCookieName, "AKAHU_APP_TOKEN");
-  const userToken = readEncryptedCookieOrEnv(request, akahuAccessTokenCookieName, "AKAHU_USER_TOKEN");
+// Reads the stored Akahu token cookies from API requests.
+export async function getValidAccessToken(request: NextRequest) {
+  const appToken = await readEncryptedCookieOrEnv(request, akahuAppTokenCookieName, "AKAHU_APP_TOKEN");
+  const userToken = await readEncryptedCookieOrEnv(request, akahuAccessTokenCookieName, "AKAHU_USER_TOKEN");
 
   return {
     appToken,
@@ -16,7 +16,8 @@ export function getValidAccessToken(request: NextRequest) {
   };
 }
 
-function readEncryptedCookieOrEnv(request: NextRequest, cookieName: string, envName: string) {
+// Prefers encrypted browser cookies and uses env tokens only for local setup.
+async function readEncryptedCookieOrEnv(request: NextRequest, cookieName: string, envName: string) {
   const cookieValue = request.cookies.get(cookieName)?.value;
 
   if (cookieValue) {

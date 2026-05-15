@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const accessToken = await provider.exchangeAuthorizationCode(code);
 
     const response = redirectWithStatus(request, "connected=1");
-    response.cookies.set(akahuAccessTokenCookieName, encryptAkahuCookieValue(accessToken), {
+    response.cookies.set(akahuAccessTokenCookieName, await encryptAkahuCookieValue(accessToken), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

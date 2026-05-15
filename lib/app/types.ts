@@ -6,6 +6,11 @@ export type TransactionFilter = "All" | "Expenses" | "Income";
 
 export type TransactionSort = "Newest" | "Oldest" | "Amount high" | "Amount low";
 
+export type TransactionAccountOption = {
+  label: string;
+  value: string;
+};
+
 export type LinkedAccount = {
   accountId: string;
   displayName: string;

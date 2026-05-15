@@ -12,21 +12,26 @@ export function ActiveView(props: ActiveViewProps) {
     case "transactions":
       return (
         <TransactionsView
+          accountOptions={props.accountOptions}
           categoryColors={props.categoryColors}
           categoryOptions={props.transactionCategoryOptions}
           dateRange={props.transactionDateRange}
           hasMoreTransactions={props.transactionsHasMore}
+          isLoadingAllTransactions={props.isLoadingAllTransactions}
           isLoadingMoreTransactions={props.isLoadingMoreTransactions}
           isLoadingTransactions={props.isLoadingTransactions}
           onCategoryChange={props.onCategoryChange}
           onCreateCategory={props.onCreateCategory}
           onDateRangeChange={props.setTransactionDateRange}
+          onLoadAllTransactions={props.onLoadAllTransactions}
           onLoadMoreTransactions={props.onLoadMoreTransactions}
           query={props.query}
           setQuery={props.setQuery}
+          setTransactionAccounts={props.setTransactionAccounts}
           setTransactionCategory={props.setTransactionCategory}
           setTransactionFilter={props.setTransactionFilter}
           setTransactionSort={props.setTransactionSort}
+          transactionAccounts={props.transactionAccounts}
           transactionCategory={props.transactionCategory}
           transactionFilter={props.transactionFilter}
           transactionSort={props.transactionSort}
@@ -63,8 +68,13 @@ export function ActiveView(props: ActiveViewProps) {
           dashboardPeriod={props.dashboardPeriod}
           defaultCategories={props.settingsCategoryOptions}
           deleteCategory={props.deleteCategory}
+          driveBackup={props.driveBackup}
+          onConnectDriveBackup={props.onConnectDriveBackup}
+          onDisconnectDriveBackup={props.onDisconnectDriveBackup}
+          onRestoreDriveBackup={props.onRestoreDriveBackup}
           showDashboardPeriodSetting={props.showDashboardPeriodSetting}
           setDashboardPeriod={props.setDashboardPeriod}
+          setDriveBackupPassphrase={props.setDriveBackupPassphrase}
           updateCategoryColor={props.updateCategoryColor}
         />
       );

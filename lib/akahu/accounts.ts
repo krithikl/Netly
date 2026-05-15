@@ -40,6 +40,7 @@ export type AkahuAccountsResponse = {
   };
 };
 
+// Extracts account lists from both Akahu list and single-item response shapes.
 export function getAkahuAccounts(response: AkahuAccountsResponse) {
   return response.items || (response.item ? [response.item] : []);
 }
@@ -57,6 +58,7 @@ export function toLinkedAccount(account: AkahuAccount): LinkedAccount {
   };
 }
 
+// Sums available balances while keeping empty account sets distinct from zero.
 export function getAvailableBalance(accounts: AkahuAccount[]) {
   if (accounts.length === 0) {
     return null;
@@ -65,6 +67,7 @@ export function getAvailableBalance(accounts: AkahuAccount[]) {
   return accounts.reduce((total, account) => total + getAccountAvailableBalance(account), 0);
 }
 
+// Uses current balance when Akahu does not expose an available balance.
 function getAccountAvailableBalance(account: AkahuAccount) {
   return account.balance?.available ?? account.balance?.current ?? 0;
 }

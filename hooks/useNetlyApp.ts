@@ -11,7 +11,8 @@ import {
   getDataSourceLabel,
   getLinkedAccountLabel,
   getLinkedUserName,
-  getStatusBannerTitle
+  getStatusBannerTitle,
+  getTransactionAccountOptions
 } from "@/lib/app/derived";
 import { applyCategoryPreferences } from "@/lib/category-rules";
 import type { DataMode } from "@/lib/app/types";
@@ -25,6 +26,7 @@ import { useAkahuConnection } from "@/hooks/useAkahuConnection";
 import { useCategorySettings } from "@/hooks/useCategorySettings";
 import { useAkahuData } from "@/hooks/useAkahuData";
 import { useDashboardPeriodSettings } from "@/hooks/useDashboardPeriodSettings";
+import { useDriveBackup } from "@/hooks/useDriveBackup";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { usePaydaySettings } from "@/hooks/usePaydaySettings";
 import { useRoutedView } from "@/hooks/useRoutedView";
@@ -64,6 +66,7 @@ export function useNetlyApp() {
     refreshTransactionPage: banking.refreshTransactionPage,
     transactions: transactionPageWorkingTransactions
   });
+  const driveBackup = useDriveBackup(() => banking.restoreArchivedTransactions(transactionControls.transactionDateRange));
   const connection = useAkahuConnection({
     refreshTransactions: banking.refreshTransactions,
     setDataMode: banking.setDataMode,
@@ -122,6 +125,18 @@ export function useNetlyApp() {
   const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
   const refreshUserTransactions = useCallback(() => banking.refreshTransactions("user", transactionControls.transactionDateRange), [banking.refreshTransactions, transactionControls.transactionDateRange]);
   const loadMoreUserTransactions = useCallback(() => banking.loadMoreTransactions(transactionControls.transactionDateRange), [banking.loadMoreTransactions, transactionControls.transactionDateRange]);
+  const loadAllUserTransactions = useCallback(async () => {
+    await banking.loadAllTransactions(transactionControls.transactionDateRange);
+    if (banking.dataMode === "user") {
+      await driveBackup.syncAfterArchiveChange();
+    }
+  }, [banking.dataMode, banking.loadAllTransactions, driveBackup.syncAfterArchiveChange, transactionControls.transactionDateRange]);
+  const loadMoreAndSyncUserTransactions = useCallback(async () => {
+    await loadMoreUserTransactions();
+    if (banking.dataMode === "user") {
+      await driveBackup.syncAfterArchiveChange();
+    }
+  }, [banking.dataMode, driveBackup.syncAfterArchiveChange, loadMoreUserTransactions]);
   const openNeedsReviewTransactions = useCallback(() => {
     transactionControls.setQuery("");
     transactionControls.setTransactionCategory(["Needs review"]);
@@ -137,7 +152,27 @@ export function useNetlyApp() {
     transactionControls.setTransactionDateRange(recurringDateRange);
     setActiveView("transactions");
   }, [setActiveView, transactionControls, workingTransactions]);
+  const updateTransactionCategoryAndSync = useCallback((transaction: Parameters<typeof categories.updateTransactionCategory>[0], category: string, scope: Parameters<typeof categories.updateTransactionCategory>[2]) => {
+    categories.updateTransactionCategory(transaction, category, scope);
+    void driveBackup.syncAfterArchiveChange();
+  }, [categories.updateTransactionCategory, driveBackup.syncAfterArchiveChange]);
+  const createCustomCategoryAndSync = useCallback((category: string) => {
+    categories.createCustomCategory(category);
+    void driveBackup.syncAfterArchiveChange();
+  }, [categories.createCustomCategory, driveBackup.syncAfterArchiveChange]);
+  const updateCategoryColorAndSync = useCallback((category: string, color: string) => {
+    categories.updateCategoryColor(category, color);
+    void driveBackup.syncAfterArchiveChange();
+  }, [categories.updateCategoryColor, driveBackup.syncAfterArchiveChange]);
+  const deleteCategoryAndSync = useCallback((category: string) => {
+    categories.deleteCategory(category);
+    void driveBackup.syncAfterArchiveChange();
+  }, [categories.deleteCategory, driveBackup.syncAfterArchiveChange]);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
+  const accountOptions = useMemo(
+    () => getTransactionAccountOptions(banking.linkedAccounts, transactionPageWorkingTransactions),
+    [banking.linkedAccounts, transactionPageWorkingTransactions]
+  );
   const safeToSpendAmount = useMemo(() => safeToSpend(periodTransactions, banking.availableBalance ?? 0), [banking.availableBalance, periodTransactions]);
   const shouldShowPeriodControl = (activeView === "home" || activeView === "budgets") && !isBottomNavigation;
 
@@ -161,16 +196,19 @@ export function useNetlyApp() {
     hasCardEligibleSpend: cardFit.basis.eligibleTransactionCount > 0 && cardFit.basis.eligibleAnnualSpend > 0,
     hoveredCategory,
     income,
+    accountOptions,
     insights,
     isConnected: banking.isConnected,
+    isLoadingAllTransactions: banking.isLoadingAllTransactions,
     isLoadingMoreTransactions: banking.isLoadingMoreTransactions,
     isLoadingTransactions: banking.isLoadingTransactions,
     monthlySpend,
-    onCategoryChange: categories.updateTransactionCategory,
-    onCreateCategory: categories.createCustomCategory,
+    onCategoryChange: updateTransactionCategoryAndSync,
+    onCreateCategory: createCustomCategoryAndSync,
     manualTokens: connection.manualTokens,
     onManualTokensChange: connection.updateManualTokens,
-    onLoadMoreTransactions: loadMoreUserTransactions,
+    onLoadAllTransactions: loadAllUserTransactions,
+    onLoadMoreTransactions: loadMoreAndSyncUserTransactions,
     onRefreshUserTransactions: refreshUserTransactions,
     onRecurringClick: openRecurringTransactions,
     onReviewNeedsReview: openNeedsReviewTransactions,
@@ -184,6 +222,7 @@ export function useNetlyApp() {
     setHoveredCategory,
     setPayday: paydaySettings.updatePayday,
     setQuery: transactionControls.setQuery,
+    setTransactionAccounts: transactionControls.setTransactionAccounts,
     setSyncResult: connection.setSyncResult,
     setTransactionCategory: transactionControls.setTransactionCategory,
     setTransactionFilter: transactionControls.setTransactionFilter,
@@ -191,6 +230,7 @@ export function useNetlyApp() {
     setTransactionDateRange: transactionControls.setTransactionDateRange,
     syncResult: connection.syncResult,
     transactionCategory: transactionControls.transactionCategory,
+    transactionAccounts: transactionControls.transactionAccounts,
     transactionCategoryOptions: categories.transactionCategoryOptions,
     transactionDateRange: transactionControls.transactionDateRange,
     transactionFilter: transactionControls.transactionFilter,
@@ -201,10 +241,15 @@ export function useNetlyApp() {
     workingTransactions,
     dashboardPeriod: dashboardPeriodSettings.dashboardPeriod,
     showDashboardPeriodSetting: isBottomNavigation,
+    driveBackup: driveBackup.driveBackup,
+    onConnectDriveBackup: driveBackup.connectAndBackUp,
+    onDisconnectDriveBackup: driveBackup.disconnectDriveBackup,
+    onRestoreDriveBackup: driveBackup.restoreFromDrive,
     settingsCategoryOptions: categories.settingsCategoryOptions,
+    setDriveBackupPassphrase: driveBackup.setDriveBackupPassphrase,
     setDashboardPeriod: dashboardPeriodSettings.updateDashboardPeriod,
-    updateCategoryColor: categories.updateCategoryColor,
-    deleteCategory: categories.deleteCategory
+    updateCategoryColor: updateCategoryColorAndSync,
+    deleteCategory: deleteCategoryAndSync
   };
 
   return {

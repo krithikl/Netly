@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(toAccountsPayload(demoAccounts, true, "demo"));
   }
 
-  const { accessToken, appToken } = getValidAccessToken(request);
+  const { accessToken, appToken } = await getValidAccessToken(request);
 
   if (!accessToken || !appToken) {
     return NextResponse.json({

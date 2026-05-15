@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { netlyPalette } from "@/lib/categories";
 import { periods } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
+import type { DriveBackupState } from "@/hooks/useDriveBackup";
 import type { PeriodOption } from "@/lib/types";
 
 type SettingsViewProps = {
@@ -23,6 +24,11 @@ type SettingsViewProps = {
   dashboardPeriod: PeriodOption;
   defaultCategories: string[];
   deleteCategory: (category: string) => void;
+  driveBackup: DriveBackupState;
+  onConnectDriveBackup: () => Promise<void>;
+  onDisconnectDriveBackup: () => void;
+  onRestoreDriveBackup: () => Promise<void>;
+  setDriveBackupPassphrase: (passphrase: string) => void;
   showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
   updateCategoryColor: (category: string, color: string) => void;
@@ -34,8 +40,13 @@ export function SettingsView({
   dashboardPeriod,
   defaultCategories,
   deleteCategory,
+  driveBackup,
+  onConnectDriveBackup,
+  onDisconnectDriveBackup,
+  onRestoreDriveBackup,
   showDashboardPeriodSetting,
   setDashboardPeriod,
+  setDriveBackupPassphrase,
   updateCategoryColor
 }: SettingsViewProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
@@ -73,6 +84,51 @@ export function SettingsView({
       </section>
 
       <section className="material-card">
+        <div className="settings-drive-card">
+          <div>
+            <h3>Google Drive backup</h3>
+            <p>Archive every transaction when first seen, then encrypt and back it up to Google Drive app data.</p>
+          </div>
+          <span className={`settings-drive-status ${driveBackup.status}`}>
+            {getDriveBackupStatusLabel(driveBackup.status)}
+          </span>
+          <label className="settings-drive-passphrase">
+            Sync passphrase
+            <input
+              autoComplete="new-password"
+              onChange={(event) => setDriveBackupPassphrase(event.target.value)}
+              placeholder="At least 12 characters"
+              spellCheck={false}
+              type="password"
+              value={driveBackup.passphrase}
+            />
+          </label>
+          {!driveBackup.clientConfigured && (
+            <p className="settings-drive-warning">
+              Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
+            </p>
+          )}
+          <p aria-live="polite" className="settings-drive-message">
+            {driveBackup.message}
+          </p>
+          {driveBackup.lastSyncedAt && (
+            <p className="settings-drive-meta">Last synced {formatDriveSyncTime(driveBackup.lastSyncedAt)}</p>
+          )}
+          <div className="settings-drive-actions">
+            <Button disabled={driveBackup.status === "syncing"} onClick={() => void onConnectDriveBackup()} type="button">
+              {driveBackup.status === "syncing" ? "Syncing..." : "Connect and back up"}
+            </Button>
+            <Button disabled={driveBackup.status === "syncing"} onClick={() => void onRestoreDriveBackup()} type="button" variant="outline">
+              Restore from Drive
+            </Button>
+            <Button disabled={driveBackup.status === "syncing"} onClick={onDisconnectDriveBackup} type="button" variant="secondary">
+              Disconnect
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="material-card">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="m-0 text-base font-semibold text-[var(--ink)]">Categories</h3>
@@ -100,6 +156,36 @@ export function SettingsView({
       </section>
     </section>
   );
+}
+
+// Formats Drive status into short UI labels.
+function getDriveBackupStatusLabel(status: DriveBackupState["status"]) {
+  switch (status) {
+    case "ready":
+      return "Ready";
+    case "syncing":
+      return "Syncing";
+    case "synced":
+      return "Synced";
+    case "failed":
+      return "Failed";
+    default:
+      return "Disconnected";
+  }
+}
+
+// Presents archive sync timestamps without adding another date library.
+function formatDriveSyncTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("en-NZ", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
 }
 
 type CategoryColorRowProps = {

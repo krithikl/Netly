@@ -50,7 +50,12 @@ export function useAkahuConnection({
       });
       setDataMode("user");
       window.localStorage.setItem("netly_data_mode", "user");
-      await refreshTransactions("user", transactionDateRange);
+
+      try {
+        await refreshTransactions("user", transactionDateRange);
+      } catch (error) {
+        setSyncResult(error instanceof Error ? error.message : "Akahu connected, but transactions could not be loaded.");
+      }
     }
   }, [manualTokens, refreshTransactions, setDataMode, transactionDateRange]);
 

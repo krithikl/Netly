@@ -6,20 +6,25 @@ import { isTransactionInDateRange } from "@/lib/periods";
 import type { Transaction } from "@/lib/types";
 
 const demoPageSize = 100;
+const maxAkahuLoadAllPages = 25;
 
 // Returns paginated transactions from Akahu or demo data for the app data hooks.
 export async function GET(request: NextRequest) {
   const source = request.nextUrl.searchParams.get("source");
   const cursor = request.nextUrl.searchParams.get("cursor") || undefined;
   const fromDate = request.nextUrl.searchParams.get("from") || undefined;
+  const loadAll = request.nextUrl.searchParams.get("load") === "all";
   const toDate = request.nextUrl.searchParams.get("to") || undefined;
 
   if (source === "demo") {
-    const demoPage = getDemoTransactionPage(demoTransactions, cursor, fromDate, toDate);
+    const demoPage = loadAll
+      ? getAllDemoTransactions(demoTransactions, fromDate, toDate)
+      : getDemoTransactionPage(demoTransactions, cursor, fromDate, toDate);
 
     return NextResponse.json({
       source: "demo",
       connected: true,
+      loadedAll: loadAll,
       rawCount: demoPage.rawCount,
       nextCursor: demoPage.nextCursor,
       transactions: demoPage.transactions,
@@ -27,7 +32,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const { accessToken, appToken } = getValidAccessToken(request);
+  const { accessToken, appToken } = await getValidAccessToken(request);
 
   if (!accessToken || !appToken) {
     return NextResponse.json({
@@ -42,15 +47,18 @@ export async function GET(request: NextRequest) {
 
   try {
     const provider = createAkahuProviderFromEnv();
-    const transactionPage = await provider.getTransactions({ accessToken, appToken }, {
-      cursor,
-      fromDate,
-      toDate
-    });
+    const transactionPage = loadAll
+      ? await getAllAkahuTransactions(provider, { accessToken, appToken }, fromDate, toDate)
+      : await provider.getTransactions({ accessToken, appToken }, {
+        cursor,
+        fromDate,
+        toDate
+      });
 
     return NextResponse.json({
       source: provider.id,
       connected: true,
+      loadedAll: loadAll,
       rawCount: transactionPage.rawCount,
       nextCursor: transactionPage.nextCursor,
       accountCount: transactionPage.accountCount,
@@ -69,6 +77,46 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Follows Akahu cursors for one explicit user-triggered range load.
+async function getAllAkahuTransactions(
+  provider: ReturnType<typeof createAkahuProviderFromEnv>,
+  token: { accessToken: string; appToken: string },
+  fromDate: string | undefined,
+  toDate: string | undefined
+) {
+  const transactions: Transaction[] = [];
+  let rawCount = 0;
+  let accountCount = 0;
+  let nextCursor: string | null = null;
+  let notice = "";
+
+  for (let page = 0; page < maxAkahuLoadAllPages; page += 1) {
+    const result = await provider.getTransactions(token, {
+      cursor: nextCursor || undefined,
+      fromDate,
+      toDate
+    });
+
+    transactions.push(...result.transactions);
+    rawCount += result.rawCount;
+    accountCount = result.accountCount;
+    notice = result.notice || notice;
+    nextCursor = result.nextCursor;
+
+    if (!nextCursor) {
+      return {
+        accountCount,
+        rawCount,
+        nextCursor,
+        transactions,
+        notice
+      };
+    }
+  }
+
+  throw new Error(`Akahu returned more than ${maxAkahuLoadAllPages} transaction pages for this range. Narrow the date range before loading all transactions.`);
+}
+
 // Applies pagination/date filtering to demo transactions so UI paths match Akahu mode.
 function getDemoTransactionPage(transactions: Transaction[], cursor: string | undefined, fromDate: string | undefined, toDate: string | undefined) {
   const offset = Number.parseInt(cursor || "0", 10);
@@ -81,6 +129,17 @@ function getDemoTransactionPage(transactions: Transaction[], cursor: string | un
     nextCursor: nextOffset < filteredTransactions.length ? String(nextOffset) : null,
     rawCount: filteredTransactions.length,
     transactions: pageTransactions
+  };
+}
+
+// Returns every demo transaction for the selected range so demo mirrors load-all.
+function getAllDemoTransactions(transactions: Transaction[], fromDate: string | undefined, toDate: string | undefined) {
+  const filteredTransactions = filterTransactionsByDateRange(transactions, fromDate, toDate);
+
+  return {
+    nextCursor: null,
+    rawCount: filteredTransactions.length,
+    transactions: filteredTransactions
   };
 }
 

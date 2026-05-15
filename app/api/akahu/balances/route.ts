@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const { accessToken, appToken } = getValidAccessToken(request);
+  const { accessToken, appToken } = await getValidAccessToken(request);
 
   if (!accessToken || !appToken) {
     return NextResponse.json({

@@ -23,24 +23,29 @@ import { formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
 import { getTransactionCategory, transactionNeedsReview } from "@/lib/transaction-display";
 import { categoriesMatch, type CategoryEditScope } from "@/lib/category-rules";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
-import type { TransactionFilter, TransactionSort } from "@/lib/app/types";
+import type { TransactionAccountOption, TransactionFilter, TransactionSort } from "@/lib/app/types";
 
 type TransactionsViewProps = {
+  accountOptions: TransactionAccountOption[];
   categoryColors: Record<string, string>;
   categoryOptions: string[];
   dateRange: TransactionDateRange;
   hasMoreTransactions: boolean;
+  isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
   isLoadingTransactions: boolean;
   onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onCreateCategory: (category: string) => void;
   onDateRangeChange: (dateRange: TransactionDateRange) => void;
+  onLoadAllTransactions: () => void;
   onLoadMoreTransactions: () => void;
   query: string;
   setQuery: (query: string) => void;
+  setTransactionAccounts: (accounts: string[]) => void;
   setTransactionCategory: (categories: string[]) => void;
   setTransactionFilter: (filter: TransactionFilter) => void;
   setTransactionSort: (sort: TransactionSort) => void;
+  transactionAccounts: string[];
   transactionCategory: string[];
   transactionFilter: TransactionFilter;
   transactionSort: TransactionSort;
@@ -53,21 +58,26 @@ const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount h
 // Handles transaction search, filters, sorting, and category creation
 // Full transactions screen: search, filters, date range, category editing, and pagination.
 export function TransactionsView({
+  accountOptions,
   categoryColors,
   categoryOptions,
   dateRange,
   hasMoreTransactions,
+  isLoadingAllTransactions,
   isLoadingMoreTransactions,
   isLoadingTransactions,
   onCategoryChange,
   onCreateCategory,
   onDateRangeChange,
+  onLoadAllTransactions,
   onLoadMoreTransactions,
   query,
   setQuery,
+  setTransactionAccounts,
   setTransactionCategory,
   setTransactionFilter,
   setTransactionSort,
+  transactionAccounts,
   transactionCategory,
   transactionFilter,
   transactionSort,
@@ -98,10 +108,11 @@ export function TransactionsView({
   const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
   const shownTransactions = isLoadingTransactions ? [] : transactions;
   const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
-  const activeFilterCount = getActiveFilterCount(transactionFilter, transactionCategory);
+  const activeFilterCount = getActiveFilterCount(transactionFilter, transactionAccounts, transactionCategory);
   const isBottomNavigation = useIsBottomNavigation();
   const resetFilters = () => {
     setTransactionFilter("All");
+    setTransactionAccounts([]);
     setTransactionCategory([]);
   };
   // Let mobile users choose multiple categories, or clear them with All categories
@@ -111,7 +122,15 @@ export function TransactionsView({
       return;
     }
 
-    setTransactionCategory(toggleCategorySelection(transactionCategory, category));
+    setTransactionCategory(toggleFilterSelection(transactionCategory, category));
+  };
+  const toggleTransactionAccount = (account: string) => {
+    if (account === allAccountsValue) {
+      setTransactionAccounts([]);
+      return;
+    }
+
+    setTransactionAccounts(toggleFilterSelection(transactionAccounts, account));
   };
   const closeSort = () => setSortOpen(false);
   const reviewNeedsReview = () => {
@@ -173,13 +192,16 @@ export function TransactionsView({
             </label>
             <TransactionDateRangePicker dateRange={dateRange} onChange={onDateRangeChange} />
             <TransactionDesktopFilterPopover
+              accountOptions={accountOptions}
               activeFilterCount={activeFilterCount}
               categoryOptions={categoryOptions}
               categorySelectValue={transactionCategory}
               filterSelectOptions={filterSelectOptions}
+              onAccountToggle={toggleTransactionAccount}
               onCategoryToggle={toggleTransactionCategory}
               onReset={resetFilters}
               onStatusChange={setTransactionFilter}
+              selectedAccounts={transactionAccounts}
               transactionFilter={transactionFilter}
             />
             <label className="transaction-sort-control">
@@ -189,6 +211,9 @@ export function TransactionsView({
                 <SelectField className="transaction-select-trigger transaction-sort-select-trigger" onChange={setTransactionSort} options={sortSelectOptions} value={transactionSort} />
               </span>
             </label>
+          </div>
+          <div className="transaction-archive-note">
+            <span>Transactions are encrypted locally when first seen. Google Drive backup can be connected from Settings.</span>
           </div>
           <div className="transaction-filter-actions">
             <div className="category-create-row">
@@ -209,12 +234,15 @@ export function TransactionsView({
           </div>
         </div>
         <TransactionFilterDialog
+          accountOptions={accountOptions}
           categoryOptions={categoryOptions}
+          onAccountToggle={toggleTransactionAccount}
           onCategoryToggle={toggleTransactionCategory}
           onOpenChange={setFiltersOpen}
           onReset={resetFilters}
           onStatusChange={setTransactionFilter}
           open={filtersOpen}
+          transactionAccounts={transactionAccounts}
           transactionCategory={transactionCategory}
           transactionFilter={transactionFilter}
         />
@@ -241,7 +269,10 @@ export function TransactionsView({
           emptyMessage="No transactions match the current filters."
           onCategoryChange={onCategoryChange}
           hasMore={hasMoreTransactions}
+          isLoading={isLoadingTransactions}
+          isLoadingAll={isLoadingAllTransactions}
           isLoadingMore={isLoadingMoreTransactions}
+          onLoadAll={onLoadAllTransactions}
           onLoadMore={onLoadMoreTransactions}
           transactions={shownTransactions}
         />
@@ -336,22 +367,28 @@ function TransactionAnalyticsCard({
 }
 
 function TransactionDesktopFilterPopover({
+  accountOptions,
   activeFilterCount,
   categoryOptions,
   categorySelectValue,
   filterSelectOptions,
+  onAccountToggle,
   onCategoryToggle,
   onReset,
   onStatusChange,
+  selectedAccounts,
   transactionFilter
 }: {
+  accountOptions: TransactionAccountOption[];
   activeFilterCount: number;
   categoryOptions: string[];
   categorySelectValue: string[];
   filterSelectOptions: { label: string; value: TransactionFilter }[];
+  onAccountToggle: (account: string) => void;
   onCategoryToggle: (category: string) => void;
   onReset: () => void;
   onStatusChange: (filter: TransactionFilter) => void;
+  selectedAccounts: string[];
   transactionFilter: TransactionFilter;
 }) {
   const filterLabel = activeFilterCount > 0 ? `Filters (${activeFilterCount})` : "Filters";
@@ -377,11 +414,23 @@ function TransactionDesktopFilterPopover({
             <SelectField className="transaction-select-trigger" onChange={onStatusChange} options={filterSelectOptions} value={transactionFilter} />
           </label>
           <label>
+            Account
+            <FilterMultiSelect
+              allLabel="All accounts"
+              allValue={allAccountsValue}
+              onToggle={onAccountToggle}
+              options={getAccountFilterOptions(accountOptions)}
+              selectedValues={selectedAccounts}
+            />
+          </label>
+          <label>
             Category
-            <CategoryMultiSelect
-              categoryOptions={categoryOptions}
-              onCategoryToggle={onCategoryToggle}
-              selectedCategories={categorySelectValue}
+            <FilterMultiSelect
+              allLabel="All categories"
+              allValue="All categories"
+              onToggle={onCategoryToggle}
+              options={getCategoryFilterOptions(categoryOptions)}
+              selectedValues={categorySelectValue}
             />
           </label>
         </PopoverContent>
@@ -702,24 +751,30 @@ function TransactionCategoryDialog({
 }
 
 type TransactionFilterDialogProps = {
+  accountOptions: TransactionAccountOption[];
   categoryOptions: string[];
+  onAccountToggle: (account: string) => void;
   onCategoryToggle: (category: string) => void;
   onOpenChange: (open: boolean) => void;
   onReset: () => void;
   onStatusChange: (filter: TransactionFilter) => void;
   open: boolean;
+  transactionAccounts: string[];
   transactionCategory: string[];
   transactionFilter: TransactionFilter;
 };
 
 // Shows mobile filters in a bottom drawer
 function TransactionFilterDialog({
+  accountOptions,
   categoryOptions,
+  onAccountToggle,
   onCategoryToggle,
   onOpenChange,
   onReset,
   onStatusChange,
   open,
+  transactionAccounts,
   transactionCategory,
   transactionFilter
 }: TransactionFilterDialogProps) {
@@ -741,11 +796,26 @@ function TransactionFilterDialog({
         </div>
       </div>
       <div className="mobile-filter-section">
+        <h3>Account</h3>
+        <div className="mobile-filter-chips category">
+          {getAccountFilterOptions(accountOptions).map((account) => (
+            <button
+              className={getFilterOptionIsActive(account.value, allAccountsValue, transactionAccounts) ? "active" : undefined}
+              key={account.value}
+              onClick={() => onAccountToggle(account.value)}
+              type="button"
+            >
+              {account.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mobile-filter-section">
         <h3>Category</h3>
         <div className="mobile-filter-chips category">
           {categoryOptions.map((category) => (
             <button
-              className={getFilterCategoryIsActive(category, transactionCategory) ? "active" : undefined}
+              className={getFilterOptionIsActive(category, "All categories", transactionCategory) ? "active" : undefined}
               key={category}
               onClick={() => onCategoryToggle(category)}
               type="button"
@@ -829,16 +899,22 @@ function getStringOptions<T extends string>(values: T[]) {
   }));
 }
 
-function CategoryMultiSelect({
-  categoryOptions,
-  onCategoryToggle,
-  selectedCategories
+const allAccountsValue = "__all_accounts__";
+
+function FilterMultiSelect({
+  allLabel,
+  allValue,
+  onToggle,
+  options,
+  selectedValues
 }: {
-  categoryOptions: string[];
-  onCategoryToggle: (category: string) => void;
-  selectedCategories: string[];
+  allLabel: string;
+  allValue: string;
+  onToggle: (value: string) => void;
+  options: TransactionAccountOption[];
+  selectedValues: string[];
 }) {
-  const label = getCategoryMultiSelectLabel(selectedCategories);
+  const label = getFilterMultiSelectLabel(selectedValues, options, allLabel);
 
   return (
     <Popover>
@@ -849,21 +925,21 @@ function CategoryMultiSelect({
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="category-multi-select-content">
-        {categoryOptions.map((category) => {
-          const isActive = getFilterCategoryIsActive(category, selectedCategories);
+        {options.map((option) => {
+          const isActive = getFilterOptionIsActive(option.value, allValue, selectedValues);
 
           return (
             <button
               aria-pressed={isActive}
               className={isActive ? "active" : undefined}
-              key={category}
-              onClick={() => onCategoryToggle(category)}
+              key={option.value}
+              onClick={() => onToggle(option.value)}
               type="button"
             >
               <span className="category-multi-select-check">
                 {isActive && <Check aria-hidden="true" className="h-4 w-4" />}
               </span>
-              <span>{category}</span>
+              <span>{option.label}</span>
             </button>
           );
         })}
@@ -885,38 +961,47 @@ function getMatchingCategory(categories: string[], category: string) {
 }
 
 // Counts hidden mobile filters so the Filters button can show a badge
-function getActiveFilterCount(transactionFilter: TransactionFilter, transactionCategory: string[]) {
+function getActiveFilterCount(transactionFilter: TransactionFilter, transactionAccounts: string[], transactionCategory: string[]) {
   let count = 0;
 
   if (transactionFilter !== "All") {
     count += 1;
   }
 
+  count += transactionAccounts.length;
   count += transactionCategory.length;
 
   return count;
 }
 
-function getFilterCategoryIsActive(category: string, transactionCategory: string[]) {
-  return category === "All categories" ? transactionCategory.length === 0 : transactionCategory.includes(category);
+function getFilterOptionIsActive(value: string, allValue: string, selectedValues: string[]) {
+  return value === allValue ? selectedValues.length === 0 : selectedValues.includes(value);
 }
 
-function getCategoryMultiSelectLabel(selectedCategories: string[]) {
-  if (selectedCategories.length === 0) {
-    return "All categories";
+function getFilterMultiSelectLabel(selectedValues: string[], options: TransactionAccountOption[], allLabel: string) {
+  if (selectedValues.length === 0) {
+    return allLabel;
   }
 
-  if (selectedCategories.length === 1) {
-    return selectedCategories[0];
+  if (selectedValues.length === 1) {
+    return options.find((option) => option.value === selectedValues[0])?.label || selectedValues[0];
   }
 
-  return `${selectedCategories.length} categories`;
+  return `${selectedValues.length} selected`;
 }
 
-function toggleCategorySelection(selectedCategories: string[], category: string) {
-  if (selectedCategories.includes(category)) {
-    return selectedCategories.filter((selectedCategory) => selectedCategory !== category);
+function toggleFilterSelection(selectedValues: string[], value: string) {
+  if (selectedValues.includes(value)) {
+    return selectedValues.filter((selectedValue) => selectedValue !== value);
   }
 
-  return [...selectedCategories, category];
+  return [...selectedValues, value];
+}
+
+function getCategoryFilterOptions(categoryOptions: string[]): TransactionAccountOption[] {
+  return categoryOptions.map((category) => ({ label: category, value: category }));
+}
+
+function getAccountFilterOptions(accountOptions: TransactionAccountOption[]) {
+  return [{ label: "All accounts", value: allAccountsValue }, ...accountOptions];
 }

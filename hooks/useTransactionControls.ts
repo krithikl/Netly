@@ -23,6 +23,7 @@ export function useTransactionControls({
   const [query, setQuery] = useState("");
   const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("All");
   const [transactionSort, setTransactionSort] = useState<TransactionSort>("Newest");
+  const [transactionAccounts, setTransactionAccounts] = useState<string[]>([]);
   const [transactionCategory, setTransactionCategory] = useState<string[]>([]);
   const [transactionDateRange, setTransactionDateRangeState] = useState(getThisMonthDateRange);
   const transactionRangeTransactions = useMemo(
@@ -30,12 +31,13 @@ export function useTransactionControls({
     [transactionDateRange, transactions]
   );
   const visibleTransactions = useMemo(
-    () => getVisibleTransactions(transactionRangeTransactions, query, transactionCategory, transactionFilter, transactionSort),
-    [query, transactionCategory, transactionFilter, transactionRangeTransactions, transactionSort]
+    () => getVisibleTransactions(transactionRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
+    [query, transactionAccounts, transactionCategory, transactionFilter, transactionRangeTransactions, transactionSort]
   );
 
   const setTransactionDateRange = useCallback((nextDateRange: TransactionDateRange) => {
     setTransactionDateRangeState(nextDateRange);
+    setTransactionAccounts([]);
     setTransactionCategory([]);
 
     refreshTransactionPage(dataMode, nextDateRange).catch((error: unknown) => {
@@ -50,6 +52,7 @@ export function useTransactionControls({
     setQuery("");
     setTransactionFilter("All");
     setTransactionSort("Newest");
+    setTransactionAccounts([]);
     setTransactionCategory([]);
     setTransactionDateRangeState(defaultDateRange);
 
@@ -64,10 +67,12 @@ export function useTransactionControls({
     query,
     resetTransactionControls,
     setQuery,
+    setTransactionAccounts,
     setTransactionCategory,
     setTransactionDateRange,
     setTransactionFilter,
     setTransactionSort,
+    transactionAccounts,
     transactionCategory,
     transactionDateRange,
     transactionFilter,

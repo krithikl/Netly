@@ -84,14 +84,16 @@ async function getAllAkahuTransactions(
   fromDate: string | undefined,
   toDate: string | undefined
 ) {
+  const accountResult = await provider.getAccounts(token);
   const transactions: Transaction[] = [];
   let rawCount = 0;
-  let accountCount = 0;
+  const accountCount = accountResult.accounts.length;
   let nextCursor: string | null = null;
-  let notice = "";
+  let notice = accountResult.notice;
 
   for (let page = 0; page < maxAkahuLoadAllPages; page += 1) {
-    const result = await provider.getTransactions(token, {
+    const result = await provider.getTransactionsForAccounts(token, {
+      accounts: accountResult.accounts,
       cursor: nextCursor || undefined,
       fromDate,
       toDate
@@ -99,7 +101,6 @@ async function getAllAkahuTransactions(
 
     transactions.push(...result.transactions);
     rawCount += result.rawCount;
-    accountCount = result.accountCount;
     notice = result.notice || notice;
     nextCursor = result.nextCursor;
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { archiveAndMergeTransactions } from "@/lib/app/transaction-archive";
+import { archiveAndMergeTransactions, readArchivedTransactions } from "@/lib/app/transaction-archive";
 import { currentBalance as fallbackBalance, transactions as fallbackTransactions } from "@/lib/mock-data";
 import { readInitialDataMode } from "@/lib/app/browser-state";
 import type { DataMode, LinkedAccount } from "@/lib/app/types";
@@ -79,6 +79,14 @@ export function useAkahuData() {
     resetBankData();
 
     try {
+      if (mode === "user") {
+        const hasArchivedTransactions = await hydrateFromArchive(dateRange, setTransactions, setTransactionPageTransactions);
+
+        if (hasArchivedTransactions) {
+          setIsLoadingTransactions(false);
+        }
+      }
+
       const transactionRequest = fetch(getTransactionsUrl(mode));
       const transactionPageRequest = dateRange ? fetch(getTransactionsUrl(mode, dateRange)) : transactionRequest;
 
@@ -248,6 +256,23 @@ export function useAkahuData() {
     transactionPageTransactions,
     transactions
   };
+}
+
+// Shows archived Akahu data immediately while fresh Akahu requests continue.
+async function hydrateFromArchive(
+  dateRange: TransactionDateRange | undefined,
+  setTransactions: (transactions: Transaction[]) => void,
+  setTransactionPageTransactions: (transactions: Transaction[]) => void
+) {
+  const [archivedTransactions, archivedTransactionPageTransactions] = await Promise.all([
+    readArchivedTransactions(),
+    readArchivedTransactions(dateRange)
+  ]);
+
+  setTransactions(archivedTransactions);
+  setTransactionPageTransactions(archivedTransactionPageTransactions);
+
+  return archivedTransactions.length > 0 || archivedTransactionPageTransactions.length > 0;
 }
 
 // Normalises failed API responses into thrown errors for the app fallback path.

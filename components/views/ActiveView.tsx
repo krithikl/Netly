@@ -49,6 +49,7 @@ export function ActiveView(props: ActiveViewProps) {
           cardFitWindowLabel={props.cardFitWindowLabel}
           cards={props.cards}
           hasCardEligibleSpend={props.hasCardEligibleSpend}
+          isLoadingTransactions={props.isLoadingCardFitTransactions}
         />
       );
     case "connect":

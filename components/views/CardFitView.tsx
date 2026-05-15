@@ -15,6 +15,7 @@ type CardFitViewProps = {
   cardFitWindowLabel: string;
   explanation: CardFitExplanation | null;
   hasCardEligibleSpend: boolean;
+  isLoadingTransactions: boolean;
   basis: CardFitBasis;
 };
 
@@ -25,7 +26,7 @@ type CardFitDetailSelection = {
 };
 
 // Card Fit screen for ranking card products against detected eligible spend.
-export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, cards, explanation: _explanation, hasCardEligibleSpend }: CardFitViewProps) {
+export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, cards, explanation: _explanation, hasCardEligibleSpend, isLoadingTransactions }: CardFitViewProps) {
   const subtitle = getCardFitSubtitle(cardFitSourceLabel);
   const [issuerFilter, setIssuerFilter] = useState(allIssuersFilter);
   const [typeFilter, setTypeFilter] = useState<CardTypeFilter>(allTypesFilter);
@@ -60,6 +61,12 @@ export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, car
         <p className="card-fit-disclaimer">
           Rewards are estimated from card-eligible spend. Listed perks are not dollar-valued unless the value is clear from the issuer source.
         </p>
+        {isLoadingTransactions && (
+          <div className="status-banner neutral" role="status">
+            <strong>Loading transaction history.</strong>
+            <span>Card Fit is reading archived Akahu transactions and checking for fresh data.</span>
+          </div>
+        )}
         <div className="card-fit-controls">
           <label>
             Bank or provider

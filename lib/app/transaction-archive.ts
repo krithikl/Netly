@@ -44,6 +44,7 @@ export type TransactionArchiveSnapshotRecord = {
 type EncryptedTransactionRecord = {
   archivedAt: string;
   ciphertext: string;
+  date?: string;
   id: string;
   iv: string;
   sourceUpdatedAt: string;
@@ -105,8 +106,9 @@ export async function upsertArchivedTransactions(transactions: Transaction[]) {
 
 // Reads archived transactions, optionally narrowed to the active Transactions date range.
 export async function readArchivedTransactions(dateRange?: TransactionDateRange) {
-  const snapshot = await exportTransactionArchiveSnapshot();
-  return snapshot.transactions
+  const records = await readArchivedTransactionRecords(dateRange);
+
+  return records
     .map((record) => record.transaction)
     .filter((transaction) => !isDemoTransaction(transaction))
     .filter((transaction) => isTransactionInOptionalRange(transaction, dateRange));
@@ -124,9 +126,7 @@ export async function exportTransactionArchiveSnapshot(): Promise<TransactionArc
   const metadata = normalizeArchiveMetadata(await readMetadataFromStore(metadataStore));
   const transactions: TransactionArchiveSnapshotRecord[] = [];
 
-  for (const encryptedRecord of encryptedRecords) {
-    transactions.push(await decryptTransactionRecord(key, encryptedRecord));
-  }
+  transactions.push(...await Promise.all(encryptedRecords.map((encryptedRecord) => decryptTransactionRecord(key, encryptedRecord))));
 
   await transactionDone;
   database.close();
@@ -194,6 +194,22 @@ async function updateArchiveMetadata(metadata: Partial<TransactionArchiveMetadat
   database.close();
 }
 
+// Reads encrypted records, skipping out-of-range records before decryption where possible.
+async function readArchivedTransactionRecords(dateRange?: TransactionDateRange) {
+  const database = await openArchiveDatabase();
+  const key = await getLocalArchiveCryptoKey();
+  const transaction = database.transaction(archiveRecordsStore, "readonly");
+  const transactionDone = waitForTransaction(transaction);
+  const encryptedRecords = await requestToPromise<EncryptedTransactionRecord[]>(transaction.objectStore(archiveRecordsStore).getAll());
+  const candidateRecords = encryptedRecords.filter((record) => isEncryptedRecordInOptionalRange(record, dateRange));
+  const records = await Promise.all(candidateRecords.map((record) => decryptTransactionRecord(key, record)));
+
+  await transactionDone;
+  database.close();
+
+  return records;
+}
+
 // Opens the archive database and creates the encrypted record stores.
 function openArchiveDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
@@ -259,6 +275,7 @@ async function encryptTransactionRecord(key: CryptoKey, record: TransactionArchi
   return {
     archivedAt: record.archivedAt,
     ciphertext: toBase64Url(new Uint8Array(ciphertext)),
+    date: getTransactionDate(record.transaction),
     id: record.id,
     iv: toBase64Url(iv),
     sourceUpdatedAt: record.sourceUpdatedAt
@@ -325,6 +342,23 @@ function isTransactionInOptionalRange(transaction: Transaction, dateRange?: Tran
   }
 
   if (dateRange?.to && transactionDate > dateRange.to) {
+    return false;
+  }
+
+  return true;
+}
+
+// Keeps older archive records readable while filtering newer records before decrypting.
+function isEncryptedRecordInOptionalRange(record: EncryptedTransactionRecord, dateRange?: TransactionDateRange) {
+  if (!dateRange || !record.date) {
+    return true;
+  }
+
+  if (dateRange.from && record.date < dateRange.from) {
+    return false;
+  }
+
+  if (dateRange.to && record.date > dateRange.to) {
     return false;
   }
 

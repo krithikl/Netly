@@ -73,6 +73,7 @@ export type CardFitViewStateProps = {
   cardFitExplanation: CardFitExplanation | null;
   cards: CardValue[];
   hasCardEligibleSpend: boolean;
+  isLoadingCardFitTransactions: boolean;
 };
 
 export type ConnectViewStateProps = {

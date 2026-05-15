@@ -187,6 +187,7 @@ export function useNetlyApp() {
     cardFitSourceLabel: getCardFitSourceLabel(banking.dataMode, banking.isConnected),
     cardFitWindowLabel: getCardFitWindowLabel(cardFit.basis),
     cards: cardFit.cards,
+    isLoadingCardFitTransactions: banking.isLoadingTransactions,
     categories: categoryTotals,
     categoryColors: categories.categoryColors,
     chartCategories,

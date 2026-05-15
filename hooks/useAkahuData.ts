@@ -136,8 +136,6 @@ export function useAkahuData() {
         }
       }
 
-      const transactionRequest = fetch(getTransactionsUrl(mode));
-      const transactionPageRequest = dateRange ? fetch(getTransactionsUrl(mode, dateRange)) : transactionRequest;
       const accountsRequest = loadAndApplyAccountSnapshot(mode, isCurrentRequest, {
         setAkahuDataFreshness,
         setAvailableBalance,
@@ -146,8 +144,22 @@ export function useAkahuData() {
         setPrimaryLinkedAccount,
         setTransactionLoadNotice
       });
-      const transactionsRequest = loadTransactionsPayloads(mode, transactionRequest, transactionPageRequest, dateRange)
-        .then(({ transactionsPayload, transactionPagePayload }) => {
+      const transactionsRequest = mode === "user"
+        ? syncAllAkahuTransactionsToArchive(dateRange).then(({ archivedTransactions, archivedTransactionPageTransactions, connected, notice }) => {
+          if (!isCurrentRequest()) {
+            return;
+          }
+
+          setTransactions(archivedTransactions);
+          setTransactionPageTransactions(archivedTransactionPageTransactions);
+          setTransactionPageNextCursor(null);
+          if (connected) {
+            setIsConnected(true);
+          }
+          setTransactionLoadError("");
+          setTransactionLoadNotice(notice || "Transactions synced from Akahu and saved to the encrypted archive.");
+        })
+        : loadDemoTransactions(dateRange).then(({ transactionsPayload, transactionPagePayload }) => {
           if (!isCurrentRequest()) {
             return;
           }
@@ -155,9 +167,6 @@ export function useAkahuData() {
           setTransactions(transactionsPayload.transactions);
           setTransactionPageTransactions(transactionPagePayload.transactions);
           setTransactionPageNextCursor(transactionPagePayload.nextCursor || null);
-          if (mode === "user" && transactionsPayload.connected) {
-            setIsConnected(true);
-          }
           setTransactionLoadError("");
           setTransactionLoadNotice(transactionsPayload.notice || transactionPagePayload.notice || "");
         });
@@ -182,14 +191,22 @@ export function useAkahuData() {
     setTransactionPageNextCursor(null);
 
     try {
+      if (mode === "user") {
+        const archivedTransactions = await readArchivedTransactions(dateRange);
+        setTransactionPageTransactions(archivedTransactions);
+        setTransactionPageNextCursor(null);
+        setTransactionLoadError("");
+        setTransactionLoadNotice(archivedTransactions.length > 0
+          ? "Showing transactions from the encrypted archive. Use Refresh to sync Akahu."
+          : "No archived transactions found for this range. Use Refresh to sync Akahu.");
+        return;
+      }
+
       const response = await fetch(getTransactionsUrl(mode, dateRange));
       const payload = await readJsonResponse<TransactionsPayload>(response, "transactions");
 
       assertAkahuResponse(response, payload.error, "Could not load transactions.");
-      const archivedTransactions = mode === "demo"
-        ? payload.transactions
-        : await archiveAndMergeTransactions(payload.transactions, dateRange);
-      setTransactionPageTransactions(archivedTransactions);
+      setTransactionPageTransactions(payload.transactions);
       setTransactionPageNextCursor(payload.nextCursor || null);
       setTransactionLoadError(payload.error || "");
       setTransactionLoadNotice(payload.notice || "");
@@ -199,6 +216,12 @@ export function useAkahuData() {
   }, [dataMode]);
 
   const loadMoreTransactions = useCallback(async (dateRange?: TransactionDateRange) => {
+    if (dataMode === "user") {
+      setTransactionPageNextCursor(null);
+      setTransactionLoadNotice("All matching archived transactions are already loaded for this range.");
+      return;
+    }
+
     if (!transactionPageNextCursor) {
       return;
     }
@@ -210,10 +233,7 @@ export function useAkahuData() {
       const payload = await readJsonResponse<TransactionsPayload>(response, "more transactions");
 
       assertAkahuResponse(response, payload.error, "Could not load more transactions.");
-      const archivedTransactions = dataMode === "demo"
-        ? payload.transactions
-        : await archiveAndMergeTransactions(payload.transactions, dateRange);
-      setTransactionPageTransactions((currentTransactions) => mergeTransactionPages(currentTransactions, archivedTransactions));
+      setTransactionPageTransactions((currentTransactions) => mergeTransactionPages(currentTransactions, payload.transactions));
       setTransactionPageNextCursor(payload.nextCursor || null);
       setTransactionLoadError(payload.error || "");
       setTransactionLoadNotice(payload.notice || "");
@@ -226,14 +246,22 @@ export function useAkahuData() {
     setIsLoadingAllTransactions(true);
 
     try {
+      if (dataMode === "user") {
+        const archivedTransactions = await readArchivedTransactions(dateRange);
+        setTransactionPageTransactions(archivedTransactions);
+        setTransactionPageNextCursor(null);
+        setTransactionLoadError("");
+        setTransactionLoadNotice(archivedTransactions.length > 0
+          ? "Loaded all transactions for this range from the encrypted archive."
+          : "No archived transactions found for this range. Use Refresh to sync Akahu.");
+        return;
+      }
+
       const response = await fetch(getTransactionsUrl(dataMode, dateRange, undefined, true));
       const payload = await readJsonResponse<TransactionsPayload>(response, "all transactions");
 
       assertAkahuResponse(response, payload.error, "Could not load all transactions for this range.");
-      const archivedTransactions = dataMode === "demo"
-        ? payload.transactions
-        : await archiveAndMergeTransactions(payload.transactions, dateRange);
-      setTransactionPageTransactions(archivedTransactions);
+      setTransactionPageTransactions(payload.transactions);
       setTransactionPageNextCursor(null);
       setTransactionLoadError(payload.error || "");
       setTransactionLoadNotice(payload.notice || "");
@@ -474,15 +502,29 @@ function getFailedFreshnessState(error: unknown, fallbackMessage: string): Akahu
   };
 }
 
-// Reads fresh transaction payloads and merges them with the encrypted local archive.
-async function loadTransactionsPayloads(
-  mode: DataMode,
-  transactionRequest: Promise<Response>,
-  transactionPageRequest: Promise<Response>,
-  dateRange: TransactionDateRange | undefined
-) {
-  const transactionsResponse = await transactionRequest;
-  const transactionPageResponse = await transactionPageRequest;
+// Syncs the full Akahu transaction history into the encrypted local archive, then serves the active range from the archive.
+async function syncAllAkahuTransactionsToArchive(dateRange: TransactionDateRange | undefined) {
+  const response = await fetch(getTransactionsUrl("user", undefined, undefined, true));
+  const payload = await readJsonResponse<TransactionsPayload>(response, "all transactions");
+
+  assertAkahuResponse(response, payload.error, "Could not sync Akahu transactions.");
+  const archivedTransactions = await archiveAndMergeTransactions(payload.transactions);
+  const archivedTransactionPageTransactions = dateRange
+    ? await readArchivedTransactions(dateRange)
+    : archivedTransactions;
+
+  return {
+    archivedTransactions,
+    archivedTransactionPageTransactions,
+    connected: Boolean(payload.connected),
+    notice: payload.notice || ""
+  };
+}
+
+// Loads demo transactions without using the persistent user archive.
+async function loadDemoTransactions(dateRange: TransactionDateRange | undefined) {
+  const transactionsResponse = await fetch(getTransactionsUrl("demo"));
+  const transactionPageResponse = dateRange ? await fetch(getTransactionsUrl("demo", dateRange)) : transactionsResponse;
   const transactionsPayload = await readJsonResponse<TransactionsPayload>(transactionsResponse, "transactions");
   const transactionPagePayload = transactionPageResponse === transactionsResponse
     ? transactionsPayload
@@ -492,18 +534,8 @@ async function loadTransactionsPayloads(
   assertAkahuResponse(transactionPageResponse, transactionPagePayload.error, "Could not load transactions.");
 
   return {
-    transactionsPayload: {
-      ...transactionsPayload,
-      transactions: mode === "demo"
-        ? transactionsPayload.transactions
-        : await archiveAndMergeTransactions(transactionsPayload.transactions)
-    },
-    transactionPagePayload: {
-      ...transactionPagePayload,
-      transactions: mode === "demo"
-        ? transactionPagePayload.transactions
-        : await archiveAndMergeTransactions(transactionPagePayload.transactions, dateRange)
-    }
+    transactionsPayload,
+    transactionPagePayload
   };
 }
 

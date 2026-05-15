@@ -8,6 +8,7 @@ import {
   deletedCategoriesStorageKey
 } from "@/lib/app/constants";
 import { getTransactionDate, getTransactionId } from "@/lib/transaction-display";
+import type { AccountDataFreshness, LinkedAccount } from "@/lib/app/types";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 
 const archiveDatabaseName = "netly-transaction-archive";
@@ -21,7 +22,19 @@ const metadataKey = "metadata";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
+export type ArchivedAccountSnapshot = {
+  accountFreshness: AccountDataFreshness[];
+  accounts: LinkedAccount[];
+  availableBalance: number | null;
+  balanceRefreshedAt: string | null;
+  isStale: boolean;
+  primaryAccount: LinkedAccount | null;
+  retrievedAt: string | null;
+  transactionsRefreshedAt: string | null;
+};
+
 export type TransactionArchiveMetadata = {
+  accountSnapshot?: ArchivedAccountSnapshot;
   deviceId: string;
   lastDriveSyncAt: string;
   lastLocalUpdateAt: string;
@@ -112,6 +125,21 @@ export async function readArchivedTransactions(dateRange?: TransactionDateRange)
     .map((record) => record.transaction)
     .filter((transaction) => !isDemoTransaction(transaction))
     .filter((transaction) => isTransactionInOptionalRange(transaction, dateRange));
+}
+
+
+// Reads the latest archived account/balance snapshot without decrypting transactions.
+export async function readArchivedAccountSnapshot() {
+  const metadata = await readArchiveMetadata();
+  return metadata.accountSnapshot || null;
+}
+
+// Stores the latest account/balance snapshot alongside archive metadata for fast hero hydration.
+export async function writeArchivedAccountSnapshot(snapshot: ArchivedAccountSnapshot) {
+  await updateArchiveMetadata({
+    accountSnapshot: snapshot,
+    lastLocalUpdateAt: new Date().toISOString()
+  });
 }
 
 // Exports decrypted archive data for encrypted Drive backup.
@@ -383,6 +411,7 @@ function normalizeArchiveMetadata(metadata: StoredArchiveMetadata | undefined): 
   }
 
   return {
+    accountSnapshot: metadata?.accountSnapshot,
     deviceId: metadata?.deviceId || getArchiveDeviceId(),
     lastDriveSyncAt: metadata?.lastDriveSyncAt || "",
     lastLocalUpdateAt: metadata?.lastLocalUpdateAt || "",

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
+import type { AkahuProvider, AkahuTransactionResult } from "@/lib/akahu/provider";
 import { getMissingAkahuCredentialsNotice, getValidAccessToken } from "@/lib/akahu/token";
 import { transactions as demoTransactions } from "@/lib/mock-data";
 import { isTransactionInDateRange } from "@/lib/periods";
@@ -79,19 +80,21 @@ export async function GET(request: NextRequest) {
 
 // Follows Akahu cursors for one explicit user-triggered range load.
 async function getAllAkahuTransactions(
-  provider: ReturnType<typeof createAkahuProviderFromEnv>,
+  provider: AkahuProvider,
   token: { accessToken: string; appToken: string },
   fromDate: string | undefined,
   toDate: string | undefined
 ) {
+  const accountResult = await provider.getAccounts(token);
   const transactions: Transaction[] = [];
   let rawCount = 0;
-  let accountCount = 0;
+  const accountCount = accountResult.accounts.length;
   let nextCursor: string | null = null;
-  let notice = "";
+  let notice = accountResult.notice;
 
   for (let page = 0; page < maxAkahuLoadAllPages; page += 1) {
-    const result = await provider.getTransactions(token, {
+    const result: AkahuTransactionResult = await provider.getTransactionsForAccounts(token, {
+      accounts: accountResult.accounts,
       cursor: nextCursor || undefined,
       fromDate,
       toDate
@@ -99,7 +102,6 @@ async function getAllAkahuTransactions(
 
     transactions.push(...result.transactions);
     rawCount += result.rawCount;
-    accountCount = result.accountCount;
     notice = result.notice || notice;
     nextCursor = result.nextCursor;
 

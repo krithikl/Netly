@@ -28,6 +28,10 @@ export type AkahuTransactionRequest = {
   toDate?: string;
 };
 
+export type AkahuTransactionsForAccountsRequest = AkahuTransactionRequest & {
+  accounts: AkahuAccount[];
+};
+
 export type AkahuTransactionResult = {
   accountCount: number;
   nextCursor: string | null;
@@ -49,6 +53,7 @@ export interface AkahuProvider {
   getAccounts(token: AkahuAccessToken): Promise<AkahuAccountResult>;
   getBalance(token: AkahuAccessToken): Promise<AkahuBalanceResult>;
   getTransactions(token: AkahuAccessToken, query?: AkahuTransactionRequest): Promise<AkahuTransactionResult>;
+  getTransactionsForAccounts(token: AkahuAccessToken, query: AkahuTransactionsForAccountsRequest): Promise<AkahuTransactionResult>;
   requestRefresh(token: AkahuAccessToken): Promise<AkahuRefreshResult>;
 }
 
@@ -95,23 +100,30 @@ class DefaultAkahuProvider implements AkahuProvider {
 
   async getTransactions(token: AkahuAccessToken, query: AkahuTransactionRequest = {}): Promise<AkahuTransactionResult> {
     const rawAccounts = await this.getRawAccounts(token);
+    return this.getTransactionsForAccounts(token, {
+      ...query,
+      accounts: rawAccounts
+    });
+  }
+
+  async getTransactionsForAccounts(token: AkahuAccessToken, query: AkahuTransactionsForAccountsRequest): Promise<AkahuTransactionResult> {
     const transactionsResponse = await this.client.getTransactionsPageForAccounts(
       { appToken: token.appToken, userToken: token.accessToken },
-      rawAccounts,
+      query.accounts,
       toAkahuTransactionQuery(query)
     );
     const transactions = filterTransactionsByDateRange(
-      dedupeAkahuTransactions(getAkahuTransactions(transactionsResponse, rawAccounts)),
+      dedupeAkahuTransactions(getAkahuTransactions(transactionsResponse, query.accounts)),
       query.fromDate,
       query.toDate
     );
 
     return {
-      accountCount: rawAccounts.length,
+      accountCount: query.accounts.length,
       rawCount: transactionsResponse.items?.length || 0,
       nextCursor: transactionsResponse.cursor?.next || null,
       transactions,
-      notice: transactions.length === 0 ? getEmptyAkahuTransactionsNotice(rawAccounts) : ""
+      notice: transactions.length === 0 ? getEmptyAkahuTransactionsNotice(query.accounts) : ""
     };
   }
 

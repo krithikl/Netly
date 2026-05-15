@@ -246,7 +246,6 @@ export function useNetlyApp() {
     onDisconnectDriveBackup: driveBackup.disconnectDriveBackup,
     onRestoreDriveBackup: driveBackup.restoreFromDrive,
     settingsCategoryOptions: categories.settingsCategoryOptions,
-    setDriveBackupPassphrase: driveBackup.setDriveBackupPassphrase,
     setDashboardPeriod: dashboardPeriodSettings.updateDashboardPeriod,
     updateCategoryColor: updateCategoryColorAndSync,
     deleteCategory: deleteCategoryAndSync

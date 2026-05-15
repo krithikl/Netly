@@ -74,7 +74,6 @@ export function ActiveView(props: ActiveViewProps) {
           onRestoreDriveBackup={props.onRestoreDriveBackup}
           showDashboardPeriodSetting={props.showDashboardPeriodSetting}
           setDashboardPeriod={props.setDashboardPeriod}
-          setDriveBackupPassphrase={props.setDriveBackupPassphrase}
           updateCategoryColor={props.updateCategoryColor}
         />
       );

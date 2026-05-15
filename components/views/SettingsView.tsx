@@ -28,7 +28,6 @@ type SettingsViewProps = {
   onConnectDriveBackup: () => Promise<void>;
   onDisconnectDriveBackup: () => void;
   onRestoreDriveBackup: () => Promise<void>;
-  setDriveBackupPassphrase: (passphrase: string) => void;
   showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
   updateCategoryColor: (category: string, color: string) => void;
@@ -46,7 +45,6 @@ export function SettingsView({
   onRestoreDriveBackup,
   showDashboardPeriodSetting,
   setDashboardPeriod,
-  setDriveBackupPassphrase,
   updateCategoryColor
 }: SettingsViewProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
@@ -87,27 +85,19 @@ export function SettingsView({
         <div className="settings-drive-card">
           <div>
             <h3>Google Drive backup</h3>
-            <p>Archive every transaction when first seen, then encrypt and back it up to Google Drive app data.</p>
+            <p>Archive every Akahu transaction when first seen, then back it up to Google Drive app data.</p>
           </div>
           <span className={`settings-drive-status ${driveBackup.status}`}>
             {getDriveBackupStatusLabel(driveBackup.status)}
           </span>
-          <label className="settings-drive-passphrase">
-            Sync passphrase
-            <input
-              autoComplete="new-password"
-              onChange={(event) => setDriveBackupPassphrase(event.target.value)}
-              placeholder="At least 12 characters"
-              spellCheck={false}
-              type="password"
-              value={driveBackup.passphrase}
-            />
-          </label>
           {!driveBackup.clientConfigured && (
             <p className="settings-drive-warning">
               Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
             </p>
           )}
+          <p className="settings-drive-message">
+            Backups use Google's hidden app data folder. Netly does not request access to your other Drive files.
+          </p>
           <p aria-live="polite" className="settings-drive-message">
             {driveBackup.message}
           </p>

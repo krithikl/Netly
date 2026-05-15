@@ -1598,27 +1598,6 @@ h2 {
   color: var(--danger);
 }
 
-.settings-drive-passphrase {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 850;
-  text-transform: uppercase;
-}
-
-.settings-drive-passphrase input {
-  min-height: 44px;
-  border: 1px solid var(--outline);
-  border-radius: 12px;
-  padding: 10px 13px;
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  text-transform: none;
-}
-
 .settings-drive-warning,
 .settings-drive-message,
 .settings-drive-meta,

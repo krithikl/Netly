@@ -89,7 +89,6 @@ export type SettingsViewStateProps = {
   onConnectDriveBackup: () => Promise<void>;
   onDisconnectDriveBackup: () => void;
   onRestoreDriveBackup: () => Promise<void>;
-  setDriveBackupPassphrase: (passphrase: string) => void;
   showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
   settingsCategoryOptions: string[];

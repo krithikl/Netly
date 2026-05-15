@@ -5,8 +5,19 @@ import {
   getTransactionMerchant,
   getTransactionStatus
 } from "@/lib/transaction-display";
+import { categoriesMatch, getRawAkahuCategory, getRawAkahuPersonalFinanceCategory, normalizeCategoryLabel } from "@/lib/category-rules";
+import { needsReviewCategory } from "@/lib/categories";
 
-const cardExcludedCategories = new Set(["Housing", "Income", "Transfers", "Fees", "Needs review"]);
+const cardExcludedAkahuGroups = new Set(["Housing"]);
+const cardExcludedAkahuCategories = [
+  "Cash withdrawals",
+  "Debt repayments",
+  "Foreign exchange and money transfer services",
+  "Rent for permanent accommodation",
+  "Student loans",
+  "Tax payments"
+];
+const cardExcludedTransactionTypeTerms = ["atm", "cash withdrawal", "loan", "tax", "transfer"];
 const cardFitWindowDays = 365;
 const defaultComparisonCardName = "Current debit card baseline";
 const cardFitDriverLimit = 3;
@@ -68,11 +79,11 @@ export function detectRecurring(transactions: Transaction[]): RecurringMerchant[
 
 // Estimates money left after likely bills and a fixed buffer
 export function safeToSpend(transactions: Transaction[], currentBalance: number) {
-  const expectedBills = detectRecurring(transactions)
-    .filter((item) => item.category !== "Groceries" && item.category !== "Fuel")
+  const expectedRecurringOutgoings = detectRecurring(transactions)
+    .filter((item) => item.category !== "Food" && item.category !== "Transport")
     .reduce((total, item) => total + item.average, 0);
 
-  return Math.max(currentBalance - expectedBills - 250, 0);
+  return Math.max(currentBalance - expectedRecurringOutgoings - 250, 0);
 }
 
 // Works out the spend that can count toward card rewards
@@ -99,12 +110,11 @@ export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWi
   let eligibleSpend = 0;
 
   windowEntries.forEach(({ transaction }) => {
-    const category = getTransactionCategory(transaction);
-
-    if (cardExcludedCategories.has(category)) {
+    if (isCardExcludedTransaction(transaction)) {
       return;
     }
 
+    const category = getTransactionCategory(transaction);
     const amount = Math.abs(transaction.amount);
     eligibleTransactionCount += 1;
     eligibleSpend += amount;
@@ -125,6 +135,27 @@ export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWi
       .map(([category, amount]) => ({ category, amount }))
       .sort((a, b) => b.amount - a.amount)
   };
+}
+
+function isCardExcludedTransaction(transaction: Transaction) {
+  if (getTransactionCategory(transaction) === needsReviewCategory) {
+    return true;
+  }
+
+  const rawGroup = getRawAkahuPersonalFinanceCategory(transaction);
+  const rawCategory = getRawAkahuCategory(transaction);
+
+  if ([...cardExcludedAkahuGroups].some((group) => categoriesMatch(rawGroup, group))) {
+    return true;
+  }
+
+  if (cardExcludedAkahuCategories.some((category) => categoriesMatch(rawCategory, category))) {
+    return true;
+  }
+
+  const transactionType = normalizeCategoryLabel(transaction.type);
+
+  return cardExcludedTransactionTypeTerms.some((term) => transactionType.includes(term));
 }
 
 // Ranks cards by rewards, perks, and fees

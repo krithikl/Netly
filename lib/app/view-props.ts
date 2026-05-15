@@ -1,4 +1,5 @@
 import type { Budget, CardFitBasis, CardFitExplanation, CardValue, PeriodOption, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
+import type { CategoryEditScope } from "@/lib/category-rules";
 import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 
 export type SharedViewProps = {
@@ -31,7 +32,7 @@ export type HomeViewStateProps = {
 export type TransactionsViewStateProps = {
   isLoadingMoreTransactions: boolean;
   onCreateCategory: (category: string) => void;
-  onCategoryChange: (transactionId: string, category: string) => void;
+  onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onLoadMoreTransactions: () => void;
   onRefreshUserTransactions: () => void;
   query: string;
@@ -79,6 +80,7 @@ export type SettingsViewStateProps = {
   dashboardPeriod: PeriodOption;
   showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
+  settingsCategoryOptions: string[];
   updateCategoryColor: (category: string, color: string) => void;
   deleteCategory: (category: string) => void;
 };

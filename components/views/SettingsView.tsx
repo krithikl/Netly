@@ -89,6 +89,7 @@ export function SettingsView({
               isActive={activeColorPicker === category}
               onColorPickerOpenChange={(isOpen) => setColorPickerOpen(category, isOpen)}
               onDelete={() => deleteCategory(category)}
+              usedColors={getUsedCategoryColors(allCategories, category, categoryColors)}
               updateCategoryColor={(cat, color) => {
                 updateCategoryColor(cat, color);
                 setActiveColorPicker(null);
@@ -107,6 +108,7 @@ type CategoryColorRowProps = {
   isActive: boolean;
   onColorPickerOpenChange: (isOpen: boolean) => void;
   onDelete: () => void;
+  usedColors: Set<string>;
   updateCategoryColor: (category: string, color: string) => void;
 };
 
@@ -117,6 +119,7 @@ function CategoryColorRow({
   isActive,
   onColorPickerOpenChange,
   onDelete,
+  usedColors,
   updateCategoryColor
 }: CategoryColorRowProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -157,6 +160,7 @@ function CategoryColorRow({
                     category={category}
                     color={color}
                     currentColor={currentColor}
+                    disabled={usedColors.has(color)}
                     updateCategoryColor={updateCategoryColor}
                   />
                 ))}
@@ -201,13 +205,14 @@ type ColorOptionButtonProps = {
   category: string;
   color: string;
   currentColor: string;
+  disabled: boolean;
   updateCategoryColor: (category: string, color: string) => void;
 };
 
-function ColorOptionButton({ category, color, currentColor, updateCategoryColor }: ColorOptionButtonProps) {
+function ColorOptionButton({ category, color, currentColor, disabled, updateCategoryColor }: ColorOptionButtonProps) {
   const isSelected = currentColor === color;
   const buttonClassName = cn(
-    "h-8 w-8 rounded-full border-2 border-transparent p-0 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]",
+    "h-8 w-8 rounded-full border-2 border-transparent p-0 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100",
     isSelected && "border-[var(--ink)]"
   );
   
@@ -215,9 +220,19 @@ function ColorOptionButton({ category, color, currentColor, updateCategoryColor 
     <button
       type="button"
       className={buttonClassName}
+      disabled={disabled}
       onClick={() => updateCategoryColor(category, color)}
       style={{ background: color }}
       aria-label={`Set color to ${color}`}
     />
+  );
+}
+
+function getUsedCategoryColors(categories: string[], currentCategory: string, categoryColors: Record<string, string>) {
+  return new Set(
+    categories
+      .filter((category) => category !== currentCategory)
+      .map((category) => categoryColors[category])
+      .filter(Boolean)
   );
 }

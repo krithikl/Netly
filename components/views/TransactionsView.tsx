@@ -21,6 +21,7 @@ import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
 import { formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
 import { getTransactionCategory, transactionNeedsReview } from "@/lib/transaction-display";
+import { categoriesMatch, type CategoryEditScope } from "@/lib/category-rules";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionFilter, TransactionSort } from "@/lib/app/types";
 
@@ -31,7 +32,7 @@ type TransactionsViewProps = {
   hasMoreTransactions: boolean;
   isLoadingMoreTransactions: boolean;
   isLoadingTransactions: boolean;
-  onCategoryChange: (transactionId: string, category: string) => void;
+  onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onCreateCategory: (category: string) => void;
   onDateRangeChange: (dateRange: TransactionDateRange) => void;
   onLoadMoreTransactions: () => void;
@@ -193,7 +194,7 @@ export function TransactionsView({
             <div className="category-create-row">
               <label>
                 New category
-                <input onChange={handleNewCategoryChange} placeholder="e.g. Kids, Pets, Travel" value={newCategory} />
+                <input onChange={handleNewCategoryChange} placeholder="e.g. Kids, Pets, Coffee" value={newCategory} />
               </label>
               <Button className="transaction-add-category-button" disabled={!canCreateCategory} onClick={handleCreateCategory} type="button" variant="outline">
                 <Plus aria-hidden="true" className="h-4 w-4" />
@@ -682,7 +683,7 @@ function TransactionCategoryDialog({
         <div className="mobile-filter-drawer-body">
           <div className="mobile-filter-section">
             <div className="mobile-category-create-row">
-              <input onChange={onNewCategoryChange} placeholder="e.g. Kids, Pets, Travel" value={newCategory} />
+              <input onChange={onNewCategoryChange} placeholder="e.g. Kids, Pets, Coffee" value={newCategory} />
               <Button disabled={!canCreateCategory} onClick={handleCreateCategory} type="button" variant="outline">
                 <Plus aria-hidden="true" className="h-4 w-4" />
                 Add
@@ -880,7 +881,7 @@ function getMatchingCategory(categories: string[], category: string) {
     return "";
   }
 
-  return categories.find((currentCategory) => currentCategory.toLowerCase() === category.toLowerCase()) || "";
+  return categories.find((currentCategory) => categoriesMatch(currentCategory, category)) || "";
 }
 
 // Counts hidden mobile filters so the Filters button can show a badge

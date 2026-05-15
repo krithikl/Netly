@@ -61,7 +61,7 @@ export function ActiveView(props: ActiveViewProps) {
         <SettingsView
           categoryColors={props.categoryColors}
           dashboardPeriod={props.dashboardPeriod}
-          defaultCategories={props.transactionCategoryOptions}
+          defaultCategories={props.settingsCategoryOptions}
           deleteCategory={props.deleteCategory}
           showDashboardPeriodSetting={props.showDashboardPeriodSetting}
           setDashboardPeriod={props.setDashboardPeriod}

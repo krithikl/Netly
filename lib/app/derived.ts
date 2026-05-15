@@ -3,31 +3,11 @@ import {
   getTransactionAccountLabel,
   getTransactionCategory,
   getTransactionDate,
-  getTransactionId,
   getTransactionMerchant,
   getTransactionSearchText,
   getTransactionStatus
 } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
-
-// Applies saved category edits without changing the original Akahu records
-export function applyCategoryOverrides(transactions: Transaction[], categoryOverrides: Record<string, string>) {
-  return transactions.map((transaction) => {
-    const override = categoryOverrides[getTransactionId(transaction)];
-
-    if (!override) {
-      return transaction;
-    }
-
-    return {
-      ...transaction,
-      netly: {
-        ...transaction.netly,
-        categoryOverride: override
-      }
-    };
-  });
-}
 
 // Filters and sorts transactions for the Transactions page
 export function getVisibleTransactions(

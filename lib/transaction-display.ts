@@ -1,5 +1,10 @@
 import type { Transaction } from "@/lib/types";
-import { mapSourceCategoryToNetlyCategory } from "@/lib/category-mapping";
+import {
+  getRawAkahuCategory,
+  getRawAkahuPersonalFinanceCategory,
+  getTransactionCategory as getEffectiveTransactionCategory,
+  transactionNeedsReview as getEffectiveTransactionNeedsReview
+} from "@/lib/category-rules";
 
 export type TransactionStatus = "Booked" | "Pending";
 
@@ -46,16 +51,7 @@ export function getTransactionMerchant(transaction: Transaction) {
 // Picks the category to show, with local edits taking priority
 // Resolves a transaction category, preferring user overrides.
 export function getTransactionCategory(transaction: Transaction) {
-  if (transaction.netly?.categoryOverride) {
-    return transaction.netly.categoryOverride;
-  }
-
-  return mapSourceCategoryToNetlyCategory(
-    firstUsefulText([
-      transaction.category?.groups?.personal_finance?.name,
-      transaction.category?.name
-    ], "")
-  );
+  return getEffectiveTransactionCategory(transaction);
 }
 
 export function getTransactionAccountLabel(transaction: Transaction) {
@@ -103,7 +99,8 @@ export function getTransactionDetailRows(transaction: Transaction) {
     { label: "Currency", value: getTransactionCurrency(transaction) },
     { label: "Type", value: transaction.type },
     { label: "Category", value: getTransactionCategory(transaction) },
-    { label: "Akahu category", value: transaction.category?.name },
+    { label: "Akahu group", value: getRawAkahuPersonalFinanceCategory(transaction) },
+    { label: "Akahu category", value: getRawAkahuCategory(transaction) },
     { label: "Merchant", value: transaction.merchant?.name },
     { label: "Card suffix", value: transaction.meta?.card_suffix },
     { label: "Balance after", value: getBalanceValue(transaction) },
@@ -121,6 +118,7 @@ export function getTransactionSearchText(transaction: Transaction) {
   return [
     transaction.description,
     transaction.merchant?.name,
+    getTransactionCategory(transaction),
     transaction.category?.name,
     transaction.category?.groups?.personal_finance?.name,
     transaction.meta?.particulars,
@@ -132,13 +130,27 @@ export function getTransactionSearchText(transaction: Transaction) {
     .join(" | ");
 }
 
+// Shows only source payment/bank fields, not Akahu enrichment or Netly labels.
+export function getTransactionRawBankText(transaction: Transaction) {
+  return [
+    transaction.description,
+    transaction.meta?.particulars,
+    transaction.meta?.code,
+    transaction.meta?.reference,
+    transaction.meta?.other_account,
+    transaction.type
+  ]
+    .filter(isUsefulText)
+    .join(" | ");
+}
+
 // Scores how reliable the category looks
 export function getTransactionConfidence(transaction: Transaction) {
-  if (transaction.netly?.categoryOverride) {
+  if (transaction.netly?.categoryOverride || transaction.netly?.categoryRule) {
     return 1;
   }
 
-  if (getTransactionCategory(transaction) !== "Needs review") {
+  if (!transactionNeedsReview(transaction)) {
     return 0.95;
   }
 
@@ -147,7 +159,7 @@ export function getTransactionConfidence(transaction: Transaction) {
 
 // Flags transactions whose inferred category should be checked by a user.
 export function transactionNeedsReview(transaction: Transaction) {
-  return getTransactionCategory(transaction) === "Needs review";
+  return getEffectiveTransactionNeedsReview(transaction);
 }
 
 function firstUsefulText(values: Array<unknown>, fallback = "Unknown transaction") {

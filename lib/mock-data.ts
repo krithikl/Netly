@@ -7,15 +7,15 @@ export const currentBalance = 3268.42;
 
 export const budgets: Budget[] = [
   { category: "Housing", limit: 1200 },
-  { category: "Groceries", limit: 760 },
-  { category: "Travel", limit: 450 },
-  { category: "Eating out", limit: 340 },
-  { category: "Fuel", limit: 320 },
-  { category: "Shopping", limit: 280 },
-  { category: "Transport", limit: 260 },
-  { category: "Entertainment", limit: 240 },
+  { category: "Food", limit: 760 },
+  { category: "Lifestyle", limit: 450 },
+  { category: "Transport", limit: 320 },
+  { category: "Household", limit: 280 },
   { category: "Utilities", limit: 220 },
-  { category: "Health", limit: 180 }
+  { category: "Health", limit: 180 },
+  { category: "Appearance", limit: 160 },
+  { category: "Education", limit: 140 },
+  { category: "Professional Services", limit: 120 }
 ];
 
 export const cardProducts: CardProduct[] = [

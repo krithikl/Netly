@@ -1,7 +1,32 @@
-import { categoryColorsStorageKey, categoryOverridesStorageKey, customCategoriesStorageKey, deletedCategoriesStorageKey } from "@/lib/app/constants";
-import { defaultCategoryColors } from "@/lib/categories";
+import {
+  categoryColorsStorageKey,
+  categoryOverridesStorageKey,
+  categoryRulesStorageKey,
+  categorySettingsVersion,
+  categorySettingsVersionStorageKey,
+  customCategoriesStorageKey,
+  deletedCategoriesStorageKey
+} from "@/lib/app/constants";
+import { defaultCategoryColors, defaultTransactionCategories, categoryRollupCategory, netlyPalette } from "@/lib/categories";
 import { parseStoredJson } from "@/lib/app/storage";
 import type { DataMode } from "@/lib/app/types";
+
+export function resetOutdatedCategorySettings() {
+  const storedVersion = window.localStorage.getItem(categorySettingsVersionStorageKey);
+
+  if (storedVersion === categorySettingsVersion) {
+    return;
+  }
+
+  [
+    categoryColorsStorageKey,
+    categoryOverridesStorageKey,
+    categoryRulesStorageKey,
+    customCategoriesStorageKey,
+    deletedCategoriesStorageKey
+  ].forEach((storageKey) => window.localStorage.removeItem(storageKey));
+  window.localStorage.setItem(categorySettingsVersionStorageKey, categorySettingsVersion);
+}
 
 export function readCategoryOverrides() {
   const storedValue = window.localStorage.getItem(categoryOverridesStorageKey);
@@ -11,6 +36,16 @@ export function readCategoryOverrides() {
   }
 
   return assertStringRecord(categoryOverridesStorageKey, parseStoredJson<unknown>(categoryOverridesStorageKey, storedValue));
+}
+
+export function readCategoryRules() {
+  const storedValue = window.localStorage.getItem(categoryRulesStorageKey);
+
+  if (storedValue === null) {
+    return {};
+  }
+
+  return assertStringRecord(categoryRulesStorageKey, parseStoredJson<unknown>(categoryRulesStorageKey, storedValue));
 }
 
 export function readCustomCategories() {
@@ -38,7 +73,7 @@ export function readCategoryColors() {
   const stored = storedValue === null
     ? {}
     : assertStringRecord(categoryColorsStorageKey, parseStoredJson<unknown>(categoryColorsStorageKey, storedValue));
-  return { ...defaultCategoryColors, ...stored };
+  return { ...defaultCategoryColors, ...getStoredCategoryColorOverrides(stored) };
 }
 
 export function readInitialDataMode(): DataMode {
@@ -103,4 +138,26 @@ function assertStringArray(storageKey: string, value: unknown): string[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getStoredCategoryColorOverrides(stored: Record<string, string>) {
+  const builtInCategorySet = new Set([...defaultTransactionCategories, categoryRollupCategory]);
+  const builtInDefaultColorOwners = new Map(
+    [...builtInCategorySet].map((category) => [defaultCategoryColors[category], category])
+  );
+
+  return Object.fromEntries(
+    Object.entries(stored).filter(([category, color]) => {
+      if (!netlyPalette.includes(color)) {
+        return false;
+      }
+
+      if (!builtInCategorySet.has(category)) {
+        return true;
+      }
+
+      const defaultColorOwner = builtInDefaultColorOwners.get(color);
+      return defaultColorOwner === undefined || defaultColorOwner === category;
+    })
+  );
 }

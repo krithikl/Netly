@@ -20,6 +20,14 @@ import {
   SheetTitle
 } from "@/components/ui/sheet";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import {
   getTransactionAccountLabel,
   getTransactionAmountLabel,
   getTransactionCategory,
@@ -27,9 +35,11 @@ import {
   getTransactionDetailRows,
   getTransactionId,
   getTransactionMerchant,
+  getTransactionRawBankText,
   getTransactionSearchText,
   getTransactionStatus
 } from "@/lib/transaction-display";
+import type { CategoryEditScope } from "@/lib/category-rules";
 import type { Transaction } from "@/lib/types";
 
 type TransactionListProps = {
@@ -39,7 +49,7 @@ type TransactionListProps = {
   emptyMessage?: string;
   hasMore?: boolean;
   isLoadingMore?: boolean;
-  onCategoryChange?: (transactionId: string, category: string) => void;
+  onCategoryChange?: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onLoadMore?: () => void;
   transactions: Transaction[];
 };
@@ -170,7 +180,7 @@ type TransactionDetailsOverlayProps = {
   categoryColors: Record<string, string>;
   categorySelectOptions?: SelectOption[];
   editable?: boolean;
-  onCategoryChange?: (transactionId: string, category: string) => void;
+  onCategoryChange?: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onClose: () => void;
   open: boolean;
   transaction: Transaction;
@@ -248,7 +258,7 @@ const TransactionRow = memo(function TransactionRow({
         <span className="transaction-merchant-avatar" style={row.colorStyle}>{row.initial}</span>
         <span className="transaction-merchant-copy">
           <strong>{row.merchant}</strong>
-          <small className="transaction-row-status">{row.status}</small>
+          <small className="transaction-row-status">{row.statusLabel}</small>
           <span className="transaction-category-chip transaction-mobile-category-chip" style={row.colorStyle}>
             <span aria-hidden="true" />
             {row.category}
@@ -283,9 +293,26 @@ function getTransactionRowModel(transaction: Transaction, categoryColors: Record
     date: formatTransactionDate(getTransactionDate(transaction)),
     initial: merchant.slice(0, 1).toUpperCase(),
     merchant,
-    status: getTransactionStatus(transaction),
+    statusLabel: getTransactionRowStatusLabel(transaction),
     valueTone: transaction.amount < 0 ? "negative" : "positive"
   };
+}
+
+function getTransactionRowStatusLabel(transaction: Transaction) {
+  return [
+    getTransactionStatus(transaction),
+    getPaymentTypeLabel(transaction)
+  ].filter(Boolean).join(" · ");
+}
+
+function getPaymentTypeLabel(transaction: Transaction) {
+  const paymentType = typeof transaction.type === "string" ? transaction.type.trim() : "";
+
+  return paymentType ? formatPaymentType(paymentType) : "";
+}
+
+function formatPaymentType(value: string) {
+  return value.toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function getTransactionColor(category: string, categoryColors: Record<string, string>) {
@@ -302,23 +329,55 @@ function CategorySelect({
 }: {
   categoryLabel: string;
   categoryOptions: SelectOption[];
-  onCategoryChange?: (transactionId: string, category: string) => void;
+  onCategoryChange?: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onClose: () => void;
   transaction: Transaction;
 }) {
+  const [pendingCategory, setPendingCategory] = useState("");
+  const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
   const handleCategoryChange = (category: string) => {
-    onCategoryChange?.(getTransactionId(transaction), category);
+    setPendingCategory(category);
+    setScopeDialogOpen(true);
+  };
+  const applyCategoryChange = (scope: CategoryEditScope) => {
+    if (!pendingCategory) {
+      return;
+    }
+
+    onCategoryChange?.(transaction, pendingCategory, scope);
+    setScopeDialogOpen(false);
+    setPendingCategory("");
     onClose();
   };
 
   return (
-    <SelectField
-      ariaLabel={categoryLabel}
-      className="transaction-detail-category-select"
-      onChange={handleCategoryChange}
-      options={categoryOptions}
-      value={getTransactionCategory(transaction)}
-    />
+    <>
+      <SelectField
+        ariaLabel={categoryLabel}
+        className="transaction-detail-category-select"
+        onChange={handleCategoryChange}
+        options={categoryOptions}
+        value={getTransactionCategory(transaction)}
+      />
+      <Dialog onOpenChange={setScopeDialogOpen} open={scopeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Apply category change?</DialogTitle>
+            <DialogDescription>
+              Choose whether this category should apply only to this transaction or to similar transactions from the same merchant and Akahu category.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => applyCategoryChange("transaction")} type="button" variant="outline">
+              Only this transaction
+            </Button>
+            <Button onClick={() => applyCategoryChange("similar")} type="button">
+              All similar transactions
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -336,7 +395,7 @@ function TransactionDetailsSheet({
   categoryColors: Record<string, string>;
   editable: boolean;
   open: boolean;
-  onCategoryChange?: (transactionId: string, category: string) => void;
+  onCategoryChange?: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onClose: () => void;
   transaction: Transaction;
 }) {
@@ -387,7 +446,7 @@ function TransactionDetailsDrawer({
   categoryColors: Record<string, string>;
   editable: boolean;
   open: boolean;
-  onCategoryChange?: (transactionId: string, category: string) => void;
+  onCategoryChange?: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onClose: () => void;
   transaction: Transaction;
 }) {
@@ -424,14 +483,15 @@ function TransactionDetailsContent({
   categorySelectOptions: SelectOption[];
   categoryColors: Record<string, string>;
   editable: boolean;
-  onCategoryChange?: (transactionId: string, category: string) => void;
+  onCategoryChange?: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   transaction: Transaction;
 }) {
   const merchant = getTransactionMerchant(transaction);
   const category = getTransactionCategory(transaction);
   const colorStyle = { "--transaction-color": getTransactionColor(category, categoryColors) } as CSSProperties;
   const amountClassName = transaction.amount < 0 ? "negative" : "positive";
-  const rawText = getTransactionSearchText(transaction);
+  const summaryStatusLabel = getTransactionRowStatusLabel(transaction);
+  const rawText = getTransactionRawBankText(transaction);
   const transactionId = getTransactionId(transaction);
   const [rawTextExpanded, setRawTextExpanded] = useState(false);
 
@@ -447,7 +507,7 @@ function TransactionDetailsContent({
         </span>
         <div className="min-w-0">
           <strong className="block truncate">{merchant}</strong>
-          <p>{formatTransactionDate(getTransactionDate(transaction))} · {getTransactionStatus(transaction)}</p>
+          <p>{formatTransactionDate(getTransactionDate(transaction))} · {summaryStatusLabel}</p>
           <div className="transaction-detail-summary-meta">
             <span className="transaction-category-chip" style={colorStyle}>
               <span aria-hidden="true" />

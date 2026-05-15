@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { handleCallbackParams } from "@/lib/app/browser-state";
+import { categoryRollupCategory } from "@/lib/categories";
 import {
-  applyCategoryOverrides,
   getCardFitSourceLabel,
   getCardFitWindowLabel,
   getConnectionCopy,
@@ -13,6 +13,7 @@ import {
   getLinkedUserName,
   getStatusBannerTitle
 } from "@/lib/app/derived";
+import { applyCategoryPreferences } from "@/lib/category-rules";
 import type { DataMode } from "@/lib/app/types";
 import type { ActiveViewProps } from "@/lib/app/view-props";
 import { budgets, cardProducts, payday as defaultPayday } from "@/lib/mock-data";
@@ -49,12 +50,12 @@ export function useNetlyApp() {
   const categories = useCategorySettings(categorySourceTransactions, []);
   // Apply saved category overrides before deriving dashboard metrics.
   const workingTransactions = useMemo(
-    () => applyCategoryOverrides(banking.transactions, categories.categoryOverrides),
-    [banking.transactions, categories.categoryOverrides]
+    () => applyCategoryPreferences(banking.transactions, categories.categoryOverrides, categories.categoryRules),
+    [banking.transactions, categories.categoryOverrides, categories.categoryRules]
   );
   const transactionPageWorkingTransactions = useMemo(
-    () => applyCategoryOverrides(banking.transactionPageTransactions, categories.categoryOverrides),
-    [banking.transactionPageTransactions, categories.categoryOverrides]
+    () => applyCategoryPreferences(banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules),
+    [banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules]
   );
   // Transactions page owns its own search/filter/date state but receives app data here.
   const transactionControls = useTransactionControls({
@@ -200,6 +201,7 @@ export function useNetlyApp() {
     workingTransactions,
     dashboardPeriod: dashboardPeriodSettings.dashboardPeriod,
     showDashboardPeriodSetting: isBottomNavigation,
+    settingsCategoryOptions: categories.settingsCategoryOptions,
     setDashboardPeriod: dashboardPeriodSettings.updateDashboardPeriod,
     updateCategoryColor: categories.updateCategoryColor,
     deleteCategory: categories.deleteCategory
@@ -246,10 +248,9 @@ function getAverageDailySpend(expenses: ReturnType<typeof debitTransactions>, to
   return totalSpend / dayCount;
 }
 
-// Keeps the donut chart readable by grouping small categories into “Other”.
+// Keeps the donut chart readable by grouping small categories into a visual roll-up.
 function groupCategoriesForChart(categories: { category: string; amount: number }[], limit: number) {
   const sortedCategories = categories
-    .filter((item) => item.category !== "Income")
     .sort((first, second) => second.amount - first.amount);
 
   if (sortedCategories.length <= limit) {
@@ -259,5 +260,5 @@ function groupCategoriesForChart(categories: { category: string; amount: number 
   const visibleCategories = sortedCategories.slice(0, limit);
   const otherAmount = sum(sortedCategories.slice(limit).map((item) => item.amount));
 
-  return [...visibleCategories, { category: "Other", amount: otherAmount }];
+  return [...visibleCategories, { category: categoryRollupCategory, amount: otherAmount }];
 }

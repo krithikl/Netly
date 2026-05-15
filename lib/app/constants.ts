@@ -14,6 +14,12 @@ export const periods: PeriodOption[] = ["This month", "30 days", "90 days", "All
 
 export const categoryOverridesStorageKey = "netly_category_overrides";
 
+export const categoryRulesStorageKey = "netly_category_learning_rules";
+
+export const categorySettingsVersionStorageKey = "netly_category_settings_version";
+
+export const categorySettingsVersion = "2";
+
 export const customCategoriesStorageKey = "netly_custom_categories";
 
 export const deletedCategoriesStorageKey = "netly_deleted_categories";

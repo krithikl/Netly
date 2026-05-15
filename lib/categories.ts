@@ -1,20 +1,19 @@
-// Default category list used by filters, settings, charts, and category mapping.
+export const needsReviewCategory = "Needs review";
+export const categoryRollupCategory = "Smaller categories";
+
+// Akahu personal finance groups used as Netly's default category set.
 export const defaultTransactionCategories = [
-  "Groceries",
-  "Eating out",
-  "Transport",
-  "Housing",
-  "Utilities",
-  "Shopping",
-  "Health",
-  "Lifestyle",
+  "Appearance",
   "Education",
-  "Entertainment",
-  "Travel",
-  "Fees",
-  "Income",
-  "Other",
-  "Needs review"
+  "Food",
+  "Health",
+  "Household",
+  "Housing",
+  "Lifestyle",
+  "Professional Services",
+  "Transport",
+  "Utilities",
+  needsReviewCategory
 ];
 
 export const netlyPalette = [
@@ -25,19 +24,16 @@ export const netlyPalette = [
 
 // Default colours used before a user customises category settings.
 export const defaultCategoryColors: Record<string, string> = {
-  Shopping: "#ef5350",
-  "Eating out": "#d84315",
-  Housing: "#f57c00",
-  Utilities: "#ffb300",
-  Income: "#43a047",
-  Groceries: "#26a69a",
-  Health: "#00acc1",
-  Transport: "#4285f4",
-  Education: "#5e97f6",
-  Travel: "#7e57c2",
+  Appearance: "#ec407a",
+  Education: "#5c6bc0",
+  Food: "#43a047",
+  Health: "#26c6da",
+  Household: "#f57c00",
+  Housing: "#8d6e63",
   Lifestyle: "#ab47bc",
-  Entertainment: "#ec407a",
-  Other: "#8d6e63",
-  Fees: "#78909c",
-  "Needs review": "#607d8b"
+  "Professional Services": "#607d8b",
+  [categoryRollupCategory]: "#7cb342",
+  Transport: "#4285f4",
+  Utilities: "#ffb300",
+  [needsReviewCategory]: "#ef5350"
 };

@@ -53,6 +53,7 @@ export type Transaction = AkahuTransaction & {
     accountName?: string;
     accountCurrency?: string;
     categoryOverride?: string;
+    categoryRule?: string;
   };
 };
 

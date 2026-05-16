@@ -12,21 +12,26 @@ export function ActiveView(props: ActiveViewProps) {
     case "transactions":
       return (
         <TransactionsView
+          accountOptions={props.accountOptions}
           categoryColors={props.categoryColors}
           categoryOptions={props.transactionCategoryOptions}
           dateRange={props.transactionDateRange}
           hasMoreTransactions={props.transactionsHasMore}
+          isLoadingAllTransactions={props.isLoadingAllTransactions}
           isLoadingMoreTransactions={props.isLoadingMoreTransactions}
           isLoadingTransactions={props.isLoadingTransactions}
           onCategoryChange={props.onCategoryChange}
           onCreateCategory={props.onCreateCategory}
           onDateRangeChange={props.setTransactionDateRange}
+          onLoadAllTransactions={props.onLoadAllTransactions}
           onLoadMoreTransactions={props.onLoadMoreTransactions}
           query={props.query}
           setQuery={props.setQuery}
+          setTransactionAccounts={props.setTransactionAccounts}
           setTransactionCategory={props.setTransactionCategory}
           setTransactionFilter={props.setTransactionFilter}
           setTransactionSort={props.setTransactionSort}
+          transactionAccounts={props.transactionAccounts}
           transactionCategory={props.transactionCategory}
           transactionFilter={props.transactionFilter}
           transactionSort={props.transactionSort}
@@ -44,6 +49,7 @@ export function ActiveView(props: ActiveViewProps) {
           cardFitWindowLabel={props.cardFitWindowLabel}
           cards={props.cards}
           hasCardEligibleSpend={props.hasCardEligibleSpend}
+          isLoadingTransactions={props.isLoadingCardFitTransactions}
         />
       );
     case "connect":
@@ -59,10 +65,16 @@ export function ActiveView(props: ActiveViewProps) {
     case "settings":
       return (
         <SettingsView
+          akahuDataFreshness={props.akahuDataFreshness}
           categoryColors={props.categoryColors}
+          dataMode={props.dataMode}
           dashboardPeriod={props.dashboardPeriod}
           defaultCategories={props.settingsCategoryOptions}
           deleteCategory={props.deleteCategory}
+          driveBackup={props.driveBackup}
+          onConnectDriveBackup={props.onConnectDriveBackup}
+          onDisconnectDriveBackup={props.onDisconnectDriveBackup}
+          onRestoreDriveBackup={props.onRestoreDriveBackup}
           showDashboardPeriodSetting={props.showDashboardPeriodSetting}
           setDashboardPeriod={props.setDashboardPeriod}
           updateCategoryColor={props.updateCategoryColor}
@@ -88,7 +100,6 @@ export function ActiveView(props: ActiveViewProps) {
             payday={props.payday}
             paydayPatternDate={props.paydayPatternDate}
             reviewCount={props.reviewCount}
-            safeToSpendAmount={props.safeToSpendAmount}
             setActiveView={props.setActiveView}
             setHoveredCategory={props.setHoveredCategory}
             setPayday={props.setPayday}

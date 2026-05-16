@@ -63,6 +63,16 @@ export class AkahuClient {
     return this.getJson<AkahuAccountsResponse>("/accounts", token);
   }
 
+  async requestRefresh(token: AkahuToken) {
+    const response = await fetch(this.buildUrl("/refresh"), {
+      method: "POST",
+      headers: this.userHeaders(token),
+      cache: "no-store"
+    });
+
+    return this.readResponse<{ success?: boolean; message?: string }>(response);
+  }
+
   async getTransactions(token: AkahuToken, query: AkahuTransactionQuery = {}) {
     return this.getAllItems<AkahuTransactionsResponse>(addTransactionQueryToPath("/transactions", query), token);
   }

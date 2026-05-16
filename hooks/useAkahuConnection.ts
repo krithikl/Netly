@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import type { DataMode } from "@/lib/app/types";
 import type { TransactionDateRange } from "@/lib/types";
 
@@ -40,18 +41,36 @@ export function useAkahuConnection({
       })
     });
     const payload = (await response.json()) as { error?: string; message?: string };
+    const completionMessage = getCompletionMessage(response.ok, payload);
 
-    setSyncResult(getCompletionMessage(response.ok, payload));
+    setSyncResult(completionMessage);
 
     if (response.ok) {
+      toast.success("Akahu connected", {
+        description: completionMessage
+      });
       setManualTokens({
         appToken: "",
         userToken: ""
       });
       setDataMode("user");
       window.localStorage.setItem("netly_data_mode", "user");
-      await refreshTransactions("user", transactionDateRange);
+
+      try {
+        await refreshTransactions("user", transactionDateRange);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Akahu connected, but transactions could not be loaded.";
+        setSyncResult(message);
+        toast.error("Akahu connected, but loading failed", {
+          description: message
+        });
+      }
+      return;
     }
+
+    toast.error("Akahu connection failed", {
+      description: completionMessage
+    });
   }, [manualTokens, refreshTransactions, setDataMode, transactionDateRange]);
 
   const updateManualTokens = useCallback((tokens: AkahuManualTokens) => {

@@ -13,7 +13,6 @@ type HeroBalanceCardProps = {
   onReviewSpend: () => void;
   payday: string;
   paydayPatternDate: string;
-  safeToSpendAmount: number;
   setPayday: (payday: string) => void;
 };
 
@@ -25,7 +24,6 @@ export function HeroBalanceCard({
   onReviewSpend,
   payday,
   paydayPatternDate,
-  safeToSpendAmount,
   setPayday
 }: HeroBalanceCardProps) {
   const [paydayPopoverOpen, setPaydayPopoverOpen] = useState(false);
@@ -46,7 +44,6 @@ export function HeroBalanceCard({
       <div className="hero-card-section hero-balance">
         <span className="eyebrow">Available balance</span>
         <strong>{balanceLabel}</strong>
-        <p>{formatMoney(safeToSpendAmount)} looks safe after upcoming bills and buffer.</p>
       </div>
 
       <div className="hero-card-divider" aria-hidden="true" />
@@ -86,16 +83,22 @@ export function HeroBalanceCard({
         <p>{paydayLabel}</p>
       </div>
 
-      <div className="hero-actions">
+      <div className="hero-actions !items-end">
+        <Button
+          aria-hidden={isConnected}
+          className={`hero-secondary-action ${isConnected ? "invisible pointer-events-none" : ""}`}
+          onClick={onConnect}
+          tabIndex={isConnected ? -1 : 0}
+          type="button"
+          variant="outline"
+        >
+          Connect bank
+        </Button>
+
         <Button onClick={onReviewSpend} type="button">
           Review spend
           <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
         </Button>
-        {!isConnected && (
-          <Button className="hero-secondary-action" onClick={onConnect} type="button" variant="outline">
-            Connect bank
-          </Button>
-        )}
       </div>
     </Card>
   );

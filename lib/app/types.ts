@@ -6,6 +6,11 @@ export type TransactionFilter = "All" | "Expenses" | "Income";
 
 export type TransactionSort = "Newest" | "Oldest" | "Amount high" | "Amount low";
 
+export type TransactionAccountOption = {
+  label: string;
+  value: string;
+};
+
 export type LinkedAccount = {
   accountId: string;
   displayName: string;
@@ -14,4 +19,22 @@ export type LinkedAccount = {
   accountType: string;
   accountSubType: string;
   ownerName?: string;
+};
+
+export type AccountDataFreshness = {
+  accountId: string;
+  displayName: string;
+  status: string;
+  balanceRefreshedAt: string | null;
+  transactionsRefreshedAt: string | null;
+};
+
+export type AkahuDataFreshness = {
+  accounts: AccountDataFreshness[];
+  balanceRefreshedAt: string | null;
+  error: string;
+  isStale: boolean;
+  retrievedAt: string | null;
+  status: "idle" | "loading" | "refreshing" | "refreshed" | "failed";
+  transactionsRefreshedAt: string | null;
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ChevronDown, ChevronRight, CreditCard } from "lucide-react";
+import { ChevronDown, ChevronRight, CreditCard, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import {
@@ -48,8 +48,11 @@ type TransactionListProps = {
   editable?: boolean;
   emptyMessage?: string;
   hasMore?: boolean;
+  isLoading?: boolean;
+  isLoadingAll?: boolean;
   isLoadingMore?: boolean;
   onCategoryChange?: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
+  onLoadAll?: () => void;
   onLoadMore?: () => void;
   transactions: Transaction[];
 };
@@ -71,8 +74,11 @@ export function TransactionList({
   editable = false,
   emptyMessage = "No transactions to show.",
   hasMore = false,
+  isLoading = false,
+  isLoadingAll = false,
   isLoadingMore = false,
   onCategoryChange,
+  onLoadAll,
   onLoadMore,
   transactions
 }: TransactionListProps) {
@@ -126,6 +132,15 @@ export function TransactionList({
     return () => window.clearTimeout(clearDetailsTransaction);
   }, [selectedTransaction]);
 
+  if (isLoading) {
+    return (
+      <div className="transaction-loading-state" role="status">
+        <LoaderCircle aria-hidden="true" className="h-5 w-5 animate-spin" />
+        <span>Loading transactions and encrypted archive...</span>
+      </div>
+    );
+  }
+
   if (transactions.length === 0) {
     return <div className="empty-state">{emptyMessage}</div>;
   }
@@ -156,9 +171,16 @@ export function TransactionList({
           })}
         </div>
         {(remainingTransactionCount > 0 || hasMore) && (
-          <Button className="transaction-load-more" disabled={isLoadingMore} onClick={showMoreTransactions} type="button" variant="secondary">
-            {getLoadMoreLabel(remainingTransactionCount, hasMore, isLoadingMore)}
-          </Button>
+          <div className="transaction-load-actions">
+            <Button className="transaction-load-more" disabled={isLoadingMore || isLoadingAll} onClick={showMoreTransactions} type="button" variant="secondary">
+              {getLoadMoreLabel(remainingTransactionCount, hasMore, isLoadingMore)}
+            </Button>
+            {hasMore && onLoadAll && (
+              <Button className="transaction-load-more" disabled={isLoadingMore || isLoadingAll} onClick={onLoadAll} type="button" variant="outline">
+                {isLoadingAll ? "Loading full range" : "Load all for this range"}
+              </Button>
+            )}
+          </div>
         )}
       </div>
       {detailsTransaction && (

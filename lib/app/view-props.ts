@@ -1,6 +1,7 @@
 import type { Budget, CardFitBasis, CardFitExplanation, CardValue, PeriodOption, RecurringMerchant, Transaction, TransactionDateRange } from "@/lib/types";
 import type { CategoryEditScope } from "@/lib/category-rules";
-import type { TransactionFilter, TransactionSort, View } from "@/lib/app/types";
+import type { DriveBackupState } from "@/hooks/useDriveBackup";
+import type { AkahuDataFreshness, TransactionAccountOption, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 import type { AkahuManualTokens } from "@/hooks/useAkahuConnection";
 
 export type SharedViewProps = {
@@ -24,25 +25,29 @@ export type HomeViewStateProps = {
   payday: string;
   paydayPatternDate: string;
   reviewCount: number;
-  safeToSpendAmount: number;
   setHoveredCategory: (category: string | null) => void;
   setPayday: (payday: string) => void;
   transactionPreview: Transaction[];
 };
 
 export type TransactionsViewStateProps = {
+  accountOptions: TransactionAccountOption[];
+  isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
   onCreateCategory: (category: string) => void;
   onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
+  onLoadAllTransactions: () => void;
   onLoadMoreTransactions: () => void;
   onRefreshUserTransactions: () => void;
   query: string;
   setQuery: (query: string) => void;
+  setTransactionAccounts: (accounts: string[]) => void;
   setTransactionCategory: (categories: string[]) => void;
   setTransactionDateRange: (dateRange: TransactionDateRange) => void;
   setTransactionFilter: (filter: TransactionFilter) => void;
   setTransactionSort: (sort: TransactionSort) => void;
   syncResult: string;
+  transactionAccounts: string[];
   transactionCategory: string[];
   transactionCategoryOptions: string[];
   transactionDateRange: TransactionDateRange;
@@ -67,6 +72,7 @@ export type CardFitViewStateProps = {
   cardFitExplanation: CardFitExplanation | null;
   cards: CardValue[];
   hasCardEligibleSpend: boolean;
+  isLoadingCardFitTransactions: boolean;
 };
 
 export type ConnectViewStateProps = {
@@ -78,7 +84,13 @@ export type ConnectViewStateProps = {
 };
 
 export type SettingsViewStateProps = {
+  akahuDataFreshness: AkahuDataFreshness;
+  dataMode: "user" | "demo";
   dashboardPeriod: PeriodOption;
+  driveBackup: DriveBackupState;
+  onConnectDriveBackup: () => Promise<void>;
+  onDisconnectDriveBackup: () => void;
+  onRestoreDriveBackup: () => Promise<void>;
   showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
   settingsCategoryOptions: string[];

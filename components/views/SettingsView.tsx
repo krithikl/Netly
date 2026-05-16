@@ -16,13 +16,21 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { netlyPalette } from "@/lib/categories";
 import { periods } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
+import type { DriveBackupState } from "@/hooks/useDriveBackup";
+import type { AkahuDataFreshness, DataMode } from "@/lib/app/types";
 import type { PeriodOption } from "@/lib/types";
 
 type SettingsViewProps = {
+  akahuDataFreshness: AkahuDataFreshness;
   categoryColors: Record<string, string>;
+  dataMode: DataMode;
   dashboardPeriod: PeriodOption;
   defaultCategories: string[];
   deleteCategory: (category: string) => void;
+  driveBackup: DriveBackupState;
+  onConnectDriveBackup: () => Promise<void>;
+  onDisconnectDriveBackup: () => void;
+  onRestoreDriveBackup: () => Promise<void>;
   showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
   updateCategoryColor: (category: string, color: string) => void;
@@ -30,10 +38,16 @@ type SettingsViewProps = {
 
 // Settings screen for managing category colours and hiding unused categories.
 export function SettingsView({
+  akahuDataFreshness,
   categoryColors,
+  dataMode,
   dashboardPeriod,
   defaultCategories,
   deleteCategory,
+  driveBackup,
+  onConnectDriveBackup,
+  onDisconnectDriveBackup,
+  onRestoreDriveBackup,
   showDashboardPeriodSetting,
   setDashboardPeriod,
   updateCategoryColor
@@ -73,6 +87,47 @@ export function SettingsView({
       </section>
 
       <section className="material-card">
+        <AkahuFreshnessCard dataMode={dataMode} freshness={akahuDataFreshness} />
+      </section>
+
+      <section className="material-card">
+        <div className="settings-drive-card">
+          <div>
+            <h3>Google Drive backup</h3>
+            <p>Archive every Akahu transaction when first seen, then back it up to Google Drive app data.</p>
+          </div>
+          <span className={`settings-drive-status ${driveBackup.status}`}>
+            {getDriveBackupStatusLabel(driveBackup.status)}
+          </span>
+          {!driveBackup.clientConfigured && (
+            <p className="settings-drive-warning">
+              Missing GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
+            </p>
+          )}
+          <p className="settings-drive-message">
+            Backups use Google's hidden app data folder. Netly does not request access to your other Drive files.
+          </p>
+          <p aria-live="polite" className="settings-drive-message">
+            {driveBackup.message}
+          </p>
+          {driveBackup.lastSyncedAt && (
+            <p className="settings-drive-meta">Last synced {formatDriveSyncTime(driveBackup.lastSyncedAt)}</p>
+          )}
+          <div className="settings-drive-actions">
+            <Button disabled={driveBackup.status === "syncing"} onClick={() => void onConnectDriveBackup()} type="button">
+              {driveBackup.status === "syncing" ? "Syncing..." : "Connect and back up"}
+            </Button>
+            <Button disabled={driveBackup.status === "syncing"} onClick={() => void onRestoreDriveBackup()} type="button" variant="outline">
+              Restore from Drive
+            </Button>
+            <Button disabled={driveBackup.status === "syncing"} onClick={onDisconnectDriveBackup} type="button" variant="secondary">
+              Disconnect
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="material-card">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="m-0 text-base font-semibold text-[var(--ink)]">Categories</h3>
@@ -100,6 +155,155 @@ export function SettingsView({
       </section>
     </section>
   );
+}
+
+type AkahuFreshnessCardProps = {
+  dataMode: DataMode;
+  freshness: AkahuDataFreshness;
+};
+
+// Shows when Netly last retrieved data from Akahu and when Akahu refreshed it.
+function AkahuFreshnessCard({ dataMode, freshness }: AkahuFreshnessCardProps) {
+  const isDemoMode = dataMode === "demo";
+  const statusLabel = isDemoMode ? "Demo" : getAkahuFreshnessStatusLabel(freshness);
+  const statusClassName = isDemoMode ? "ready" : getAkahuFreshnessStatusClassName(freshness);
+
+  return (
+    <div className="settings-drive-card">
+      <div>
+        <h3>Akahu data freshness</h3>
+        <p>{isDemoMode ? "Demo mode uses local sample data." : "Latest endpoint retrieval and Akahu account refresh timestamps."}</p>
+      </div>
+      <span className={`settings-drive-status ${statusClassName}`}>
+        {statusLabel}
+      </span>
+      {!isDemoMode && (
+        <>
+          <div className="settings-freshness-grid" aria-live="polite">
+            <FreshnessMetric label="Retrieved from Akahu" value={formatAkahuFreshnessTime(freshness.retrievedAt)} />
+            <FreshnessMetric label="Balance data" value={formatAkahuFreshnessTime(freshness.balanceRefreshedAt)} />
+            <FreshnessMetric label="Transactions checked" value={formatAkahuFreshnessTime(freshness.transactionsRefreshedAt)} />
+          </div>
+          {freshness.status === "refreshing" && (
+            <p className="settings-drive-message">Akahu data looked stale, so Netly requested a refresh and is rechecking the account snapshot.</p>
+          )}
+          {freshness.status === "failed" && freshness.error && (
+            <p className="settings-drive-warning">{freshness.error}</p>
+          )}
+          {freshness.status !== "failed" && freshness.isStale && (
+            <p className="settings-drive-message">Some account data is older than 24 hours. Akahu may delay manual refreshes during its refresh rest period.</p>
+          )}
+          {freshness.accounts.length > 1 && (
+            <details className="settings-freshness-details">
+              <summary>Account timestamps</summary>
+              <div className="settings-freshness-account-list">
+                {freshness.accounts.map((account) => (
+                  <div key={account.accountId}>
+                    <strong>{account.displayName}</strong>
+                    <span>{account.status}</span>
+                    <span>Balance {formatAkahuFreshnessTime(account.balanceRefreshedAt)}</span>
+                    <span>Transactions {formatAkahuFreshnessTime(account.transactionsRefreshedAt)}</span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+type FreshnessMetricProps = {
+  label: string;
+  value: string;
+};
+
+// Renders one compact timestamp field in the Akahu freshness card.
+function FreshnessMetric({ label, value }: FreshnessMetricProps) {
+  return (
+    <div className="settings-freshness-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+// Converts freshness state into a short status chip label.
+function getAkahuFreshnessStatusLabel(freshness: AkahuDataFreshness) {
+  switch (freshness.status) {
+    case "loading":
+      return "Loading";
+    case "refreshing":
+      return "Refreshing";
+    case "failed":
+      return "Failed";
+    case "refreshed":
+      return freshness.isStale ? "Stale" : "Current";
+    default:
+      return "Not loaded";
+  }
+}
+
+// Maps Akahu freshness state onto the existing Settings status chip tones.
+function getAkahuFreshnessStatusClassName(freshness: AkahuDataFreshness) {
+  if (freshness.status === "failed") {
+    return "failed";
+  }
+
+  if (freshness.status === "loading" || freshness.status === "refreshing") {
+    return "syncing";
+  }
+
+  return freshness.isStale ? "syncing" : "synced";
+}
+
+// Formats Akahu ISO timestamps for Settings without adding another date library.
+function formatAkahuFreshnessTime(value: string | null) {
+  if (!value) {
+    return "Not available";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("en-NZ", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+}
+
+// Formats Drive status into short UI labels.
+function getDriveBackupStatusLabel(status: DriveBackupState["status"]) {
+  switch (status) {
+    case "ready":
+      return "Ready";
+    case "syncing":
+      return "Syncing";
+    case "synced":
+      return "Synced";
+    case "failed":
+      return "Failed";
+    default:
+      return "Disconnected";
+  }
+}
+
+// Presents archive sync timestamps without adding another date library.
+function formatDriveSyncTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("en-NZ", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
 }
 
 type CategoryColorRowProps = {

@@ -6,7 +6,7 @@ Netly should avoid becoming a generic budgeting app.
 
 The sharp version is:
 
-> Connect open banking data and show what changed, what is recurring, what is safe to spend, and whether the user has the right card/account setup for their actual spending.
+> Connect open banking data and show what changed, what is recurring, and whether the user has the right card/account setup for their actual spending.
 
 ## Current Provider Direction
 

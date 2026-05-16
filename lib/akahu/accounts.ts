@@ -1,4 +1,4 @@
-import type { LinkedAccount } from "@/lib/app/types";
+import type { AccountDataFreshness, LinkedAccount } from "@/lib/app/types";
 
 export type AkahuAccount = {
   _id: string;
@@ -40,6 +40,7 @@ export type AkahuAccountsResponse = {
   };
 };
 
+// Extracts account lists from both Akahu list and single-item response shapes.
 export function getAkahuAccounts(response: AkahuAccountsResponse) {
   return response.items || (response.item ? [response.item] : []);
 }
@@ -57,6 +58,18 @@ export function toLinkedAccount(account: AkahuAccount): LinkedAccount {
   };
 }
 
+// Converts Akahu's account refresh metadata into the UI freshness shape.
+export function toAccountDataFreshness(account: AkahuAccount): AccountDataFreshness {
+  return {
+    accountId: account._id,
+    displayName: account.name || account.connection?.name || account.formatted_account || account._id,
+    status: account.status || "UNKNOWN",
+    balanceRefreshedAt: account.refreshed?.balance || null,
+    transactionsRefreshedAt: account.refreshed?.transactions || null
+  };
+}
+
+// Sums available balances while keeping empty account sets distinct from zero.
 export function getAvailableBalance(accounts: AkahuAccount[]) {
   if (accounts.length === 0) {
     return null;
@@ -65,6 +78,7 @@ export function getAvailableBalance(accounts: AkahuAccount[]) {
   return accounts.reduce((total, account) => total + getAccountAvailableBalance(account), 0);
 }
 
+// Uses current balance when Akahu does not expose an available balance.
 function getAccountAvailableBalance(account: AkahuAccount) {
   return account.balance?.available ?? account.balance?.current ?? 0;
 }

@@ -26,7 +26,6 @@ type HomeViewProps = {
   payday: string;
   paydayPatternDate: string;
   reviewCount: number;
-  safeToSpendAmount: number;
   setActiveView: (view: View) => void;
   setHoveredCategory: (category: string | null) => void;
   setPayday: (payday: string) => void;
@@ -52,7 +51,6 @@ export function HomeView({
   payday,
   paydayPatternDate,
   reviewCount,
-  safeToSpendAmount,
   setActiveView,
   setHoveredCategory,
   setPayday,
@@ -74,7 +72,6 @@ export function HomeView({
         onReviewSpend={openTransactionsView}
         payday={payday}
         paydayPatternDate={paydayPatternDate}
-        safeToSpendAmount={safeToSpendAmount}
         setPayday={setPayday}
       />
 

@@ -3,7 +3,7 @@ import { getAvailableBalance, toAccountDataFreshness, toLinkedAccount, type Akah
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 import { getMissingAkahuCredentialsNotice, getValidAccessToken } from "@/lib/akahu/token";
 
-const staleDataThresholdMs = 24 * 60 * 60 * 1000;
+const staleDataThresholdMs = 12 * 60 * 60 * 1000;
 const personalAppManualRefreshCooldownMs = 60 * 60 * 1000;
 const fullAppManualRefreshCooldownMs = 15 * 60 * 1000;
 const demoAccounts: AkahuAccount[] = [

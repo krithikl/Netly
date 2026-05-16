@@ -136,6 +136,18 @@ export function useAkahuData() {
         }
       }
 
+      if (mode === "user") {
+        const startupRefreshNotice = await requestAkahuStartupRefresh();
+
+        if (!isCurrentRequest()) {
+          return;
+        }
+
+        if (startupRefreshNotice) {
+          setTransactionLoadNotice(startupRefreshNotice);
+        }
+      }
+
       const accountsRequest = loadAndApplyAccountSnapshot(mode, isCurrentRequest, {
         setAkahuDataFreshness,
         setAvailableBalance,
@@ -447,6 +459,17 @@ async function loadAccountsPayload(mode: DataMode) {
 
   assertAkahuResponse(response, payload.error, "Could not load accounts.");
   return payload;
+}
+
+// Requests Akahu refresh whenever user mode starts or re-enters the app. Failures are non-fatal because archive-first data should still render.
+async function requestAkahuStartupRefresh() {
+  try {
+    const payload = await requestAkahuRefresh();
+    recordManualRefreshRequestedAt();
+    return payload.notice || "Akahu refresh requested. Syncing latest accounts and transactions.";
+  } catch (error) {
+    return error instanceof Error ? error.message : "Could not request Akahu refresh.";
+  }
 }
 
 // Calls Akahu's manual refresh route and fails loudly if it is rejected.

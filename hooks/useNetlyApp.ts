@@ -101,6 +101,26 @@ export function useNetlyApp() {
   }, []);
 
   useEffect(() => {
+    const refreshUserModeWhenVisible = () => {
+      if (banking.dataMode !== "user" || document.visibilityState !== "visible") {
+        return;
+      }
+
+      banking.refreshTransactions("user", transactionControls.transactionDateRange).catch((error: unknown) => {
+        banking.setTransactionLoadError(error instanceof Error ? error.message : "Could not refresh Akahu transactions.");
+      });
+    };
+
+    window.addEventListener("focus", refreshUserModeWhenVisible);
+    document.addEventListener("visibilitychange", refreshUserModeWhenVisible);
+
+    return () => {
+      window.removeEventListener("focus", refreshUserModeWhenVisible);
+      document.removeEventListener("visibilitychange", refreshUserModeWhenVisible);
+    };
+  }, [banking.dataMode, banking.refreshTransactions, banking.setTransactionLoadError, transactionControls.transactionDateRange]);
+
+  useEffect(() => {
     const previousActiveView = previousActiveViewRef.current;
 
     if (previousActiveView === "transactions" && activeView !== "transactions") {

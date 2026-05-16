@@ -9,41 +9,42 @@ import { useNetlyApp } from "@/hooks/useNetlyApp";
 // Main client shell: wires global app state into sidebar, topbar, and active page view.
 export function AppShell() {
   const app = useNetlyApp();
+  const { shell } = app;
 
   return (
     <div className="app-shell">
       <AppSidebar
-        activeView={app.activeView}
-        changeDataMode={app.changeDataMode}
-        connectionCopy={app.connectionCopy}
-        connectionTitle={app.connectionTitle}
-        dataMode={app.dataMode}
-        setActiveView={app.setActiveView}
+        activeView={shell.activeView}
+        changeDataMode={shell.changeDataMode}
+        connectionCopy={shell.connectionCopy}
+        connectionTitle={shell.connectionTitle}
+        dataMode={shell.dataMode}
+        setActiveView={shell.setActiveView}
       />
 
       <main className="main">
         <Topbar
-          activeView={app.activeView}
-          dataSourceLabel={app.dataSourceLabel}
-          linkedAccountLabel={app.linkedAccountLabel}
-          linkedUserName={app.linkedUserName}
-          payday={app.payday}
-          period={app.period}
-          setPeriod={app.setPeriod}
-          showPeriodControl={app.shouldShowPeriodControl}
+          activeView={shell.activeView}
+          dataSourceLabel={shell.dataSourceLabel}
+          linkedAccountLabel={shell.linkedAccountLabel}
+          linkedUserName={shell.linkedUserName}
+          payday={shell.payday}
+          period={shell.period}
+          setPeriod={shell.setPeriod}
+          showPeriodControl={shell.shouldShowPeriodControl}
         />
 
-        {app.statusBannerMessage && (
+        {shell.statusBannerMessage && (
           <div className="status-banner" role="status">
-            <strong>{app.statusBannerTitle}</strong>
-            <span>{app.statusBannerMessage}</span>
+            <strong>{shell.statusBannerTitle}</strong>
+            <span>{shell.statusBannerMessage}</span>
           </div>
         )}
 
         <DashboardViewRouter {...app.viewProps} />
       </main>
 
-      {app.isInitialTransactionImport && <InitialTransactionImportOverlay />}
+      {shell.isInitialTransactionImport && <InitialTransactionImportOverlay />}
     </div>
   );
 }

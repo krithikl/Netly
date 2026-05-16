@@ -19,36 +19,43 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SelectField } from "@/components/ui/select-field";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
-import { formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
-import { getTransactionCategory, transactionNeedsReview } from "@/lib/transaction-display";
-import { categoriesMatch, type CategoryEditScope } from "@/lib/category-rules";
+import { filterTransactionsByDateRange, formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
+import { type CategoryEditScope } from "@/lib/category-rules";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionAccountOption, TransactionFilter, TransactionSort } from "@/lib/app/types";
+import {
+  getActiveFilterCount,
+  getMatchingCategory,
+  getTransactionAnalytics,
+  getVisibleTransactions,
+  normalizeCategoryName,
+  toggleFilterSelection,
+  type TransactionAnalytics
+} from "@/features/transactions/transactionLogic";
+
+export type TransactionOpenPreset = {
+  dateRange?: TransactionDateRange;
+  id: number;
+  query?: string;
+  transactionCategory?: string[];
+  transactionFilter?: TransactionFilter;
+};
 
 type TransactionsPageProps = {
   accountOptions: TransactionAccountOption[];
   categoryColors: Record<string, string>;
   categoryOptions: string[];
-  dateRange: TransactionDateRange;
   hasMoreTransactions: boolean;
+  initialDateRange: TransactionDateRange;
   isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
   isLoadingTransactions: boolean;
   onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onCreateCategory: (category: string) => void;
   onDateRangeChange: (dateRange: TransactionDateRange) => void;
-  onLoadAllTransactions: () => void;
-  onLoadMoreTransactions: () => void;
-  query: string;
-  setQuery: (query: string) => void;
-  setTransactionAccounts: (accounts: string[]) => void;
-  setTransactionCategory: (categories: string[]) => void;
-  setTransactionFilter: (filter: TransactionFilter) => void;
-  setTransactionSort: (sort: TransactionSort) => void;
-  transactionAccounts: string[];
-  transactionCategory: string[];
-  transactionFilter: TransactionFilter;
-  transactionSort: TransactionSort;
+  onLoadAllTransactions: (dateRange: TransactionDateRange) => void;
+  onLoadMoreTransactions: (dateRange: TransactionDateRange) => void;
+  openPreset: TransactionOpenPreset | null;
   transactions: Transaction[];
 };
 
@@ -61,8 +68,8 @@ export function TransactionsPage({
   accountOptions,
   categoryColors,
   categoryOptions,
-  dateRange,
   hasMoreTransactions,
+  initialDateRange,
   isLoadingAllTransactions,
   isLoadingMoreTransactions,
   isLoadingTransactions,
@@ -71,18 +78,15 @@ export function TransactionsPage({
   onDateRangeChange,
   onLoadAllTransactions,
   onLoadMoreTransactions,
-  query,
-  setQuery,
-  setTransactionAccounts,
-  setTransactionCategory,
-  setTransactionFilter,
-  setTransactionSort,
-  transactionAccounts,
-  transactionCategory,
-  transactionFilter,
-  transactionSort,
+  openPreset,
   transactions
 }: TransactionsPageProps) {
+  const [query, setQuery] = useState("");
+  const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("All");
+  const [transactionSort, setTransactionSort] = useState<TransactionSort>("Newest");
+  const [transactionAccounts, setTransactionAccounts] = useState<string[]>([]);
+  const [transactionCategory, setTransactionCategory] = useState<string[]>([]);
+  const [dateRange, setDateRange] = useState(initialDateRange);
   const [newCategory, setNewCategory] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
@@ -106,11 +110,21 @@ export function TransactionsPage({
   const filterSelectOptions = useMemo(() => getStringOptions(transactionFilters), []);
   const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
   const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
-  const shownTransactions = transactions;
+  const dateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactions, dateRange), [dateRange, transactions]);
+  const shownTransactions = useMemo(
+    () => getVisibleTransactions(dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
+    [dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
+  );
   const shouldShowListLoading = isLoadingTransactions && transactions.length === 0;
   const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionAccounts, transactionCategory);
   const isBottomNavigation = useIsBottomNavigation();
+  const changeDateRange = (nextDateRange: TransactionDateRange) => {
+    setDateRange(nextDateRange);
+    setTransactionAccounts([]);
+    setTransactionCategory([]);
+    onDateRangeChange(nextDateRange);
+  };
   const resetFilters = () => {
     setTransactionFilter("All");
     setTransactionAccounts([]);
@@ -141,6 +155,26 @@ export function TransactionsPage({
     setTransactionCategory(["Needs review"]);
   };
 
+  useEffect(() => {
+    setDateRange(initialDateRange);
+  }, [initialDateRange]);
+
+  useEffect(() => {
+    if (!openPreset) {
+      return;
+    }
+
+    setQuery(openPreset.query || "");
+    setTransactionFilter(openPreset.transactionFilter || "All");
+    setTransactionAccounts([]);
+    setTransactionCategory(openPreset.transactionCategory || []);
+
+    if (openPreset.dateRange) {
+      setDateRange(openPreset.dateRange);
+      onDateRangeChange(openPreset.dateRange);
+    }
+  }, [openPreset, onDateRangeChange]);
+
   return (
     <section className="transaction-page view-stack">
       <TransactionAnalyticsSummary analytics={analytics} onReviewNeedsReview={reviewNeedsReview} />
@@ -161,7 +195,7 @@ export function TransactionsPage({
                   />
                 </span>
               </label>
-              <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
+              <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={changeDateRange} />
             </div>
             {isBottomNavigation && (
               <div className="transaction-mobile-actions">
@@ -192,7 +226,7 @@ export function TransactionsPage({
                 />
               </span>
             </label>
-            <TransactionDateRangePicker dateRange={dateRange} onChange={onDateRangeChange} />
+            <TransactionDateRangePicker dateRange={dateRange} onChange={changeDateRange} />
             <TransactionDesktopFilterPopover
               accountOptions={accountOptions}
               activeFilterCount={activeFilterCount}
@@ -274,21 +308,14 @@ export function TransactionsPage({
           isLoading={shouldShowListLoading}
           isLoadingAll={isLoadingAllTransactions}
           isLoadingMore={isLoadingMoreTransactions}
-          onLoadAll={onLoadAllTransactions}
-          onLoadMore={onLoadMoreTransactions}
+          onLoadAll={() => onLoadAllTransactions(dateRange)}
+          onLoadMore={() => onLoadMoreTransactions(dateRange)}
           transactions={shownTransactions}
         />
       </section>
     </section>
   );
 }
-
-type TransactionAnalytics = {
-  activeCategoryCount: number;
-  averagePerDay: number;
-  needsReviewCount: number;
-  totalSpending: number;
-};
 
 // Compact KPI strip shown above the transaction table/list.
 function TransactionAnalyticsSummary({
@@ -439,45 +466,6 @@ function TransactionDesktopFilterPopover({
       </Popover>
     </div>
   );
-}
-
-// Derives transaction totals for the current Transactions page filter/date range.
-function getTransactionAnalytics(transactions: Transaction[], dateRange: TransactionDateRange): TransactionAnalytics {
-  const activeCategories = new Set<string>();
-  let needsReviewCount = 0;
-  let totalSpending = 0;
-
-  transactions.forEach((transaction) => {
-    if (transactionNeedsReview(transaction)) {
-      needsReviewCount += 1;
-    }
-
-    if (transaction.amount < 0) {
-      totalSpending += Math.abs(transaction.amount);
-      activeCategories.add(getTransactionCategory(transaction));
-    }
-  });
-
-  const rangeDays = getDateRangeDayCount(dateRange);
-
-  return {
-    activeCategoryCount: activeCategories.size,
-    averagePerDay: rangeDays > 0 ? totalSpending / rangeDays : 0,
-    needsReviewCount,
-    totalSpending
-  };
-}
-
-function getDateRangeDayCount(dateRange: TransactionDateRange) {
-  const from = parseInputDate(dateRange.from);
-  const to = parseInputDate(dateRange.to);
-
-  if (!from || !to) {
-    return 0;
-  }
-
-  const dayMs = 24 * 60 * 60 * 1000;
-  return Math.max(1, Math.round((to.getTime() - from.getTime()) / dayMs) + 1);
 }
 
 function TransactionDateRangePicker({
@@ -950,32 +938,6 @@ function FilterMultiSelect({
   );
 }
 
-function normalizeCategoryName(category: string) {
-  return category.trim().replace(/\s+/g, " ");
-}
-
-function getMatchingCategory(categories: string[], category: string) {
-  if (!category) {
-    return "";
-  }
-
-  return categories.find((currentCategory) => categoriesMatch(currentCategory, category)) || "";
-}
-
-// Counts hidden mobile filters so the Filters button can show a badge
-function getActiveFilterCount(transactionFilter: TransactionFilter, transactionAccounts: string[], transactionCategory: string[]) {
-  let count = 0;
-
-  if (transactionFilter !== "All") {
-    count += 1;
-  }
-
-  count += transactionAccounts.length;
-  count += transactionCategory.length;
-
-  return count;
-}
-
 function getFilterOptionIsActive(value: string, allValue: string, selectedValues: string[]) {
   return value === allValue ? selectedValues.length === 0 : selectedValues.includes(value);
 }
@@ -990,14 +952,6 @@ function getFilterMultiSelectLabel(selectedValues: string[], options: Transactio
   }
 
   return `${selectedValues.length} selected`;
-}
-
-function toggleFilterSelection(selectedValues: string[], value: string) {
-  if (selectedValues.includes(value)) {
-    return selectedValues.filter((selectedValue) => selectedValue !== value);
-  }
-
-  return [...selectedValues, value];
 }
 
 function getCategoryFilterOptions(categoryOptions: string[]): TransactionAccountOption[] {

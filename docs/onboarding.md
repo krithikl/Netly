@@ -38,7 +38,7 @@ Copy `.env.example` to `.env.local` for Akahu testing. Demo mode works without r
 | Insights panel copy/logic | `features/home/InsightsPanel.tsx` and `lib/insights.ts` | Generated insights are passed from `useNetlyApp`. |
 | Transactions page | `features/transactions/TransactionsPage.tsx` | Main filter/search/date/category UI lives here. |
 | Transaction rows/details | `features/transactions/TransactionList.tsx` | Uses helpers from `lib/transaction-display.ts`. |
-| Transaction filtering/sorting | `hooks/useTransactionControls.ts` and `lib/app/derived.ts` | UI controls live in `TransactionsPage`; derived filtering lives in these files. |
+| Transaction filtering/sorting | `features/transactions/transactionLogic.ts` | UI controls live in `TransactionsPage`; pure transaction logic stays nearby. |
 | Budgets page | `features/budgets/BudgetsPage.tsx` | Budget seed data is in `lib/mock-data.ts`. |
 | Recurring merchant detection | `lib/insights.ts` | Used by Budgets and the recurring transaction jump. |
 | Card Fit page | `features/card-fit/CardFitPage.tsx` | Renders ranked card results and filters. |
@@ -63,26 +63,28 @@ Copy `.env.example` to `.env.local` for Akahu testing. Demo mode works without r
 2. `features/dashboard/AppShell.tsx` calls `useNetlyApp()`.
 3. `useNetlyApp()` loads Akahu/demo data, applies category settings, calculates metrics, and builds `viewProps`.
 4. `features/dashboard/DashboardViewRouter.tsx` receives `viewProps` and renders the selected page.
-5. Page components compose smaller components from `features/home`, `components/charts`, `features/transactions`, `features/card-fit`, and `components/ui`.
+5. Page components compose smaller components from nearby `features/*` files and generic primitives from `components/ui`.
 
-If you are trying to find where a smaller component is passed in, start at the page component in `features/*/*Page.tsx`, then follow props back to `DashboardViewRouter.tsx`, then `useNetlyApp.ts`.
+If you are trying to find where a smaller component is passed in, start at the page component in `features/*/*Page.tsx`. Follow cross-page data back to that page's named prop group in `useNetlyApp.ts`; `DashboardViewRouter.tsx` should only choose the active page.
 
 ## Folder structure
 
 ```text
-app/                  Next.js layouts, routed pages, and API routes
-features/dashboard/     Dashboard routing and page-selection logic
-components/layout/    Sidebar, topbar, and global app navigation
-features/home/      Home dashboard subcomponents
-components/charts/    Chart wrappers and Chart.js rendering
-features/transactions/ Transaction list/detail UI
-features/card-fit/  Card Fit detail UI
-components/ui/        Shared low-level UI primitives
-hooks/                Client-side state and orchestration hooks
-lib/app/              App routing, storage, and derived state helpers
-lib/akahu/            Akahu API client, provider, token, and normalisation logic
-lib/                  Product calculations, mock data, periods, types, utilities
-docs/                 Existing deeper architecture/handover notes
+app/                     Next.js layouts, routed pages, and API routes
+features/dashboard/      App shell and active-view selection
+components/layout/       Sidebar, topbar, and global app navigation
+features/home/           Home dashboard page, charts, and subcomponents
+features/transactions/   Transaction page, list/detail UI, and transaction-local logic
+features/card-fit/       Card Fit page and detail UI
+features/budgets/        Budget page UI
+features/connect/        Akahu connect page UI
+features/settings/       Settings page UI
+components/ui/           Shared low-level UI primitives
+hooks/                   Cross-feature state and side-effect hooks
+lib/app/                 App routing, browser storage, and dashboard copy helpers
+lib/akahu/               Akahu API client, provider, token, and normalisation logic
+lib/                     Product calculations, mock data, periods, types, utilities
+docs/                    Durable architecture and onboarding notes
 ```
 
 ## Data flow
@@ -91,14 +93,15 @@ docs/                 Existing deeper architecture/handover notes
 - `useNetlyApp` combines banking data with category settings, payday settings, period filters, and derived product metrics.
 - `lib/insights.ts` calculates spend totals, recurring merchants, safe-to-spend, insights, and card-fit rankings.
 - `lib/transaction-display.ts` centralises display-safe transaction values so UI files do not need to know every Akahu shape.
-- `DashboardViewRouter` passes only the relevant pieces to each page view.
+- `useNetlyApp` returns named shell/page prop groups, and `DashboardViewRouter` passes only the active page's group.
 
 ## Before adding new code
 
 - Check `components/ui/*` before creating another button, sheet, drawer, select, popover, or card primitive.
 - Check `lib/transaction-display.ts` before adding transaction formatting inside a component.
 - Check `lib/insights.ts` before adding spend, budget, recurring, or card-fit calculations.
-- Check `lib/app/derived.ts` before adding transaction filtering/sorting helpers.
+- Keep page-local state in the page file. Add a hook only when the state is genuinely reused across features or owns a real cross-feature side effect.
+- Put feature-specific pure logic in a nearby `featureLogic.ts` file instead of `lib/app`.
 - Keep API calls inside `app/api/*`, `lib/akahu/*`, or hooks. Avoid fetching directly in leaf UI components.
 - Keep comments short in code. Put deeper explanations in this file or `docs/architecture.md`.
 
@@ -110,9 +113,10 @@ docs/                 Existing deeper architecture/handover notes
 - Prefer small derived values before JSX rather than long inline expressions.
 - Avoid broad global CSS changes unless the layout system truly needs them.
 - Keep new reusable UI in `components/ui` only when it is generic; product-specific UI belongs near its page area.
+- Avoid pass-through files whose main job is to forward props or hide where behavior is actually defined.
 
 ## Areas to review later
 
-- `hooks/useNetlyApp.ts` is the main orchestration point and may eventually be worth splitting by domain.
+- `hooks/useNetlyApp.ts` is the main orchestration point. If it grows, split by real domain boundaries while keeping named page prop groups easy to follow.
 - `features/transactions/TransactionsPage.tsx` is large because it owns most transaction controls and responsive UI.
 - Akahu token storage is currently cookie-based for MVP/dev usage and should move to encrypted server-side storage when auth exists.

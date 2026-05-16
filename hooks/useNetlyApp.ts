@@ -11,17 +11,16 @@ import {
   getDataSourceLabel,
   getLinkedAccountLabel,
   getLinkedUserName,
-  getStatusBannerTitle,
-  getTransactionAccountOptions
+  getStatusBannerTitle
 } from "@/lib/app/derived";
 import { applyCategoryPreferences } from "@/lib/category-rules";
 import type { DataMode } from "@/lib/app/types";
-import type { DashboardViewRouterProps } from "@/features/dashboard/DashboardViewRouter";
 import { budgets, cardProducts, payday as defaultPayday } from "@/lib/mock-data";
-import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
-import { filterTransactionsByPeriod, getTransactionPeriodDateRange } from "@/lib/periods";
+import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, spendByCategory, sum } from "@/lib/insights";
+import { filterTransactionsByPeriod, getThisMonthDateRange, getTransactionPeriodDateRange } from "@/lib/periods";
 import { getTransactionDate, transactionNeedsReview } from "@/lib/transaction-display";
 import { periods } from "@/lib/app/constants";
+import { getTransactionAccountOptions } from "@/features/transactions/transactionLogic";
 import { useAkahuConnection } from "@/hooks/useAkahuConnection";
 import { useCategorySettings } from "@/hooks/useCategorySettings";
 import { useAkahuData } from "@/hooks/useAkahuData";
@@ -30,8 +29,8 @@ import { useDriveBackup } from "@/hooks/useDriveBackup";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { usePaydaySettings } from "@/hooks/usePaydaySettings";
 import { useRoutedView } from "@/hooks/useRoutedView";
-import { useTransactionControls } from "@/hooks/useTransactionControls";
 import type { PeriodOption } from "@/lib/types";
+import type { TransactionOpenPreset } from "@/features/transactions/TransactionsPage";
 
 const topCategoryLimit = 5;
 
@@ -41,7 +40,10 @@ export function useNetlyApp() {
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
   const isBottomNavigation = useIsBottomNavigation();
   const previousActiveViewRef = useRef(activeView);
+  const transactionOpenPresetIdRef = useRef(0);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [transactionPageDateRange, setTransactionPageDateRange] = useState(getThisMonthDateRange);
+  const [transactionOpenPreset, setTransactionOpenPreset] = useState<TransactionOpenPreset | null>(null);
 
   const banking = useAkahuData();
   // Use all loaded transaction sets so category options stay consistent across pages.
@@ -59,18 +61,17 @@ export function useNetlyApp() {
     () => applyCategoryPreferences(banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules),
     [banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules]
   );
-  // Transactions page owns its own search/filter/date state but receives app data here.
-  const transactionControls = useTransactionControls({
-    applyFallbackState: banking.applyFallbackState,
-    dataMode: banking.dataMode,
-    refreshTransactionPage: banking.refreshTransactionPage,
-    transactions: transactionPageWorkingTransactions
-  });
-  const driveBackup = useDriveBackup(() => banking.restoreArchivedTransactions(transactionControls.transactionDateRange));
+  const refreshTransactionPageRange = useCallback((dateRange = transactionPageDateRange) => {
+    setTransactionPageDateRange(dateRange);
+    banking.refreshTransactionPage(banking.dataMode, dateRange).catch((error: unknown) => {
+      banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
+    });
+  }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage, transactionPageDateRange]);
+  const driveBackup = useDriveBackup(() => banking.restoreArchivedTransactions(transactionPageDateRange));
   const connection = useAkahuConnection({
     refreshTransactions: banking.refreshTransactions,
     setDataMode: banking.setDataMode,
-    transactionDateRange: transactionControls.transactionDateRange
+    transactionDateRange: transactionPageDateRange
   });
   const paydaySettings = usePaydaySettings(defaultPayday);
   const dashboardPeriodSettings = useDashboardPeriodSettings(periods[0]);
@@ -95,7 +96,7 @@ export function useNetlyApp() {
     paydaySettings.restorePaydaySettings();
     dashboardPeriodSettings.restoreDashboardPeriod();
 
-    banking.refreshTransactions(initialDataMode, transactionControls.transactionDateRange).catch((error: unknown) => {
+    banking.refreshTransactions(initialDataMode, transactionPageDateRange).catch((error: unknown) => {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
   }, []);
@@ -108,11 +109,21 @@ export function useNetlyApp() {
     const previousActiveView = previousActiveViewRef.current;
 
     if (previousActiveView === "transactions" && activeView !== "transactions") {
-      transactionControls.resetTransactionControls();
+      const defaultDateRange = getThisMonthDateRange();
+      const shouldRefreshDateRange = transactionPageDateRange.from !== defaultDateRange.from || transactionPageDateRange.to !== defaultDateRange.to;
+
+      setTransactionOpenPreset(null);
+      setTransactionPageDateRange(defaultDateRange);
+
+      if (shouldRefreshDateRange) {
+        banking.refreshTransactionPage(banking.dataMode, defaultDateRange).catch((error: unknown) => {
+          banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
+        });
+      }
     }
 
     previousActiveViewRef.current = activeView;
-  }, [activeView, transactionControls.resetTransactionControls]);
+  }, [activeView, banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage, transactionPageDateRange]);
 
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
   const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
@@ -127,34 +138,42 @@ export function useNetlyApp() {
   const reviewCount = useMemo(() => periodTransactions.filter(transactionNeedsReview).length, [periodTransactions]);
   const chartCategories = useMemo(() => groupCategoriesForChart(categoryTotals, topCategoryLimit), [categoryTotals]);
   const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
-  const loadMoreUserTransactions = useCallback(() => banking.loadMoreTransactions(transactionControls.transactionDateRange), [banking.loadMoreTransactions, transactionControls.transactionDateRange]);
-  const loadAllUserTransactions = useCallback(async () => {
-    await banking.loadAllTransactions(transactionControls.transactionDateRange);
+  const loadMoreUserTransactions = useCallback((dateRange: Parameters<typeof banking.loadMoreTransactions>[0]) => banking.loadMoreTransactions(dateRange), [banking.loadMoreTransactions]);
+  const loadAllUserTransactions = useCallback(async (dateRange: Parameters<typeof banking.loadAllTransactions>[0]) => {
+    await banking.loadAllTransactions(dateRange);
     if (banking.dataMode === "user") {
       await driveBackup.syncAfterArchiveChange();
     }
-  }, [banking.dataMode, banking.loadAllTransactions, driveBackup.syncAfterArchiveChange, transactionControls.transactionDateRange]);
-  const loadMoreAndSyncUserTransactions = useCallback(async () => {
-    await loadMoreUserTransactions();
+  }, [banking.dataMode, banking.loadAllTransactions, driveBackup.syncAfterArchiveChange]);
+  const loadMoreAndSyncUserTransactions = useCallback(async (dateRange: Parameters<typeof banking.loadMoreTransactions>[0]) => {
+    await loadMoreUserTransactions(dateRange);
     if (banking.dataMode === "user") {
       await driveBackup.syncAfterArchiveChange();
     }
   }, [banking.dataMode, driveBackup.syncAfterArchiveChange, loadMoreUserTransactions]);
   const openNeedsReviewTransactions = useCallback(() => {
-    transactionControls.setQuery("");
-    transactionControls.setTransactionCategory(["Needs review"]);
-    transactionControls.setTransactionFilter("All");
+    transactionOpenPresetIdRef.current += 1;
+    setTransactionOpenPreset({
+      id: transactionOpenPresetIdRef.current,
+      query: "",
+      transactionCategory: ["Needs review"],
+      transactionFilter: "All"
+    });
     setActiveView("transactions");
-  }, [setActiveView, transactionControls]);
+  }, [setActiveView]);
   const openRecurringTransactions = useCallback((merchant: string) => {
     const recurringDateRange = getTransactionPeriodDateRange(workingTransactions, "90 days");
 
-    transactionControls.setQuery(merchant);
-    transactionControls.setTransactionCategory([]);
-    transactionControls.setTransactionFilter("All");
-    transactionControls.setTransactionDateRange(recurringDateRange);
+    transactionOpenPresetIdRef.current += 1;
+    setTransactionOpenPreset({
+      dateRange: recurringDateRange,
+      id: transactionOpenPresetIdRef.current,
+      query: merchant,
+      transactionCategory: [],
+      transactionFilter: "All"
+    });
     setActiveView("transactions");
-  }, [setActiveView, transactionControls, workingTransactions]);
+  }, [setActiveView, workingTransactions]);
   const updateTransactionCategoryAndSync = useCallback((transaction: Parameters<typeof categories.updateTransactionCategory>[0], category: string, scope: Parameters<typeof categories.updateTransactionCategory>[2]) => {
     categories.updateTransactionCategory(transaction, category, scope);
     void driveBackup.syncAfterArchiveChange();
@@ -179,99 +198,105 @@ export function useNetlyApp() {
   const shouldShowPeriodControl = (activeView === "home" || activeView === "budgets") && !isBottomNavigation;
   const isInitialTransactionImport = banking.isConnected && banking.dataMode === "user" && banking.isLoadingTransactions && banking.transactions.length === 0 && banking.transactionPageTransactions.length === 0;
 
-  // Single page-state bundle passed into DashboardViewRouter, then split into the active page component.
-  const dashboardViewRouterProps: DashboardViewRouterProps = {
-    activeView,
-    akahuDataFreshness: banking.akahuDataFreshness,
-    averageDailySpend,
-    availableBalance: banking.availableBalance,
-    budgets,
-    cardBasis: cardFit.basis,
-    cardFitExplanation: cardFit.explanation,
-    cardFitSourceLabel: getCardFitSourceLabel(banking.dataMode, banking.isConnected),
-    cardFitWindowLabel: getCardFitWindowLabel(cardFit.basis),
-    cards: cardFit.cards,
-    isLoadingCardFitTransactions: banking.isLoadingTransactions,
-    categories: categoryTotals,
-    categoryColors: categories.categoryColors,
-    chartCategories,
-    chartTotal,
-    completeAkahuConnection: connection.completeAkahuConnection,
-    expensesCount: expenses.length,
-    hasCardEligibleSpend: cardFit.basis.eligibleTransactionCount > 0 && cardFit.basis.eligibleAnnualSpend > 0,
-    hoveredCategory,
-    income,
-    accountOptions,
-    insights,
-    isConnected: banking.isConnected,
-    isLoadingAllTransactions: banking.isLoadingAllTransactions,
-    isLoadingMoreTransactions: banking.isLoadingMoreTransactions,
-    isLoadingTransactions: banking.isLoadingTransactions,
-    monthlySpend,
-    onCategoryChange: updateTransactionCategoryAndSync,
-    onCreateCategory: createCustomCategoryAndSync,
-    manualTokens: connection.manualTokens,
-    onManualTokensChange: connection.updateManualTokens,
-    onLoadAllTransactions: loadAllUserTransactions,
-    onLoadMoreTransactions: loadMoreAndSyncUserTransactions,
-    onRecurringClick: openRecurringTransactions,
-    onReviewNeedsReview: openNeedsReviewTransactions,
-    payday: paydaySettings.payday,
-    paydayPatternDate: paydaySettings.paydayPatternDate,
-    query: transactionControls.query,
-    recurring,
-    reviewCount,
-    setActiveView,
-    setHoveredCategory,
-    setPayday: paydaySettings.updatePayday,
-    setQuery: transactionControls.setQuery,
-    setTransactionAccounts: transactionControls.setTransactionAccounts,
-    setSyncResult: connection.setSyncResult,
-    setTransactionCategory: transactionControls.setTransactionCategory,
-    setTransactionFilter: transactionControls.setTransactionFilter,
-    setTransactionSort: transactionControls.setTransactionSort,
-    setTransactionDateRange: transactionControls.setTransactionDateRange,
-    syncResult: connection.syncResult,
-    transactionCategory: transactionControls.transactionCategory,
-    transactionAccounts: transactionControls.transactionAccounts,
-    transactionCategoryOptions: categories.transactionCategoryOptions,
-    transactionDateRange: transactionControls.transactionDateRange,
-    transactionFilter: transactionControls.transactionFilter,
-    transactionsHasMore: Boolean(banking.transactionPageNextCursor),
-    transactionPreview: periodTransactions,
-    transactionSort: transactionControls.transactionSort,
-    visibleTransactions: transactionControls.visibleTransactions,
-    dashboardPeriod: dashboardPeriodSettings.dashboardPeriod,
-    dataMode: banking.dataMode,
-    showDashboardPeriodSetting: isBottomNavigation,
-    driveBackup: driveBackup.driveBackup,
-    onConnectDriveBackup: driveBackup.connectAndBackUp,
-    onDisconnectDriveBackup: driveBackup.disconnectDriveBackup,
-    onRestoreDriveBackup: driveBackup.restoreFromDrive,
-    settingsCategoryOptions: categories.settingsCategoryOptions,
-    setDashboardPeriod: dashboardPeriodSettings.updateDashboardPeriod,
-    updateCategoryColor: updateCategoryColorAndSync,
-    deleteCategory: deleteCategoryAndSync
-  };
-
   return {
-    activeView,
-    changeDataMode: (mode: DataMode) => banking.changeDataMode(mode, transactionControls.transactionDateRange),
-    connectionCopy: getConnectionCopy(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
-    connectionTitle: getConnectionTitle(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
-    dataMode: banking.dataMode,
-    dataSourceLabel: getDataSourceLabel(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
-    linkedAccountLabel: getLinkedAccountLabel(banking.primaryLinkedAccount, banking.linkedAccounts.length, banking.isConnected),
-    linkedUserName,
-    isInitialTransactionImport,
-    payday: paydaySettings.payday,
-    period,
-    setActiveView,
-    setPeriod,
-    shouldShowPeriodControl,
-    statusBannerMessage: banking.transactionLoadError || banking.transactionLoadNotice,
-    statusBannerTitle: getStatusBannerTitle(banking.transactionLoadError, banking.dataMode),
-    viewProps: dashboardViewRouterProps
+    shell: {
+      activeView,
+      changeDataMode: (mode: DataMode) => banking.changeDataMode(mode, transactionPageDateRange),
+      connectionCopy: getConnectionCopy(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
+      connectionTitle: getConnectionTitle(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
+      dataMode: banking.dataMode,
+      dataSourceLabel: getDataSourceLabel(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
+      linkedAccountLabel: getLinkedAccountLabel(banking.primaryLinkedAccount, banking.linkedAccounts.length, banking.isConnected),
+      linkedUserName,
+      isInitialTransactionImport,
+      payday: paydaySettings.payday,
+      period,
+      setActiveView,
+      setPeriod,
+      shouldShowPeriodControl,
+      statusBannerMessage: banking.transactionLoadError || banking.transactionLoadNotice,
+      statusBannerTitle: getStatusBannerTitle(banking.transactionLoadError, banking.dataMode)
+    },
+    viewProps: {
+      activeView,
+      budgets: {
+        budgets,
+        categories: categoryTotals,
+        categoryColors: categories.categoryColors,
+        onRecurringClick: openRecurringTransactions,
+        recurring
+      },
+      cards: {
+        basis: cardFit.basis,
+        cardFitSourceLabel: getCardFitSourceLabel(banking.dataMode, banking.isConnected),
+        cardFitWindowLabel: getCardFitWindowLabel(cardFit.basis),
+        cards: cardFit.cards,
+        explanation: cardFit.explanation,
+        hasCardEligibleSpend: cardFit.basis.eligibleTransactionCount > 0 && cardFit.basis.eligibleAnnualSpend > 0,
+        isLoadingTransactions: banking.isLoadingTransactions
+      },
+      connect: {
+        completeAkahuConnection: connection.completeAkahuConnection,
+        manualTokens: connection.manualTokens,
+        onManualTokensChange: connection.updateManualTokens,
+        setSyncResult: connection.setSyncResult,
+        syncResult: connection.syncResult
+      },
+      home: {
+        averageDailySpend,
+        availableBalance: banking.availableBalance,
+        categoryColors: categories.categoryColors,
+        chartCategories,
+        chartTotal,
+        expensesCount: expenses.length,
+        hoveredCategory,
+        income,
+        insights,
+        isConnected: banking.isConnected,
+        isLoadingTransactions: banking.isLoadingTransactions,
+        monthlySpend,
+        onReviewNeedsReview: openNeedsReviewTransactions,
+        payday: paydaySettings.payday,
+        paydayPatternDate: paydaySettings.paydayPatternDate,
+        reviewCount,
+        setActiveView,
+        setHoveredCategory,
+        setPayday: paydaySettings.updatePayday,
+        transactionPreview: periodTransactions
+      },
+      settings: {
+        akahuDataFreshness: banking.akahuDataFreshness,
+        categoryColors: categories.categoryColors,
+        dashboardPeriod: dashboardPeriodSettings.dashboardPeriod,
+        dataMode: banking.dataMode,
+        defaultCategories: categories.settingsCategoryOptions,
+        deleteCategory: deleteCategoryAndSync,
+        driveBackup: driveBackup.driveBackup,
+        onConnectDriveBackup: driveBackup.connectAndBackUp,
+        onDisconnectDriveBackup: driveBackup.disconnectDriveBackup,
+        onRestoreDriveBackup: driveBackup.restoreFromDrive,
+        setDashboardPeriod: dashboardPeriodSettings.updateDashboardPeriod,
+        showDashboardPeriodSetting: isBottomNavigation,
+        updateCategoryColor: updateCategoryColorAndSync
+      },
+      transactions: {
+        accountOptions,
+        categoryColors: categories.categoryColors,
+        categoryOptions: categories.transactionCategoryOptions,
+        hasMoreTransactions: Boolean(banking.transactionPageNextCursor),
+        initialDateRange: transactionPageDateRange,
+        isLoadingAllTransactions: banking.isLoadingAllTransactions,
+        isLoadingMoreTransactions: banking.isLoadingMoreTransactions,
+        isLoadingTransactions: banking.isLoadingTransactions,
+        onCategoryChange: updateTransactionCategoryAndSync,
+        onCreateCategory: createCustomCategoryAndSync,
+        onDateRangeChange: refreshTransactionPageRange,
+        onLoadAllTransactions: loadAllUserTransactions,
+        onLoadMoreTransactions: loadMoreAndSyncUserTransactions,
+        openPreset: transactionOpenPreset,
+        transactions: transactionPageWorkingTransactions
+      }
+    }
   };
 }
 

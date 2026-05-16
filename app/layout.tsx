@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6d5ef5"
+  themeColor: "#000000"
 };
 
 // Root Next.js layout that wraps every route and mounts global toast UI.

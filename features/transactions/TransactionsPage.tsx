@@ -148,7 +148,7 @@ export function TransactionsPage({
       <section className="transaction-workspace">
         <div className="transaction-filter-panel" suppressHydrationWarning>
           <div className="transaction-mobile-controls">
-            <div className="transaction-mobile-search-row">
+            <div className="transaction-mobile-search-row" suppressHydrationWarning>
               <label className="transaction-mobile-search">
                 Search
                 <span className="transaction-search-field">

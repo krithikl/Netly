@@ -16,7 +16,7 @@ import {
 } from "@/lib/app/derived";
 import { applyCategoryPreferences } from "@/lib/category-rules";
 import type { DataMode } from "@/lib/app/types";
-import type { DashboardViewRouterProps } from "@/features/dashboard/dashboard-view-router-props";
+import type { DashboardViewRouterProps } from "@/features/dashboard/DashboardViewRouter";
 import { budgets, cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
 import { filterTransactionsByPeriod, getTransactionPeriodDateRange } from "@/lib/periods";
@@ -127,7 +127,6 @@ export function useNetlyApp() {
   const reviewCount = useMemo(() => periodTransactions.filter(transactionNeedsReview).length, [periodTransactions]);
   const chartCategories = useMemo(() => groupCategoriesForChart(categoryTotals, topCategoryLimit), [categoryTotals]);
   const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
-  const refreshUserTransactions = useCallback(() => banking.refreshTransactions("user", transactionControls.transactionDateRange, { forceFullSync: true }), [banking.refreshTransactions, transactionControls.transactionDateRange]);
   const loadMoreUserTransactions = useCallback(() => banking.loadMoreTransactions(transactionControls.transactionDateRange), [banking.loadMoreTransactions, transactionControls.transactionDateRange]);
   const loadAllUserTransactions = useCallback(async () => {
     await banking.loadAllTransactions(transactionControls.transactionDateRange);
@@ -215,7 +214,6 @@ export function useNetlyApp() {
     onManualTokensChange: connection.updateManualTokens,
     onLoadAllTransactions: loadAllUserTransactions,
     onLoadMoreTransactions: loadMoreAndSyncUserTransactions,
-    onRefreshUserTransactions: refreshUserTransactions,
     onRecurringClick: openRecurringTransactions,
     onReviewNeedsReview: openNeedsReviewTransactions,
     payday: paydaySettings.payday,
@@ -243,7 +241,6 @@ export function useNetlyApp() {
     transactionPreview: periodTransactions,
     transactionSort: transactionControls.transactionSort,
     visibleTransactions: transactionControls.visibleTransactions,
-    workingTransactions,
     dashboardPeriod: dashboardPeriodSettings.dashboardPeriod,
     dataMode: banking.dataMode,
     showDashboardPeriodSetting: isBottomNavigation,

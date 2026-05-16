@@ -9,8 +9,8 @@ Netly is a Next.js App Router MVP for NZ open-banking spend insights. The app lo
 The main app is rendered through a client shell:
 
 - `app/layout.tsx` wraps the whole app and global toast UI.
-- `app/(dashboard)/layout.tsx` mounts `components/AppShell.tsx` for all dashboard routes.
-- `components/AppShell.tsx` places the sidebar, topbar, status banner, and active view.
+- `app/(dashboard)/layout.tsx` mounts `features/dashboard/AppShell.tsx` for all dashboard routes.
+- `features/dashboard/AppShell.tsx` places the sidebar, topbar, status banner, and active view.
 - `hooks/useNetlyApp.ts` is the central app state/composition hook.
 - `features/dashboard/DashboardViewRouter.tsx` chooses which page view to render.
 
@@ -34,7 +34,7 @@ Copy `.env.example` to `.env.local` for Akahu testing. Demo mode works without r
 | Home dashboard layout/content | `features/home/HomePage.tsx` | Composes hero balance, metric cards, donut chart, insights, and recent activity. |
 | Home summary cards | `features/home/MetricCard.tsx` and `features/home/HomePage.tsx` | Values are calculated in `hooks/useNetlyApp.ts`. |
 | Balance/payday hero | `features/home/HeroBalanceCard.tsx` | Payday state comes from `hooks/usePaydaySettings.ts`. |
-| Category donut chart | `components/charts/CategoryDonutCard.tsx` and `components/charts/DonutChart.tsx` | Category totals come from `spendByCategory` in `lib/insights.ts`. |
+| Category donut chart | `features/home/CategoryDonutCard.tsx` and `features/home/DonutChart.tsx` | Category totals come from `spendByCategory` in `lib/insights.ts`. |
 | Insights panel copy/logic | `features/home/InsightsPanel.tsx` and `lib/insights.ts` | Generated insights are passed from `useNetlyApp`. |
 | Transactions page | `features/transactions/TransactionsPage.tsx` | Main filter/search/date/category UI lives here. |
 | Transaction rows/details | `features/transactions/TransactionList.tsx` | Uses helpers from `lib/transaction-display.ts`. |
@@ -60,7 +60,7 @@ Copy `.env.example` to `.env.local` for Akahu testing. Demo mode works without r
 ## Main composition flow
 
 1. Route enters `app/(dashboard)/layout.tsx`.
-2. `components/AppShell.tsx` calls `useNetlyApp()`.
+2. `features/dashboard/AppShell.tsx` calls `useNetlyApp()`.
 3. `useNetlyApp()` loads Akahu/demo data, applies category settings, calculates metrics, and builds `viewProps`.
 4. `features/dashboard/DashboardViewRouter.tsx` receives `viewProps` and renders the selected page.
 5. Page components compose smaller components from `features/home`, `components/charts`, `features/transactions`, `features/card-fit`, and `components/ui`.

@@ -1,4 +1,4 @@
-import { AppShell } from "@/components/AppShell";
+import { AppShell } from "@/features/dashboard/AppShell";
 
 // Dashboard route group renders the client-side shell used by every app view.
 export default function DashboardLayout({

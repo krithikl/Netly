@@ -1,11 +1,12 @@
 import clsx from "clsx";
 import { CalendarDays, Sparkles, TrendingUp, WalletCards } from "lucide-react";
-import { CategoryDonutCard } from "@/components/charts/CategoryDonutCard";
+import { CategoryDonutCard } from "@/features/home/CategoryDonutCard";
 import { HeroBalanceCard } from "@/features/home/HeroBalanceCard";
 import { InsightsPanel } from "@/features/home/InsightsPanel";
 import { MetricCard } from "@/features/home/MetricCard";
 import { RecentActivityStrip } from "@/features/home/RecentActivityStrip";
 import { formatMoney } from "@/lib/insights";
+import { getTransactionTimestamp } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 import type { View } from "@/lib/app/types";
 
@@ -58,7 +59,9 @@ export function HomePage({
 }: HomePageProps) {
   const metricGridClassName = getLoadingClassName("metric-grid", isLoadingTransactions);
   const dashboardGridClassName = getLoadingClassName("dashboard-grid", isLoadingTransactions);
-  const recentTransactions = transactionPreview.slice(0, 5);
+  const recentTransactions = [...transactionPreview]
+    .sort((first, second) => getTransactionTimestamp(second) - getTransactionTimestamp(first))
+    .slice(0, 5);
   const openConnectView = () => setActiveView("connect");
   const openTransactionsView = () => setActiveView("transactions");
   const openBudgetsView = () => setActiveView("budgets");

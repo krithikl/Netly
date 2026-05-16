@@ -600,7 +600,7 @@ function RawBankTextPanel({ expanded, rawText }: { expanded: boolean; rawText: s
       return;
     }
 
-    setContentHeight(contentRef.current.scrollHeight);
+    setContentHeight(getRawBankTextContentHeight(contentRef.current));
   }, [rawText]);
 
   useEffect(() => {
@@ -608,7 +608,7 @@ function RawBankTextPanel({ expanded, rawText }: { expanded: boolean; rawText: s
       return;
     }
 
-    setContentHeight(contentRef.current.scrollHeight);
+    setContentHeight(getRawBankTextContentHeight(contentRef.current));
   }, [expanded]);
 
   return (
@@ -624,6 +624,15 @@ function RawBankTextPanel({ expanded, rawText }: { expanded: boolean; rawText: s
   );
 }
 
+// Measures the full rendered panel content, including margin and border.
+function getRawBankTextContentHeight(element: HTMLDivElement) {
+  const style = window.getComputedStyle(element);
+  const marginTop = Number.parseFloat(style.marginTop) || 0;
+  const marginBottom = Number.parseFloat(style.marginBottom) || 0;
+
+  return element.offsetHeight + marginTop + marginBottom;
+}
+
 function formatTransactionDate(value: string) {
   const date = new Date(`${value}T12:00:00`);
 
@@ -634,12 +643,12 @@ function formatTransactionDate(value: string) {
   return transactionDateFormatter.format(date);
 }
 
-// Watches the screen width so details use a sheet on desktop and a drawer on mobile
+// Watches the app shell breakpoint so details match sidebar or bottom navigation.
 function useIsDesktopNavigation() {
   const [isDesktop, setIsDesktop] = useState(true);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1025px)");
+    const mediaQuery = window.matchMedia("(min-width: 1181px)");
     const handleChange = () => setIsDesktop(mediaQuery.matches);
 
     handleChange();

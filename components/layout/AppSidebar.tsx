@@ -3,6 +3,7 @@
 import clsx from "clsx";
 import { CreditCard, Database, Home, Link2, List, MoreHorizontal, PieChart, Settings } from "lucide-react";
 import { useState } from "react";
+import { fullWidthClassName, zeroRightClassName } from "react-remove-scroll-bar";
 import { navItems } from "@/lib/app/constants";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { DataMode, View } from "@/lib/app/types";
@@ -36,7 +37,7 @@ export function AppSidebar({
   };
 
   return (
-    <aside className="sidebar" aria-label="Main navigation">
+    <aside className={clsx("sidebar", fullWidthClassName, zeroRightClassName)} aria-label="Main navigation">
       <div className="brand">
         <div className="brand-mark">N</div>
         <div>

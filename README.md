@@ -45,20 +45,19 @@ The app also supports demo/local fallback data so most UI work can be done witho
 ```text
 app/
 components/
+features/
 hooks/
-services/
 lib/
-styles/
 public/
 ```
 
 A simple way to think about the structure:
 
 - `app/` → routes and layouts
-- `components/` → UI and feature sections
+- `components/` → app shell, layout, charts, and shared UI
 - `hooks/` → state + orchestration
-- `services/` → API/integration logic
-- `lib/` → shared helpers/utilities
+- `features/` → feature-owned screens and nearby subcomponents
+- `lib/` → Akahu integration logic and shared helpers/utilities
 
 Most pages are built by composing smaller components together.
 
@@ -80,9 +79,9 @@ Route/Page
 |---|---|
 | `app/page.tsx` | Main dashboard/homepage entry |
 | `app/layout.tsx` | Root layout and providers |
-| `components/AppShell/*` | Sidebar, navigation, app layout |
+| `components/AppShell.tsx` and `components/layout/*` | Sidebar, navigation, app layout |
 | `hooks/useNetlyApp.ts` | Main app orchestration/state layer |
-| `services/*` | Akahu integrations and API logic |
+| `lib/akahu/*` | Akahu integrations and API logic |
 | `app/api/*` | Server-side API handlers |
 
 If you are new to the project, these files give the quickest understanding of how the app fits together.
@@ -93,15 +92,30 @@ If you are new to the project, these files give the quickest understanding of ho
 
 | If you want to... | Start here |
 |---|---|
-| Edit homepage/dashboard content | `app/page.tsx` |
-| Edit navigation/sidebar | `components/AppShell/` |
+| Edit homepage/dashboard content | `features/home/HomePage.tsx` |
+| Edit navigation/sidebar | `components/layout/` |
 | Edit shared UI | `components/ui/` |
-| Edit dashboard widgets | dashboard-related component folders |
+| Edit dashboard widgets | `features/home/` |
 | Change app-wide behaviour | `hooks/useNetlyApp.ts` |
-| Update Akahu/API logic | `services/` or `app/api/` |
+| Update Akahu/API logic | `lib/akahu/` or `app/api/akahu/` |
 | Add a new route/page | `app/` |
 
 A lot of the app is composed through imported sections/components, so the actual editable UI is usually one or two layers below the route itself.
+
+## Current Frontend Structure
+
+Netly now keeps product-specific UI in shallow feature folders:
+
+```text
+features/home/
+features/transactions/
+features/budgets/
+features/card-fit/
+features/connect/
+features/settings/
+```
+
+`components/` is reserved for the app shell, layout pieces, charts, and shared UI primitives. This avoids the old pattern where screens and subcomponents were spread across several unrelated component folders.
 
 ---
 
@@ -136,13 +150,13 @@ Before adding new code:
 - check existing hooks/components first
 - reuse shared UI where possible
 - avoid duplicate fetch helpers/utilities
-- keep API logic inside `services/`
+- keep API logic inside `app/api/*` and integration helpers in `lib/akahu/*`
 - keep presentational components mostly UI-focused
 
 Common pattern:
 
 ```text
-services → hooks → feature components → shared UI
+app/api + lib/akahu → hooks → feature components → shared UI
 ```
 
 ---

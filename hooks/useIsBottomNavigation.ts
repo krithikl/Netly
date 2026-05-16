@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 const bottomNavigationMediaQuery = "(max-width: 1180px)";
 
 export function useIsBottomNavigation() {
-  const [isBottomNavigation, setIsBottomNavigation] = useState(() => getIsBottomNavigation());
+  const [isBottomNavigation, setIsBottomNavigation] = useState(false);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(bottomNavigationMediaQuery);
@@ -18,8 +18,4 @@ export function useIsBottomNavigation() {
   }, []);
 
   return isBottomNavigation;
-}
-
-export function getIsBottomNavigation() {
-  return typeof window === "undefined" ? false : window.matchMedia(bottomNavigationMediaQuery).matches;
 }

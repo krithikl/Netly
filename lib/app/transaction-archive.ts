@@ -7,7 +7,7 @@ import {
   customCategoriesStorageKey,
   deletedCategoriesStorageKey
 } from "@/lib/app/constants";
-import { getTransactionDate, getTransactionId } from "@/lib/transaction-display";
+import { getTransactionDate, getTransactionFallbackSortTimestamp, getTransactionId, getTransactionTimestamp } from "@/lib/transaction-display";
 import type { AccountDataFreshness, LinkedAccount } from "@/lib/app/types";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 
@@ -164,7 +164,7 @@ export async function exportTransactionArchiveSnapshot(): Promise<TransactionArc
   return {
     metadata,
     settings: readPortableSettings(),
-    transactions: realTransactionRecords.sort((first, second) => getTransactionDate(second.transaction).localeCompare(getTransactionDate(first.transaction)))
+    transactions: realTransactionRecords.sort((first, second) => compareArchivedTransactions(second.transaction, first.transaction))
   };
 }
 
@@ -344,7 +344,23 @@ function mergeTransactions(archivedTransactions: Transaction[], freshTransaction
     byId.set(getArchiveTransactionId(transaction), transaction);
   });
 
-  return [...byId.values()].sort((first, second) => getTransactionDate(second).localeCompare(getTransactionDate(first)));
+  return [...byId.values()].sort((first, second) => compareArchivedTransactions(second, first));
+}
+
+function compareArchivedTransactions(first: Transaction, second: Transaction) {
+  const dateDifference = getTransactionTimestamp(first) - getTransactionTimestamp(second);
+
+  if (dateDifference !== 0) {
+    return dateDifference;
+  }
+
+  const fallbackDifference = getTransactionFallbackSortTimestamp(first) - getTransactionFallbackSortTimestamp(second);
+
+  if (fallbackDifference !== 0) {
+    return fallbackDifference;
+  }
+
+  return getTransactionId(first).localeCompare(getTransactionId(second));
 }
 
 // Requires every archived transaction to have a stable, non-empty identity.

@@ -12,7 +12,7 @@ The main app is rendered through a client shell:
 - `app/(dashboard)/layout.tsx` mounts `components/AppShell.tsx` for all dashboard routes.
 - `components/AppShell.tsx` places the sidebar, topbar, status banner, and active view.
 - `hooks/useNetlyApp.ts` is the central app state/composition hook.
-- `components/views/ActiveView.tsx` chooses which page view to render.
+- `features/dashboard/DashboardViewRouter.tsx` chooses which page view to render.
 
 ## Local setup
 
@@ -31,24 +31,24 @@ Copy `.env.example` to `.env.local` for Akahu testing. Demo mode works without r
 
 | To update this | Go here first | Notes |
 | --- | --- | --- |
-| Home dashboard layout/content | `components/views/HomeView.tsx` | Composes hero balance, metric cards, donut chart, insights, and recent activity. |
-| Home summary cards | `components/home/MetricCard.tsx` and `components/views/HomeView.tsx` | Values are calculated in `hooks/useNetlyApp.ts`. |
-| Balance/payday hero | `components/home/HeroBalanceCard.tsx` | Payday state comes from `hooks/usePaydaySettings.ts`. |
+| Home dashboard layout/content | `features/home/HomePage.tsx` | Composes hero balance, metric cards, donut chart, insights, and recent activity. |
+| Home summary cards | `features/home/MetricCard.tsx` and `features/home/HomePage.tsx` | Values are calculated in `hooks/useNetlyApp.ts`. |
+| Balance/payday hero | `features/home/HeroBalanceCard.tsx` | Payday state comes from `hooks/usePaydaySettings.ts`. |
 | Category donut chart | `components/charts/CategoryDonutCard.tsx` and `components/charts/DonutChart.tsx` | Category totals come from `spendByCategory` in `lib/insights.ts`. |
-| Insights panel copy/logic | `components/home/InsightsPanel.tsx` and `lib/insights.ts` | Generated insights are passed from `useNetlyApp`. |
-| Transactions page | `components/views/TransactionsView.tsx` | Main filter/search/date/category UI lives here. |
-| Transaction rows/details | `components/transactions/TransactionList.tsx` | Uses helpers from `lib/transaction-display.ts`. |
-| Transaction filtering/sorting | `hooks/useTransactionControls.ts` and `lib/app/derived.ts` | UI controls live in `TransactionsView`; derived filtering lives in these files. |
-| Budgets page | `components/views/BudgetsView.tsx` | Budget seed data is in `lib/mock-data.ts`. |
+| Insights panel copy/logic | `features/home/InsightsPanel.tsx` and `lib/insights.ts` | Generated insights are passed from `useNetlyApp`. |
+| Transactions page | `features/transactions/TransactionsPage.tsx` | Main filter/search/date/category UI lives here. |
+| Transaction rows/details | `features/transactions/TransactionList.tsx` | Uses helpers from `lib/transaction-display.ts`. |
+| Transaction filtering/sorting | `hooks/useTransactionControls.ts` and `lib/app/derived.ts` | UI controls live in `TransactionsPage`; derived filtering lives in these files. |
+| Budgets page | `features/budgets/BudgetsPage.tsx` | Budget seed data is in `lib/mock-data.ts`. |
 | Recurring merchant detection | `lib/insights.ts` | Used by Budgets and the recurring transaction jump. |
-| Card Fit page | `components/views/CardFitView.tsx` | Renders ranked card results and filters. |
-| Card Fit detail panel | `components/card-fit/CardFitDetailPanel.tsx` | Explains individual card result details. |
+| Card Fit page | `features/card-fit/CardFitPage.tsx` | Renders ranked card results and filters. |
+| Card Fit detail panel | `features/card-fit/CardFitDetailPanel.tsx` | Explains individual card result details. |
 | Card ranking logic | `lib/insights.ts` | Look for `calculateCardFit`. Card product data is in `lib/mock-data.ts`. |
-| Connect Akahu screen | `components/views/ConnectView.tsx` | Calls connection handlers from `hooks/useAkahuConnection.ts`. |
+| Connect Akahu screen | `features/connect/ConnectPage.tsx` | Calls connection handlers from `hooks/useAkahuConnection.ts`. |
 | Akahu API routes | `app/api/akahu/*/route.ts` | Server endpoints for OAuth, tokens, accounts, balances, and transactions. |
 | Akahu client/provider logic | `lib/akahu/client.ts` and `lib/akahu/provider.ts` | Keep raw API calls here, not in components. |
 | Account/transaction normalisation | `lib/akahu/accounts.ts`, `lib/akahu/normalize.ts`, `lib/transaction-display.ts` | These turn Akahu-shaped data into UI-friendly values. |
-| Settings page | `components/views/SettingsView.tsx` | Category colour and category removal UI. |
+| Settings page | `features/settings/SettingsPage.tsx` | Category colour and category removal UI. |
 | Category settings persistence | `hooks/useCategorySettings.ts` | Stored in `localStorage`. |
 | Navigation/sidebar/bottom nav | `components/layout/AppSidebar.tsx` | View labels/icons and data mode toggle live here. |
 | Topbar and period tabs | `components/layout/Topbar.tsx` and `components/layout/TimeRangeTabs.tsx` | Period control appears on Home and Budgets. |
@@ -62,24 +62,24 @@ Copy `.env.example` to `.env.local` for Akahu testing. Demo mode works without r
 1. Route enters `app/(dashboard)/layout.tsx`.
 2. `components/AppShell.tsx` calls `useNetlyApp()`.
 3. `useNetlyApp()` loads Akahu/demo data, applies category settings, calculates metrics, and builds `viewProps`.
-4. `components/views/ActiveView.tsx` receives `viewProps` and renders the selected page.
-5. Page components compose smaller components from `components/home`, `components/charts`, `components/transactions`, `components/card-fit`, and `components/ui`.
+4. `features/dashboard/DashboardViewRouter.tsx` receives `viewProps` and renders the selected page.
+5. Page components compose smaller components from `features/home`, `components/charts`, `features/transactions`, `features/card-fit`, and `components/ui`.
 
-If you are trying to find where a smaller component is passed in, start at the page component in `components/views/*`, then follow props back to `ActiveView.tsx`, then `useNetlyApp.ts`.
+If you are trying to find where a smaller component is passed in, start at the page component in `features/*/*Page.tsx`, then follow props back to `DashboardViewRouter.tsx`, then `useNetlyApp.ts`.
 
 ## Folder structure
 
 ```text
 app/                  Next.js layouts, routed pages, and API routes
-components/views/     Main app screens selected by ActiveView
+features/dashboard/     Dashboard routing and page-selection logic
 components/layout/    Sidebar, topbar, and global app navigation
-components/home/      Home dashboard subcomponents
+features/home/      Home dashboard subcomponents
 components/charts/    Chart wrappers and Chart.js rendering
-components/transactions/ Transaction list/detail UI
-components/card-fit/  Card Fit detail UI
+features/transactions/ Transaction list/detail UI
+features/card-fit/  Card Fit detail UI
 components/ui/        Shared low-level UI primitives
 hooks/                Client-side state and orchestration hooks
-lib/app/              App routing, storage, derived state, and prop types
+lib/app/              App routing, storage, and derived state helpers
 lib/akahu/            Akahu API client, provider, token, and normalisation logic
 lib/                  Product calculations, mock data, periods, types, utilities
 docs/                 Existing deeper architecture/handover notes
@@ -91,7 +91,7 @@ docs/                 Existing deeper architecture/handover notes
 - `useNetlyApp` combines banking data with category settings, payday settings, period filters, and derived product metrics.
 - `lib/insights.ts` calculates spend totals, recurring merchants, safe-to-spend, insights, and card-fit rankings.
 - `lib/transaction-display.ts` centralises display-safe transaction values so UI files do not need to know every Akahu shape.
-- `ActiveView` passes only the relevant pieces to each page view.
+- `DashboardViewRouter` passes only the relevant pieces to each page view.
 
 ## Before adding new code
 
@@ -114,5 +114,5 @@ docs/                 Existing deeper architecture/handover notes
 ## Areas to review later
 
 - `hooks/useNetlyApp.ts` is the main orchestration point and may eventually be worth splitting by domain.
-- `components/views/TransactionsView.tsx` is large because it owns most transaction controls and responsive UI.
+- `features/transactions/TransactionsPage.tsx` is large because it owns most transaction controls and responsive UI.
 - Akahu token storage is currently cookie-based for MVP/dev usage and should move to encrypted server-side storage when auth exists.

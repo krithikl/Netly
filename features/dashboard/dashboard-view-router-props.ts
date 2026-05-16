@@ -4,7 +4,7 @@ import type { DriveBackupState } from "@/hooks/useDriveBackup";
 import type { AkahuDataFreshness, TransactionAccountOption, TransactionFilter, TransactionSort, View } from "@/lib/app/types";
 import type { AkahuManualTokens } from "@/hooks/useAkahuConnection";
 
-export type SharedViewProps = {
+export type SharedDashboardPageProps = {
   activeView: View;
   categoryColors: Record<string, string>;
   isConnected: boolean;
@@ -12,7 +12,7 @@ export type SharedViewProps = {
   setActiveView: (view: View) => void;
 };
 
-export type HomeViewStateProps = {
+export type HomePageStateProps = {
   averageDailySpend: number;
   availableBalance: number | null;
   chartCategories: { category: string; amount: number }[];
@@ -30,7 +30,7 @@ export type HomeViewStateProps = {
   transactionPreview: Transaction[];
 };
 
-export type TransactionsViewStateProps = {
+export type TransactionsPageStateProps = {
   accountOptions: TransactionAccountOption[];
   isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
@@ -58,14 +58,14 @@ export type TransactionsViewStateProps = {
   workingTransactions: Transaction[];
 };
 
-export type BudgetsViewStateProps = {
+export type BudgetsPageStateProps = {
   budgets: Budget[];
   categories: { category: string; amount: number }[];
   onRecurringClick: (merchant: string) => void;
   recurring: RecurringMerchant[];
 };
 
-export type CardFitViewStateProps = {
+export type CardFitPageStateProps = {
   cardBasis: CardFitBasis;
   cardFitSourceLabel: string;
   cardFitWindowLabel: string;
@@ -75,7 +75,7 @@ export type CardFitViewStateProps = {
   isLoadingCardFitTransactions: boolean;
 };
 
-export type ConnectViewStateProps = {
+export type ConnectPageStateProps = {
   completeAkahuConnection: (tokens?: AkahuManualTokens) => Promise<void>;
   manualTokens: AkahuManualTokens;
   onManualTokensChange: (tokens: AkahuManualTokens) => void;
@@ -83,7 +83,7 @@ export type ConnectViewStateProps = {
   syncResult: string;
 };
 
-export type SettingsViewStateProps = {
+export type SettingsPageStateProps = {
   akahuDataFreshness: AkahuDataFreshness;
   dataMode: "user" | "demo";
   dashboardPeriod: PeriodOption;
@@ -98,14 +98,14 @@ export type SettingsViewStateProps = {
   deleteCategory: (category: string) => void;
 };
 
-// Complete view model passed from useNetlyApp into ActiveView and its child screens.
-export type ActiveViewProps = SharedViewProps
-  & HomeViewStateProps
-  & TransactionsViewStateProps
-  & BudgetsViewStateProps
-  & CardFitViewStateProps
-  & ConnectViewStateProps
-  & SettingsViewStateProps
+// Complete page state passed from useNetlyApp into DashboardViewRouter and its child pages.
+export type DashboardViewRouterProps = SharedDashboardPageProps
+  & HomePageStateProps
+  & TransactionsPageStateProps
+  & BudgetsPageStateProps
+  & CardFitPageStateProps
+  & ConnectPageStateProps
+  & SettingsPageStateProps
   & {
     onReviewNeedsReview: () => void;
   };

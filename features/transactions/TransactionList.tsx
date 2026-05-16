@@ -67,7 +67,7 @@ const transactionDateFormatter = new Intl.DateTimeFormat("en-NZ", {
 });
 
 // Shows transactions in pages and opens the right detail view for the screen size
-// Transaction list/table used by TransactionsView for rendered results.
+// Transaction list/table used by TransactionsPage for rendered results.
 export function TransactionList({
   categoryColors,
   categorySelectOptions = [],
@@ -636,7 +636,7 @@ function formatTransactionDate(value: string) {
 
 // Watches the screen width so details use a sheet on desktop and a drawer on mobile
 function useIsDesktopNavigation() {
-  const [isDesktop, setIsDesktop] = useState(() => getIsDesktopNavigation());
+  const [isDesktop, setIsDesktop] = useState(true);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1025px)");
@@ -649,8 +649,4 @@ function useIsDesktopNavigation() {
   }, []);
 
   return isDesktop;
-}
-
-function getIsDesktopNavigation() {
-  return typeof window === "undefined" ? true : window.matchMedia("(min-width: 1025px)").matches;
 }

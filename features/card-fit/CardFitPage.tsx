@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import { ExternalLink, Gift, TrendingUp } from "lucide-react";
-import { CardFitDetailPanel, type CardFitDetailPanelMode } from "@/components/card-fit/CardFitDetailPanel";
+import { CardFitDetailPanel, type CardFitDetailPanelMode } from "@/features/card-fit/CardFitDetailPanel";
 import { Button } from "@/components/ui/button";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
@@ -9,7 +9,7 @@ import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
 import type { CardFitBasis, CardFitExplanation, CardValue } from "@/lib/types";
 
-type CardFitViewProps = {
+type CardFitPageProps = {
   cards: CardValue[];
   cardFitSourceLabel: string;
   cardFitWindowLabel: string;
@@ -26,7 +26,7 @@ type CardFitDetailSelection = {
 };
 
 // Card Fit screen for ranking card products against detected eligible spend.
-export function CardFitView({ basis, cardFitSourceLabel, cardFitWindowLabel, cards, explanation: _explanation, hasCardEligibleSpend, isLoadingTransactions }: CardFitViewProps) {
+export function CardFitPage({ basis, cardFitSourceLabel, cardFitWindowLabel, cards, explanation: _explanation, hasCardEligibleSpend, isLoadingTransactions }: CardFitPageProps) {
   const subtitle = getCardFitSubtitle(cardFitSourceLabel);
   const [issuerFilter, setIssuerFilter] = useState(allIssuersFilter);
   const [typeFilter, setTypeFilter] = useState<CardTypeFilter>(allTypesFilter);

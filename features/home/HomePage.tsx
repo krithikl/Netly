@@ -1,15 +1,15 @@
 import clsx from "clsx";
 import { CalendarDays, Sparkles, TrendingUp, WalletCards } from "lucide-react";
 import { CategoryDonutCard } from "@/components/charts/CategoryDonutCard";
-import { HeroBalanceCard } from "@/components/home/HeroBalanceCard";
-import { InsightsPanel } from "@/components/home/InsightsPanel";
-import { MetricCard } from "@/components/home/MetricCard";
-import { RecentActivityStrip } from "@/components/home/RecentActivityStrip";
+import { HeroBalanceCard } from "@/features/home/HeroBalanceCard";
+import { InsightsPanel } from "@/features/home/InsightsPanel";
+import { MetricCard } from "@/features/home/MetricCard";
+import { RecentActivityStrip } from "@/features/home/RecentActivityStrip";
 import { formatMoney } from "@/lib/insights";
 import type { Transaction } from "@/lib/types";
 import type { View } from "@/lib/app/types";
 
-type HomeViewProps = {
+type HomePageProps = {
   availableBalance: number | null;
   categoryColors: Record<string, string>;
   chartCategories: { category: string; amount: number }[];
@@ -34,7 +34,7 @@ type HomeViewProps = {
 
 // Shows the dashboard summary, category chart, insights, and recent transactions
 // Home dashboard composed from summary cards, charts, insights, and recent transactions.
-export function HomeView({
+export function HomePage({
   availableBalance,
   categoryColors,
   chartCategories,
@@ -55,7 +55,7 @@ export function HomeView({
   setHoveredCategory,
   setPayday,
   transactionPreview
-}: HomeViewProps) {
+}: HomePageProps) {
   const metricGridClassName = getLoadingClassName("metric-grid", isLoadingTransactions);
   const dashboardGridClassName = getLoadingClassName("dashboard-grid", isLoadingTransactions);
   const recentTransactions = transactionPreview.slice(0, 5);

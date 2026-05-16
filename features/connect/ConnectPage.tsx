@@ -4,7 +4,7 @@ import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
 import type { AkahuManualTokens } from "@/hooks/useAkahuConnection";
 
-type ConnectViewProps = {
+type ConnectPageProps = {
   completeAkahuConnection: (tokens?: AkahuManualTokens) => Promise<void>;
   manualTokens: AkahuManualTokens;
   onManualTokensChange: (tokens: AkahuManualTokens) => void;
@@ -12,13 +12,13 @@ type ConnectViewProps = {
   syncResult: string;
 };
 
-export function ConnectView({
+export function ConnectPage({
   completeAkahuConnection,
   manualTokens,
   onManualTokensChange,
   setSyncResult,
   syncResult
-}: ConnectViewProps) {
+}: ConnectPageProps) {
   const canCompleteConnection = manualTokens.appToken.trim().length > 0 && manualTokens.userToken.trim().length > 0;
   const handleAuthorizationStart = () => {
     setSyncResult("Opening Akahu authorization...");

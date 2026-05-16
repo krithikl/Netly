@@ -1,17 +1,17 @@
-import { BudgetsView } from "@/components/views/BudgetsView";
-import { CardFitView } from "@/components/views/CardFitView";
-import { ConnectView } from "@/components/views/ConnectView";
-import { HomeView } from "@/components/views/HomeView";
-import { SettingsView } from "@/components/views/SettingsView";
-import { TransactionsView } from "@/components/views/TransactionsView";
-import type { ActiveViewProps } from "@/lib/app/view-props";
+import { BudgetsPage } from "@/features/budgets/BudgetsPage";
+import { CardFitPage } from "@/features/card-fit/CardFitPage";
+import { ConnectPage } from "@/features/connect/ConnectPage";
+import { HomePage } from "@/features/home/HomePage";
+import { SettingsPage } from "@/features/settings/SettingsPage";
+import { TransactionsPage } from "@/features/transactions/TransactionsPage";
+import type { DashboardViewRouterProps } from "@/features/dashboard/dashboard-view-router-props";
 
 // Chooses the live page component from the active view value produced by routing/sidebar state.
-export function ActiveView(props: ActiveViewProps) {
+export function DashboardViewRouter(props: DashboardViewRouterProps) {
   switch (props.activeView) {
     case "transactions":
       return (
-        <TransactionsView
+        <TransactionsPage
           accountOptions={props.accountOptions}
           categoryColors={props.categoryColors}
           categoryOptions={props.transactionCategoryOptions}
@@ -39,10 +39,10 @@ export function ActiveView(props: ActiveViewProps) {
         />
       );
     case "budgets":
-      return <BudgetsView budgets={props.budgets} categories={props.categories} categoryColors={props.categoryColors} onRecurringClick={props.onRecurringClick} recurring={props.recurring} />;
+      return <BudgetsPage budgets={props.budgets} categories={props.categories} categoryColors={props.categoryColors} onRecurringClick={props.onRecurringClick} recurring={props.recurring} />;
     case "cards":
       return (
-        <CardFitView
+        <CardFitPage
           basis={props.cardBasis}
           explanation={props.cardFitExplanation}
           cardFitSourceLabel={props.cardFitSourceLabel}
@@ -54,7 +54,7 @@ export function ActiveView(props: ActiveViewProps) {
       );
     case "connect":
       return (
-        <ConnectView
+        <ConnectPage
           completeAkahuConnection={props.completeAkahuConnection}
           manualTokens={props.manualTokens}
           onManualTokensChange={props.onManualTokensChange}
@@ -64,7 +64,7 @@ export function ActiveView(props: ActiveViewProps) {
       );
     case "settings":
       return (
-        <SettingsView
+        <SettingsPage
           akahuDataFreshness={props.akahuDataFreshness}
           categoryColors={props.categoryColors}
           dataMode={props.dataMode}
@@ -83,7 +83,7 @@ export function ActiveView(props: ActiveViewProps) {
     default:
       return (
         <section className="view-stack">
-          <HomeView
+          <HomePage
             averageDailySpend={props.averageDailySpend}
             availableBalance={props.availableBalance}
             categoryColors={props.categoryColors}

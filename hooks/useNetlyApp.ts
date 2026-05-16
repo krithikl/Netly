@@ -16,7 +16,7 @@ import {
 } from "@/lib/app/derived";
 import { applyCategoryPreferences } from "@/lib/category-rules";
 import type { DataMode } from "@/lib/app/types";
-import type { ActiveViewProps } from "@/lib/app/view-props";
+import type { DashboardViewRouterProps } from "@/features/dashboard/dashboard-view-router-props";
 import { budgets, cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, safeToSpend, spendByCategory, sum } from "@/lib/insights";
 import { filterTransactionsByPeriod, getTransactionPeriodDateRange } from "@/lib/periods";
@@ -100,25 +100,9 @@ export function useNetlyApp() {
     });
   }, []);
 
-  useEffect(() => {
-    const refreshUserModeWhenVisible = () => {
-      if (banking.dataMode !== "user" || document.visibilityState !== "visible") {
-        return;
-      }
-
-      banking.refreshTransactions("user", transactionControls.transactionDateRange).catch((error: unknown) => {
-        banking.setTransactionLoadError(error instanceof Error ? error.message : "Could not refresh Akahu transactions.");
-      });
-    };
-
-    window.addEventListener("focus", refreshUserModeWhenVisible);
-    document.addEventListener("visibilitychange", refreshUserModeWhenVisible);
-
-    return () => {
-      window.removeEventListener("focus", refreshUserModeWhenVisible);
-      document.removeEventListener("visibilitychange", refreshUserModeWhenVisible);
-    };
-  }, [banking.dataMode, banking.refreshTransactions, banking.setTransactionLoadError, transactionControls.transactionDateRange]);
+  // Do not refresh on window focus or visibility changes. Akahu refreshes are
+  // intentionally limited to initial app load, explicit user refreshes, and the
+  // stale-data cooldown inside useAkahuData. This keeps tab/page navigation fast.
 
   useEffect(() => {
     const previousActiveView = previousActiveViewRef.current;
@@ -143,7 +127,7 @@ export function useNetlyApp() {
   const reviewCount = useMemo(() => periodTransactions.filter(transactionNeedsReview).length, [periodTransactions]);
   const chartCategories = useMemo(() => groupCategoriesForChart(categoryTotals, topCategoryLimit), [categoryTotals]);
   const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
-  const refreshUserTransactions = useCallback(() => banking.refreshTransactions("user", transactionControls.transactionDateRange), [banking.refreshTransactions, transactionControls.transactionDateRange]);
+  const refreshUserTransactions = useCallback(() => banking.refreshTransactions("user", transactionControls.transactionDateRange, { forceFullSync: true }), [banking.refreshTransactions, transactionControls.transactionDateRange]);
   const loadMoreUserTransactions = useCallback(() => banking.loadMoreTransactions(transactionControls.transactionDateRange), [banking.loadMoreTransactions, transactionControls.transactionDateRange]);
   const loadAllUserTransactions = useCallback(async () => {
     await banking.loadAllTransactions(transactionControls.transactionDateRange);
@@ -194,9 +178,10 @@ export function useNetlyApp() {
     [banking.linkedAccounts, transactionPageWorkingTransactions]
   );
   const shouldShowPeriodControl = (activeView === "home" || activeView === "budgets") && !isBottomNavigation;
+  const isInitialTransactionImport = banking.isConnected && banking.dataMode === "user" && banking.isLoadingTransactions && banking.transactions.length === 0 && banking.transactionPageTransactions.length === 0;
 
-  // Single prop bundle passed into ActiveView, then split into each screen component.
-  const viewProps: ActiveViewProps = {
+  // Single page-state bundle passed into DashboardViewRouter, then split into the active page component.
+  const dashboardViewRouterProps: DashboardViewRouterProps = {
     activeView,
     akahuDataFreshness: banking.akahuDataFreshness,
     averageDailySpend,
@@ -281,6 +266,7 @@ export function useNetlyApp() {
     dataSourceLabel: getDataSourceLabel(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
     linkedAccountLabel: getLinkedAccountLabel(banking.primaryLinkedAccount, banking.linkedAccounts.length, banking.isConnected),
     linkedUserName,
+    isInitialTransactionImport,
     payday: paydaySettings.payday,
     period,
     setActiveView,
@@ -288,7 +274,7 @@ export function useNetlyApp() {
     shouldShowPeriodControl,
     statusBannerMessage: banking.transactionLoadError || banking.transactionLoadNotice,
     statusBannerTitle: getStatusBannerTitle(banking.transactionLoadError, banking.dataMode),
-    viewProps
+    viewProps: dashboardViewRouterProps
   };
 }
 

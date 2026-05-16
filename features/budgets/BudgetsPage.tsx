@@ -3,7 +3,7 @@ import { PanelTitle } from "@/components/ui/panel-title";
 import { formatMoney } from "@/lib/insights";
 import type { Budget, RecurringMerchant } from "@/lib/types";
 
-type BudgetsViewProps = {
+type BudgetsPageProps = {
   budgets: Budget[];
   categories: { category: string; amount: number }[];
   categoryColors: Record<string, string>;
@@ -12,7 +12,7 @@ type BudgetsViewProps = {
 };
 
 // Budget screen composed from category spend totals and recurring merchant insights.
-export function BudgetsView({ budgets, categories, categoryColors, onRecurringClick, recurring }: BudgetsViewProps) {
+export function BudgetsPage({ budgets, categories, categoryColors, onRecurringClick, recurring }: BudgetsPageProps) {
   return (
     <section className="view-stack">
       <section className="material-card">
@@ -47,7 +47,7 @@ export function BudgetsView({ budgets, categories, categoryColors, onRecurringCl
   );
 }
 
-// Individual budget progress card rendered inside BudgetsView.
+// Individual budget progress card rendered inside BudgetsPage.
 function BudgetCard({ budget, categoryColor, spent }: { budget: Budget; categoryColor: string; spent: number }) {
   const progress = Math.min((spent / budget.limit) * 100, 100);
   const avatarStyle = getBudgetAvatarStyle(categoryColor);

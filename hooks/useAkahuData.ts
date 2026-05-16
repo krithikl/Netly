@@ -37,6 +37,12 @@ type RefreshPayload = {
 };
 
 const lastAkahuManualRefreshStorageKey = "netly_last_akahu_manual_refresh_requested_at";
+const lastFullTransactionSyncStorageKey = "netly_last_full_transaction_sync_at";
+const fullTransactionSyncCooldownMs = 3 * 60 * 60 * 1000;
+
+type RefreshTransactionsOptions = {
+  forceFullSync?: boolean;
+};
 
 const emptyAkahuDataFreshness: AkahuDataFreshness = {
   accounts: [],
@@ -95,18 +101,27 @@ export function useAkahuData() {
   }, []);
 
   // Loads archived transactions first, then applies fresh Akahu account and transaction payloads.
-  const refreshTransactions = useCallback(async (mode: DataMode = dataMode, dateRange?: TransactionDateRange) => {
+  const refreshTransactions = useCallback(async (mode: DataMode = dataMode, dateRange?: TransactionDateRange, options: RefreshTransactionsOptions = {}) => {
     const requestId = refreshRequestIdRef.current + 1;
     refreshRequestIdRef.current = requestId;
     const isCurrentRequest = () => refreshRequestIdRef.current === requestId;
+    let shouldSyncFullTransactions = options.forceFullSync;
 
     setIsLoadingTransactions(true);
-    resetBankData();
-    setAkahuDataFreshness(mode === "user" ? { ...emptyAkahuDataFreshness, status: "loading" } : emptyAkahuDataFreshness);
+
+    // Keep the existing screen populated during same-mode refreshes. Clearing here
+    // caused the app to flash empty rows/cards whenever a tab regained focus or a
+    // view triggered a reload. Only clear when changing data source.
+    if (mode !== dataMode) {
+      resetBankData();
+    }
+
+    setAkahuDataFreshness(mode === "user" ? { ...akahuDataFreshness, status: "loading" } : emptyAkahuDataFreshness);
 
     try {
       if (mode === "user") {
         const { archivedAccountSnapshot, archivedTransactions, archivedTransactionPageTransactions, hasArchivedTransactions } = await readArchiveHydration(dateRange);
+        shouldSyncFullTransactions = options.forceFullSync || shouldRunFullTransactionSync(hasArchivedTransactions);
 
         if (!isCurrentRequest()) {
           return;
@@ -136,17 +151,8 @@ export function useAkahuData() {
         }
       }
 
-      if (mode === "user") {
-        const startupRefreshNotice = await requestAkahuStartupRefresh();
-
-        if (!isCurrentRequest()) {
-          return;
-        }
-
-        if (startupRefreshNotice) {
-          setTransactionLoadNotice(startupRefreshNotice);
-        }
-      }
+      // Manual Akahu refresh is handled after account freshness is known. This
+      // avoids requesting /api/akahu/refresh on every app entry/navigation.
 
       const accountsRequest = loadAndApplyAccountSnapshot(mode, isCurrentRequest, {
         setAkahuDataFreshness,
@@ -157,20 +163,30 @@ export function useAkahuData() {
         setTransactionLoadNotice
       });
       const transactionsRequest = mode === "user"
-        ? syncAllAkahuTransactionsToArchive(dateRange).then(({ archivedTransactions, archivedTransactionPageTransactions, connected, notice }) => {
-          if (!isCurrentRequest()) {
-            return;
-          }
+        ? (!shouldSyncFullTransactions
+          ? Promise.resolve().then(() => {
+            if (!isCurrentRequest()) {
+              return;
+            }
 
-          setTransactions(archivedTransactions);
-          setTransactionPageTransactions(archivedTransactionPageTransactions);
-          setTransactionPageNextCursor(null);
-          if (connected) {
-            setIsConnected(true);
-          }
-          setTransactionLoadError("");
-          setTransactionLoadNotice(notice || "Transactions synced from Akahu and saved to the encrypted archive.");
-        })
+            setTransactionPageNextCursor(null);
+            setTransactionLoadError("");
+            setTransactionLoadNotice("");
+          })
+          : syncAllAkahuTransactionsToArchive(dateRange).then(({ archivedTransactions, archivedTransactionPageTransactions, connected, notice }) => {
+            if (!isCurrentRequest()) {
+              return;
+            }
+
+            setTransactions(archivedTransactions);
+            setTransactionPageTransactions(archivedTransactionPageTransactions);
+            setTransactionPageNextCursor(null);
+            if (connected) {
+              setIsConnected(true);
+            }
+            setTransactionLoadError("");
+            setTransactionLoadNotice(notice || "Transactions synced from Akahu and saved to the encrypted archive.");
+          }))
         : loadDemoTransactions(dateRange).then(({ transactionsPayload, transactionPagePayload }) => {
           if (!isCurrentRequest()) {
             return;
@@ -195,7 +211,7 @@ export function useAkahuData() {
         setIsLoadingTransactions(false);
       }
     }
-  }, [dataMode, resetBankData]);
+  }, [akahuDataFreshness, dataMode, resetBankData]);
 
   const refreshTransactionPage = useCallback(async (mode: DataMode = dataMode, dateRange?: TransactionDateRange) => {
     setIsLoadingTransactions(true);
@@ -461,17 +477,6 @@ async function loadAccountsPayload(mode: DataMode) {
   return payload;
 }
 
-// Requests Akahu refresh whenever user mode starts or re-enters the app. Failures are non-fatal because archive-first data should still render.
-async function requestAkahuStartupRefresh() {
-  try {
-    const payload = await requestAkahuRefresh();
-    recordManualRefreshRequestedAt();
-    return payload.notice || "Akahu refresh requested. Syncing latest accounts and transactions.";
-  } catch (error) {
-    return error instanceof Error ? error.message : "Could not request Akahu refresh.";
-  }
-}
-
 // Calls Akahu's manual refresh route and fails loudly if it is rejected.
 async function requestAkahuRefresh() {
   const response = await fetch("/api/akahu/refresh", { method: "POST" });
@@ -505,7 +510,8 @@ function canRequestManualRefresh(cooldownMs: number) {
   const timestamp = Date.parse(lastRequestedAt);
 
   if (!Number.isFinite(timestamp)) {
-    throw new Error(`Invalid localStorage key "${lastAkahuManualRefreshStorageKey}": expected an ISO timestamp.`);
+    window.localStorage.removeItem(lastAkahuManualRefreshStorageKey);
+    return true;
   }
 
   return Date.now() - timestamp >= cooldownMs;
@@ -525,12 +531,38 @@ function getFailedFreshnessState(error: unknown, fallbackMessage: string): Akahu
   };
 }
 
+function shouldRunFullTransactionSync(hasArchivedTransactions: boolean) {
+  if (!hasArchivedTransactions) {
+    return true;
+  }
+
+  const lastSyncedAt = window.localStorage.getItem(lastFullTransactionSyncStorageKey);
+
+  if (!lastSyncedAt) {
+    return true;
+  }
+
+  const timestamp = Date.parse(lastSyncedAt);
+
+  if (!Number.isFinite(timestamp)) {
+    window.localStorage.removeItem(lastFullTransactionSyncStorageKey);
+    return true;
+  }
+
+  return Date.now() - timestamp >= fullTransactionSyncCooldownMs;
+}
+
+function recordFullTransactionSync() {
+  window.localStorage.setItem(lastFullTransactionSyncStorageKey, new Date().toISOString());
+}
+
 // Syncs the full Akahu transaction history into the encrypted local archive, then serves the active range from the archive.
 async function syncAllAkahuTransactionsToArchive(dateRange: TransactionDateRange | undefined) {
   const response = await fetch(getTransactionsUrl("user", undefined, undefined, true));
   const payload = await readJsonResponse<TransactionsPayload>(response, "all transactions");
 
   assertAkahuResponse(response, payload.error, "Could not sync Akahu transactions.");
+  recordFullTransactionSync();
   const archivedTransactions = await archiveAndMergeTransactions(payload.transactions);
   const archivedTransactionPageTransactions = dateRange
     ? await readArchivedTransactions(dateRange)

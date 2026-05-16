@@ -11,7 +11,7 @@ export type AkahuManualTokens = {
 };
 
 type UseAkahuConnectionOptions = {
-  refreshTransactions: (mode?: DataMode, dateRange?: TransactionDateRange) => Promise<void>;
+  refreshTransactions: (mode?: DataMode, dateRange?: TransactionDateRange, options?: { forceFullSync?: boolean }) => Promise<void>;
   setDataMode: (mode: DataMode) => void;
   transactionDateRange: TransactionDateRange;
 };
@@ -57,7 +57,7 @@ export function useAkahuConnection({
       window.localStorage.setItem("netly_data_mode", "user");
 
       try {
-        await refreshTransactions("user", transactionDateRange);
+        await refreshTransactions("user", transactionDateRange, { forceFullSync: true });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Akahu connected, but transactions could not be loaded.";
         setSyncResult(message);

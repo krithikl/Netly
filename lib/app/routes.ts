@@ -20,7 +20,7 @@ export function getRouteForView(view: View): Route {
   return viewRoutes[view] as Route;
 }
 
-// Converts the current browser path into the active view rendered by ActiveView.
+// Converts the current browser path into the active view rendered by DashboardViewRouter.
 export function getViewForPathname(pathname: string): View {
   return routeViews[pathname] || "home";
 }

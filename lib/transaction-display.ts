@@ -29,6 +29,42 @@ export function getTransactionDate(transaction: Transaction) {
   return transaction.date.slice(0, 10);
 }
 
+export function getTransactionTimestamp(transaction: Transaction) {
+  const dateTimestamp = getUsableTransactionTimestamp(transaction.date);
+
+  if (Number.isFinite(dateTimestamp)) {
+    return dateTimestamp;
+  }
+
+  const dateOnlyTimestamp = Date.parse(`${getTransactionDate(transaction)}T00:00:00`);
+  return Number.isFinite(dateOnlyTimestamp) ? dateOnlyTimestamp : 0;
+}
+
+export function getTransactionFallbackSortTimestamp(transaction: Transaction) {
+  const createdTimestamp = getUsableTransactionTimestamp(transaction.created_at);
+
+  if (Number.isFinite(createdTimestamp)) {
+    return createdTimestamp;
+  }
+
+  const updatedTimestamp = getUsableTransactionTimestamp(transaction.updated_at);
+
+  if (Number.isFinite(updatedTimestamp)) {
+    return updatedTimestamp;
+  }
+
+  return 0;
+}
+
+function getUsableTransactionTimestamp(value: string | undefined) {
+  if (!value) {
+    return Number.NaN;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : Number.NaN;
+}
+
 export function getTransactionStatus(transaction: Transaction): TransactionStatus {
   if (transaction.pending) {
     return "Pending";

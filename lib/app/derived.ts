@@ -3,6 +3,9 @@ import {
   getTransactionAccountLabel,
   getTransactionCategory,
   getTransactionDate,
+  getTransactionId,
+  getTransactionFallbackSortTimestamp,
+  getTransactionTimestamp,
   getTransactionMerchant,
   getTransactionSearchText,
   getTransactionStatus
@@ -57,16 +60,38 @@ function matchesTransactionFilter(transaction: Transaction, transactionFilter: T
 
 // Sorts transaction rows according to the active Transactions page sort option.
 function compareTransactions(first: Transaction, second: Transaction, transactionSort: TransactionSort) {
+  const newestFirst = compareTransactionTimeDescending(first, second);
+
   switch (transactionSort) {
     case "Oldest":
-      return getTransactionDate(first).localeCompare(getTransactionDate(second));
+      return -newestFirst;
     case "Amount high":
-      return Math.abs(second.amount) - Math.abs(first.amount);
+      return compareByAmount(second, first) || newestFirst;
     case "Amount low":
-      return Math.abs(first.amount) - Math.abs(second.amount);
+      return compareByAmount(first, second) || newestFirst;
     default:
-      return getTransactionDate(second).localeCompare(getTransactionDate(first));
+      return newestFirst;
   }
+}
+
+function compareTransactionTimeDescending(first: Transaction, second: Transaction) {
+  const dateDifference = getTransactionTimestamp(second) - getTransactionTimestamp(first);
+
+  if (dateDifference !== 0) {
+    return dateDifference;
+  }
+
+  const fallbackDifference = getTransactionFallbackSortTimestamp(second) - getTransactionFallbackSortTimestamp(first);
+
+  if (fallbackDifference !== 0) {
+    return fallbackDifference;
+  }
+
+  return getTransactionId(second).localeCompare(getTransactionId(first));
+}
+
+function compareByAmount(first: Transaction, second: Transaction) {
+  return Math.abs(first.amount) - Math.abs(second.amount);
 }
 
 export function getConnectionTitle(isLoadingTransactions: boolean, dataMode: DataMode, isConnected: boolean) {

@@ -20,7 +20,7 @@ import type { DriveBackupState } from "@/hooks/useDriveBackup";
 import type { AkahuDataFreshness, DataMode } from "@/lib/app/types";
 import type { PeriodOption } from "@/lib/types";
 
-type SettingsViewProps = {
+type SettingsPageProps = {
   akahuDataFreshness: AkahuDataFreshness;
   categoryColors: Record<string, string>;
   dataMode: DataMode;
@@ -37,7 +37,7 @@ type SettingsViewProps = {
 };
 
 // Settings screen for managing category colours and hiding unused categories.
-export function SettingsView({
+export function SettingsPage({
   akahuDataFreshness,
   categoryColors,
   dataMode,
@@ -51,7 +51,7 @@ export function SettingsView({
   showDashboardPeriodSetting,
   setDashboardPeriod,
   updateCategoryColor
-}: SettingsViewProps) {
+}: SettingsPageProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
 
@@ -316,7 +316,7 @@ type CategoryColorRowProps = {
   updateCategoryColor: (category: string, color: string) => void;
 };
 
-// One editable category row used by SettingsView.
+// One editable category row used by SettingsPage.
 function CategoryColorRow({
   category,
   currentColor,

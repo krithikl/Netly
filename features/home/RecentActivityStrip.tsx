@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { TransactionDetailsOverlay } from "@/components/transactions/TransactionList";
+import { TransactionDetailsOverlay } from "@/features/transactions/TransactionList";
 import { formatMoney } from "@/lib/insights";
 import {
   getTransactionCategory,

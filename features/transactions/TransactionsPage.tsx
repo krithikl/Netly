@@ -4,7 +4,7 @@ import { AlertCircle, ArrowDownUp, CalendarDays, Check, ChevronDown, Plus, Recei
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
-import { TransactionList } from "@/components/transactions/TransactionList";
+import { TransactionList } from "@/features/transactions/TransactionList";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -25,7 +25,7 @@ import { categoriesMatch, type CategoryEditScope } from "@/lib/category-rules";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionAccountOption, TransactionFilter, TransactionSort } from "@/lib/app/types";
 
-type TransactionsViewProps = {
+type TransactionsPageProps = {
   accountOptions: TransactionAccountOption[];
   categoryColors: Record<string, string>;
   categoryOptions: string[];
@@ -57,7 +57,7 @@ const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount h
 
 // Handles transaction search, filters, sorting, and category creation
 // Full transactions screen: search, filters, date range, category editing, and pagination.
-export function TransactionsView({
+export function TransactionsPage({
   accountOptions,
   categoryColors,
   categoryOptions,
@@ -82,7 +82,7 @@ export function TransactionsView({
   transactionFilter,
   transactionSort,
   transactions
-}: TransactionsViewProps) {
+}: TransactionsPageProps) {
   const [newCategory, setNewCategory] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
@@ -106,7 +106,8 @@ export function TransactionsView({
   const filterSelectOptions = useMemo(() => getStringOptions(transactionFilters), []);
   const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
   const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
-  const shownTransactions = isLoadingTransactions ? [] : transactions;
+  const shownTransactions = transactions;
+  const shouldShowListLoading = isLoadingTransactions && transactions.length === 0;
   const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionAccounts, transactionCategory);
   const isBottomNavigation = useIsBottomNavigation();
@@ -270,7 +271,7 @@ export function TransactionsView({
           emptyMessage="No transactions match the current filters."
           onCategoryChange={onCategoryChange}
           hasMore={hasMoreTransactions}
-          isLoading={isLoadingTransactions}
+          isLoading={shouldShowListLoading}
           isLoadingAll={isLoadingAllTransactions}
           isLoadingMore={isLoadingMoreTransactions}
           onLoadAll={onLoadAllTransactions}

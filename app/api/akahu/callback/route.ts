@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24 * 365
+      maxAge: 60 * 60 * 24 * 30
     });
     response.cookies.delete("netly_akahu_state");
 

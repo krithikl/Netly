@@ -62,7 +62,6 @@ export function HomePage({
   const recentTransactions = [...transactionPreview]
     .sort((first, second) => getTransactionTimestamp(second) - getTransactionTimestamp(first))
     .slice(0, 5);
-  const openConnectView = () => setActiveView("connect");
   const openTransactionsView = () => setActiveView("transactions");
   const openBudgetsView = () => setActiveView("budgets");
 
@@ -71,7 +70,6 @@ export function HomePage({
       <HeroBalanceCard
         availableBalance={availableBalance}
         isConnected={isConnected}
-        onConnect={openConnectView}
         onReviewSpend={openTransactionsView}
         payday={payday}
         paydayPatternDate={paydayPatternDate}

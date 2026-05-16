@@ -645,6 +645,7 @@ h2 {
   z-index: 1;
   display: grid;
   gap: 14px;
+  align-self: flex-end;
 }
 
 .hero-secondary-action.hero-secondary-action {

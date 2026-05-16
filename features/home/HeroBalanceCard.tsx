@@ -9,7 +9,6 @@ import { formatMoney } from "@/lib/insights";
 type HeroBalanceCardProps = {
   availableBalance: number | null;
   isConnected: boolean;
-  onConnect: () => void;
   onReviewSpend: () => void;
   payday: string;
   paydayPatternDate: string;
@@ -19,8 +18,6 @@ type HeroBalanceCardProps = {
 // Home hero card for available balance, safe-to-spend, and payday controls.
 export function HeroBalanceCard({
   availableBalance,
-  isConnected,
-  onConnect,
   onReviewSpend,
   payday,
   paydayPatternDate,
@@ -83,18 +80,7 @@ export function HeroBalanceCard({
         <p>{paydayLabel}</p>
       </div>
 
-      <div className="hero-actions !items-end">
-        <Button
-          aria-hidden={isConnected}
-          className={`hero-secondary-action ${isConnected ? "invisible pointer-events-none" : ""}`}
-          onClick={onConnect}
-          tabIndex={isConnected ? -1 : 0}
-          type="button"
-          variant="outline"
-        >
-          Connect bank
-        </Button>
-
+      <div className="hero-actions">
         <Button onClick={onReviewSpend} type="button">
           Review spend
           <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />

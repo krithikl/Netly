@@ -23,7 +23,7 @@ export function CategoryDonutCard({
   onViewBreakdown
 }: CategoryDonutCardProps) {
   return (
-    <Card className="chart-panel category-panel">
+    <Card className="chart-panel category-panel" data-testid="category-donut-card">
       <CardHeader>
         <CardTitle>Spending by category</CardTitle>
         <Button className="mobile-chart-action" onClick={onViewBreakdown} type="button" aria-label="View full breakdown" size="icon" variant="ghost">

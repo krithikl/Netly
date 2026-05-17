@@ -23,7 +23,7 @@ Netly now treats Akahu as the open banking provider for this branch. The UI shou
 2. User connects Akahu or switches to demo mode.
 3. App retrieves accounts and transactions.
 4. App uses Akahu merchant and category enrichment where available.
-5. App shows safe-to-spend, top categories, recurring payments, and card/reward comparison.
+5. App shows balances, top categories, recurring payments, and card/reward comparison.
 6. User can override categories and customise colours.
 
 ## Current Routing Pattern

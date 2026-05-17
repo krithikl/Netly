@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import { ExternalLink, Gift, TrendingUp } from "lucide-react";
 import { CardFitDetailPanel, type CardFitDetailPanelMode } from "@/features/card-fit/CardFitDetailPanel";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { Button } from "@/components/ui/button";
-import { PanelTitle } from "@/components/ui/panel-title";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
@@ -15,7 +15,6 @@ type CardFitPageProps = {
   cardFitWindowLabel: string;
   explanation: CardFitExplanation | null;
   hasCardEligibleSpend: boolean;
-  isLoadingTransactions: boolean;
   basis: CardFitBasis;
 };
 
@@ -26,7 +25,7 @@ type CardFitDetailSelection = {
 };
 
 // Card Fit screen for ranking card products against detected eligible spend.
-export function CardFitPage({ basis, cardFitSourceLabel, cardFitWindowLabel, cards, explanation: _explanation, hasCardEligibleSpend, isLoadingTransactions }: CardFitPageProps) {
+export function CardFitPage({ basis, cardFitSourceLabel, cardFitWindowLabel, cards, explanation: _explanation, hasCardEligibleSpend }: CardFitPageProps) {
   const subtitle = getCardFitSubtitle(cardFitSourceLabel);
   const [issuerFilter, setIssuerFilter] = useState(allIssuersFilter);
   const [typeFilter, setTypeFilter] = useState<CardTypeFilter>(allTypesFilter);
@@ -54,19 +53,14 @@ export function CardFitPage({ basis, cardFitSourceLabel, cardFitWindowLabel, car
   }, [filteredCards, selectedDetail]);
 
   return (
-    <section className="view-stack">
+    <section className="view-stack" data-testid="card-fit-page">
+      <MobilePageHeader title="Card fit" />
       <section className="material-card">
-        <PanelTitle title="Card fit comparison" subtitle={subtitle} />
         <CardFitBasisSummary basis={basis} cardFitWindowLabel={cardFitWindowLabel} />
+        <p className="card-fit-summary-copy">{subtitle}</p>
         <p className="card-fit-disclaimer">
           Rewards are estimated from card-eligible spend. Listed perks are not dollar-valued unless the value is clear from the issuer source.
         </p>
-        {isLoadingTransactions && (
-          <div className="status-banner neutral" role="status">
-            <strong>Loading transaction history.</strong>
-            <span>Card Fit is reading archived Akahu transactions and checking for fresh data.</span>
-          </div>
-        )}
         <div className="card-fit-controls">
           <label>
             Bank or provider
@@ -78,9 +72,9 @@ export function CardFitPage({ basis, cardFitSourceLabel, cardFitWindowLabel, car
           </label>
         </div>
         {!hasCardEligibleSpend && (
-          <div className="status-banner neutral" role="status">
+          <div className="empty-state" role="status">
             <strong>No card-eligible spend yet.</strong>
-            <span>Netly excludes income, transfers, fees, housing, upcoming payments, and needs-review rows from card rewards calculations.</span>
+            <span>Adjust Card Fit categories in Settings or review uncategorized transactions.</span>
           </div>
         )}
         <div className="card-list">
@@ -199,7 +193,7 @@ function CardOption({
             <div className="flex flex-wrap items-center gap-2">
               <h2>{card.name}</h2>
               {isUnavailable && (
-                <span className="rounded-lg border border-[var(--outline)] bg-white/70 px-2.5 py-1 text-[11px] font-black uppercase text-[var(--muted)]">
+                <span className="rounded-lg border border-[var(--outline-soft)] bg-[var(--surface-2)] px-2.5 py-1 text-[11px] font-black uppercase text-[var(--muted)]">
                   Legacy
                 </span>
               )}

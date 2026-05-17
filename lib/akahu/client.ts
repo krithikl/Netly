@@ -6,6 +6,7 @@ type AkahuConfig = {
   appToken?: string;
   appSecret?: string;
   oauthScope: string;
+  requestTimeoutMs: number;
   redirectUri: string;
   oauthUrl: string;
 };
@@ -64,7 +65,7 @@ export class AkahuClient {
   }
 
   async requestRefresh(token: AkahuToken) {
-    const response = await fetch(this.buildUrl("/refresh"), {
+    const response = await this.fetchAkahu("/refresh", {
       method: "POST",
       headers: this.userHeaders(token),
       cache: "no-store"
@@ -116,7 +117,7 @@ export class AkahuClient {
   }
 
   private async getJson<T>(path: string, token: AkahuToken) {
-    const response = await fetch(this.buildUrl(path), {
+    const response = await this.fetchAkahu(path, {
       headers: this.userHeaders(token),
       cache: "no-store"
     });
@@ -146,7 +147,7 @@ export class AkahuClient {
   }
 
   private async postJson<T>(path: string, body: unknown) {
-    const response = await fetch(this.buildUrl(path), {
+    const response = await this.fetchAkahu(path, {
       method: "POST",
       headers: {
         "content-type": "application/json"
@@ -156,6 +157,20 @@ export class AkahuClient {
     });
 
     return this.readResponse<T>(response);
+  }
+
+  // Wraps Akahu fetch calls so network failures include the endpoint and root cause.
+  private async fetchAkahu(path: string, init: RequestInit) {
+    const url = this.buildUrl(path);
+
+    try {
+      return await fetch(url, {
+        ...init,
+        signal: AbortSignal.timeout(this.config.requestTimeoutMs)
+      });
+    } catch (error) {
+      throw new Error(`Akahu API network request failed for ${url}: ${formatFetchFailure(error)}`);
+    }
   }
 
   private buildUrl(path: string) {
@@ -210,6 +225,7 @@ export function createAkahuClientFromEnv() {
     appToken,
     appSecret: process.env.AKAHU_APP_SECRET,
     oauthScope: process.env.AKAHU_OAUTH_SCOPE || "ONEOFF TRANSACTIONS ACCOUNT",
+    requestTimeoutMs: getAkahuRequestTimeoutMs(),
     redirectUri: process.env.AKAHU_REDIRECT_URI || `${process.env.APP_BASE_URL || "http://localhost:3000"}/api/akahu/callback`,
     oauthUrl: process.env.AKAHU_OAUTH_URL || "https://oauth.akahu.nz"
   });
@@ -272,4 +288,46 @@ async function readJsonBody(response: Response) {
   } catch {
     return { message: text };
   }
+}
+
+// Reads the Akahu request timeout with a conservative default for user-facing flows.
+function getAkahuRequestTimeoutMs() {
+  const configuredTimeout = Number.parseInt(process.env.AKAHU_REQUEST_TIMEOUT_MS || "", 10);
+
+  if (Number.isFinite(configuredTimeout) && configuredTimeout > 0) {
+    return configuredTimeout;
+  }
+
+  return 12000;
+}
+
+// Preserves Node fetch failure causes that are otherwise collapsed into "fetch failed".
+function formatFetchFailure(error: unknown) {
+  if (!(error instanceof Error)) {
+    return "Unknown fetch failure.";
+  }
+
+  const cause = getErrorCause(error);
+  return cause ? `${error.message}. ${cause}` : error.message;
+}
+
+// Extracts common undici/Node cause metadata without assuming a specific error class.
+function getErrorCause(error: Error) {
+  const cause = error.cause;
+
+  if (cause instanceof Error) {
+    return cause.message;
+  }
+
+  if (isRecord(cause)) {
+    const code = typeof cause.code === "string" ? cause.code : "";
+    const message = typeof cause.message === "string" ? cause.message : "";
+    return [code, message].filter(Boolean).join(": ");
+  }
+
+  return "";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

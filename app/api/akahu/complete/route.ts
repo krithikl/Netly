@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { akahuAccessTokenCookieName, akahuAppTokenCookieName } from "@/lib/akahu/token";
+import { akahuAccessTokenCookieName, akahuAppTokenCookieName, getAkahuTokenCookieOptions } from "@/lib/akahu/token";
 import { encryptAkahuCookieValue } from "@/lib/akahu/secure-cookie";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 
@@ -54,20 +54,8 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.json({ message: "Akahu tokens saved for this browser session. Transactions will now load from Akahu." });
-  response.cookies.set(akahuAppTokenCookieName, encryptedAppToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30
-  });
-  response.cookies.set(akahuAccessTokenCookieName, encryptedUserToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30
-  });
+  response.cookies.set(akahuAppTokenCookieName, encryptedAppToken, getAkahuTokenCookieOptions());
+  response.cookies.set(akahuAccessTokenCookieName, encryptedUserToken, getAkahuTokenCookieOptions());
 
   return response;
 }
@@ -84,6 +72,10 @@ function getAkahuCredentialValidationError(error: unknown) {
     return "Akahu credentials were rejected. Check AKAHU_APP_TOKEN and AKAHU_USER_TOKEN.";
   }
 
+  if (isAkahuNetworkErrorMessage(message)) {
+    return `Could not reach Akahu to validate credentials. Tokens were not saved. ${message}`;
+  }
+
   return `Could not validate Akahu credentials before saving them: ${message}`;
 }
 
@@ -95,4 +87,9 @@ function getCredentialValidationStatus(error: unknown) {
 
 function isAkahuAuthErrorMessage(message: string) {
   return /\b(401|403|unauthori[sz]ed|forbidden|invalid_token|invalid client|access denied)\b/i.test(message);
+}
+
+// Detects transport failures so Connect does not frame them as bad credentials.
+function isAkahuNetworkErrorMessage(message: string) {
+  return /\b(network request failed|fetch failed|ENOTFOUND|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|TLS|certificate|timeout)\b/i.test(message);
 }

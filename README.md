@@ -5,7 +5,7 @@ Netly helps New Zealanders understand where their money is going, track repeat s
 The app connects to Akahu for account and transaction data, uses Akahu merchant/category enrichment where available, and falls back to demo data during local development.
 
 Main features:
-- Spending dashboard with balances, safe-to-spend calculations, income tracking, and review signals
+- Spending dashboard with balances, income tracking, spend rhythm, and review signals
 - Transaction feed with merchant/category enrichment
 - Budget and recurring payment tracking
 - Card comparison and rewards-fit analysis
@@ -201,4 +201,3 @@ Most frontend work should still function without live banking connections.
 5. Trace one feature end-to-end
 
 That is usually enough context to start making changes safely and understand how the app is structured.
-

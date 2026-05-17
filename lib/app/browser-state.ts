@@ -4,8 +4,10 @@ import {
   categoryRulesStorageKey,
   categorySettingsVersion,
   categorySettingsVersionStorageKey,
+  cardFitIncludedCategoriesStorageKey,
   customCategoriesStorageKey,
-  deletedCategoriesStorageKey
+  deletedCategoriesStorageKey,
+  hideBalancesStorageKey
 } from "@/lib/app/constants";
 import { defaultCategoryColors, defaultTransactionCategories, categoryRollupCategory, netlyPalette } from "@/lib/categories";
 import { parseStoredJson } from "@/lib/app/storage";
@@ -22,6 +24,7 @@ export function resetOutdatedCategorySettings() {
     categoryColorsStorageKey,
     categoryOverridesStorageKey,
     categoryRulesStorageKey,
+    cardFitIncludedCategoriesStorageKey,
     customCategoriesStorageKey,
     deletedCategoriesStorageKey
   ].forEach((storageKey) => window.localStorage.removeItem(storageKey));
@@ -68,6 +71,16 @@ export function readDeletedCategories() {
   return assertStringArray(deletedCategoriesStorageKey, parseStoredJson<unknown>(deletedCategoriesStorageKey, storedValue));
 }
 
+export function readCardFitIncludedCategories() {
+  const storedValue = window.localStorage.getItem(cardFitIncludedCategoriesStorageKey);
+
+  if (storedValue === null) {
+    return null;
+  }
+
+  return assertStringArray(cardFitIncludedCategoriesStorageKey, parseStoredJson<unknown>(cardFitIncludedCategoriesStorageKey, storedValue));
+}
+
 export function readCategoryColors() {
   const storedValue = window.localStorage.getItem(categoryColorsStorageKey);
   const stored = storedValue === null
@@ -88,6 +101,24 @@ export function readInitialDataMode(): DataMode {
   }
 
   throw new Error(`Invalid localStorage key "netly_data_mode": expected "user" or "demo", received "${value}".`);
+}
+
+export function readHideBalances() {
+  const value = window.localStorage.getItem(hideBalancesStorageKey);
+
+  if (value === null) {
+    return false;
+  }
+
+  if (value === "true") {
+    return true;
+  }
+
+  if (value === "false") {
+    return false;
+  }
+
+  throw new Error(`Invalid localStorage key "${hideBalancesStorageKey}": expected "true" or "false", received "${value}".`);
 }
 
 // Reads Akahu callback URL params, shows a status message, then cleans the URL

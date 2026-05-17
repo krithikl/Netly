@@ -1,9 +1,8 @@
 "use client";
 
 import clsx from "clsx";
-import { CreditCard, Database, Home, Link2, List, MoreHorizontal, PieChart, Settings } from "lucide-react";
+import { CreditCard, Home, Link2, List, MoreHorizontal, PieChart, Settings } from "lucide-react";
 import { useState } from "react";
-import { fullWidthClassName, zeroRightClassName } from "react-remove-scroll-bar";
 import { navItems } from "@/lib/app/constants";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { DataMode, View } from "@/lib/app/types";
@@ -11,8 +10,6 @@ import type { DataMode, View } from "@/lib/app/types";
 type AppSidebarProps = {
   activeView: View;
   changeDataMode: (mode: DataMode) => void;
-  connectionCopy: string;
-  connectionTitle: string;
   dataMode: DataMode;
   setActiveView: (view: View) => void;
 };
@@ -21,8 +18,6 @@ type AppSidebarProps = {
 export function AppSidebar({
   activeView,
   changeDataMode,
-  connectionCopy,
-  connectionTitle,
   dataMode,
   setActiveView
 }: AppSidebarProps) {
@@ -37,7 +32,7 @@ export function AppSidebar({
   };
 
   return (
-    <aside className={clsx("sidebar", fullWidthClassName, zeroRightClassName)} aria-label="Main navigation">
+    <aside className="sidebar" aria-label="Main navigation" data-testid="desktop-sidebar">
       <div className="brand">
         <div className="brand-mark">N</div>
         <div>
@@ -50,6 +45,7 @@ export function AppSidebar({
         {navItems.map((item) => (
           <button
             className={getNavItemClassName(activeView, item.view)}
+            data-testid={getNavTestId(item.view)}
             key={item.view}
             onClick={() => handleViewChange(item.view)}
             type="button"
@@ -72,22 +68,13 @@ export function AppSidebar({
           </button>
         </section>
 
-        <section className="sidebar-demo-card">
-          <Database aria-hidden="true" size={20} strokeWidth={2.3} />
-          <div>
-            <strong>{connectionTitle}</strong>
-            <p>{connectionCopy}</p>
-            <button onClick={() => changeDataMode(getNextDataMode(dataMode))} type="button">
-              Switch to {getDataModeLabel(getNextDataMode(dataMode))}
-            </button>
-          </div>
-        </section>
       </div>
 
-      <nav className="mobile-nav" aria-label="Main mobile navigation">
+      <nav className="mobile-nav" aria-label="Main mobile navigation" data-testid="bottom-nav">
         {primaryMobileItems.map((item) => (
           <button
             className={getNavItemClassName(activeView, item.view)}
+            data-testid={getNavTestId(item.view)}
             key={item.view}
             onClick={() => handleViewChange(item.view)}
             type="button"
@@ -99,17 +86,18 @@ export function AppSidebar({
 
         <Popover onOpenChange={setIsMoreOpen} open={isMoreOpen}>
           <PopoverTrigger asChild>
-            <button className={clsx("nav-item", moreIsActive && "active")} type="button">
+            <button className={clsx("nav-item", moreIsActive && "active")} data-testid="nav-more" type="button">
               <span className="nav-icon">
                 <MoreHorizontal aria-hidden="true" size={18} strokeWidth={2.4} />
               </span>
               <span>More</span>
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="mobile-more-menu" side="top">
+          <PopoverContent align="end" className="mobile-more-menu" data-testid="mobile-more-menu" side="top">
             {moreMobileItems.map((item) => (
               <button
                 className={getNavItemClassName(activeView, item.view)}
+                data-testid={getNavTestId(item.view)}
                 key={item.view}
                 onClick={() => handleViewChange(item.view)}
                 type="button"
@@ -145,6 +133,14 @@ function getCurrentDataModeLabel(dataMode: DataMode) {
 
 function getDataModeLabel(mode: DataMode) {
   return mode === "user" ? "Akahu" : "Demo";
+}
+
+function getNavTestId(view: View) {
+  if (view === "cards") {
+    return "nav-card-fit";
+  }
+
+  return `nav-${view}`;
 }
 
 function getNavItemClassName(activeView: View, itemView: View) {

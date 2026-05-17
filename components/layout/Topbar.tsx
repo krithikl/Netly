@@ -28,7 +28,7 @@ export function Topbar({
   const pageCopy = getPageCopy(activeView, linkedUserName);
 
   return (
-    <header className="topbar">
+    <header className="topbar" data-active-view={activeView}>
       <div>
         <p className="eyebrow">{dateLabel}</p>
         <h1>{pageCopy.title}</h1>
@@ -84,7 +84,7 @@ function getPageCopy(activeView: View, linkedUserName: string) {
   }
 
   return {
-    title: `Good evening${linkedUserName ? `, ${linkedUserName}` : ""}`,
+    title: "Netly",
     subtitle: "Here is your money picture."
   };
 }

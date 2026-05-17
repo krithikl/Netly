@@ -9,6 +9,7 @@ import { categoriesMatch, getRawAkahuCategory, getRawAkahuPersonalFinanceCategor
 import { needsReviewCategory } from "@/lib/categories";
 
 const cardExcludedAkahuGroups = new Set(["Housing"]);
+const cardDefaultExcludedCategories = new Set(["All categories", "Housing", needsReviewCategory]);
 const cardExcludedAkahuCategories = [
   "Cash withdrawals",
   "Debt repayments",
@@ -77,17 +78,8 @@ export function detectRecurring(transactions: Transaction[]): RecurringMerchant[
     .sort((a, b) => b.average - a.average);
 }
 
-// Estimates money left after likely bills and a fixed buffer
-export function safeToSpend(transactions: Transaction[], currentBalance: number) {
-  const expectedRecurringOutgoings = detectRecurring(transactions)
-    .filter((item) => item.category !== "Food" && item.category !== "Transport")
-    .reduce((total, item) => total + item.average, 0);
-
-  return Math.max(currentBalance - expectedRecurringOutgoings - 250, 0);
-}
-
 // Works out the spend that can count toward card rewards
-export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWindowDays): CardFitBasis {
+export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWindowDays, includedCategories?: string[] | null): CardFitBasis {
   const debitEntries = transactions.reduce<Array<{ transaction: Transaction; time: number }>>((entries, transaction) => {
     if (transaction.amount >= 0 || getTransactionStatus(transaction) !== "Booked") {
       return entries;
@@ -110,7 +102,7 @@ export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWi
   let eligibleSpend = 0;
 
   windowEntries.forEach(({ transaction }) => {
-    if (isCardExcludedTransaction(transaction)) {
+    if (!isCardEligibleTransaction(transaction, includedCategories)) {
       return;
     }
 
@@ -137,6 +129,21 @@ export function cardFitBasis(transactions: Transaction[], windowDays = cardFitWi
   };
 }
 
+// Defaults Card Fit category settings to the existing Netly exclusion model.
+export function getDefaultCardFitIncludedCategories(categoryOptions: string[]) {
+  return categoryOptions.filter((category) => !cardDefaultExcludedCategories.has(category));
+}
+
+// Applies either the default Akahu-based exclusions or explicit user category choices.
+function isCardEligibleTransaction(transaction: Transaction, includedCategories: string[] | null | undefined) {
+  if (!includedCategories) {
+    return !isCardExcludedTransaction(transaction);
+  }
+
+  const category = getTransactionCategory(transaction);
+  return includedCategories.some((includedCategory) => categoriesMatch(includedCategory, category));
+}
+
 function isCardExcludedTransaction(transaction: Transaction) {
   if (getTransactionCategory(transaction) === needsReviewCategory) {
     return true;
@@ -159,8 +166,8 @@ function isCardExcludedTransaction(transaction: Transaction) {
 }
 
 // Ranks cards by rewards, perks, and fees
-export function annualCardValues(transactions: Transaction[], cardProducts: CardProduct[]): CardValue[] {
-  const basis = cardFitBasis(transactions);
+export function annualCardValues(transactions: Transaction[], cardProducts: CardProduct[], includedCategories?: string[] | null): CardValue[] {
+  const basis = cardFitBasis(transactions, cardFitWindowDays, includedCategories);
 
   return annualCardValuesForBasis(basis, cardProducts);
 }
@@ -173,8 +180,8 @@ function annualCardValuesForBasis(basis: CardFitBasis, cardProducts: CardProduct
 
 // Returns the card spend estimate and ranked card list together
 // Ranks cards by estimated annual value from eligible transaction spend.
-export function calculateCardFit(transactions: Transaction[], cardProducts: CardProduct[], comparisonCard?: CardProduct) {
-  const basis = cardFitBasis(transactions);
+export function calculateCardFit(transactions: Transaction[], cardProducts: CardProduct[], comparisonCard?: CardProduct, includedCategories?: string[] | null) {
+  const basis = cardFitBasis(transactions, cardFitWindowDays, includedCategories);
   const cards = annualCardValuesForBasis(basis, cardProducts);
   const comparisonCardValue = comparisonCard
     ? getAnnualCardValue(comparisonCard, basis.eligibleAnnualSpend)
@@ -263,7 +270,7 @@ function getCardFitDrivers(basis: CardFitBasis, recommendedCard: CardValue): Car
 
 // Builds the short insight messages shown on the dashboard
 // Builds the short insight strings shown on the Home dashboard.
-export function generateInsights(transactions: Transaction[], cardProducts: CardProduct[], currentBalance: number | null) {
+export function generateInsights(transactions: Transaction[], cardProducts: CardProduct[]) {
   const categories = spendByCategory(transactions);
   const recurring = detectRecurring(transactions);
   const bestCard = annualCardValues(transactions, cardProducts)[0];

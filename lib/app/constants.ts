@@ -27,3 +27,7 @@ export const deletedCategoriesStorageKey = "netly_deleted_categories";
 export const categoryColorsStorageKey = "netly_category_colors";
 
 export const dashboardPeriodStorageKey = "netly_dashboard_period";
+
+export const cardFitIncludedCategoriesStorageKey = "netly_card_fit_included_categories";
+
+export const hideBalancesStorageKey = "netly_hide_balances";

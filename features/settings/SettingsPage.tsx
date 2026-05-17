@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { PanelTitle } from "@/components/ui/panel-title";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { netlyPalette } from "@/lib/categories";
+import { categoriesMatch } from "@/lib/category-rules";
 import { periods } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
 import type { DriveBackupState } from "@/hooks/useDriveBackup";
@@ -22,6 +24,8 @@ import type { PeriodOption } from "@/lib/types";
 
 type SettingsPageProps = {
   akahuDataFreshness: AkahuDataFreshness;
+  cardFitAvailableCategories: string[];
+  cardFitIncludedCategories: string[];
   categoryColors: Record<string, string>;
   dataMode: DataMode;
   dashboardPeriod: PeriodOption;
@@ -29,16 +33,20 @@ type SettingsPageProps = {
   deleteCategory: (category: string) => void;
   driveBackup: DriveBackupState;
   onConnectDriveBackup: () => Promise<void>;
+  onCreateCategory: (category: string) => void;
   onDisconnectDriveBackup: () => void;
   onRestoreDriveBackup: () => Promise<void>;
   showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
+  updateCardFitIncludedCategories: (categories: string[]) => void;
   updateCategoryColor: (category: string, color: string) => void;
 };
 
 // Settings screen for managing category colours and hiding unused categories.
 export function SettingsPage({
   akahuDataFreshness,
+  cardFitAvailableCategories,
+  cardFitIncludedCategories,
   categoryColors,
   dataMode,
   dashboardPeriod,
@@ -46,24 +54,40 @@ export function SettingsPage({
   deleteCategory,
   driveBackup,
   onConnectDriveBackup,
+  onCreateCategory,
   onDisconnectDriveBackup,
   onRestoreDriveBackup,
   showDashboardPeriodSetting,
   setDashboardPeriod,
+  updateCardFitIncludedCategories,
   updateCategoryColor
 }: SettingsPageProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
+  const [newCategory, setNewCategory] = useState("");
+  const normalizedNewCategory = normalizeCategoryName(newCategory);
+  const duplicateCategory = getMatchingCategory(allCategories, normalizedNewCategory);
+  const categoryErrorMessage = duplicateCategory ? `${duplicateCategory} already exists` : "";
+  const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
 
   const setColorPickerOpen = (category: string, isOpen: boolean) => {
     setActiveColorPicker(isOpen ? category : null);
   };
+  const handleCreateCategory = () => {
+    if (!canCreateCategory) {
+      return;
+    }
+
+    onCreateCategory(normalizedNewCategory);
+    toast.success("Category added");
+    setNewCategory("");
+  };
 
   return (
-    <section className="view-stack">
-      <section className="material-card">
-        <PanelTitle title="Settings" subtitle="Manage your preferences" />
-        {showDashboardPeriodSetting && (
+    <section className="view-stack" data-testid="settings-page" suppressHydrationWarning>
+      <MobilePageHeader title="Settings" />
+      {showDashboardPeriodSetting && (
+        <section className="material-card">
           <div className="settings-period-control">
             <div>
               <h3>Default dashboard period</h3>
@@ -83,11 +107,19 @@ export function SettingsPage({
               ))}
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       <section className="material-card">
         <AkahuFreshnessCard dataMode={dataMode} freshness={akahuDataFreshness} />
+      </section>
+
+      <section className="material-card">
+        <CardFitCategorySettings
+          availableCategories={cardFitAvailableCategories}
+          includedCategories={cardFitIncludedCategories}
+          onChange={updateCardFitIncludedCategories}
+        />
       </section>
 
       <section className="material-card">
@@ -101,7 +133,7 @@ export function SettingsPage({
           </span>
           {!driveBackup.clientConfigured && (
             <p className="settings-drive-warning">
-              Missing GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
+              Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
             </p>
           )}
           <p className="settings-drive-message">
@@ -131,8 +163,23 @@ export function SettingsPage({
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="m-0 text-base font-semibold text-[var(--ink)]">Categories</h3>
-            <p className="mt-1 text-[13px] text-[var(--muted)]">Customize colors or remove unused categories.</p>
+            <p className="mt-1 text-[13px] text-[var(--muted)]">Add categories, customize colors, or remove unused categories.</p>
           </div>
+        </div>
+        <div className="category-create-row settings-category-create-row">
+          <label>
+            New category
+            <input onChange={(event) => setNewCategory(event.target.value)} placeholder="e.g. Kids, Pets, Coffee" value={newCategory} />
+          </label>
+          <Button disabled={!canCreateCategory} onClick={handleCreateCategory} type="button" variant="outline">
+            <Plus aria-hidden="true" className="h-4 w-4" />
+            Add category
+          </Button>
+          {categoryErrorMessage && (
+            <p aria-live="polite" className="category-error-message">
+              {categoryErrorMessage}
+            </p>
+          )}
         </div>
         
         <div className="stack-list">
@@ -154,6 +201,58 @@ export function SettingsPage({
         </div>
       </section>
     </section>
+  );
+}
+
+type CardFitCategorySettingsProps = {
+  availableCategories: string[];
+  includedCategories: string[];
+  onChange: (categories: string[]) => void;
+};
+
+// Lets users decide which spending categories count toward Card Fit rewards.
+function CardFitCategorySettings({ availableCategories, includedCategories, onChange }: CardFitCategorySettingsProps) {
+  const includedSet = new Set(includedCategories);
+  const toggleCategory = (category: string) => {
+    const nextCategories = includedSet.has(category)
+      ? includedCategories.filter((item) => item !== category)
+      : [...includedCategories, category];
+
+    onChange(nextCategories);
+  };
+  const selectAll = () => onChange(availableCategories);
+  const clearAll = () => onChange([]);
+
+  return (
+    <div className="settings-card-fit">
+      <div className="settings-section-heading">
+        <div>
+          <h3>Card Fit categories</h3>
+          <p>Choose which categories count toward rewards estimates.</p>
+        </div>
+        <div className="settings-inline-actions">
+          <Button onClick={selectAll} type="button" variant="outline" size="sm">
+            Select all
+          </Button>
+          <Button onClick={clearAll} type="button" variant="outline" size="sm">
+            Clear
+          </Button>
+        </div>
+      </div>
+      <div className="settings-category-toggle-grid">
+        {availableCategories.map((category) => (
+          <button
+            aria-pressed={includedSet.has(category)}
+            className={includedSet.has(category) ? "active" : undefined}
+            key={category}
+            onClick={() => toggleCategory(category)}
+            type="button"
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -184,14 +283,8 @@ function AkahuFreshnessCard({ dataMode, freshness }: AkahuFreshnessCardProps) {
             <FreshnessMetric label="Balance data" value={formatAkahuFreshnessTime(freshness.balanceRefreshedAt)} />
             <FreshnessMetric label="Transactions checked" value={formatAkahuFreshnessTime(freshness.transactionsRefreshedAt)} />
           </div>
-          {freshness.status === "refreshing" && (
-            <p className="settings-drive-message">Akahu data looked stale, so Netly requested a refresh and is rechecking the account snapshot.</p>
-          )}
           {freshness.status === "failed" && freshness.error && (
             <p className="settings-drive-warning">{freshness.error}</p>
-          )}
-          {freshness.status !== "failed" && freshness.isStale && (
-            <p className="settings-drive-message">Some account data is older than 24 hours. Akahu may delay manual refreshes during its refresh rest period.</p>
           )}
           {freshness.accounts.length > 1 && (
             <details className="settings-freshness-details">
@@ -439,4 +532,18 @@ function getUsedCategoryColors(categories: string[], currentCategory: string, ca
       .map((category) => categoryColors[category])
       .filter(Boolean)
   );
+}
+
+// Normalises category input before duplicate checks and creation.
+function normalizeCategoryName(category: string) {
+  return category.trim().replace(/\s+/g, " ");
+}
+
+// Finds an existing category while ignoring case and spacing differences.
+function getMatchingCategory(categories: string[], category: string) {
+  if (!category) {
+    return "";
+  }
+
+  return categories.find((currentCategory) => categoriesMatch(currentCategory, category)) || "";
 }

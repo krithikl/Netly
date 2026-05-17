@@ -274,7 +274,7 @@ const TransactionRow = memo(function TransactionRow({
   const openDetails = useCallback(() => onOpenDetails(transactionId), [onOpenDetails, transactionId]);
 
   return (
-    <button className="transaction-ledger-row" onClick={openDetails} role="row" type="button">
+    <button className="transaction-ledger-row" data-testid="transaction-row" onClick={openDetails} role="row" type="button">
       <span className="transaction-ledger-date" role="cell">{row.date}</span>
       <span className="transaction-ledger-merchant" role="cell">
         <span className="transaction-merchant-avatar" style={row.colorStyle}>{row.initial}</span>
@@ -431,6 +431,7 @@ function TransactionDetailsSheet({
     <Sheet onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open}>
       <SheetContent
         className="transaction-details-shell overflow-hidden p-0"
+        data-testid="transaction-details-drawer"
         overlayClassName="transaction-details-overlay"
         onOpenAutoFocus={focusTitleOnOpen}
       >
@@ -474,7 +475,7 @@ function TransactionDetailsDrawer({
 }) {
   return (
     <Drawer onOpenChange={(nextOpen) => !nextOpen && onClose()} open={open} shouldScaleBackground={false}>
-      <DrawerContent className="transaction-details-mobile-drawer overflow-hidden">
+      <DrawerContent className="transaction-details-mobile-drawer overflow-hidden" data-testid="transaction-details-drawer">
         <DrawerHeader className="mobile-filter-header">
           <DrawerTitle>Transaction details</DrawerTitle>
           <DrawerDescription className="sr-only">Selected transaction details.</DrawerDescription>

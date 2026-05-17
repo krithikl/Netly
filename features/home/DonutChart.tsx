@@ -151,7 +151,7 @@ function getChartOptions(
 ): ChartOptions<"doughnut"> {
   return {
     animation: {
-      duration: 180,
+      duration: 420,
       easing: "easeOutQuart"
     },
     cutout: isMobileChart ? "50%" : "64%",

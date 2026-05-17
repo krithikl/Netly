@@ -12,12 +12,10 @@ export function AppShell() {
   const { shell } = app;
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-testid="app-shell">
       <AppSidebar
         activeView={shell.activeView}
         changeDataMode={shell.changeDataMode}
-        connectionCopy={shell.connectionCopy}
-        connectionTitle={shell.connectionTitle}
         dataMode={shell.dataMode}
         setActiveView={shell.setActiveView}
       />

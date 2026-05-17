@@ -84,6 +84,10 @@ function getAkahuCredentialValidationError(error: unknown) {
     return "Akahu credentials were rejected. Check AKAHU_APP_TOKEN and AKAHU_USER_TOKEN.";
   }
 
+  if (isAkahuNetworkErrorMessage(message)) {
+    return `Could not reach Akahu to validate credentials. Tokens were not saved. ${message}`;
+  }
+
   return `Could not validate Akahu credentials before saving them: ${message}`;
 }
 
@@ -95,4 +99,9 @@ function getCredentialValidationStatus(error: unknown) {
 
 function isAkahuAuthErrorMessage(message: string) {
   return /\b(401|403|unauthori[sz]ed|forbidden|invalid_token|invalid client|access denied)\b/i.test(message);
+}
+
+// Detects transport failures so Connect does not frame them as bad credentials.
+function isAkahuNetworkErrorMessage(message: string) {
+  return /\b(network request failed|fetch failed|ENOTFOUND|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|TLS|certificate|timeout)\b/i.test(message);
 }

@@ -54,7 +54,7 @@ export function CardFitPage({ basis, cardFitSourceLabel, cardFitWindowLabel, car
   }, [filteredCards, selectedDetail]);
 
   return (
-    <section className="view-stack">
+    <section className="view-stack" data-testid="card-fit-page">
       <section className="material-card">
         <PanelTitle title="Card fit comparison" subtitle={subtitle} />
         <CardFitBasisSummary basis={basis} cardFitWindowLabel={cardFitWindowLabel} />
@@ -199,7 +199,7 @@ function CardOption({
             <div className="flex flex-wrap items-center gap-2">
               <h2>{card.name}</h2>
               {isUnavailable && (
-                <span className="rounded-lg border border-[var(--outline)] bg-white/70 px-2.5 py-1 text-[11px] font-black uppercase text-[var(--muted)]">
+                <span className="rounded-lg border border-[var(--outline-soft)] bg-[var(--surface-2)] px-2.5 py-1 text-[11px] font-black uppercase text-[var(--muted)]">
                   Legacy
                 </span>
               )}

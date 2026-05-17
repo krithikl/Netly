@@ -140,8 +140,3 @@ export type CardFitBasis = {
   latestTransactionDate: string | null;
   categories: { category: string; amount: number }[];
 };
-
-export type Budget = {
-  category: string;
-  limit: number;
-};

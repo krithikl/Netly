@@ -60,7 +60,7 @@ export function SettingsPage({
   };
 
   return (
-    <section className="view-stack">
+    <section className="view-stack" data-testid="settings-page">
       <section className="material-card">
         <PanelTitle title="Settings" subtitle="Manage your preferences" />
         {showDashboardPeriodSetting && (

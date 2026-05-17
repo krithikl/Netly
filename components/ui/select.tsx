@@ -15,7 +15,7 @@ const SelectTrigger = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Trigger
     className={cn(
-      "flex h-10 w-full items-center justify-between gap-2 rounded-full border border-[var(--outline)] bg-[rgba(255,251,255,0.86)] px-3 py-2 text-sm font-bold text-[var(--ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50",
+      "flex h-10 w-full items-center justify-between gap-2 rounded-full border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3 py-2 text-sm font-bold text-[var(--ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-50",
       className
     )}
     ref={ref}
@@ -36,7 +36,7 @@ const SelectContent = React.forwardRef<
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       className={cn(
-        "relative z-[120] max-h-72 min-w-[8rem] overflow-hidden rounded-2xl border border-[var(--outline)] bg-[var(--surface)] text-[var(--ink)] shadow-[0_18px_48px_rgba(29,27,32,0.18)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        "relative z-[120] max-h-72 min-w-[8rem] overflow-hidden rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface)] text-[var(--ink)] shadow-[0_18px_48px_rgba(0,0,0,0.44)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
         className
       )}

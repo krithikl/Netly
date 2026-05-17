@@ -16,7 +16,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-[90] bg-[rgba(15,18,25,0.2)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-[90] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     ref={ref}
@@ -37,7 +37,7 @@ const SheetContent = React.forwardRef<
     <SheetOverlay className={overlayClassName} />
     <SheetPrimitive.Content
       className={cn(
-        "fixed right-[18px] top-[18px] bottom-[18px] z-[100] w-[min(460px,calc(100vw-36px))] rounded-[22px] border border-[rgba(119,106,116,0.12)] bg-white/98 p-[22px] shadow-[0_24px_70px_rgba(29,27,32,0.18)] outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right-6 data-[state=open]:slide-in-from-right-6 data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        "fixed right-[18px] top-[18px] bottom-[18px] z-[100] w-[min(460px,calc(100vw-36px))] rounded-[22px] border border-[var(--outline-soft)] bg-[var(--surface)] p-[22px] shadow-[0_24px_70px_rgba(0,0,0,0.5)] outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right-6 data-[state=open]:slide-in-from-right-6 data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         className
       )}
       ref={ref}

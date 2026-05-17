@@ -90,6 +90,7 @@ export function TransactionsPage({
   const [newCategory, setNewCategory] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const normalizedNewCategory = normalizeCategoryName(newCategory);
   const duplicateCategory = getMatchingCategory(categoryOptions, normalizedNewCategory);
@@ -111,6 +112,8 @@ export function TransactionsPage({
   const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
   const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
   const dateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactions, dateRange), [dateRange, transactions]);
+  const monthOptions = useMemo(() => getTransactionMonthOptions(dateRange), [dateRange]);
+  const monthSummary = useMemo(() => getTransactionMonthSummary(dateRangeTransactions), [dateRangeTransactions]);
   const shownTransactions = useMemo(
     () => getVisibleTransactions(dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
     [dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
@@ -130,6 +133,7 @@ export function TransactionsPage({
     setTransactionAccounts([]);
     setTransactionCategory([]);
   };
+  const selectMonth = (monthDate: Date) => changeDateRange(getMonthDateRange(monthDate));
   
   // Let mobile users choose multiple categories, or clear them with All categories
   const toggleTransactionCategory = (category: string) => {
@@ -176,41 +180,45 @@ export function TransactionsPage({
   }, [openPreset, onDateRangeChange]);
 
   return (
-    <section className="transaction-page view-stack">
-      <TransactionAnalyticsSummary analytics={analytics} onReviewNeedsReview={reviewNeedsReview} />
+    <section className="transaction-page view-stack" data-testid="transactions-page">
+      <TransactionMonthOverview
+        activeDateRange={dateRange}
+        monthOptions={monthOptions}
+        monthSummary={monthSummary}
+        onMonthSelect={selectMonth}
+      />
 
       <section className="transaction-workspace">
         <div className="transaction-filter-panel" suppressHydrationWarning>
           <div className="transaction-mobile-controls">
-            <div className="transaction-mobile-search-row" suppressHydrationWarning>
-              <label className="transaction-mobile-search">
-                Search
-                <span className="transaction-search-field">
-                  <Search aria-hidden="true" className="h-4 w-4" />
-                  <input
-                    className="search"
-                    onChange={handleSearchChange}
-                    placeholder="Search merchant, bank text, category"
-                    value={query}
-                  />
-                </span>
-              </label>
+            <div className="transaction-mobile-action-row" suppressHydrationWarning>
+              <Button aria-label="Search transactions" className="transaction-icon-action" onClick={() => setSearchOpen(true)} title="Search" type="button" variant="secondary">
+                <Search aria-hidden="true" className="h-5 w-5" />
+              </Button>
               <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={changeDateRange} />
+              {isBottomNavigation && (
+                <>
+                  <Button aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`} className="transaction-icon-action" data-testid="transaction-filter-button" onClick={() => setFiltersOpen(true)} title="Filters" type="button" variant="secondary">
+                    <SlidersHorizontal aria-hidden="true" className="h-5 w-5" />
+                  </Button>
+                  <Button aria-label="Sort transactions" className="transaction-icon-action" data-testid="transaction-sort-button" onClick={() => setSortOpen(true)} title="Sort" type="button" variant="secondary">
+                    <ArrowDownUp aria-hidden="true" className="h-5 w-5" />
+                  </Button>
+                  <Button aria-label="Categories" className="transaction-icon-action" onClick={() => setCategoryOpen(true)} title="Categories" type="button" variant="secondary">
+                    <Plus aria-hidden="true" className="h-5 w-5" />
+                  </Button>
+                </>
+              )}
             </div>
+            {query && (
+              <button className="transaction-active-query" onClick={() => setSearchOpen(true)} type="button">
+                Search: {query}
+              </button>
+            )}
             {isBottomNavigation && (
-              <div className="transaction-mobile-actions">
-                <Button onClick={() => setFiltersOpen(true)} type="button" variant="secondary">
-                  <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
-                  Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-                </Button>
-                <Button onClick={() => setSortOpen(true)} type="button" variant="secondary">
-                  <ArrowDownUp aria-hidden="true" className="h-4 w-4" />
-                  Sort
-                </Button>
-                <Button aria-label="Categories" onClick={() => setCategoryOpen(true)} title="Categories" type="button" variant="secondary">
-                  <Plus aria-hidden="true" className="h-4 w-4" />
-                </Button>
-              </div>
+              <button className="transaction-review-shortcut" onClick={reviewNeedsReview} type="button">
+                {analytics.needsReviewCount} need review
+              </button>
             )}
           </div>
           <div className="transaction-controls transaction-desktop-controls">
@@ -291,6 +299,14 @@ export function TransactionsPage({
           onOpenChange={setCategoryOpen}
           open={categoryOpen}
         />
+        <TransactionSearchDialog
+          dateRange={dateRange}
+          onDateRangeChange={changeDateRange}
+          onOpenChange={setSearchOpen}
+          onSearchChange={handleSearchChange}
+          open={searchOpen}
+          query={query}
+        />
         <TransactionSortDialog
           onApply={closeSort}
           onOpenChange={setSortOpen}
@@ -313,6 +329,55 @@ export function TransactionsPage({
           transactions={shownTransactions}
         />
       </section>
+    </section>
+  );
+}
+
+type TransactionMonthOption = {
+  date: Date;
+  label: string;
+  monthKey: string;
+};
+
+type TransactionMonthSummary = {
+  expenses: number;
+  income: number;
+  net: number;
+};
+
+// Month-first navigation and totals for the active transaction period.
+function TransactionMonthOverview({
+  activeDateRange,
+  monthOptions,
+  monthSummary,
+  onMonthSelect
+}: {
+  activeDateRange: TransactionDateRange;
+  monthOptions: TransactionMonthOption[];
+  monthSummary: TransactionMonthSummary;
+  onMonthSelect: (monthDate: Date) => void;
+}) {
+  const activeMonthKey = getMonthKey(parseInputDate(activeDateRange.from) || new Date());
+
+  return (
+    <section className="transaction-month-overview">
+      <div className="transaction-month-rail" aria-label="Transaction month">
+        {monthOptions.map((option) => (
+          <button
+            className={option.monthKey === activeMonthKey ? "active" : undefined}
+            key={option.monthKey}
+            onClick={() => onMonthSelect(option.date)}
+            type="button"
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <div className="transaction-month-summary" aria-label="Monthly transaction summary">
+        <span className="expense">{formatMoney(monthSummary.expenses, true)}</span>
+        <span className="income">{formatMoney(monthSummary.income, true)}</span>
+        <strong>{formatMoney(monthSummary.net, true)}</strong>
+      </div>
     </section>
   );
 }
@@ -684,6 +749,49 @@ function getDraftRangeLabel(dateRange: DateRange | undefined) {
   return `${format(dateRange.from, "d MMM yyyy")} - ${format(dateRange.to, "d MMM yyyy")}`;
 }
 
+// Builds a five-month rail centered on the selected month.
+function getTransactionMonthOptions(dateRange: TransactionDateRange): TransactionMonthOption[] {
+  const activeDate = parseInputDate(dateRange.from) || new Date();
+  const startDate = new Date(activeDate.getFullYear(), activeDate.getMonth() - 2, 1);
+
+  return Array.from({ length: 5 }, (_, index) => {
+    const date = new Date(startDate.getFullYear(), startDate.getMonth() + index, 1);
+
+    return {
+      date,
+      label: format(date, "MMMM"),
+      monthKey: getMonthKey(date)
+    };
+  });
+}
+
+// Converts a month selection into the complete calendar month range.
+function getMonthDateRange(monthDate: Date): TransactionDateRange {
+  return {
+    from: formatDateInputValue(new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)),
+    to: formatDateInputValue(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0))
+  };
+}
+
+// Totals money movement for the active month before search/filter narrowing.
+function getTransactionMonthSummary(transactions: Transaction[]): TransactionMonthSummary {
+  return transactions.reduce<TransactionMonthSummary>((summary, transaction) => {
+    if (transaction.amount < 0) {
+      summary.expenses += Math.abs(transaction.amount);
+    } else {
+      summary.income += transaction.amount;
+    }
+
+    summary.net += transaction.amount;
+    return summary;
+  }, { expenses: 0, income: 0, net: 0 });
+}
+
+// Stable month key used by the rail active state.
+function getMonthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
 type TransactionCategoryDialogProps = {
   canCreateCategory: boolean;
   categoryErrorMessage: string;
@@ -733,6 +841,56 @@ function TransactionCategoryDialog({
                 {categoryErrorMessage}
               </p>
             )}
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
+
+type TransactionSearchDialogProps = {
+  dateRange: TransactionDateRange;
+  onDateRangeChange: (dateRange: TransactionDateRange) => void;
+  onOpenChange: (open: boolean) => void;
+  onSearchChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  open: boolean;
+  query: string;
+};
+
+// Shows search as a focused mobile drawer instead of a full-width always-on control.
+function TransactionSearchDialog({
+  dateRange,
+  onDateRangeChange,
+  onOpenChange,
+  onSearchChange,
+  open,
+  query
+}: TransactionSearchDialogProps) {
+  return (
+    <Drawer onOpenChange={onOpenChange} open={open}>
+      <DrawerContent className="mobile-filter-drawer transaction-search-drawer">
+        <DrawerHeader className="mobile-filter-header centered">
+          <DrawerTitle>Search</DrawerTitle>
+          <DrawerDescription className="sr-only">Search transactions by merchant, bank text, or category.</DrawerDescription>
+          <DrawerHeaderClose className="mobile-filter-close" />
+        </DrawerHeader>
+        <div className="transaction-search-drawer-body">
+          <label className="transaction-search-drawer-field">
+            Search
+            <span className="transaction-search-field">
+              <Search aria-hidden="true" className="h-5 w-5" />
+              <input
+                autoFocus
+                className="search"
+                data-testid="transaction-search"
+                onChange={onSearchChange}
+                placeholder="Search..."
+                value={query}
+              />
+            </span>
+          </label>
+          <div className="transaction-search-drawer-actions">
+            <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
           </div>
         </div>
       </DrawerContent>

@@ -6,8 +6,6 @@ import { categoryRollupCategory } from "@/lib/categories";
 import {
   getCardFitSourceLabel,
   getCardFitWindowLabel,
-  getConnectionCopy,
-  getConnectionTitle,
   getDataSourceLabel,
   getLinkedAccountLabel,
   getLinkedUserName,
@@ -15,7 +13,7 @@ import {
 } from "@/lib/app/derived";
 import { applyCategoryPreferences } from "@/lib/category-rules";
 import type { DataMode } from "@/lib/app/types";
-import { budgets, cardProducts, payday as defaultPayday } from "@/lib/mock-data";
+import { cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, spendByCategory, sum } from "@/lib/insights";
 import { filterTransactionsByPeriod, getThisMonthDateRange, getTransactionPeriodDateRange } from "@/lib/periods";
 import { getTransactionDate, transactionNeedsReview } from "@/lib/transaction-display";
@@ -202,8 +200,6 @@ export function useNetlyApp() {
     shell: {
       activeView,
       changeDataMode: (mode: DataMode) => banking.changeDataMode(mode, transactionPageDateRange),
-      connectionCopy: getConnectionCopy(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
-      connectionTitle: getConnectionTitle(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
       dataMode: banking.dataMode,
       dataSourceLabel: getDataSourceLabel(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
       linkedAccountLabel: getLinkedAccountLabel(banking.primaryLinkedAccount, banking.linkedAccounts.length, banking.isConnected),
@@ -220,7 +216,7 @@ export function useNetlyApp() {
     viewProps: {
       activeView,
       budgets: {
-        budgets,
+        categoryOptions: categories.settingsCategoryOptions,
         categories: categoryTotals,
         categoryColors: categories.categoryColors,
         onRecurringClick: openRecurringTransactions,

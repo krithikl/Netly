@@ -50,7 +50,7 @@ export function ConnectPage({
   };
 
   return (
-    <section className="view-stack">
+    <section className="view-stack" data-testid="connect-page">
       <section className="material-card" suppressHydrationWarning>
         <PanelTitle title="Akahu connection" subtitle="Read-only account and transaction access" />
         <div className="flow">

@@ -1,22 +1,9 @@
 import dummyTransactions from "@/lib/akahu/dummy-transactions.json";
-import type { Budget, CardProduct, Transaction } from "./types";
+import type { CardProduct, Transaction } from "./types";
 
 export const payday = "2026-05-15";
 
 export const currentBalance = 3268.42;
-
-export const budgets: Budget[] = [
-  { category: "Housing", limit: 1200 },
-  { category: "Food", limit: 760 },
-  { category: "Lifestyle", limit: 450 },
-  { category: "Transport", limit: 320 },
-  { category: "Household", limit: 280 },
-  { category: "Utilities", limit: 220 },
-  { category: "Health", limit: 180 },
-  { category: "Appearance", limit: 160 },
-  { category: "Education", limit: 140 },
-  { category: "Professional Services", limit: 120 }
-];
 
 export const cardProducts: CardProduct[] = [
   {

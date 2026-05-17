@@ -66,6 +66,9 @@ export function useNetlyApp() {
       banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
     });
   }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage, transactionPageDateRange]);
+  const selectTransactionMonthRange = useCallback((dateRange: typeof transactionPageDateRange) => {
+    setTransactionPageDateRange(dateRange);
+  }, []);
   const driveBackup = useDriveBackup(() => banking.restoreArchivedTransactions(transactionPageDateRange));
   const connection = useAkahuConnection({
     refreshTransactions: banking.refreshTransactions,
@@ -249,8 +252,8 @@ export function useNetlyApp() {
   }, []);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
   const accountOptions = useMemo(
-    () => getTransactionAccountOptions(banking.linkedAccounts, transactionPageWorkingTransactions),
-    [banking.linkedAccounts, transactionPageWorkingTransactions]
+    () => getTransactionAccountOptions(banking.linkedAccounts, workingTransactions),
+    [banking.linkedAccounts, workingTransactions]
   );
   const shouldShowPeriodControl = (activeView === "home" || activeView === "budgets") && !isBottomNavigation;
   return {
@@ -326,6 +329,7 @@ export function useNetlyApp() {
         deleteCategory: deleteCategoryAndSync,
         driveBackup: driveBackup.driveBackup,
         onConnectDriveBackup: driveBackup.connectAndBackUp,
+        onCreateCategory: createCustomCategoryAndSync,
         onDisconnectDriveBackup: driveBackup.disconnectDriveBackup,
         onRestoreDriveBackup: driveBackup.restoreFromDrive,
         setDashboardPeriod: dashboardPeriodSettings.updateDashboardPeriod,
@@ -343,12 +347,12 @@ export function useNetlyApp() {
         isLoadingMoreTransactions: banking.isLoadingMoreTransactions,
         isLoadingTransactions: banking.isLoadingTransactions,
         onCategoryChange: updateTransactionCategoryAndSync,
-        onCreateCategory: createCustomCategoryAndSync,
         onDateRangeChange: refreshTransactionPageRange,
+        onMonthRangeChange: selectTransactionMonthRange,
         onLoadAllTransactions: loadAllUserTransactions,
         onLoadMoreTransactions: loadMoreAndSyncUserTransactions,
         openPreset: transactionOpenPreset,
-        transactions: transactionPageWorkingTransactions
+        transactions: workingTransactions
       }
     }
   };

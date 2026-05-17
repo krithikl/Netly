@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { netlyPalette } from "@/lib/categories";
+import { categoriesMatch } from "@/lib/category-rules";
 import { periods } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
 import type { DriveBackupState } from "@/hooks/useDriveBackup";
@@ -31,6 +33,7 @@ type SettingsPageProps = {
   deleteCategory: (category: string) => void;
   driveBackup: DriveBackupState;
   onConnectDriveBackup: () => Promise<void>;
+  onCreateCategory: (category: string) => void;
   onDisconnectDriveBackup: () => void;
   onRestoreDriveBackup: () => Promise<void>;
   showDashboardPeriodSetting: boolean;
@@ -51,6 +54,7 @@ export function SettingsPage({
   deleteCategory,
   driveBackup,
   onConnectDriveBackup,
+  onCreateCategory,
   onDisconnectDriveBackup,
   onRestoreDriveBackup,
   showDashboardPeriodSetting,
@@ -60,13 +64,27 @@ export function SettingsPage({
 }: SettingsPageProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
+  const [newCategory, setNewCategory] = useState("");
+  const normalizedNewCategory = normalizeCategoryName(newCategory);
+  const duplicateCategory = getMatchingCategory(allCategories, normalizedNewCategory);
+  const categoryErrorMessage = duplicateCategory ? `${duplicateCategory} already exists` : "";
+  const canCreateCategory = normalizedNewCategory.length > 0 && !duplicateCategory;
 
   const setColorPickerOpen = (category: string, isOpen: boolean) => {
     setActiveColorPicker(isOpen ? category : null);
   };
+  const handleCreateCategory = () => {
+    if (!canCreateCategory) {
+      return;
+    }
+
+    onCreateCategory(normalizedNewCategory);
+    toast.success("Category added");
+    setNewCategory("");
+  };
 
   return (
-    <section className="view-stack" data-testid="settings-page">
+    <section className="view-stack" data-testid="settings-page" suppressHydrationWarning>
       <MobilePageHeader title="Settings" />
       {showDashboardPeriodSetting && (
         <section className="material-card">
@@ -145,8 +163,23 @@ export function SettingsPage({
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="m-0 text-base font-semibold text-[var(--ink)]">Categories</h3>
-            <p className="mt-1 text-[13px] text-[var(--muted)]">Customize colors or remove unused categories.</p>
+            <p className="mt-1 text-[13px] text-[var(--muted)]">Add categories, customize colors, or remove unused categories.</p>
           </div>
+        </div>
+        <div className="category-create-row settings-category-create-row">
+          <label>
+            New category
+            <input onChange={(event) => setNewCategory(event.target.value)} placeholder="e.g. Kids, Pets, Coffee" value={newCategory} />
+          </label>
+          <Button disabled={!canCreateCategory} onClick={handleCreateCategory} type="button" variant="outline">
+            <Plus aria-hidden="true" className="h-4 w-4" />
+            Add category
+          </Button>
+          {categoryErrorMessage && (
+            <p aria-live="polite" className="category-error-message">
+              {categoryErrorMessage}
+            </p>
+          )}
         </div>
         
         <div className="stack-list">
@@ -499,4 +532,18 @@ function getUsedCategoryColors(categories: string[], currentCategory: string, ca
       .map((category) => categoryColors[category])
       .filter(Boolean)
   );
+}
+
+// Normalises category input before duplicate checks and creation.
+function normalizeCategoryName(category: string) {
+  return category.trim().replace(/\s+/g, " ");
+}
+
+// Finds an existing category while ignoring case and spacing differences.
+function getMatchingCategory(categories: string[], category: string) {
+  if (!category) {
+    return "";
+  }
+
+  return categories.find((currentCategory) => categoriesMatch(currentCategory, category)) || "";
 }

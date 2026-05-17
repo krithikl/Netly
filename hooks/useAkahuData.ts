@@ -640,7 +640,7 @@ async function syncAllAkahuTransactionsToArchive(dateRange: TransactionDateRange
 
 // Loads demo transactions without using the persistent user archive.
 async function loadDemoTransactions(dateRange: TransactionDateRange | undefined) {
-  const transactionsResponse = await fetch(getTransactionsUrl("demo"));
+  const transactionsResponse = await fetch(getTransactionsUrl("demo", undefined, undefined, true));
   const transactionPageResponse = dateRange ? await fetch(getTransactionsUrl("demo", dateRange)) : transactionsResponse;
   const transactionsPayload = await readJsonResponse<TransactionsPayload>(transactionsResponse, "transactions");
   const transactionPagePayload = transactionPageResponse === transactionsResponse

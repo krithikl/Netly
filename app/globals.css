@@ -1730,9 +1730,8 @@ h2 {
 
 .transaction-month-carousel {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
 }
 
 .transaction-month-rail {
@@ -1745,24 +1744,6 @@ h2 {
   background: var(--surface);
   padding: 6px;
   box-shadow: var(--shadow-soft);
-}
-
-.transaction-month-nav {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  border: 1px solid var(--outline-soft);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.transaction-month-nav:hover,
-.transaction-month-nav:focus-visible {
-  border-color: var(--primary-border);
-  color: var(--accent-cream);
 }
 
 .transaction-month-rail button {
@@ -5056,14 +5037,8 @@ body {
   }
 
   .transaction-month-carousel {
-    grid-template-columns: 38px minmax(0, 1fr) 38px;
-    gap: 6px;
+    grid-template-columns: minmax(0, 1fr);
     padding-inline: 12px;
-  }
-
-  .transaction-month-nav {
-    width: 38px;
-    height: 38px;
   }
 
   .transaction-month-rail {

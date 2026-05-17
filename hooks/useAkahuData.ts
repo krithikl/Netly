@@ -226,8 +226,7 @@ export function useAkahuData() {
 
     try {
       if (mode === "user") {
-        const { archivedTransactions, archivedTransactionPageTransactions, nextCursor } = await syncVisibleAkahuTransactionsToArchive(dateRange);
-        setTransactions(archivedTransactions);
+        const { archivedTransactionPageTransactions, nextCursor } = await syncVisibleAkahuTransactionsToArchive(dateRange);
         setTransactionPageTransactions(archivedTransactionPageTransactions);
         setTransactionPageNextCursor(nextCursor);
         setTransactionLoadError("");

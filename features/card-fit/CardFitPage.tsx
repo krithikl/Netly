@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import { ExternalLink, Gift, TrendingUp } from "lucide-react";
 import { CardFitDetailPanel, type CardFitDetailPanelMode } from "@/features/card-fit/CardFitDetailPanel";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { Button } from "@/components/ui/button";
-import { PanelTitle } from "@/components/ui/panel-title";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
@@ -54,9 +54,10 @@ export function CardFitPage({ basis, cardFitSourceLabel, cardFitWindowLabel, car
 
   return (
     <section className="view-stack" data-testid="card-fit-page">
+      <MobilePageHeader title="Card fit" />
       <section className="material-card">
-        <PanelTitle title="Card fit comparison" subtitle={subtitle} />
         <CardFitBasisSummary basis={basis} cardFitWindowLabel={cardFitWindowLabel} />
+        <p className="card-fit-summary-copy">{subtitle}</p>
         <p className="card-fit-disclaimer">
           Rewards are estimated from card-eligible spend. Listed perks are not dollar-valued unless the value is clear from the issuer source.
         </p>

@@ -1,4 +1,5 @@
 import type { ChangeEvent, SubmitEvent } from "react";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { FlowStep } from "@/components/ui/flow-step";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ export function ConnectPage({
 
   return (
     <section className="view-stack" data-testid="connect-page">
+      <MobilePageHeader title="Connect" />
       <section className="material-card" suppressHydrationWarning>
         <PanelTitle title="Akahu connection" subtitle="Read-only account and transaction access" />
         <div className="flow">

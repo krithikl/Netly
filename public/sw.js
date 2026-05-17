@@ -1,4 +1,4 @@
-const CACHE_NAME = "netly-pwa-v1";
+const CACHE_NAME = "netly-pwa-v2";
 const APP_ASSETS = [
   "/",
   "/manifest.webmanifest",

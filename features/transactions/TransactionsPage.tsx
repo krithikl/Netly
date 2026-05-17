@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { TransactionList } from "@/features/transactions/TransactionList";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -181,6 +182,7 @@ export function TransactionsPage({
 
   return (
     <section className="transaction-page view-stack" data-testid="transactions-page">
+      <MobilePageHeader title="Transactions" />
       <TransactionMonthOverview
         activeDateRange={dateRange}
         monthOptions={monthOptions}

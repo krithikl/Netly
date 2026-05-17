@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { PanelTitle } from "@/components/ui/panel-title";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -67,9 +67,9 @@ export function SettingsPage({
 
   return (
     <section className="view-stack" data-testid="settings-page">
-      <section className="material-card">
-        <PanelTitle title="Settings" subtitle="Manage your preferences" />
-        {showDashboardPeriodSetting && (
+      <MobilePageHeader title="Settings" />
+      {showDashboardPeriodSetting && (
+        <section className="material-card">
           <div className="settings-period-control">
             <div>
               <h3>Default dashboard period</h3>
@@ -89,8 +89,8 @@ export function SettingsPage({
               ))}
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       <section className="material-card">
         <AkahuFreshnessCard dataMode={dataMode} freshness={akahuDataFreshness} />

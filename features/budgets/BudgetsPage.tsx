@@ -2,6 +2,7 @@
 
 import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { InfoRow } from "@/components/ui/info-row";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
@@ -120,14 +121,9 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
 
   return (
     <section className="view-stack budget-page-layout" data-testid="budgets-page">
+      <MobilePageHeader title="Budgets" />
       <div className="budget-desktop-grid">
         <section className="budget-builder">
-          <div className="budget-builder-header">
-            <div>
-              <h2>Budgets</h2>
-              <p>Track spending limits from the categories you choose.</p>
-            </div>
-          </div>
           <div className="budget-card-list">
             {visibleBudgets.map((budget) => (
               <BudgetCard

@@ -231,6 +231,14 @@ export function useAkahuData() {
         setTransactionPageNextCursor(nextCursor);
         setTransactionLoadError("");
         setTransactionLoadNotice("");
+        await loadAndApplyAccountSnapshot(mode, () => true, {
+          setAkahuDataFreshness,
+          setAvailableBalance,
+          setIsConnected,
+          setLinkedAccounts,
+          setPrimaryLinkedAccount,
+          setTransactionLoadNotice
+        });
         return;
       }
 

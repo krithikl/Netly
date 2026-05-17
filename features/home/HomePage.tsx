@@ -17,6 +17,7 @@ type HomePageProps = {
   chartTotal: number;
   expensesCount: number;
   hoveredCategory: string | null;
+  hideBalances: boolean;
   income: number;
   insights: string[];
   isConnected: boolean;
@@ -29,6 +30,7 @@ type HomePageProps = {
   reviewCount: number;
   setActiveView: (view: View) => void;
   setHoveredCategory: (category: string | null) => void;
+  setHideBalances: (hidden: boolean) => void;
   setPayday: (payday: string) => void;
   transactionPreview: Transaction[];
 };
@@ -42,6 +44,7 @@ export function HomePage({
   chartTotal,
   expensesCount,
   hoveredCategory,
+  hideBalances,
   income,
   insights,
   isConnected,
@@ -54,11 +57,14 @@ export function HomePage({
   reviewCount,
   setActiveView,
   setHoveredCategory,
+  setHideBalances,
   setPayday,
   transactionPreview
 }: HomePageProps) {
-  const metricGridClassName = getLoadingClassName("metric-grid", isLoadingTransactions);
-  const dashboardGridClassName = getLoadingClassName("dashboard-grid", isLoadingTransactions);
+  const hasVisibleHomeData = transactionPreview.length > 0 || chartCategories.length > 0;
+  const shouldHideHomeSections = isLoadingTransactions && !hasVisibleHomeData;
+  const metricGridClassName = getLoadingClassName("metric-grid", shouldHideHomeSections);
+  const dashboardGridClassName = getLoadingClassName("dashboard-grid", shouldHideHomeSections);
   const recentTransactions = [...transactionPreview]
     .sort((first, second) => getTransactionTimestamp(second) - getTransactionTimestamp(first))
     .slice(0, 5);
@@ -66,31 +72,19 @@ export function HomePage({
   const openBudgetsView = () => setActiveView("budgets");
 
   return (
-    <>
+    <section className="view-stack" data-testid="home-page">
       <HeroBalanceCard
         availableBalance={availableBalance}
+        hideBalances={hideBalances}
         isConnected={isConnected}
         onReviewSpend={openTransactionsView}
         payday={payday}
         paydayPatternDate={paydayPatternDate}
+        setHideBalances={setHideBalances}
         setPayday={setPayday}
       />
 
-      {isLoadingTransactions && (
-        <div className="status-banner neutral" role="status">
-          <strong>Loading transactions.</strong>
-          <span>Checking whether Akahu data is available.</span>
-        </div>
-      )}
-
-      <div className={metricGridClassName} aria-busy={isLoadingTransactions}>
-        <MetricCard icon={TrendingUp} label="Spent" note={`${expensesCount} outgoing transactions`} tone="blue" value={formatMoney(monthlySpend)} />
-        <MetricCard icon={CalendarDays} label="Average per day" note="Estimated daily spend" tone="orange" value={formatMoney(averageDailySpend, true)} />
-        <MetricCard icon={WalletCards} label="Income" note="Credits in this period" tone="green" value={formatMoney(income)} />
-        <MetricCard actionLabel="Review" icon={Sparkles} label="Needs review" note="Low-confidence matches" onAction={onReviewNeedsReview} tone="red" value={reviewCount.toString()} />
-      </div>
-
-      <div className={dashboardGridClassName} aria-busy={isLoadingTransactions}>
+      <div className={dashboardGridClassName} aria-busy={shouldHideHomeSections}>
         <CategoryDonutCard
           categories={chartCategories}
           categoryColors={categoryColors}
@@ -103,12 +97,19 @@ export function HomePage({
         <InsightsPanel insights={insights} onViewInsights={openTransactionsView} />
       </div>
 
+      <div className={metricGridClassName} aria-busy={shouldHideHomeSections}>
+        <MetricCard icon={TrendingUp} label="Spent" note={`${expensesCount} outgoing transactions`} tone="blue" value={formatMoney(monthlySpend)} />
+        <MetricCard icon={CalendarDays} label="Average per day" note="Estimated daily spend" tone="orange" value={formatMoney(averageDailySpend, true)} />
+        <MetricCard icon={WalletCards} label="Income" note="Credits in this period" tone="green" value={formatMoney(income)} />
+        <MetricCard actionLabel="Review" icon={Sparkles} label="Needs review" note="Low-confidence matches" onAction={onReviewNeedsReview} tone="red" value={reviewCount.toString()} />
+      </div>
+
       <RecentActivityStrip
         categoryColors={categoryColors}
         onViewAll={openTransactionsView}
         transactions={recentTransactions}
       />
-    </>
+    </section>
   );
 }
 

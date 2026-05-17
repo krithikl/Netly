@@ -5,6 +5,7 @@ import {
   categoryColorsStorageKey,
   categoryOverridesStorageKey,
   categoryRulesStorageKey,
+  cardFitIncludedCategoriesStorageKey,
   customCategoriesStorageKey,
   deletedCategoriesStorageKey
 } from "@/lib/app/constants";
@@ -12,6 +13,7 @@ import {
   readCategoryColors,
   readCategoryOverrides,
   readCategoryRules,
+  readCardFitIncludedCategories,
   readCustomCategories,
   readDeletedCategories,
   resetOutdatedCategorySettings
@@ -39,6 +41,7 @@ export function useCategorySettings(
   const [categoryRules, setCategoryRules] = useState<CategoryRuleMap>({});
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [deletedCategories, setDeletedCategories] = useState<string[]>([]);
+  const [cardFitIncludedCategories, setCardFitIncludedCategories] = useState<string[] | null>(null);
   const [categoryColors, setCategoryColors] = useState<Record<string, string>>(defaultCategoryColors);
   const categorizedTransactions = useMemo(
     () => applyCategoryPreferences(transactions, categoryOverrides, categoryRules),
@@ -58,6 +61,7 @@ export function useCategorySettings(
     resetOutdatedCategorySettings();
     setCategoryOverrides(readCategoryOverrides());
     setCategoryRules(readCategoryRules());
+    setCardFitIncludedCategories(readCardFitIncludedCategories());
     setCustomCategories(readCustomCategories());
     setDeletedCategories(readDeletedCategories());
     setCategoryColors(readCategoryColors());
@@ -141,7 +145,15 @@ export function useCategorySettings(
     window.localStorage.setItem(categoryColorsStorageKey, JSON.stringify(getCategoryColorOverrides(next)));
   }, [categoryColors]);
 
+  const updateCardFitIncludedCategories = useCallback((categories: string[]) => {
+    const nextCategories = [...categories].sort();
+
+    setCardFitIncludedCategories(nextCategories);
+    window.localStorage.setItem(cardFitIncludedCategoriesStorageKey, JSON.stringify(nextCategories));
+  }, []);
+
   return {
+    cardFitIncludedCategories,
     categoryColors,
     categoryOverrides,
     categoryRules,
@@ -150,6 +162,7 @@ export function useCategorySettings(
     restoreCategorySettings,
     settingsCategoryOptions,
     transactionCategoryOptions,
+    updateCardFitIncludedCategories,
     updateCategoryColor,
     updateTransactionCategory
   };

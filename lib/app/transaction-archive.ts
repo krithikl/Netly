@@ -4,6 +4,7 @@ import {
   categoryColorsStorageKey,
   categoryOverridesStorageKey,
   categoryRulesStorageKey,
+  cardFitIncludedCategoriesStorageKey,
   customCategoriesStorageKey,
   deletedCategoriesStorageKey
 } from "@/lib/app/constants";
@@ -452,6 +453,7 @@ function readPortableSettings() {
     categoryColorsStorageKey,
     categoryOverridesStorageKey,
     categoryRulesStorageKey,
+    cardFitIncludedCategoriesStorageKey,
     customCategoriesStorageKey,
     deletedCategoriesStorageKey
   ];
@@ -480,6 +482,7 @@ function isPortableSettingsKey(key: string) {
     categoryColorsStorageKey,
     categoryOverridesStorageKey,
     categoryRulesStorageKey,
+    cardFitIncludedCategoriesStorageKey,
     customCategoriesStorageKey,
     deletedCategoriesStorageKey
   ].includes(key);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { akahuAccessTokenCookieName, akahuAppTokenCookieName } from "@/lib/akahu/token";
+import { akahuAccessTokenCookieName, akahuAppTokenCookieName, getAkahuTokenCookieOptions } from "@/lib/akahu/token";
 import { encryptAkahuCookieValue } from "@/lib/akahu/secure-cookie";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 
@@ -54,20 +54,8 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.json({ message: "Akahu tokens saved for this browser session. Transactions will now load from Akahu." });
-  response.cookies.set(akahuAppTokenCookieName, encryptedAppToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30
-  });
-  response.cookies.set(akahuAccessTokenCookieName, encryptedUserToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30
-  });
+  response.cookies.set(akahuAppTokenCookieName, encryptedAppToken, getAkahuTokenCookieOptions());
+  response.cookies.set(akahuAccessTokenCookieName, encryptedUserToken, getAkahuTokenCookieOptions());
 
   return response;
 }

@@ -18,7 +18,7 @@ export function useDriveBackup(onArchiveRestored: () => Promise<void>) {
   const [status, setStatus] = useState<DriveBackupStatus>("disconnected");
   const [message, setMessage] = useState("Google Drive backup is not connected.");
   const [lastSyncedAt, setLastSyncedAt] = useState("");
-  const clientId = process.env.GOOGLE_CLIENT_ID || "";
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
   const clientConfigured = clientId.trim().length > 0;
   const state = useMemo<DriveBackupState>(() => ({
     clientConfigured,

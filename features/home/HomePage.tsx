@@ -17,6 +17,7 @@ type HomePageProps = {
   chartTotal: number;
   expensesCount: number;
   hoveredCategory: string | null;
+  hideBalances: boolean;
   income: number;
   insights: string[];
   isConnected: boolean;
@@ -29,6 +30,7 @@ type HomePageProps = {
   reviewCount: number;
   setActiveView: (view: View) => void;
   setHoveredCategory: (category: string | null) => void;
+  setHideBalances: (hidden: boolean) => void;
   setPayday: (payday: string) => void;
   transactionPreview: Transaction[];
 };
@@ -42,6 +44,7 @@ export function HomePage({
   chartTotal,
   expensesCount,
   hoveredCategory,
+  hideBalances,
   income,
   insights,
   isConnected,
@@ -54,6 +57,7 @@ export function HomePage({
   reviewCount,
   setActiveView,
   setHoveredCategory,
+  setHideBalances,
   setPayday,
   transactionPreview
 }: HomePageProps) {
@@ -69,19 +73,14 @@ export function HomePage({
     <section className="view-stack" data-testid="home-page">
       <HeroBalanceCard
         availableBalance={availableBalance}
+        hideBalances={hideBalances}
         isConnected={isConnected}
         onReviewSpend={openTransactionsView}
         payday={payday}
         paydayPatternDate={paydayPatternDate}
+        setHideBalances={setHideBalances}
         setPayday={setPayday}
       />
-
-      {isLoadingTransactions && (
-        <div className="status-banner neutral" role="status">
-          <strong>Loading transactions.</strong>
-          <span>Checking whether Akahu data is available.</span>
-        </div>
-      )}
 
       <div className={dashboardGridClassName} aria-busy={isLoadingTransactions}>
         <CategoryDonutCard

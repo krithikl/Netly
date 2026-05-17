@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
-import { akahuAccessTokenCookieName } from "@/lib/akahu/token";
+import { akahuAccessTokenCookieName, akahuStateCookieName, getAkahuTokenCookieOptions } from "@/lib/akahu/token";
 import { encryptAkahuCookieValue } from "@/lib/akahu/secure-cookie";
 
 // Handles Akahu OAuth redirect, validates state, stores token cookies, and redirects home.
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const error = request.nextUrl.searchParams.get("error");
-  const expectedState = request.cookies.get("netly_akahu_state")?.value;
+  const expectedState = request.cookies.get(akahuStateCookieName)?.value;
 
   if (error) {
     return redirectWithStatus(request, `connect_error=${encodeURIComponent(error)}`);
@@ -27,14 +27,8 @@ export async function GET(request: NextRequest) {
     const accessToken = await provider.exchangeAuthorizationCode(code);
 
     const response = redirectWithStatus(request, "connected=1");
-    response.cookies.set(akahuAccessTokenCookieName, await encryptAkahuCookieValue(accessToken), {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30
-    });
-    response.cookies.delete("netly_akahu_state");
+    response.cookies.set(akahuAccessTokenCookieName, await encryptAkahuCookieValue(accessToken), getAkahuTokenCookieOptions());
+    response.cookies.delete(akahuStateCookieName);
 
     return response;
   } catch (exchangeError) {

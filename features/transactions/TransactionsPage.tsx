@@ -256,9 +256,6 @@ export function TransactionsPage({
               </span>
             </label>
           </div>
-          <div className="transaction-archive-note">
-            <span>Transactions are encrypted locally when first seen. Google Drive backup can be connected from Settings.</span>
-          </div>
           <div className="transaction-filter-actions">
             <div className="category-create-row">
               <label>

@@ -22,6 +22,8 @@ import type { PeriodOption } from "@/lib/types";
 
 type SettingsPageProps = {
   akahuDataFreshness: AkahuDataFreshness;
+  cardFitAvailableCategories: string[];
+  cardFitIncludedCategories: string[];
   categoryColors: Record<string, string>;
   dataMode: DataMode;
   dashboardPeriod: PeriodOption;
@@ -33,12 +35,15 @@ type SettingsPageProps = {
   onRestoreDriveBackup: () => Promise<void>;
   showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
+  updateCardFitIncludedCategories: (categories: string[]) => void;
   updateCategoryColor: (category: string, color: string) => void;
 };
 
 // Settings screen for managing category colours and hiding unused categories.
 export function SettingsPage({
   akahuDataFreshness,
+  cardFitAvailableCategories,
+  cardFitIncludedCategories,
   categoryColors,
   dataMode,
   dashboardPeriod,
@@ -50,6 +55,7 @@ export function SettingsPage({
   onRestoreDriveBackup,
   showDashboardPeriodSetting,
   setDashboardPeriod,
+  updateCardFitIncludedCategories,
   updateCategoryColor
 }: SettingsPageProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
@@ -91,6 +97,14 @@ export function SettingsPage({
       </section>
 
       <section className="material-card">
+        <CardFitCategorySettings
+          availableCategories={cardFitAvailableCategories}
+          includedCategories={cardFitIncludedCategories}
+          onChange={updateCardFitIncludedCategories}
+        />
+      </section>
+
+      <section className="material-card">
         <div className="settings-drive-card">
           <div>
             <h3>Google Drive backup</h3>
@@ -101,7 +115,7 @@ export function SettingsPage({
           </span>
           {!driveBackup.clientConfigured && (
             <p className="settings-drive-warning">
-              Missing GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
+              Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
             </p>
           )}
           <p className="settings-drive-message">
@@ -157,6 +171,58 @@ export function SettingsPage({
   );
 }
 
+type CardFitCategorySettingsProps = {
+  availableCategories: string[];
+  includedCategories: string[];
+  onChange: (categories: string[]) => void;
+};
+
+// Lets users decide which spending categories count toward Card Fit rewards.
+function CardFitCategorySettings({ availableCategories, includedCategories, onChange }: CardFitCategorySettingsProps) {
+  const includedSet = new Set(includedCategories);
+  const toggleCategory = (category: string) => {
+    const nextCategories = includedSet.has(category)
+      ? includedCategories.filter((item) => item !== category)
+      : [...includedCategories, category];
+
+    onChange(nextCategories);
+  };
+  const selectAll = () => onChange(availableCategories);
+  const clearAll = () => onChange([]);
+
+  return (
+    <div className="settings-card-fit">
+      <div className="settings-section-heading">
+        <div>
+          <h3>Card Fit categories</h3>
+          <p>Choose which categories count toward rewards estimates.</p>
+        </div>
+        <div className="settings-inline-actions">
+          <Button onClick={selectAll} type="button" variant="outline" size="sm">
+            Select all
+          </Button>
+          <Button onClick={clearAll} type="button" variant="outline" size="sm">
+            Clear
+          </Button>
+        </div>
+      </div>
+      <div className="settings-category-toggle-grid">
+        {availableCategories.map((category) => (
+          <button
+            aria-pressed={includedSet.has(category)}
+            className={includedSet.has(category) ? "active" : undefined}
+            key={category}
+            onClick={() => toggleCategory(category)}
+            type="button"
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 type AkahuFreshnessCardProps = {
   dataMode: DataMode;
   freshness: AkahuDataFreshness;
@@ -184,14 +250,8 @@ function AkahuFreshnessCard({ dataMode, freshness }: AkahuFreshnessCardProps) {
             <FreshnessMetric label="Balance data" value={formatAkahuFreshnessTime(freshness.balanceRefreshedAt)} />
             <FreshnessMetric label="Transactions checked" value={formatAkahuFreshnessTime(freshness.transactionsRefreshedAt)} />
           </div>
-          {freshness.status === "refreshing" && (
-            <p className="settings-drive-message">Akahu data looked stale, so Netly requested a refresh and is rechecking the account snapshot.</p>
-          )}
           {freshness.status === "failed" && freshness.error && (
             <p className="settings-drive-warning">{freshness.error}</p>
-          )}
-          {freshness.status !== "failed" && freshness.isStale && (
-            <p className="settings-drive-message">Some account data is older than 24 hours. Akahu may delay manual refreshes during its refresh rest period.</p>
           )}
           {freshness.accounts.length > 1 && (
             <details className="settings-freshness-details">

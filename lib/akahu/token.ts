@@ -3,6 +3,32 @@ import { decryptAkahuCookieValue } from "@/lib/akahu/secure-cookie";
 
 export const akahuAppTokenCookieName = "netly_akahu_app_token";
 export const akahuAccessTokenCookieName = "netly_akahu_access_token";
+export const akahuStateCookieName = "netly_akahu_state";
+
+const thirtyDayCookieMaxAgeSeconds = 60 * 60 * 24 * 30;
+const stateCookieMaxAgeSeconds = 10 * 60;
+
+// Shared secure defaults for encrypted Akahu bearer-token cookies.
+export function getAkahuTokenCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: thirtyDayCookieMaxAgeSeconds
+  };
+}
+
+// Short-lived OAuth state cookie options.
+export function getAkahuStateCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: stateCookieMaxAgeSeconds
+  };
+}
 
 // Reads the stored Akahu token cookies from API requests.
 export async function getValidAccessToken(request: NextRequest) {

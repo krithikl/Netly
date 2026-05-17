@@ -1,23 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { handleCallbackParams } from "@/lib/app/browser-state";
+import { handleCallbackParams, readHideBalances } from "@/lib/app/browser-state";
 import { categoryRollupCategory } from "@/lib/categories";
 import {
   getCardFitSourceLabel,
   getCardFitWindowLabel,
   getDataSourceLabel,
   getLinkedAccountLabel,
-  getLinkedUserName,
-  getStatusBannerTitle
+  getLinkedUserName
 } from "@/lib/app/derived";
 import { applyCategoryPreferences } from "@/lib/category-rules";
 import type { DataMode } from "@/lib/app/types";
 import { cardProducts, payday as defaultPayday } from "@/lib/mock-data";
-import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, spendByCategory, sum } from "@/lib/insights";
-import { filterTransactionsByPeriod, getThisMonthDateRange, getTransactionPeriodDateRange } from "@/lib/periods";
+import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, getDefaultCardFitIncludedCategories, spendByCategory, sum } from "@/lib/insights";
+import { filterTransactionsByDateRange, filterTransactionsByPeriod, getThisMonthDateRange, getTransactionPeriodDateRange } from "@/lib/periods";
 import { getTransactionDate, transactionNeedsReview } from "@/lib/transaction-display";
-import { periods } from "@/lib/app/constants";
+import { hideBalancesStorageKey, periods } from "@/lib/app/constants";
 import { getTransactionAccountOptions } from "@/features/transactions/transactionLogic";
 import { useAkahuConnection } from "@/hooks/useAkahuConnection";
 import { useCategorySettings } from "@/hooks/useCategorySettings";
@@ -38,10 +37,12 @@ export function useNetlyApp() {
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
   const isBottomNavigation = useIsBottomNavigation();
   const previousActiveViewRef = useRef(activeView);
+  const lastForegroundRefreshRef = useRef(0);
   const transactionOpenPresetIdRef = useRef(0);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [transactionPageDateRange, setTransactionPageDateRange] = useState(getThisMonthDateRange);
   const [transactionOpenPreset, setTransactionOpenPreset] = useState<TransactionOpenPreset | null>(null);
+  const [hideBalances, setHideBalances] = useState(false);
 
   const banking = useAkahuData();
   // Use all loaded transaction sets so category options stay consistent across pages.
@@ -75,8 +76,10 @@ export function useNetlyApp() {
   const dashboardPeriodSettings = useDashboardPeriodSettings(periods[0]);
   const activeDashboardPeriod = isBottomNavigation ? dashboardPeriodSettings.dashboardPeriod : period;
   const periodTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, activeDashboardPeriod), [activeDashboardPeriod, workingTransactions]);
+  const budgetMonthTransactions = useMemo(() => filterTransactionsByDateRange(workingTransactions, getThisMonthDateRange()), [workingTransactions]);
   const recurringTransactions = useMemo(() => filterTransactionsByPeriod(workingTransactions, "90 days"), [workingTransactions]);
   const categoryTotals = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
+  const budgetCategoryTotals = useMemo(() => spendByCategory(budgetMonthTransactions), [budgetMonthTransactions]);
 
   // Loads saved settings and the first data source when the app starts
   useEffect(() => {
@@ -93,18 +96,55 @@ export function useNetlyApp() {
 
     paydaySettings.restorePaydaySettings();
     dashboardPeriodSettings.restoreDashboardPeriod();
+    setHideBalances(readHideBalances());
 
     banking.refreshTransactions(initialDataMode, transactionPageDateRange).catch((error: unknown) => {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
   }, []);
 
-  // Do not refresh on window focus or visibility changes. Akahu refreshes are
-  // intentionally limited to initial app load, explicit user refreshes, and the
-  // stale-data cooldown inside useAkahuData. This keeps tab/page navigation fast.
+  // Refreshes quietly when the installed app/browser returns to the foreground.
+  useEffect(() => {
+    const foregroundRefreshCooldownMs = 60 * 1000;
+    const refreshForegroundData = () => {
+      if (banking.dataMode !== "user") {
+        return;
+      }
+
+      const now = Date.now();
+
+      if (now - lastForegroundRefreshRef.current < foregroundRefreshCooldownMs) {
+        return;
+      }
+
+      lastForegroundRefreshRef.current = now;
+      banking.refreshTransactions("user", transactionPageDateRange).catch((error: unknown) => {
+        banking.applyFallbackState("user", error, "Could not refresh Akahu transactions.");
+      });
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refreshForegroundData();
+      }
+    };
+
+    window.addEventListener("focus", refreshForegroundData);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", refreshForegroundData);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactions, transactionPageDateRange]);
 
   useEffect(() => {
     const previousActiveView = previousActiveViewRef.current;
+
+    if (previousActiveView !== "transactions" && activeView === "transactions") {
+      banking.refreshTransactionPage(banking.dataMode, transactionPageDateRange).catch((error: unknown) => {
+        banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
+      });
+    }
 
     if (previousActiveView === "transactions" && activeView !== "transactions") {
       const defaultDateRange = getThisMonthDateRange();
@@ -124,10 +164,21 @@ export function useNetlyApp() {
   }, [activeView, banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage, transactionPageDateRange]);
 
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
-  const cardFit = useMemo(() => calculateCardFit(workingTransactions, cardProducts), [workingTransactions]);
+  const cardFitAvailableCategories = useMemo(
+    () => categories.settingsCategoryOptions.filter((category) => category !== "All categories"),
+    [categories.settingsCategoryOptions]
+  );
+  const cardFitIncludedCategories = useMemo(
+    () => categories.cardFitIncludedCategories || getDefaultCardFitIncludedCategories(cardFitAvailableCategories),
+    [cardFitAvailableCategories, categories.cardFitIncludedCategories]
+  );
+  const cardFit = useMemo(
+    () => calculateCardFit(workingTransactions, cardProducts, undefined, cardFitIncludedCategories),
+    [cardFitIncludedCategories, workingTransactions]
+  );
   const insights = useMemo(
-    () => generateInsights(periodTransactions, cardProducts, banking.availableBalance),
-    [banking.availableBalance, periodTransactions]
+    () => generateInsights(periodTransactions, cardProducts),
+    [periodTransactions]
   );
   const expenses = useMemo(() => debitTransactions(periodTransactions), [periodTransactions]);
   const monthlySpend = useMemo(() => sum(expenses.map((transaction) => Math.abs(transaction.amount))), [expenses]);
@@ -184,18 +235,24 @@ export function useNetlyApp() {
     categories.updateCategoryColor(category, color);
     void driveBackup.syncAfterArchiveChange();
   }, [categories.updateCategoryColor, driveBackup.syncAfterArchiveChange]);
+  const updateCardFitIncludedCategoriesAndSync = useCallback((includedCategories: string[]) => {
+    categories.updateCardFitIncludedCategories(includedCategories);
+    void driveBackup.syncAfterArchiveChange();
+  }, [categories.updateCardFitIncludedCategories, driveBackup.syncAfterArchiveChange]);
   const deleteCategoryAndSync = useCallback((category: string) => {
     categories.deleteCategory(category);
     void driveBackup.syncAfterArchiveChange();
   }, [categories.deleteCategory, driveBackup.syncAfterArchiveChange]);
+  const updateHideBalances = useCallback((hidden: boolean) => {
+    setHideBalances(hidden);
+    window.localStorage.setItem(hideBalancesStorageKey, String(hidden));
+  }, []);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
   const accountOptions = useMemo(
     () => getTransactionAccountOptions(banking.linkedAccounts, transactionPageWorkingTransactions),
     [banking.linkedAccounts, transactionPageWorkingTransactions]
   );
   const shouldShowPeriodControl = (activeView === "home" || activeView === "budgets") && !isBottomNavigation;
-  const isInitialTransactionImport = banking.isConnected && banking.dataMode === "user" && banking.isLoadingTransactions && banking.transactions.length === 0 && banking.transactionPageTransactions.length === 0;
-
   return {
     shell: {
       activeView,
@@ -204,20 +261,17 @@ export function useNetlyApp() {
       dataSourceLabel: getDataSourceLabel(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
       linkedAccountLabel: getLinkedAccountLabel(banking.primaryLinkedAccount, banking.linkedAccounts.length, banking.isConnected),
       linkedUserName,
-      isInitialTransactionImport,
       payday: paydaySettings.payday,
       period,
       setActiveView,
       setPeriod,
-      shouldShowPeriodControl,
-      statusBannerMessage: banking.transactionLoadError || banking.transactionLoadNotice,
-      statusBannerTitle: getStatusBannerTitle(banking.transactionLoadError, banking.dataMode)
+      shouldShowPeriodControl
     },
     viewProps: {
       activeView,
       budgets: {
         categoryOptions: categories.settingsCategoryOptions,
-        categories: categoryTotals,
+        categories: budgetCategoryTotals,
         categoryColors: categories.categoryColors,
         onRecurringClick: openRecurringTransactions,
         recurring
@@ -228,8 +282,7 @@ export function useNetlyApp() {
         cardFitWindowLabel: getCardFitWindowLabel(cardFit.basis),
         cards: cardFit.cards,
         explanation: cardFit.explanation,
-        hasCardEligibleSpend: cardFit.basis.eligibleTransactionCount > 0 && cardFit.basis.eligibleAnnualSpend > 0,
-        isLoadingTransactions: banking.isLoadingTransactions
+        hasCardEligibleSpend: cardFit.basis.eligibleTransactionCount > 0 && cardFit.basis.eligibleAnnualSpend > 0
       },
       connect: {
         completeAkahuConnection: connection.completeAkahuConnection,
@@ -246,6 +299,7 @@ export function useNetlyApp() {
         chartTotal,
         expensesCount: expenses.length,
         hoveredCategory,
+        hideBalances,
         income,
         insights,
         isConnected: banking.isConnected,
@@ -257,11 +311,14 @@ export function useNetlyApp() {
         reviewCount,
         setActiveView,
         setHoveredCategory,
+        setHideBalances: updateHideBalances,
         setPayday: paydaySettings.updatePayday,
         transactionPreview: periodTransactions
       },
       settings: {
         akahuDataFreshness: banking.akahuDataFreshness,
+        cardFitAvailableCategories,
+        cardFitIncludedCategories,
         categoryColors: categories.categoryColors,
         dashboardPeriod: dashboardPeriodSettings.dashboardPeriod,
         dataMode: banking.dataMode,
@@ -273,6 +330,7 @@ export function useNetlyApp() {
         onRestoreDriveBackup: driveBackup.restoreFromDrive,
         setDashboardPeriod: dashboardPeriodSettings.updateDashboardPeriod,
         showDashboardPeriodSetting: isBottomNavigation,
+        updateCardFitIncludedCategories: updateCardFitIncludedCategoriesAndSync,
         updateCategoryColor: updateCategoryColorAndSync
       },
       transactions: {

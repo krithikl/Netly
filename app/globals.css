@@ -2744,7 +2744,7 @@ h2 {
 
 .budget-card-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 14px;
   align-items: stretch;
 }
@@ -2956,6 +2956,30 @@ h2 {
   align-self: start;
 }
 
+.budget-empty-state {
+  display: grid;
+  min-height: 170px;
+  align-content: center;
+  gap: 8px;
+  border: 1px dashed var(--outline-soft);
+  border-radius: 28px;
+  padding: 18px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.budget-empty-state strong {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.budget-empty-state span {
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .budget-add-card:hover,
 .budget-add-card:focus-visible {
   border-color: var(--primary-border);
@@ -2999,70 +3023,94 @@ h2 {
   color: var(--ink);
 }
 
+.budget-editor-sheet {
+  gap: 18px;
+}
+
 .budget-editor-form {
   display: grid;
-  gap: 16px;
+  gap: 14px;
+  overflow: auto;
   padding: 0 18px 18px;
+}
+
+.budget-editor-sheet .budget-editor-form {
+  padding: 0;
 }
 
 .budget-editor-form label {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 850;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .budget-editor-form input {
-  min-height: 48px;
+  min-height: 44px;
   width: 100%;
   border: 1px solid var(--outline-soft);
-  border-radius: 16px;
-  padding: 12px 14px;
+  border-radius: 12px;
+  padding: 10px 12px;
   background: var(--surface-2);
   color: var(--ink);
-  font-size: 1rem;
-  font-weight: 800;
+  font-size: 0.95rem;
+  font-weight: 750;
   outline: none;
 }
 
 .budget-editor-form input:focus {
   border-color: var(--primary-border);
-  box-shadow: 0 0 0 4px var(--focus-ring);
+  box-shadow: none;
 }
 
 .budget-category-selector {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .budget-category-selector h3 {
   margin: 0;
   color: var(--ink);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 900;
 }
 
-.budget-category-selector > div {
+.budget-category-selector-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.budget-category-selector-heading > div {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  max-height: min(34vh, 260px);
+}
+
+.budget-category-selector-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: min(32vh, 240px);
   overflow: auto;
   padding-right: 2px;
 }
 
 .budget-category-selector button {
-  min-height: 38px;
+  min-height: 34px;
   border: 1px solid var(--outline-soft);
-  border-radius: 999px;
-  padding: 8px 12px;
+  border-radius: 12px;
+  padding: 7px 10px;
   background: var(--surface-2);
   color: var(--muted);
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 850;
 }
 
@@ -3081,7 +3129,7 @@ h2 {
   display: flex;
   justify-content: end;
   gap: 10px;
-  padding-top: 6px;
+  padding-top: 4px;
 }
 
 .budget-editor-actions > button {
@@ -3090,7 +3138,7 @@ h2 {
 
 .budget-save-button {
   display: inline-flex;
-  min-height: 40px;
+  min-height: 38px;
   align-items: center;
   justify-content: center;
   border: 0;
@@ -3111,6 +3159,10 @@ h2 {
 .budget-save-button:disabled {
   cursor: default;
   opacity: 0.5;
+}
+
+.budget-editor-sheet .budget-category-selector-options {
+  max-height: 220px;
 }
 
 .budget-delete-button.budget-delete-button {
@@ -4911,6 +4963,15 @@ body {
 }
 
 @media (max-width: 1180px) {
+  .budget-desktop-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-recurring-panel {
+    position: static;
+    max-height: none;
+  }
+
   .sidebar {
     background: rgba(5, 5, 5, 0.94);
     border-top: 1px solid var(--outline-soft);

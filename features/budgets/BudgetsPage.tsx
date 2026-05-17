@@ -1,7 +1,7 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useState } from "react";
-import { Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { InfoRow } from "@/components/ui/info-row";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,13 @@ import {
   DrawerHeaderClose,
   DrawerTitle
 } from "@/components/ui/drawer";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle
+} from "@/components/ui/sheet";
 import { formatMoney } from "@/lib/insights";
 import type { RecurringMerchant } from "@/lib/types";
 
@@ -37,13 +44,7 @@ type BudgetFormState = {
   name: string;
 };
 
-type SavedBudgetState = {
-  budgets: UserBudget[];
-  hasStoredBudgets: boolean;
-};
-
 const budgetStorageKey = "netly_user_budgets";
-const excludedDefaultBudgetCategories = new Set(["All categories", "Housing", "Income", "Needs review", "Transfers"]);
 const collapsedBudgetLimit = 3;
 
 // Budget screen with user-defined budgets calculated from selected categories.
@@ -51,13 +52,12 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
   const [budgets, setBudgets] = useState<UserBudget[]>([]);
   const [editingBudget, setEditingBudget] = useState<UserBudget | null>(null);
   const [budgetStorageError, setBudgetStorageError] = useState("");
-  const [hasStoredBudgets, setHasStoredBudgets] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isBudgetListExpanded, setIsBudgetListExpanded] = useState(false);
-  const [form, setForm] = useState<BudgetFormState>(() => getEmptyBudgetForm([]));
+  const [form, setForm] = useState<BudgetFormState>(getEmptyBudgetForm);
   const renderedBudgets = useMemo(
-    () => getRenderableBudgets(budgets, categories, categoryOptions, hasStoredBudgets),
-    [budgets, categories, categoryOptions, hasStoredBudgets]
+    () => getRenderableBudgets(budgets),
+    [budgets]
   );
   const visibleBudgets = isBudgetListExpanded ? renderedBudgets : renderedBudgets.slice(0, collapsedBudgetLimit);
   const hiddenBudgetCount = Math.max(0, renderedBudgets.length - visibleBudgets.length);
@@ -68,15 +68,12 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
   const canSaveBudget = form.name.trim().length > 0 && Number.isFinite(formLimit) && formLimit > 0 && form.categoryNames.length > 0;
 
   useEffect(() => {
-    const savedBudgetState = readSavedBudgetState();
-
-    setBudgets(savedBudgetState.budgets);
-    setHasStoredBudgets(savedBudgetState.hasStoredBudgets);
+    setBudgets(readSavedBudgets());
   }, []);
 
   const openNewBudget = () => {
     setEditingBudget(null);
-    setForm(getEmptyBudgetForm(availableCategoryOptions));
+    setForm(getEmptyBudgetForm());
     setIsEditorOpen(true);
   };
   const openBudgetEditor = (budget: UserBudget) => {
@@ -105,7 +102,7 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
       : [...budgets, nextBudget];
 
     setIsEditorOpen(false);
-    setBudgetsAndPersist(nextBudgets, setBudgets, setHasStoredBudgets, setBudgetStorageError);
+    setBudgetsAndPersist(nextBudgets, setBudgets, setBudgetStorageError);
   };
   const submitBudgetForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -117,10 +114,9 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
       return;
     }
 
-    setBudgetsAndPersist(budgets.filter((budget) => budget.id !== activeBudget.id), setBudgets, setHasStoredBudgets, setBudgetStorageError);
+    setBudgetsAndPersist(budgets.filter((budget) => budget.id !== activeBudget.id), setBudgets, setBudgetStorageError);
     setIsEditorOpen(false);
   };
-  const resetBudgets = () => restoreDefaultBudgets(setBudgets, setHasStoredBudgets, setBudgetStorageError);
 
   return (
     <section className="view-stack budget-page-layout" data-testid="budgets-page">
@@ -131,12 +127,6 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
               <h2>Budgets</h2>
               <p>Track spending limits from the categories you choose.</p>
             </div>
-            {hasStoredBudgets && (
-              <button className="budget-reset-button" onClick={resetBudgets} type="button">
-                <RotateCcw aria-hidden="true" size={16} strokeWidth={2.4} />
-                Reset
-              </button>
-            )}
           </div>
           <div className="budget-card-list">
             {visibleBudgets.map((budget) => (
@@ -157,6 +147,12 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
               <button className="budget-less-card" onClick={() => setIsBudgetListExpanded(false)} type="button">
                 Show less
               </button>
+            )}
+            {visibleBudgets.length === 0 && (
+              <div className="budget-empty-state">
+                <strong>No budgets yet</strong>
+                <span>Add a monthly budget and choose the categories that count toward it.</span>
+              </div>
             )}
             <button className="budget-add-card" onClick={openNewBudget} type="button">
               <Plus aria-hidden="true" size={28} strokeWidth={2.1} />
@@ -219,7 +215,11 @@ function BudgetCard({
   spent: number;
 }) {
   const left = Math.max(0, budget.limit - spent);
-  const progress = budget.limit > 0 ? Math.min((spent / budget.limit) * 100, 100) : 0;
+  const remaining = budget.limit - spent;
+  const progress = budget.limit > 0 ? (spent / budget.limit) * 100 : 0;
+  const budgetStatusLabel = remaining >= 0
+    ? `${formatMoney(remaining, true)} left of ${formatMoney(budget.limit, true)}`
+    : `${formatMoney(Math.abs(remaining), true)} over of ${formatMoney(budget.limit, true)}`;
   const monthPeriod = getCurrentMonthPeriod();
   const todayProgress = getMonthProgress();
   const daysLeft = getDaysLeftInMonth();
@@ -231,7 +231,7 @@ function BudgetCard({
         <div>
           <strong>{budget.name}</strong>
           <p>
-            <b>{formatMoney(left, true)}</b> left of {formatMoney(budget.limit, true)}
+            <b>{budgetStatusLabel}</b>
           </p>
         </div>
         <button aria-label={`Edit ${budget.name}`} onClick={onEdit} type="button">
@@ -252,7 +252,7 @@ function BudgetCard({
           <span>{monthPeriod.endLabel}</span>
         </div>
         <p className="budget-daily-note">
-          {left > 0 ? `You can spend ${formatMoney(dailyAmount, true)}/day for ${daysLeft} more days` : "Budget fully used for this period"}
+          {remaining > 0 ? `You can spend ${formatMoney(dailyAmount, true)}/day for ${daysLeft} more days` : `${formatMoney(Math.abs(remaining), true)} over this month`}
         </p>
         <div className="budget-category-pills">
           {budget.categoryNames.map((category) => (
@@ -291,8 +291,12 @@ function BudgetEditor({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   open: boolean;
 }) {
+  const isMobileEditor = useBudgetMobileEditor();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const changeName = (event: ChangeEvent<HTMLInputElement>) => onFormChange({ ...form, name: event.target.value });
   const changeLimit = (event: ChangeEvent<HTMLInputElement>) => onFormChange({ ...form, limit: event.target.value });
+  const selectAllCategories = () => onFormChange({ ...form, categoryNames: availableCategoryOptions });
+  const clearCategories = () => onFormChange({ ...form, categoryNames: [] });
   const toggleCategory = (category: string) => {
     const nextCategories = form.categoryNames.includes(category)
       ? form.categoryNames.filter((item) => item !== category)
@@ -303,6 +307,80 @@ function BudgetEditor({
       categoryNames: nextCategories
     });
   };
+  const focusTitleOnOpen = (event: Event) => {
+    event.preventDefault();
+    titleRef.current?.focus();
+  };
+
+  const formContent = (
+    <form className="budget-editor-form" onSubmit={onSubmit}>
+      <label>
+        Budget name
+        <input autoComplete="off" onChange={changeName} placeholder="Spending money" value={form.name} />
+      </label>
+      <label>
+        Amount
+        <input inputMode="decimal" min="0" onChange={changeLimit} placeholder="800" step="0.01" type="number" value={form.limit} />
+      </label>
+      <section className="budget-category-selector">
+        <div className="budget-category-selector-heading">
+          <h3>Categories that count as progress</h3>
+          <div>
+            <Button onClick={selectAllCategories} size="sm" type="button" variant="outline">
+              Select all
+            </Button>
+            <Button onClick={clearCategories} size="sm" type="button" variant="outline">
+              Clear
+            </Button>
+          </div>
+        </div>
+        <div className="budget-category-selector-options">
+          {availableCategoryOptions.map((category) => (
+            <button
+              aria-pressed={form.categoryNames.includes(category)}
+              className={form.categoryNames.includes(category) ? "active" : undefined}
+              key={category}
+              onClick={() => toggleCategory(category)}
+              type="button"
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </section>
+      <div className="budget-editor-actions">
+        {editingBudget && (
+          <Button className="budget-delete-button" onClick={onDelete} type="button" variant="outline">
+            <Trash2 aria-hidden="true" className="h-4 w-4" />
+            Delete
+          </Button>
+        )}
+        <button className="budget-save-button" disabled={!canSaveBudget} onClick={onSave} type="button">
+          Save budget
+        </button>
+      </div>
+    </form>
+  );
+
+  if (!isMobileEditor) {
+    return (
+      <Sheet onOpenChange={onOpenChange} open={open}>
+        <SheetContent
+          className="transaction-details-shell w-[min(560px,calc(100vw-36px))] overflow-hidden p-0"
+          overlayClassName="transaction-details-overlay"
+          onOpenAutoFocus={focusTitleOnOpen}
+        >
+          <div className="transaction-details-sheet budget-editor-sheet flex h-full flex-col overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle className="focus:outline-none" ref={titleRef} tabIndex={-1}>{editingBudget ? "Edit budget" : "New budget"}</SheetTitle>
+              <SheetDescription>Set a monthly budget amount and choose categories that count toward progress.</SheetDescription>
+            </SheetHeader>
+            {formContent}
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   return (
     <Drawer onOpenChange={onOpenChange} open={open}>
@@ -312,46 +390,29 @@ function BudgetEditor({
           <DrawerDescription className="sr-only">Set a budget amount and choose categories that count toward progress.</DrawerDescription>
           <DrawerHeaderClose className="mobile-filter-close" />
         </DrawerHeader>
-        <form className="budget-editor-form" onSubmit={onSubmit}>
-          <label>
-            Budget name
-            <input autoComplete="off" onChange={changeName} placeholder="Spending money" value={form.name} />
-          </label>
-          <label>
-            Amount
-            <input inputMode="decimal" min="0" onChange={changeLimit} placeholder="800" step="0.01" type="number" value={form.limit} />
-          </label>
-          <section className="budget-category-selector">
-            <h3>Categories that count as progress</h3>
-            <div>
-              {availableCategoryOptions.map((category) => (
-                <button
-                  aria-pressed={form.categoryNames.includes(category)}
-                  className={form.categoryNames.includes(category) ? "active" : undefined}
-                  key={category}
-                  onClick={() => toggleCategory(category)}
-                  type="button"
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </section>
-          <div className="budget-editor-actions">
-            {editingBudget && (
-              <Button className="budget-delete-button" onClick={onDelete} type="button" variant="outline">
-                <Trash2 aria-hidden="true" className="h-4 w-4" />
-                Delete
-              </Button>
-            )}
-            <button className="budget-save-button" disabled={!canSaveBudget} onClick={onSave} type="button">
-              Save budget
-            </button>
-          </div>
-        </form>
+        {formContent}
       </DrawerContent>
     </Drawer>
   );
+}
+
+// Uses a true mobile cutoff so narrow desktop windows still get a side sheet.
+function useBudgetMobileEditor() {
+  const [isMobileEditor, setIsMobileEditor] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const updateEditorMode = () => setIsMobileEditor(media.matches);
+
+    updateEditorMode();
+    media.addEventListener("change", updateEditorMode);
+
+    return () => {
+      media.removeEventListener("change", updateEditorMode);
+    };
+  }, []);
+
+  return isMobileEditor;
 }
 
 // Summarizes the recurring merchant evidence for a row.
@@ -364,22 +425,9 @@ function getBudgetSpend(categoryTotals: Map<string, number>, categoryNames: stri
   return categoryNames.reduce((total, category) => total + (categoryTotals.get(category) || 0), 0);
 }
 
-// Supplies the starter budget until the user saves their own budget state.
-function getRenderableBudgets(budgets: UserBudget[], categories: { category: string; amount: number }[], categoryOptions: string[], hasStoredBudgets: boolean) {
-  if (hasStoredBudgets || budgets.length > 0) {
-    return budgets;
-  }
-
-  const defaultCategories = getDefaultBudgetCategories(getAvailableCategoryOptions(categoryOptions, categories));
-
-  return [
-    {
-      categoryNames: defaultCategories,
-      id: "default-spending-money",
-      limit: 800,
-      name: "Spending money"
-    }
-  ];
+// Returns the user-created budget list without adding starter defaults.
+function getRenderableBudgets(budgets: UserBudget[]) {
+  return budgets;
 }
 
 // Builds a unique, sorted list of spend categories that can count toward progress.
@@ -392,42 +440,25 @@ function getAvailableCategoryOptions(categoryOptions: string[], categories: { ca
   return [...allCategories].sort((first, second) => first.localeCompare(second));
 }
 
-// Picks sensible expense-like categories for the starter budget.
-function getDefaultBudgetCategories(categoryOptions: string[]) {
-  const defaultCategories = categoryOptions.filter((category) => !excludedDefaultBudgetCategories.has(category));
-
-  if (defaultCategories.length > 0) {
-    return defaultCategories;
-  }
-
-  return categoryOptions.slice(0, 4);
-}
-
-// Creates the form state used for a new or starter budget.
-function getEmptyBudgetForm(categoryOptions: string[]): BudgetFormState {
+// Creates the form state used for a new monthly budget.
+function getEmptyBudgetForm(): BudgetFormState {
   return {
-    categoryNames: getDefaultBudgetCategories(categoryOptions),
+    categoryNames: [],
     limit: "800",
     name: "Spending money"
   };
 }
 
-// Reads persisted budgets and distinguishes "never saved" from "saved empty".
-function readSavedBudgetState(): SavedBudgetState {
+// Reads persisted budgets, using an empty list when no budget has been saved.
+function readSavedBudgets() {
   const storage = getBudgetStorage();
   const storedBudgets = storage?.getItem(budgetStorageKey);
 
   if (!storedBudgets) {
-    return {
-      budgets: [],
-      hasStoredBudgets: false
-    };
+    return [];
   }
 
-  return {
-    budgets: parseSavedBudgets(storedBudgets),
-    hasStoredBudgets: true
-  };
+  return parseSavedBudgets(storedBudgets);
 }
 
 // Parses the persisted local budget array and fails loudly on corrupt data.
@@ -467,24 +498,10 @@ function parseSavedBudget(value: unknown): UserBudget {
 function setBudgetsAndPersist(
   budgets: UserBudget[],
   setBudgets: (budgets: UserBudget[]) => void,
-  setHasStoredBudgets: (hasStoredBudgets: boolean) => void,
   setBudgetStorageError: (message: string) => void
 ) {
   setBudgets(budgets);
-  setHasStoredBudgets(true);
   persistBudgetStorage(budgets, setBudgetStorageError);
-}
-
-// Clears local custom budgets so the starter budget is shown again.
-function restoreDefaultBudgets(
-  setBudgets: (budgets: UserBudget[]) => void,
-  setHasStoredBudgets: (hasStoredBudgets: boolean) => void,
-  setBudgetStorageError: (message: string) => void
-) {
-  setBudgets([]);
-  setHasStoredBudgets(false);
-  setBudgetStorageError("");
-  getBudgetStorage()?.removeItem(budgetStorageKey);
 }
 
 // Persists budgets when browser storage is available and reports when it is not.

@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Pencil } from "lucide-react";
+import { ArrowRight, CalendarDays, Eye, EyeOff, Pencil } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -8,23 +8,28 @@ import { formatMoney } from "@/lib/insights";
 
 type HeroBalanceCardProps = {
   availableBalance: number | null;
+  hideBalances: boolean;
   isConnected: boolean;
   onReviewSpend: () => void;
   payday: string;
   paydayPatternDate: string;
+  setHideBalances: (hidden: boolean) => void;
   setPayday: (payday: string) => void;
 };
 
-// Home hero card for available balance, safe-to-spend, and payday controls.
+// Home hero card for available balance and payday controls.
 export function HeroBalanceCard({
   availableBalance,
+  hideBalances,
   onReviewSpend,
   payday,
   paydayPatternDate,
+  setHideBalances,
   setPayday
 }: HeroBalanceCardProps) {
   const [paydayPopoverOpen, setPaydayPopoverOpen] = useState(false);
-  const balanceLabel = availableBalance === null ? "Loading" : formatMoney(availableBalance, true);
+  const balanceLabel = hideBalances ? "••••" : availableBalance === null ? "Loading" : formatMoney(availableBalance, true);
+  const BalanceVisibilityIcon = hideBalances ? EyeOff : Eye;
   const paydayLabel = formatPayday(payday);
   const daysToPayday = getDaysUntil(payday);
   const nextPaydayDate = parsePaydayDate(payday);
@@ -39,7 +44,20 @@ export function HeroBalanceCard({
   return (
     <Card className="hero-card" aria-label="Balance overview" role="region">
       <div className="hero-card-section hero-balance">
-        <span className="eyebrow">Available balance</span>
+        <span className="balance-heading">
+          <span className="eyebrow">Available balance</span>
+          <Button
+            aria-label={hideBalances ? "Show balance" : "Hide balance"}
+            className="balance-visibility-button"
+            onClick={() => setHideBalances(!hideBalances)}
+            size="icon"
+            title={hideBalances ? "Show balance" : "Hide balance"}
+            type="button"
+            variant="ghost"
+          >
+            <BalanceVisibilityIcon aria-hidden="true" className="h-4 w-4" />
+          </Button>
+        </span>
         <strong>{balanceLabel}</strong>
       </div>
 

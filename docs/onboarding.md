@@ -91,7 +91,7 @@ docs/                    Durable architecture and onboarding notes
 
 - `useAkahuData` fetches transactions, accounts, and balances from `/api/akahu/*`.
 - `useNetlyApp` combines banking data with category settings, payday settings, period filters, and derived product metrics.
-- `lib/insights.ts` calculates spend totals, recurring merchants, safe-to-spend, insights, and card-fit rankings.
+- `lib/insights.ts` calculates spend totals, recurring merchants, insights, and card-fit rankings.
 - `lib/transaction-display.ts` centralises display-safe transaction values so UI files do not need to know every Akahu shape.
 - `useNetlyApp` returns named shell/page prop groups, and `DashboardViewRouter` passes only the active page's group.
 

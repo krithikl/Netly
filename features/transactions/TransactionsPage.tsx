@@ -1,6 +1,6 @@
 import type { ChangeEvent, TouchEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, ArrowDownUp, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, ReceiptText, Search, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { AlertCircle, ArrowDownUp, CalendarDays, Check, ChevronDown, ReceiptText, Search, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { TransactionList } from "@/features/transactions/TransactionList";
@@ -230,8 +230,6 @@ export function TransactionsPage({
         monthOptions={monthOptions}
         monthSummary={monthSummary}
         onMonthSelect={selectMonth}
-        onNextMonth={selectNextMonth}
-        onPreviousMonth={selectPreviousMonth}
       />
 
       <section className="transaction-workspace">
@@ -363,16 +361,12 @@ function TransactionMonthOverview({
   activeDateRange,
   monthOptions,
   monthSummary,
-  onMonthSelect,
-  onNextMonth,
-  onPreviousMonth
+  onMonthSelect
 }: {
   activeDateRange: TransactionDateRange;
   monthOptions: TransactionMonthOption[];
   monthSummary: TransactionMonthSummary;
   onMonthSelect: (monthDate: Date) => void;
-  onNextMonth: () => void;
-  onPreviousMonth: () => void;
 }) {
   const activeDate = parseInputDate(activeDateRange.from) || new Date();
   const activeMonthKey = getMonthKey(activeDate);
@@ -380,9 +374,6 @@ function TransactionMonthOverview({
   return (
     <section className="transaction-month-overview">
       <div className="transaction-month-carousel" aria-label="Transaction month carousel">
-        <button aria-label="Previous month" className="transaction-month-nav" onClick={onPreviousMonth} type="button">
-          <ChevronLeft aria-hidden="true" className="h-5 w-5" />
-        </button>
         <div className="transaction-month-rail" aria-label="Transaction month">
           {monthOptions.map((option) => (
             <button
@@ -397,9 +388,6 @@ function TransactionMonthOverview({
             </button>
           ))}
         </div>
-        <button aria-label="Next month" className="transaction-month-nav" onClick={onNextMonth} type="button">
-          <ChevronRight aria-hidden="true" className="h-5 w-5" />
-        </button>
       </div>
       <div className="transaction-month-summary" aria-label="Monthly transaction summary">
         <TransactionMonthMetric label="Money out" tone="expense" value={formatMoney(monthSummary.expenses, true)} />

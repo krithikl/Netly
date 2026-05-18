@@ -6,8 +6,10 @@ import {
   categorySettingsVersionStorageKey,
   cardFitIncludedCategoriesStorageKey,
   customCategoriesStorageKey,
+  defaultAccountStorageKey,
   deletedCategoriesStorageKey,
-  hideBalancesStorageKey
+  hideBalancesStorageKey,
+  incomeExcludedCategoriesStorageKey
 } from "@/lib/app/constants";
 import { defaultCategoryColors, defaultTransactionCategories, categoryRollupCategory, netlyPalette } from "@/lib/categories";
 import { parseStoredJson } from "@/lib/app/storage";
@@ -119,6 +121,20 @@ export function readHideBalances() {
   }
 
   throw new Error(`Invalid localStorage key "${hideBalancesStorageKey}": expected "true" or "false", received "${value}".`);
+}
+
+export function readDefaultAccountId() {
+  return window.localStorage.getItem(defaultAccountStorageKey) || "";
+}
+
+export function readIncomeExcludedCategories() {
+  const storedValue = window.localStorage.getItem(incomeExcludedCategoriesStorageKey);
+
+  if (storedValue === null) {
+    return [];
+  }
+
+  return assertStringArray(incomeExcludedCategoriesStorageKey, parseStoredJson<unknown>(incomeExcludedCategoriesStorageKey, storedValue));
 }
 
 // Reads Akahu callback URL params, shows a status message, then cleans the URL

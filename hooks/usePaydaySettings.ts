@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { paydayStorageKey } from "@/lib/app/constants";
 import { parseStoredJson } from "@/lib/app/storage";
-
-const paydayStorageKey = "netly_payday";
 
 type PaydayRule = {
   day: number;

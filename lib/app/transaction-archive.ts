@@ -1,12 +1,18 @@
 "use client";
 
 import {
+  budgetsStorageKey,
   categoryColorsStorageKey,
   categoryOverridesStorageKey,
   categoryRulesStorageKey,
   cardFitIncludedCategoriesStorageKey,
   customCategoriesStorageKey,
-  deletedCategoriesStorageKey
+  dashboardPeriodStorageKey,
+  defaultAccountStorageKey,
+  deletedCategoriesStorageKey,
+  hideBalancesStorageKey,
+  incomeExcludedCategoriesStorageKey,
+  paydayStorageKey
 } from "@/lib/app/constants";
 import { getTransactionDate, getTransactionFallbackSortTimestamp, getTransactionId, getTransactionTimestamp } from "@/lib/transaction-display";
 import type { AccountDataFreshness, LinkedAccount } from "@/lib/app/types";
@@ -36,6 +42,8 @@ export type ArchivedAccountSnapshot = {
 
 export type TransactionArchiveMetadata = {
   accountSnapshot?: ArchivedAccountSnapshot;
+  backupCreatedAt?: string;
+  backupTransactionCount?: number;
   deviceId: string;
   lastDriveSyncAt: string;
   lastLocalUpdateAt: string;
@@ -448,14 +456,21 @@ function getArchiveDeviceId() {
   return next;
 }
 
+// Reads local settings that should move with a user's Drive backup.
 function readPortableSettings() {
   const settingKeys = [
     categoryColorsStorageKey,
     categoryOverridesStorageKey,
     categoryRulesStorageKey,
+    budgetsStorageKey,
     cardFitIncludedCategoriesStorageKey,
     customCategoriesStorageKey,
-    deletedCategoriesStorageKey
+    dashboardPeriodStorageKey,
+    defaultAccountStorageKey,
+    deletedCategoriesStorageKey,
+    hideBalancesStorageKey,
+    incomeExcludedCategoriesStorageKey,
+    paydayStorageKey
   ];
 
   return Object.fromEntries(settingKeys.map((key) => [key, window.localStorage.getItem(key)]));
@@ -477,14 +492,21 @@ function writePortableSettings(settings: Record<string, string | null>) {
   });
 }
 
+// Restricts Drive restore to known settings keys so malformed archives fail loudly.
 function isPortableSettingsKey(key: string) {
   return [
     categoryColorsStorageKey,
     categoryOverridesStorageKey,
     categoryRulesStorageKey,
+    budgetsStorageKey,
     cardFitIncludedCategoriesStorageKey,
     customCategoriesStorageKey,
-    deletedCategoriesStorageKey
+    dashboardPeriodStorageKey,
+    defaultAccountStorageKey,
+    deletedCategoriesStorageKey,
+    hideBalancesStorageKey,
+    incomeExcludedCategoriesStorageKey,
+    paydayStorageKey
   ].includes(key);
 }
 

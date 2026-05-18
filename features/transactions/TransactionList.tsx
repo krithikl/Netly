@@ -52,8 +52,8 @@ type TransactionListProps = {
   isLoadingAll?: boolean;
   isLoadingMore?: boolean;
   onCategoryChange?: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
-  onLoadAll?: () => void;
-  onLoadMore?: () => void;
+  onLoadAll?: () => Promise<void> | void;
+  onLoadMore?: () => Promise<void> | void;
   transactions: Transaction[];
 };
 
@@ -85,6 +85,10 @@ export function TransactionList({
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [detailsTransaction, setDetailsTransaction] = useState<Transaction | null>(null);
   const [visibleCount, setVisibleCount] = useState(initialVisibleTransactionCount);
+  const [isAutoLoading, setIsAutoLoading] = useState(false);
+  const loadSentinelRef = useRef<HTMLDivElement | null>(null);
+  const isAutoLoadingRef = useRef(false);
+  const hasTriggeredFullLoadRef = useRef(false);
   const previousTransactionSignatureRef = useRef("");
   const visibleTransactions = useMemo(() => transactions.slice(0, visibleCount), [transactions, visibleCount]);
   const remainingTransactionCount = Math.max(0, transactions.length - visibleTransactions.length);
@@ -94,14 +98,28 @@ export function TransactionList({
   );
   const closeDetails = useCallback(() => setSelectedTransactionId(null), []);
   const openDetails = useCallback((transactionId: string) => setSelectedTransactionId(transactionId), []);
-  const showMoreTransactions = useCallback(() => {
-    if (remainingTransactionCount > 0) {
-      setVisibleCount((currentCount) => currentCount + visibleTransactionIncrement);
+  const showMoreTransactions = useCallback(async () => {
+    if (isAutoLoadingRef.current || isLoadingAll || isLoadingMore) {
       return;
     }
 
-    onLoadMore?.();
-  }, [onLoadMore, remainingTransactionCount]);
+    isAutoLoadingRef.current = true;
+    setIsAutoLoading(true);
+
+    try {
+      if (hasMore && !hasTriggeredFullLoadRef.current && onLoadAll) {
+        hasTriggeredFullLoadRef.current = true;
+        await onLoadAll();
+      } else if (remainingTransactionCount === 0 && hasMore && onLoadMore) {
+        await onLoadMore();
+      }
+
+      setVisibleCount((currentCount) => currentCount + visibleTransactionIncrement);
+    } finally {
+      isAutoLoadingRef.current = false;
+      setIsAutoLoading(false);
+    }
+  }, [hasMore, isLoadingAll, isLoadingMore, onLoadAll, onLoadMore, remainingTransactionCount]);
 
   useEffect(() => {
     const firstTransactionId = transactions[0] ? getTransactionId(transactions[0]) : "";
@@ -112,12 +130,31 @@ export function TransactionList({
 
     if (!isAppendedPage) {
       setVisibleCount(initialVisibleTransactionCount);
+      hasTriggeredFullLoadRef.current = false;
     }
 
     previousTransactionSignatureRef.current = transactionSignature;
     setSelectedTransactionId(null);
     setDetailsTransaction(null);
   }, [transactions]);
+
+  useEffect(() => {
+    const sentinel = loadSentinelRef.current;
+
+    if (!sentinel || (!hasMore && remainingTransactionCount === 0)) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        void showMoreTransactions();
+      }
+    }, { rootMargin: "280px 0px" });
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [hasMore, remainingTransactionCount, showMoreTransactions]);
 
   useEffect(() => {
     if (selectedTransaction) {
@@ -171,14 +208,12 @@ export function TransactionList({
           })}
         </div>
         {(remainingTransactionCount > 0 || hasMore) && (
-          <div className="transaction-load-actions">
-            <Button className="transaction-load-more" disabled={isLoadingMore || isLoadingAll} onClick={showMoreTransactions} type="button" variant="secondary">
-              {getLoadMoreLabel(remainingTransactionCount, hasMore, isLoadingMore)}
-            </Button>
-            {hasMore && onLoadAll && (
-              <Button className="transaction-load-more" disabled={isLoadingMore || isLoadingAll} onClick={onLoadAll} type="button" variant="outline">
-                {isLoadingAll ? "Loading full range" : "Load all for this range"}
-              </Button>
+          <div className="transaction-load-actions" ref={loadSentinelRef}>
+            {(isAutoLoading || isLoadingAll || isLoadingMore) && (
+              <div className="transaction-loading-more" role="status">
+                <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
+                Loading more transactions...
+              </div>
             )}
           </div>
         )}
@@ -244,18 +279,6 @@ export function TransactionDetailsOverlay({
       transaction={transaction}
     />
   );
-}
-
-function getLoadMoreLabel(remainingTransactionCount: number, hasMore: boolean, isLoadingMore: boolean) {
-  if (isLoadingMore) {
-    return "Loading more";
-  }
-
-  if (remainingTransactionCount > 0) {
-    return `Load ${Math.min(visibleTransactionIncrement, remainingTransactionCount)} more`;
-  }
-
-  return hasMore ? "Load more from Akahu" : "Load more";
 }
 
 type TransactionRowProps = {

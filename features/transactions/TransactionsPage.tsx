@@ -20,6 +20,7 @@ import { SelectField } from "@/components/ui/select-field";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
 import { filterTransactionsByDateRange, formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
+import { isIncomeCategoryExcluded } from "@/lib/reporting";
 import { type CategoryEditScope } from "@/lib/category-rules";
 import { getTransactionCategory } from "@/lib/transaction-display";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
@@ -817,12 +818,10 @@ function addMonths(date: Date, offset: number) {
 
 // Totals money movement for the active month before search/filter narrowing.
 function getTransactionMonthSummary(transactions: Transaction[], incomeExcludedCategories: string[]): TransactionMonthSummary {
-  const excludedIncomeCategorySet = new Set(incomeExcludedCategories);
-
   return transactions.reduce<TransactionMonthSummary>((summary, transaction) => {
     if (transaction.amount < 0) {
       summary.expenses += Math.abs(transaction.amount);
-    } else if (!excludedIncomeCategorySet.has(getTransactionCategory(transaction))) {
+    } else if (!isIncomeCategoryExcluded(getTransactionCategory(transaction), incomeExcludedCategories)) {
       summary.income += transaction.amount;
       summary.net += transaction.amount;
       return summary;

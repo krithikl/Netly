@@ -15,6 +15,7 @@ import type { DataMode } from "@/lib/app/types";
 import { cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, getDefaultCardFitIncludedCategories, spendByCategory, sum } from "@/lib/insights";
 import { filterTransactionsByDateRange, filterTransactionsByPeriod, getThisMonthDateRange, getTransactionPeriodDateRange } from "@/lib/periods";
+import { isIncomeCategoryExcluded } from "@/lib/reporting";
 import { getTransactionCategory, getTransactionDate, transactionNeedsReview } from "@/lib/transaction-display";
 import { defaultAccountStorageKey, hideBalancesStorageKey, incomeExcludedCategoriesStorageKey, periods } from "@/lib/app/constants";
 import { getTransactionAccountOptions } from "@/features/transactions/transactionLogic";
@@ -58,10 +59,6 @@ export function useNetlyApp() {
     () => applyCategoryPreferences(banking.transactions, categories.categoryOverrides, categories.categoryRules),
     [banking.transactions, categories.categoryOverrides, categories.categoryRules]
   );
-  const transactionPageWorkingTransactions = useMemo(
-    () => applyCategoryPreferences(banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules),
-    [banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules]
-  );
   const refreshTransactionPageRange = useCallback((dateRange = transactionPageDateRange) => {
     setTransactionPageDateRange(dateRange);
     banking.refreshTransactionPage(banking.dataMode, dateRange).catch((error: unknown) => {
@@ -69,8 +66,8 @@ export function useNetlyApp() {
     });
   }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage, transactionPageDateRange]);
   const selectTransactionMonthRange = useCallback((dateRange: typeof transactionPageDateRange) => {
-    setTransactionPageDateRange(dateRange);
-  }, []);
+    refreshTransactionPageRange(dateRange);
+  }, [refreshTransactionPageRange]);
   const connection = useAkahuConnection({
     refreshTransactions: banking.refreshTransactions,
     setDataMode: banking.setDataMode,
@@ -391,7 +388,7 @@ export function useNetlyApp() {
         onLoadAllTransactions: loadAllUserTransactions,
         onLoadMoreTransactions: loadMoreAndSyncUserTransactions,
         openPreset: transactionOpenPreset,
-        transactions: transactionPageWorkingTransactions
+        transactions: workingTransactions
       }
     }
   };
@@ -433,8 +430,7 @@ function getReportableTransactions(transactions: ReturnType<typeof applyCategory
     return transactions;
   }
 
-  const excludedCategorySet = new Set(excludedIncomeCategories);
-  return transactions.filter((transaction) => transaction.amount <= 0 || !excludedCategorySet.has(getTransactionCategory(transaction)));
+  return transactions.filter((transaction) => transaction.amount <= 0 || !isIncomeCategoryExcluded(getTransactionCategory(transaction), excludedIncomeCategories));
 }
 
 // Keeps the donut chart readable by grouping small categories into a visual roll-up.

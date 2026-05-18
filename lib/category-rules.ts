@@ -5,6 +5,7 @@ export type CategoryEditScope = "transaction" | "similar";
 export type CategoryRuleMap = Record<string, string>;
 
 const ampersandPattern = /\s*&\s*/g;
+const hyphenSpacingPattern = /\s*-\s*/g;
 const whitespacePattern = /\s+/g;
 
 export function getRawAkahuPersonalFinanceCategory(transaction: Transaction) {
@@ -42,7 +43,9 @@ export function applyCategoryPreference(
   categoryRules: CategoryRuleMap
 ) {
   const categoryOverride = normalizeDisplayText(categoryOverrides[getCategoryTransactionId(transaction)]);
-  const categoryRule = normalizeDisplayText(categoryRules[getCategoryLearningRuleKey(transaction)]);
+  const categoryRule = getCategoryLearningRuleKeys(transaction)
+    .map((ruleKey) => normalizeDisplayText(categoryRules[ruleKey]))
+    .find(Boolean) || "";
   const netlyFields = {
     ...transaction.netly,
     categoryOverride: categoryOverride || undefined,
@@ -63,7 +66,29 @@ export function applyCategoryPreference(
   };
 }
 
+// Returns the preferred category learning key, with older keys retained for restored backups.
+export function getCategoryLearningRuleKeys(transaction: Transaction) {
+  return uniqueStrings([
+    getCategoryLearningRuleKey(transaction),
+    getLegacyCategoryLearningRuleKey(transaction)
+  ]);
+}
+
+// Builds a rule key from merchant/category data and bank text when merchant data is unavailable.
 export function getCategoryLearningRuleKey(transaction: Transaction) {
+  const merchantKey = transaction.merchant?._id
+    ? `merchant-id:${normalizeCategoryLabel(transaction.merchant._id)}`
+    : `bank-text:${getCategoryBankTextSignature(transaction) || normalizeCategoryLabel(getCategoryMerchant(transaction))}`;
+  const sourceCategoryKey = transaction.category?._id
+    ? `category-id:${normalizeCategoryLabel(transaction.category._id)}`
+    : `category-name:${normalizeCategoryLabel(getRawAkahuCategory(transaction) || needsReviewCategory)}`;
+  const groupKey = `group:${normalizeCategoryLabel(getRawAkahuPersonalFinanceCategory(transaction) || needsReviewCategory)}`;
+
+  return [merchantKey, sourceCategoryKey, groupKey].join("|");
+}
+
+// Preserves matching for category rules created before bank text was part of the key.
+function getLegacyCategoryLearningRuleKey(transaction: Transaction) {
   const merchantKey = transaction.merchant?._id
     ? `merchant-id:${normalizeCategoryLabel(transaction.merchant._id)}`
     : `merchant-name:${normalizeCategoryLabel(getCategoryMerchant(transaction))}`;
@@ -87,6 +112,7 @@ export function normalizeCategoryLabel(value: unknown) {
   return normalizeDisplayText(value)
     .toLowerCase()
     .replace(ampersandPattern, " and ")
+    .replace(hyphenSpacingPattern, "-")
     .replace(whitespacePattern, " ");
 }
 
@@ -119,7 +145,27 @@ function getCategoryMerchant(transaction: Transaction) {
   ]);
 }
 
+// Combines raw bank fields so transfers without merchant enrichment can still be learned.
+function getCategoryBankTextSignature(transaction: Transaction) {
+  return normalizeCategoryLabel([
+    transaction.description,
+    transaction.meta?.particulars,
+    transaction.meta?.code,
+    transaction.meta?.reference,
+    transaction.meta?.other_account,
+    transaction.type
+  ].filter(isUsefulText).join("|"));
+}
+
 function firstUsefulText(values: Array<unknown>, fallback = "Unknown transaction") {
-  const value = values.find((item) => typeof item === "string" && item.trim().length > 0);
+  const value = values.find(isUsefulText);
   return String(value || fallback).trim();
+}
+
+function isUsefulText(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values.filter(Boolean))];
 }

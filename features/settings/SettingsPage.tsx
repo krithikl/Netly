@@ -2,6 +2,16 @@ import { useState, type ReactNode } from "react";
 import { CloudDownload, CloudUpload, FolderClock, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -253,11 +263,14 @@ type DataBackupSettingsProps = {
 // Manual Google Drive backup and restore controls for the hidden app data folder.
 function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnect, onRefreshBackups, onRestore }: DataBackupSettingsProps) {
   const [selectedBackupId, setSelectedBackupId] = useState("");
+  const [backupToDelete, setBackupToDelete] = useState<DriveBackupEntry | null>(null);
   const [deletingBackupId, setDeletingBackupId] = useState("");
+  const [restoringBackupId, setRestoringBackupId] = useState("");
   const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
   const [backupPanelMode, setBackupPanelMode] = useState<"backups" | "restore" | null>(null);
   const isBottomNavigation = useIsBottomNavigation();
   const isBusy = driveBackup.status === "syncing" || driveBackup.isLoadingBackups;
+  const isRestoringBackup = restoringBackupId.length > 0;
   const selectedBackup = driveBackup.backups.find((backup) => backup.id === selectedBackupId) || driveBackup.backups[0] || null;
   const openBackupPanel = (mode: "backups" | "restore") => {
     setBackupPanelMode(mode);
@@ -276,28 +289,33 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
       return;
     }
 
+    const backup = selectedBackup;
+    const toastId = toast.loading("Restoring Google Drive backup...");
+
     try {
-      await onRestore(selectedBackup.id);
-      toast.success("Backup restored");
+      setRestoringBackupId(backup.id);
+      await onRestore(backup.id);
+      toast.success("Backup restored", { id: toastId });
       setRestoreDialogOpen(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Google Drive restore failed.");
+      toast.error(error instanceof Error ? error.message : "Google Drive restore failed.", { id: toastId });
+    } finally {
+      setRestoringBackupId("");
     }
   };
-  const deleteBackup = async (backup: DriveBackupEntry) => {
-    const confirmed = window.confirm(`Delete ${backup.name} from Google Drive backups?`);
-
-    if (!confirmed) {
+  const deleteBackup = async () => {
+    if (!backupToDelete) {
       return;
     }
 
     try {
-      setDeletingBackupId(backup.id);
-      const nextBackups = await onDeleteBackup(backup.id);
-      if (selectedBackupId === backup.id) {
+      setDeletingBackupId(backupToDelete.id);
+      const nextBackups = await onDeleteBackup(backupToDelete.id);
+      if (selectedBackupId === backupToDelete.id) {
         setSelectedBackupId(nextBackups[0]?.id || "");
       }
       toast.success("Backup deleted");
+      setBackupToDelete(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Google Drive backup delete failed.");
     } finally {
@@ -352,7 +370,7 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
         isLoading={driveBackup.isLoadingBackups}
         isMobile={isBottomNavigation}
         mode={backupPanelMode}
-        onDeleteBackup={(backup) => void deleteBackup(backup)}
+        onDeleteBackup={setBackupToDelete}
         onOpenChange={(isOpen) => {
           if (!isOpen) {
             setBackupPanelMode(null);
@@ -363,7 +381,59 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
           setRestoreDialogOpen(true);
         }}
       />
-      <Dialog onOpenChange={setRestoreDialogOpen} open={restoreDialogOpen}>
+      <AlertDialog
+        onOpenChange={(isOpen) => {
+          if (!isOpen && !deletingBackupId) {
+            setBackupToDelete(null);
+          }
+        }}
+        open={backupToDelete !== null}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this backup?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes the backup from Google Drive app data. You will not be able to restore from this file again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {backupToDelete && (
+            <div className="settings-restore-summary">
+              <strong>{formatBackupTimestamp(backupToDelete.timestamp)}</strong>
+              <span>{backupToDelete.name}</span>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={Boolean(deletingBackupId)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-[var(--danger)] text-white hover:bg-[var(--danger)]"
+              disabled={Boolean(deletingBackupId)}
+              onClick={(event) => {
+                event.preventDefault();
+                void deleteBackup();
+              }}
+            >
+              {deletingBackupId ? (
+                <>
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  Deleting
+                </>
+              ) : (
+                "Delete backup"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <Dialog
+        onOpenChange={(isOpen) => {
+          if (!isOpen && isRestoringBackup) {
+            return;
+          }
+
+          setRestoreDialogOpen(isOpen);
+        }}
+        open={restoreDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Restore selected backup?</DialogTitle>
@@ -379,12 +449,19 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
           )}
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button disabled={isRestoringBackup} type="button" variant="outline">
                 Cancel
               </Button>
             </DialogClose>
-            <Button disabled={isBusy || !selectedBackup} onClick={() => void restoreSelectedBackup()} type="button">
-              Restore backup
+            <Button disabled={isBusy || isRestoringBackup || !selectedBackup} onClick={() => void restoreSelectedBackup()} type="button">
+              {isRestoringBackup ? (
+                <>
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  Restoring
+                </>
+              ) : (
+                "Restore backup"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

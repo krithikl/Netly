@@ -5,6 +5,8 @@ import {
   categoryColorsStorageKey,
   categoryOverridesStorageKey,
   categoryRulesStorageKey,
+  categorySettingsVersion,
+  categorySettingsVersionStorageKey,
   cardFitIncludedCategoriesStorageKey,
   customCategoriesStorageKey,
   dashboardPeriodStorageKey,
@@ -462,6 +464,7 @@ function readPortableSettings() {
     categoryColorsStorageKey,
     categoryOverridesStorageKey,
     categoryRulesStorageKey,
+    categorySettingsVersionStorageKey,
     budgetsStorageKey,
     cardFitIncludedCategoriesStorageKey,
     customCategoriesStorageKey,
@@ -490,6 +493,8 @@ function writePortableSettings(settings: Record<string, string | null>) {
 
     window.localStorage.setItem(key, value);
   });
+
+  window.localStorage.setItem(categorySettingsVersionStorageKey, categorySettingsVersion);
 }
 
 // Restricts Drive restore to known settings keys so malformed archives fail loudly.
@@ -498,6 +503,7 @@ function isPortableSettingsKey(key: string) {
     categoryColorsStorageKey,
     categoryOverridesStorageKey,
     categoryRulesStorageKey,
+    categorySettingsVersionStorageKey,
     budgetsStorageKey,
     cardFitIncludedCategoriesStorageKey,
     customCategoriesStorageKey,

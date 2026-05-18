@@ -23,6 +23,7 @@ import {
   applyCategoryPreferences,
   categoriesMatch,
   getCategoryLearningRuleKey,
+  getCategoryLearningRuleKeys,
   getRawAkahuPersonalFinanceCategory,
   normalizeDisplayText,
   type CategoryEditScope,
@@ -71,6 +72,7 @@ export function useCategorySettings(
     const normalizedCategory = normalizeDisplayText(category);
     const rawAkahuGroup = getRawAkahuPersonalFinanceCategory(transaction) || needsReviewCategory;
     const ruleKey = getCategoryLearningRuleKey(transaction);
+    const ruleKeys = getCategoryLearningRuleKeys(transaction);
 
     if (scope === "similar") {
       const nextRules = { ...categoryRules };
@@ -78,9 +80,10 @@ export function useCategorySettings(
       delete nextOverrides[getTransactionId(transaction)];
 
       if (categoriesMatch(normalizedCategory, rawAkahuGroup)) {
-        delete nextRules[ruleKey];
+        ruleKeys.forEach((currentRuleKey) => delete nextRules[currentRuleKey]);
       } else {
         nextRules[ruleKey] = normalizedCategory;
+        ruleKeys.filter((currentRuleKey) => currentRuleKey !== ruleKey).forEach((currentRuleKey) => delete nextRules[currentRuleKey]);
       }
 
       setCategoryRules(nextRules);
@@ -91,7 +94,7 @@ export function useCategorySettings(
     }
 
     const nextOverrides = { ...categoryOverrides };
-    const matchingRuleCategory = categoryRules[ruleKey];
+    const matchingRuleCategory = ruleKeys.map((currentRuleKey) => categoryRules[currentRuleKey]).find(Boolean);
 
     if (categoriesMatch(normalizedCategory, rawAkahuGroup) && !matchingRuleCategory) {
       delete nextOverrides[getTransactionId(transaction)];

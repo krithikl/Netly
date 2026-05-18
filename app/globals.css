@@ -1707,8 +1707,7 @@ h2 {
   min-width: 0;
 }
 
-.settings-backup-list-item,
-.settings-restore-summary {
+.settings-backup-list-item {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
@@ -1718,6 +1717,18 @@ h2 {
   border: 1px solid var(--outline-soft);
   border-radius: 16px;
   padding: 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+}
+
+.settings-restore-summary {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 1px solid var(--outline-soft);
+  border-radius: 16px;
+  padding: 16px 20px;
   background: var(--surface-2);
   color: var(--ink);
   text-align: left;
@@ -1774,14 +1785,19 @@ h2 {
 }
 
 .settings-backup-list strong,
-.settings-backup-list small,
-.settings-restore-summary strong,
-.settings-restore-summary span {
+.settings-backup-list small {
   display: block;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.settings-restore-summary strong,
+.settings-restore-summary span {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .settings-backup-list small,
@@ -1892,14 +1908,44 @@ h2 {
   padding: 8px 12px;
   font-size: 0.82rem;
   font-weight: 850;
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
 }
 
 .settings-category-toggle-grid button:hover,
-.settings-category-toggle-grid button:focus-visible,
+.settings-category-toggle-grid button:focus-visible {
+  border-color: var(--outline);
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
 .settings-category-toggle-grid button.active {
   border-color: var(--primary-border);
   background: var(--primary);
   color: var(--accent-cream);
+}
+
+.settings-category-toggle-grid button.active:hover,
+.settings-category-toggle-grid button.active:focus-visible {
+  border-color: var(--primary-border);
+  background: var(--primary-hover);
+  color: var(--accent-cream);
+}
+
+@media (hover: none) {
+  .settings-category-toggle-grid button:hover {
+    border-color: var(--outline-soft);
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+
+  .settings-category-toggle-grid button.active:hover {
+    border-color: var(--primary-border);
+    background: var(--primary);
+    color: var(--accent-cream);
+  }
 }
 
 .settings-drive-card h3 {
@@ -2412,9 +2458,17 @@ h2 {
   text-align: left;
 }
 
-.category-multi-select-content button:hover,
-.category-multi-select-content button.active {
+.category-multi-select-content button:hover {
   background: var(--surface-2);
+}
+
+.category-multi-select-content button.active {
+  background: var(--primary-soft);
+  color: var(--secondary);
+}
+
+.category-multi-select-content button.active:hover {
+  background: rgba(183, 145, 76, 0.22);
 }
 
 .category-multi-select-check {

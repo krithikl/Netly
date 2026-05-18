@@ -20,7 +20,9 @@ import { SelectField } from "@/components/ui/select-field";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
 import { filterTransactionsByDateRange, formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
+import { isIncomeCategoryExcluded } from "@/lib/reporting";
 import { type CategoryEditScope } from "@/lib/category-rules";
+import { getTransactionCategory } from "@/lib/transaction-display";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionAccountOption, TransactionFilter, TransactionSort } from "@/lib/app/types";
 import {
@@ -43,8 +45,10 @@ type TransactionsPageProps = {
   accountOptions: TransactionAccountOption[];
   categoryColors: Record<string, string>;
   categoryOptions: string[];
+  defaultAccountId: string;
   hasMoreTransactions: boolean;
   initialDateRange: TransactionDateRange;
+  incomeExcludedCategories: string[];
   isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
   isLoadingTransactions: boolean;
@@ -66,8 +70,10 @@ export function TransactionsPage({
   accountOptions,
   categoryColors,
   categoryOptions,
+  defaultAccountId,
   hasMoreTransactions,
   initialDateRange,
+  incomeExcludedCategories,
   isLoadingAllTransactions,
   isLoadingMoreTransactions,
   isLoadingTransactions,
@@ -82,7 +88,7 @@ export function TransactionsPage({
   const [query, setQuery] = useState("");
   const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("All");
   const [transactionSort, setTransactionSort] = useState<TransactionSort>("Newest");
-  const [transactionAccounts, setTransactionAccounts] = useState<string[]>([]);
+  const [transactionAccounts, setTransactionAccounts] = useState<string[]>(() => getDefaultAccountFilter(defaultAccountId));
   const [transactionCategory, setTransactionCategory] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState(initialDateRange);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -95,7 +101,8 @@ export function TransactionsPage({
   const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
   const dateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactions, dateRange), [dateRange, transactions]);
   const monthOptions = useMemo(() => getTransactionMonthOptions(dateRange), [dateRange]);
-  const monthSummary = useMemo(() => getTransactionMonthSummary(dateRangeTransactions), [dateRangeTransactions]);
+  const monthSummaryTransactions = useMemo(() => filterTransactionsByAccount(dateRangeTransactions, transactionAccounts), [dateRangeTransactions, transactionAccounts]);
+  const monthSummary = useMemo(() => getTransactionMonthSummary(monthSummaryTransactions, incomeExcludedCategories), [incomeExcludedCategories, monthSummaryTransactions]);
   const shownTransactions = useMemo(
     () => getVisibleTransactions(dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
     [dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
@@ -109,7 +116,7 @@ export function TransactionsPage({
   const [pageSwipeStart, setPageSwipeStart] = useState<{ x: number; y: number } | null>(null);
   const changeDateRange = (nextDateRange: TransactionDateRange) => {
     setDateRange(nextDateRange);
-    setTransactionAccounts([]);
+    setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
     setTransactionCategory([]);
     onDateRangeChange(nextDateRange);
   };
@@ -124,13 +131,13 @@ export function TransactionsPage({
     setMonthCarouselDirection(nextMonth.getTime() >= currentMonth.getTime() ? "next" : "previous");
     setMonthCarouselPhase((phase) => phase === "a" ? "b" : "a");
     setDateRange(nextDateRange);
-    setTransactionAccounts([]);
+    setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
     setTransactionCategory([]);
     onMonthRangeChange(nextDateRange);
   };
   const resetFilters = () => {
     setTransactionFilter("All");
-    setTransactionAccounts([]);
+    setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
     setTransactionCategory([]);
   };
   const selectMonth = (monthDate: Date) => changeMonthRange(getMonthDateRange(monthDate));
@@ -207,14 +214,18 @@ export function TransactionsPage({
 
     setQuery(openPreset.query || "");
     setTransactionFilter(openPreset.transactionFilter || "All");
-    setTransactionAccounts([]);
+    setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
     setTransactionCategory(openPreset.transactionCategory || []);
 
     if (openPreset.dateRange) {
       setDateRange(openPreset.dateRange);
       onDateRangeChange(openPreset.dateRange);
     }
-  }, [openPreset, onDateRangeChange]);
+  }, [defaultAccountId, openPreset, onDateRangeChange]);
+
+  useEffect(() => {
+    setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
+  }, [defaultAccountId]);
 
   return (
     <section
@@ -806,17 +817,34 @@ function addMonths(date: Date, offset: number) {
 }
 
 // Totals money movement for the active month before search/filter narrowing.
-function getTransactionMonthSummary(transactions: Transaction[]): TransactionMonthSummary {
+function getTransactionMonthSummary(transactions: Transaction[], incomeExcludedCategories: string[]): TransactionMonthSummary {
   return transactions.reduce<TransactionMonthSummary>((summary, transaction) => {
     if (transaction.amount < 0) {
       summary.expenses += Math.abs(transaction.amount);
-    } else {
+    } else if (!isIncomeCategoryExcluded(getTransactionCategory(transaction), incomeExcludedCategories)) {
       summary.income += transaction.amount;
+      summary.net += transaction.amount;
+      return summary;
     }
 
-    summary.net += transaction.amount;
+    if (transaction.amount < 0) {
+      summary.net += transaction.amount;
+    }
+
     return summary;
   }, { expenses: 0, income: 0, net: 0 });
+}
+
+function getDefaultAccountFilter(defaultAccountId: string) {
+  return defaultAccountId ? [defaultAccountId] : [];
+}
+
+function filterTransactionsByAccount(transactions: Transaction[], accountIds: string[]) {
+  if (accountIds.length === 0) {
+    return transactions;
+  }
+
+  return transactions.filter((transaction) => accountIds.includes(transaction._account || ""));
 }
 
 // Stable month key used by the rail active state.

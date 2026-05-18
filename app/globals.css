@@ -896,11 +896,27 @@ h2 {
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+  min-height: 48px;
   margin: 16px auto 0;
 }
 
 .transaction-load-more {
   width: fit-content;
+}
+
+.transaction-loading-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 850;
 }
 
 .transaction-ledger {
@@ -1587,6 +1603,349 @@ h2 {
   align-items: start;
 }
 
+.settings-section {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-section-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.settings-section-heading h2,
+.settings-section-heading h3,
+.settings-income-exclusions h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.settings-section-heading p,
+.settings-income-exclusions p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.settings-section-body {
+  display: grid;
+  gap: 14px;
+}
+
+.settings-backup-card {
+  gap: 16px;
+}
+
+.settings-backup-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-backup-actions button {
+  display: grid;
+  min-height: 82px;
+  place-items: center;
+  gap: 8px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 18px;
+  background: var(--surface-2);
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 900;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease);
+}
+
+.settings-backup-actions button:hover,
+.settings-backup-actions button:focus-visible {
+  border-color: var(--primary-border);
+  background: var(--surface-3);
+}
+
+.settings-backup-actions button:active {
+  transform: scale(0.985);
+}
+
+.settings-backup-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.settings-backup-actions svg {
+  color: var(--accent-cream);
+}
+
+.settings-backup-list,
+.settings-reporting-grid,
+.settings-card-fit {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-backup-list {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  margin: 0;
+  min-height: 0;
+  list-style: none;
+  max-height: min(520px, calc(100dvh - 190px));
+  overflow-y: auto;
+  padding: 0 4px 0 0;
+}
+
+.settings-backup-list li {
+  min-width: 0;
+}
+
+.settings-backup-list-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+}
+
+.settings-restore-summary {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 1px solid var(--outline-soft);
+  border-radius: 16px;
+  padding: 16px 20px;
+  background: var(--surface-2);
+  color: var(--ink);
+  text-align: left;
+}
+
+.settings-backup-list button.settings-backup-list-item {
+  cursor: pointer;
+  font: inherit;
+}
+
+.settings-backup-list button.settings-backup-list-item:hover,
+.settings-backup-list button.settings-backup-list-item:focus-visible {
+  border-color: var(--primary-border);
+  background: var(--primary-soft);
+}
+
+.settings-backup-list em {
+  border: 1px solid var(--primary-border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: var(--accent-cream);
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.settings-backup-delete {
+  display: inline-grid;
+  place-items: center;
+  justify-self: end;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 12px;
+  background: var(--surface-3);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.settings-backup-delete:hover,
+.settings-backup-delete:focus-visible {
+  border-color: rgba(255, 125, 145, 0.34);
+  background: rgba(255, 125, 145, 0.12);
+  color: var(--danger);
+}
+
+.settings-backup-delete:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.settings-backup-list strong,
+.settings-backup-list small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-restore-summary strong,
+.settings-restore-summary span {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settings-backup-list small,
+.settings-restore-summary span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.settings-backup-sheet {
+  display: grid;
+  align-content: stretch;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 18px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.settings-backup-sheet .settings-backup-list {
+  height: 100%;
+  max-height: none;
+}
+
+.settings-backup-sheet .settings-backup-panel-empty {
+  align-self: start;
+}
+
+.settings-backup-drawer {
+  height: min(82dvh, 720px);
+}
+
+.settings-backup-drawer .settings-backup-list,
+.settings-backup-drawer .settings-backup-panel-empty {
+  padding: 0 16px calc(18px + env(safe-area-inset-bottom));
+}
+
+.settings-backup-panel-empty {
+  display: grid;
+  min-height: 120px;
+  place-items: center;
+  border: 1px solid var(--outline-soft);
+  border-radius: 16px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 850;
+  text-align: center;
+}
+
+.settings-select-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 16px;
+  padding: 14px;
+  background: var(--surface-2);
+}
+
+.settings-select-row strong,
+.settings-select-row small {
+  display: block;
+}
+
+.settings-select-row small {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.settings-select-row select {
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px 12px;
+  font-weight: 850;
+}
+
+.settings-income-exclusions {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-category-toggle-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-category-toggle-grid button {
+  min-height: 36px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-weight: 850;
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.settings-category-toggle-grid button:hover {
+  border-color: var(--outline);
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.settings-category-toggle-grid button.active {
+  border-color: var(--primary-border);
+  background: var(--primary);
+  color: var(--accent-cream);
+}
+
+.settings-category-toggle-grid button.active:hover {
+  border-color: var(--primary-border);
+  background: var(--primary-hover);
+  color: var(--accent-cream);
+}
+
+@media (hover: none) {
+  .settings-category-toggle-grid button:hover {
+    border-color: var(--outline-soft);
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+
+  .settings-category-toggle-grid button.active:hover {
+    border-color: var(--primary-border);
+    background: var(--primary);
+    color: var(--accent-cream);
+  }
+}
+
 .settings-drive-card h3 {
   margin: 0;
   color: var(--ink);
@@ -1730,9 +2089,8 @@ h2 {
 
 .transaction-month-carousel {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
 }
 
 .transaction-month-rail {
@@ -1745,24 +2103,6 @@ h2 {
   background: var(--surface);
   padding: 6px;
   box-shadow: var(--shadow-soft);
-}
-
-.transaction-month-nav {
-  display: grid;
-  width: 44px;
-  height: 44px;
-  place-items: center;
-  border: 1px solid var(--outline-soft);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.transaction-month-nav:hover,
-.transaction-month-nav:focus-visible {
-  border-color: var(--primary-border);
-  color: var(--accent-cream);
 }
 
 .transaction-month-rail button {
@@ -2116,9 +2456,17 @@ h2 {
   text-align: left;
 }
 
-.category-multi-select-content button:hover,
-.category-multi-select-content button.active {
+.category-multi-select-content button:hover {
   background: var(--surface-2);
+}
+
+.category-multi-select-content button.active {
+  background: var(--primary-soft);
+  color: var(--secondary);
+}
+
+.category-multi-select-content button.active:hover {
+  background: rgba(183, 145, 76, 0.22);
 }
 
 .category-multi-select-check {
@@ -3898,6 +4246,33 @@ h2 {
     align-self: center;
   }
 
+  .settings-backup-drawer-header.settings-backup-drawer-header {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: start;
+    gap: 4px 12px;
+    padding: 16px 16px 12px;
+    text-align: left;
+  }
+
+  .settings-backup-drawer-header h2 {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .settings-backup-drawer-header p {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+    text-align: left;
+  }
+
+  .settings-backup-drawer-header .mobile-filter-close {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: start;
+  }
+
   .mobile-filter-section {
     display: grid;
     gap: 10px;
@@ -4232,6 +4607,22 @@ h2 {
 
   .settings-drive-status {
     width: fit-content;
+  }
+
+  .settings-backup-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .settings-backup-actions button {
+    min-height: 92px;
+    border-radius: 16px;
+    padding: 10px 6px;
+    font-size: 0.82rem;
+  }
+
+  .settings-select-row {
+    grid-template-columns: 1fr;
   }
 
   .settings-freshness-grid {
@@ -5056,14 +5447,8 @@ body {
   }
 
   .transaction-month-carousel {
-    grid-template-columns: 38px minmax(0, 1fr) 38px;
-    gap: 6px;
+    grid-template-columns: minmax(0, 1fr);
     padding-inline: 12px;
-  }
-
-  .transaction-month-nav {
-    width: 38px;
-    height: 38px;
   }
 
   .transaction-month-rail {

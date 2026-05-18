@@ -21,6 +21,7 @@ import {
   SheetHeader,
   SheetTitle
 } from "@/components/ui/sheet";
+import { budgetsStorageKey } from "@/lib/app/constants";
 import { formatMoney } from "@/lib/insights";
 import type { RecurringMerchant } from "@/lib/types";
 
@@ -45,7 +46,6 @@ type BudgetFormState = {
   name: string;
 };
 
-const budgetStorageKey = "netly_user_budgets";
 const collapsedBudgetLimit = 3;
 
 // Budget screen with user-defined budgets calculated from selected categories.
@@ -448,7 +448,7 @@ function getEmptyBudgetForm(): BudgetFormState {
 // Reads persisted budgets, using an empty list when no budget has been saved.
 function readSavedBudgets() {
   const storage = getBudgetStorage();
-  const storedBudgets = storage?.getItem(budgetStorageKey);
+  const storedBudgets = storage?.getItem(budgetsStorageKey);
 
   if (!storedBudgets) {
     return [];
@@ -510,7 +510,7 @@ function persistBudgetStorage(budgets: UserBudget[], setBudgetStorageError: (mes
   }
 
   try {
-    storage.setItem(budgetStorageKey, JSON.stringify(budgets));
+    storage.setItem(budgetsStorageKey, JSON.stringify(budgets));
     setBudgetStorageError("");
   } catch {
     setBudgetStorageError("Budget changes are saved for this session only because browser storage could not be written.");

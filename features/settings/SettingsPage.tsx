@@ -1,7 +1,17 @@
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { CloudDownload, CloudUpload, FolderClock, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,54 +23,85 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerHeaderClose,
+  DrawerTitle
+} from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle
+} from "@/components/ui/sheet";
+import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { netlyPalette } from "@/lib/categories";
 import { categoriesMatch } from "@/lib/category-rules";
 import { periods } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
 import type { DriveBackupState } from "@/hooks/useDriveBackup";
-import type { AkahuDataFreshness, DataMode } from "@/lib/app/types";
+import type { DriveBackupEntry } from "@/lib/app/drive-backup";
+import type { AkahuDataFreshness, DataMode, TransactionAccountOption } from "@/lib/app/types";
 import type { PeriodOption } from "@/lib/types";
 
 type SettingsPageProps = {
+  accountOptions: TransactionAccountOption[];
   akahuDataFreshness: AkahuDataFreshness;
   cardFitAvailableCategories: string[];
   cardFitIncludedCategories: string[];
   categoryColors: Record<string, string>;
   dataMode: DataMode;
   dashboardPeriod: PeriodOption;
+  defaultAccountId: string;
   defaultCategories: string[];
   deleteCategory: (category: string) => void;
   driveBackup: DriveBackupState;
+  incomeExcludedCategories: string[];
   onConnectDriveBackup: () => Promise<void>;
   onCreateCategory: (category: string) => void;
+  onDeleteDriveBackup: (fileId: string) => Promise<DriveBackupEntry[]>;
   onDisconnectDriveBackup: () => void;
-  onRestoreDriveBackup: () => Promise<void>;
+  onRefreshDriveBackups: () => Promise<DriveBackupEntry[]>;
+  onRestoreDriveBackup: (fileId: string) => Promise<void>;
+  setDefaultAccountId: (accountId: string) => void;
   showDashboardPeriodSetting: boolean;
   setDashboardPeriod: (period: PeriodOption) => void;
   updateCardFitIncludedCategories: (categories: string[]) => void;
   updateCategoryColor: (category: string, color: string) => void;
+  updateIncomeExcludedCategories: (categories: string[]) => void;
 };
 
 // Settings screen for managing category colours and hiding unused categories.
 export function SettingsPage({
+  accountOptions,
   akahuDataFreshness,
   cardFitAvailableCategories,
   cardFitIncludedCategories,
   categoryColors,
   dataMode,
   dashboardPeriod,
+  defaultAccountId,
   defaultCategories,
   deleteCategory,
   driveBackup,
+  incomeExcludedCategories,
   onConnectDriveBackup,
   onCreateCategory,
+  onDeleteDriveBackup,
   onDisconnectDriveBackup,
+  onRefreshDriveBackups,
   onRestoreDriveBackup,
+  setDefaultAccountId,
   showDashboardPeriodSetting,
   setDashboardPeriod,
   updateCardFitIncludedCategories,
-  updateCategoryColor
+  updateCategoryColor,
+  updateIncomeExcludedCategories
 }: SettingsPageProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
@@ -86,8 +127,20 @@ export function SettingsPage({
   return (
     <section className="view-stack" data-testid="settings-page" suppressHydrationWarning>
       <MobilePageHeader title="Settings" />
-      {showDashboardPeriodSetting && (
-        <section className="material-card">
+
+      <SettingsSection title="Data backup" description="Create and restore encrypted Netly backups from Google Drive app data.">
+        <DataBackupSettings
+          driveBackup={driveBackup}
+          onBackup={onConnectDriveBackup}
+          onDeleteBackup={onDeleteDriveBackup}
+          onDisconnect={onDisconnectDriveBackup}
+          onRefreshBackups={onRefreshDriveBackups}
+          onRestore={onRestoreDriveBackup}
+        />
+      </SettingsSection>
+
+      <SettingsSection title="General settings" description="Defaults used when Netly opens.">
+        {showDashboardPeriodSetting && (
           <div className="settings-period-control">
             <div>
               <h3>Default dashboard period</h3>
@@ -107,59 +160,30 @@ export function SettingsPage({
               ))}
             </div>
           </div>
-        </section>
-      )}
-
-      <section className="material-card">
+        )}
         <AkahuFreshnessCard dataMode={dataMode} freshness={akahuDataFreshness} />
-      </section>
+      </SettingsSection>
 
-      <section className="material-card">
+      <SettingsSection title="Transaction reporting" description="Choose what Netly includes in dashboard and summary totals.">
+        <ReportingSettings
+          accountOptions={accountOptions}
+          categoryOptions={allCategories}
+          defaultAccountId={defaultAccountId}
+          incomeExcludedCategories={incomeExcludedCategories}
+          onDefaultAccountChange={setDefaultAccountId}
+          onIncomeExcludedCategoriesChange={updateIncomeExcludedCategories}
+        />
+      </SettingsSection>
+
+      <SettingsSection title="Card Fit" description="Choose which categories count toward rewards estimates.">
         <CardFitCategorySettings
           availableCategories={cardFitAvailableCategories}
           includedCategories={cardFitIncludedCategories}
           onChange={updateCardFitIncludedCategories}
         />
-      </section>
+      </SettingsSection>
 
-      <section className="material-card">
-        <div className="settings-drive-card">
-          <div>
-            <h3>Google Drive backup</h3>
-            <p>Archive every Akahu transaction when first seen, then back it up to Google Drive app data.</p>
-          </div>
-          <span className={`settings-drive-status ${driveBackup.status}`}>
-            {getDriveBackupStatusLabel(driveBackup.status)}
-          </span>
-          {!driveBackup.clientConfigured && (
-            <p className="settings-drive-warning">
-              Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
-            </p>
-          )}
-          <p className="settings-drive-message">
-            Backups use Google's hidden app data folder. Netly does not request access to your other Drive files.
-          </p>
-          <p aria-live="polite" className="settings-drive-message">
-            {driveBackup.message}
-          </p>
-          {driveBackup.lastSyncedAt && (
-            <p className="settings-drive-meta">Last synced {formatDriveSyncTime(driveBackup.lastSyncedAt)}</p>
-          )}
-          <div className="settings-drive-actions">
-            <Button disabled={driveBackup.status === "syncing"} onClick={() => void onConnectDriveBackup()} type="button">
-              {driveBackup.status === "syncing" ? "Syncing..." : "Connect and back up"}
-            </Button>
-            <Button disabled={driveBackup.status === "syncing"} onClick={() => void onRestoreDriveBackup()} type="button" variant="outline">
-              Restore from Drive
-            </Button>
-            <Button disabled={driveBackup.status === "syncing"} onClick={onDisconnectDriveBackup} type="button" variant="secondary">
-              Disconnect
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="material-card">
+      <SettingsSection title="Categories" description="Add categories, customize colors, or remove unused categories.">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h3 className="m-0 text-base font-semibold text-[var(--ink)]">Categories</h3>
@@ -199,8 +223,468 @@ export function SettingsPage({
             />
           ))}
         </div>
-      </section>
+      </SettingsSection>
     </section>
+  );
+}
+
+type SettingsSectionProps = {
+  children: ReactNode;
+  description: string;
+  title: string;
+};
+
+// Provides consistent Settings section framing without hiding feature state elsewhere.
+function SettingsSection({ children, description, title }: SettingsSectionProps) {
+  return (
+    <section className="material-card settings-section">
+      <div className="settings-section-heading">
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+      </div>
+      <div className="settings-section-body">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+type DataBackupSettingsProps = {
+  driveBackup: DriveBackupState;
+  onBackup: () => Promise<void>;
+  onDeleteBackup: (fileId: string) => Promise<DriveBackupEntry[]>;
+  onDisconnect: () => void;
+  onRefreshBackups: () => Promise<DriveBackupEntry[]>;
+  onRestore: (fileId: string) => Promise<void>;
+};
+
+// Manual Google Drive backup and restore controls for the hidden app data folder.
+function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnect, onRefreshBackups, onRestore }: DataBackupSettingsProps) {
+  const [selectedBackupId, setSelectedBackupId] = useState("");
+  const [backupToDelete, setBackupToDelete] = useState<DriveBackupEntry | null>(null);
+  const [deletingBackupId, setDeletingBackupId] = useState("");
+  const [restoringBackupId, setRestoringBackupId] = useState("");
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [backupPanelMode, setBackupPanelMode] = useState<"backups" | "restore" | null>(null);
+  const isBottomNavigation = useIsBottomNavigation();
+  const isBusy = driveBackup.status === "syncing" || driveBackup.isLoadingBackups;
+  const isRestoringBackup = restoringBackupId.length > 0;
+  const selectedBackup = driveBackup.backups.find((backup) => backup.id === selectedBackupId) || driveBackup.backups[0] || null;
+  const openBackupPanel = (mode: "backups" | "restore") => {
+    setBackupPanelMode(mode);
+    void onRefreshBackups();
+  };
+  const createBackup = async () => {
+    try {
+      await onBackup();
+      toast.success("Google Drive backup created.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Google Drive backup failed.");
+    }
+  };
+  const restoreSelectedBackup = async () => {
+    if (!selectedBackup) {
+      return;
+    }
+
+    const backup = selectedBackup;
+    const toastId = toast.loading("Restoring Google Drive backup...");
+
+    try {
+      setRestoringBackupId(backup.id);
+      await onRestore(backup.id);
+      toast.success("Backup restored", { id: toastId });
+      setRestoreDialogOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Google Drive restore failed.", { id: toastId });
+    } finally {
+      setRestoringBackupId("");
+    }
+  };
+  const deleteBackup = async () => {
+    if (!backupToDelete) {
+      return;
+    }
+
+    try {
+      setDeletingBackupId(backupToDelete.id);
+      const nextBackups = await onDeleteBackup(backupToDelete.id);
+      if (selectedBackupId === backupToDelete.id) {
+        setSelectedBackupId(nextBackups[0]?.id || "");
+      }
+      toast.success("Backup deleted");
+      setBackupToDelete(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Google Drive backup delete failed.");
+    } finally {
+      setDeletingBackupId("");
+    }
+  };
+
+  return (
+    <div className="settings-drive-card settings-backup-card">
+      <div>
+        <h3>Google Drive backup</h3>
+        <p>Backups use Google's hidden app data folder. Netly cannot read your other Drive files.</p>
+      </div>
+      <span className={`settings-drive-status ${driveBackup.status}`}>
+        {getDriveBackupStatusLabel(driveBackup.status)}
+      </span>
+      {!driveBackup.clientConfigured && (
+        <p className="settings-drive-warning">
+          Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
+        </p>
+      )}
+      {driveBackup.message && (
+        <p aria-live="polite" className="settings-drive-message">
+          {driveBackup.message}
+        </p>
+      )}
+      {driveBackup.lastSyncedAt && (
+        <p className="settings-drive-meta">Last backup {formatDriveSyncTime(driveBackup.lastSyncedAt)}</p>
+      )}
+      <div className="settings-backup-actions">
+        <button disabled={isBusy} onClick={() => void createBackup()} type="button">
+          <CloudUpload aria-hidden="true" className="h-5 w-5" />
+          <span>Backup</span>
+        </button>
+        <button disabled={isBusy} onClick={() => openBackupPanel("restore")} type="button">
+          <CloudDownload aria-hidden="true" className="h-5 w-5" />
+          <span>Restore</span>
+        </button>
+        <button disabled={isBusy} onClick={() => openBackupPanel("backups")} type="button">
+          <FolderClock aria-hidden="true" className="h-5 w-5" />
+          <span>Backups</span>
+        </button>
+      </div>
+      <div className="settings-drive-actions">
+        <Button disabled={isBusy} onClick={onDisconnect} type="button" variant="secondary">
+          Disconnect
+        </Button>
+      </div>
+      <BackupPanel
+        backups={driveBackup.backups}
+        deletingBackupId={deletingBackupId}
+        isLoading={driveBackup.isLoadingBackups}
+        isMobile={isBottomNavigation}
+        mode={backupPanelMode}
+        onDeleteBackup={setBackupToDelete}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setBackupPanelMode(null);
+          }
+        }}
+        onRestoreBackup={(backupId) => {
+          setSelectedBackupId(backupId);
+          setRestoreDialogOpen(true);
+        }}
+      />
+      <AlertDialog
+        onOpenChange={(isOpen) => {
+          if (!isOpen && !deletingBackupId) {
+            setBackupToDelete(null);
+          }
+        }}
+        open={backupToDelete !== null}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this backup?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes the backup from Google Drive app data. You will not be able to restore from this file again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {backupToDelete && (
+            <div className="settings-restore-summary">
+              <strong>{formatBackupTimestamp(backupToDelete.timestamp)}</strong>
+              <span>{backupToDelete.name}</span>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={Boolean(deletingBackupId)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-[var(--danger)] text-white hover:bg-[var(--danger)]"
+              disabled={Boolean(deletingBackupId)}
+              onClick={(event) => {
+                event.preventDefault();
+                void deleteBackup();
+              }}
+            >
+              {deletingBackupId ? (
+                <>
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  Deleting
+                </>
+              ) : (
+                "Delete backup"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <Dialog
+        onOpenChange={(isOpen) => {
+          if (!isOpen && isRestoringBackup) {
+            return;
+          }
+
+          setRestoreDialogOpen(isOpen);
+        }}
+        open={restoreDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restore selected backup?</DialogTitle>
+            <DialogDescription>
+              Transactions from this backup will be merged into this device. Backed-up settings, categories, and colours will replace current local settings.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedBackup && (
+            <div className="settings-restore-summary">
+              <strong>{formatBackupTimestamp(selectedBackup.timestamp)}</strong>
+              <span>{selectedBackup.name}</span>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button disabled={isRestoringBackup} type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button disabled={isBusy || isRestoringBackup || !selectedBackup} onClick={() => void restoreSelectedBackup()} type="button">
+              {isRestoringBackup ? (
+                <>
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  Restoring
+                </>
+              ) : (
+                "Restore backup"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+type BackupPanelProps = {
+  backups: DriveBackupState["backups"];
+  deletingBackupId: string;
+  isLoading: boolean;
+  isMobile: boolean;
+  mode: "backups" | "restore" | null;
+  onDeleteBackup: (backup: DriveBackupEntry) => void;
+  onOpenChange: (isOpen: boolean) => void;
+  onRestoreBackup: (backupId: string) => void;
+};
+
+// Shows Drive backup history in a desktop sheet or mobile drawer.
+function BackupPanel({ backups, deletingBackupId, isLoading, isMobile, mode, onDeleteBackup, onOpenChange, onRestoreBackup }: BackupPanelProps) {
+  const open = mode !== null;
+  const title = mode === "restore" ? "Restore a backup" : "Backups";
+  const description = mode === "restore"
+    ? "Choose the backup to merge into this device."
+    : "Current Google Drive app data backups for this account.";
+  const content = (
+    <BackupPanelContent
+      backups={backups}
+      deletingBackupId={deletingBackupId}
+      isLoading={isLoading}
+      mode={mode || "backups"}
+      onDeleteBackup={onDeleteBackup}
+      onRestoreBackup={onRestoreBackup}
+    />
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer onOpenChange={onOpenChange} open={open}>
+        <DrawerContent className="settings-backup-drawer">
+          <DrawerHeader className="mobile-filter-header settings-backup-drawer-header">
+            <DrawerTitle>{title}</DrawerTitle>
+            <DrawerDescription>{description}</DrawerDescription>
+            <DrawerHeaderClose className="mobile-filter-close" />
+          </DrawerHeader>
+          {content}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Sheet onOpenChange={onOpenChange} open={open}>
+      <SheetContent className="settings-backup-sheet">
+        <SheetHeader>
+          <SheetTitle>{title}</SheetTitle>
+          <SheetDescription>{description}</SheetDescription>
+        </SheetHeader>
+        {content}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+type BackupPanelContentProps = {
+  backups: DriveBackupState["backups"];
+  deletingBackupId: string;
+  isLoading: boolean;
+  mode: "backups" | "restore";
+  onDeleteBackup: (backup: DriveBackupEntry) => void;
+  onRestoreBackup: (backupId: string) => void;
+};
+
+// Renders backup rows for either history review or restore selection.
+function BackupPanelContent({ backups, deletingBackupId, isLoading, mode, onDeleteBackup, onRestoreBackup }: BackupPanelContentProps) {
+  if (isLoading) {
+    return <div className="settings-backup-panel-empty">Checking Google Drive backups...</div>;
+  }
+
+  if (backups.length === 0) {
+    return <div className="settings-backup-panel-empty">No backups found.</div>;
+  }
+
+  return (
+    <BackupList
+      backups={backups}
+      deletingBackupId={deletingBackupId}
+      mode={mode}
+      onDeleteBackup={onDeleteBackup}
+      onRestoreBackup={onRestoreBackup}
+    />
+  );
+}
+
+type BackupListProps = {
+  backups: DriveBackupState["backups"];
+  deletingBackupId: string;
+  mode: "backups" | "restore";
+  onDeleteBackup: (backup: DriveBackupEntry) => void;
+  onRestoreBackup: (id: string) => void;
+};
+
+// Shows the currently available Drive backups with timestamp fallbacks called out.
+function BackupList({ backups, deletingBackupId, mode, onDeleteBackup, onRestoreBackup }: BackupListProps) {
+  return (
+    <ul className="settings-backup-list" aria-label="Google Drive backups">
+      {backups.map((backup) => {
+        const rowContent = (
+          <>
+            <CloudDownload aria-hidden="true" className="h-5 w-5" />
+            <span>
+              <strong>{backup.metadataAvailable ? formatBackupTimestamp(backup.timestamp) : "Connect to network to see backup"}</strong>
+              <small>{backup.name}</small>
+            </span>
+            {mode === "restore" && <em>Restore</em>}
+            {mode === "backups" && (
+              <button
+                aria-label={`Delete ${backup.name}`}
+                className="settings-backup-delete"
+                disabled={deletingBackupId === backup.id}
+                onClick={() => onDeleteBackup(backup)}
+                type="button"
+              >
+                {deletingBackupId === backup.id ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 aria-hidden="true" className="h-4 w-4" />
+                )}
+              </button>
+            )}
+          </>
+        );
+
+        return (
+          <li key={backup.id}>
+            {mode === "restore" ? (
+              <button
+                aria-label={`Restore ${formatBackupTimestamp(backup.timestamp)}`}
+                className="settings-backup-list-item"
+                onClick={() => onRestoreBackup(backup.id)}
+                type="button"
+              >
+                {rowContent}
+              </button>
+            ) : (
+              <div className="settings-backup-list-item">
+                {rowContent}
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+type ReportingSettingsProps = {
+  accountOptions: TransactionAccountOption[];
+  categoryOptions: string[];
+  defaultAccountId: string;
+  incomeExcludedCategories: string[];
+  onDefaultAccountChange: (accountId: string) => void;
+  onIncomeExcludedCategoriesChange: (categories: string[]) => void;
+};
+
+// Controls the account and income categories used by reporting summaries.
+function ReportingSettings({
+  accountOptions,
+  categoryOptions,
+  defaultAccountId,
+  incomeExcludedCategories,
+  onDefaultAccountChange,
+  onIncomeExcludedCategoriesChange
+}: ReportingSettingsProps) {
+  const accountExists = !defaultAccountId || accountOptions.some((account) => account.value === defaultAccountId);
+  const toggleIncomeCategory = (category: string) => {
+    const nextCategories = incomeExcludedCategories.includes(category)
+      ? incomeExcludedCategories.filter((item) => item !== category)
+      : [...incomeExcludedCategories, category];
+
+    onIncomeExcludedCategoriesChange(nextCategories);
+  };
+
+  return (
+    <div className="settings-reporting-grid">
+      <label className="settings-select-row">
+        <span>
+          <strong>Default account</strong>
+          <small>Used by dashboard summaries and the default Transactions view.</small>
+        </span>
+        <select onChange={(event) => onDefaultAccountChange(event.target.value)} value={defaultAccountId}>
+          <option value="">All accounts</option>
+          {accountOptions.map((account) => (
+            <option key={account.value} value={account.value}>
+              {account.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {!accountExists && (
+        <p className="settings-drive-warning">The saved default account is not available in the current account list.</p>
+      )}
+      <div className="settings-income-exclusions">
+        <div>
+          <h3>Exclude income categories</h3>
+          <p>Positive transactions in these categories stay visible but are removed from reporting summaries.</p>
+        </div>
+        <div className="settings-category-toggle-grid">
+          {categoryOptions.map((category) => (
+            <button
+              aria-pressed={incomeExcludedCategories.includes(category)}
+              className={incomeExcludedCategories.includes(category) ? "active" : undefined}
+              key={category}
+              onClick={() => toggleIncomeCategory(category)}
+              type="button"
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -363,10 +847,7 @@ function formatAkahuFreshnessTime(value: string | null) {
     return value;
   }
 
-  return date.toLocaleString("en-NZ", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
+  return formatNzDateTime(date);
 }
 
 // Formats Drive status into short UI labels.
@@ -393,10 +874,30 @@ function formatDriveSyncTime(value: string) {
     return value;
   }
 
-  return date.toLocaleString("en-NZ", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
+  return formatNzDateTime(date);
+}
+
+function formatBackupTimestamp(value: string) {
+  if (!value) {
+    return "Connect to network to see backup";
+  }
+
+  return formatDriveSyncTime(value);
+}
+
+// Formats timestamps as "18 May 2026, 1:49 pm" for NZ-facing settings UI.
+function formatNzDateTime(date: Date) {
+  const dateLabel = new Intl.DateTimeFormat("en-NZ", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(date);
+  const timeLabel = new Intl.DateTimeFormat("en-NZ", {
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(date);
+
+  return `${dateLabel}, ${timeLabel}`;
 }
 
 type CategoryColorRowProps = {

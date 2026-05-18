@@ -19,7 +19,9 @@ export const defaultTransactionCategories = [
 export const netlyPalette = [
   "#D81B60", "#8E24AA", "#3949AB", "#1E88E5", "#00ACC1",
   "#00897B", "#43A047", "#7CB342", "#FDD835", "#FB8C00",
-  "#E53935", "#6D4C41", "#546E7A", "#C0CA33", "#5E35B1"
+  "#E53935", "#6D4C41", "#546E7A", "#C0CA33", "#5E35B1",
+  "#F06292", "#BA68C8", "#7986CB", "#4FC3F7", "#4DD0E1",
+  "#26A69A", "#66BB6A", "#DCE775", "#FFB74D", "#FF8A65"
 ];
 
 // Default colours used before a user customises category settings.

@@ -31,3 +31,11 @@ export const dashboardPeriodStorageKey = "netly_dashboard_period";
 export const cardFitIncludedCategoriesStorageKey = "netly_card_fit_included_categories";
 
 export const hideBalancesStorageKey = "netly_hide_balances";
+
+export const defaultAccountStorageKey = "netly_default_account_id";
+
+export const incomeExcludedCategoriesStorageKey = "netly_income_excluded_categories";
+
+export const paydayStorageKey = "netly_payday";
+
+export const budgetsStorageKey = "netly_user_budgets";

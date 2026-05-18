@@ -1914,8 +1914,7 @@ h2 {
     color var(--motion-fast) var(--motion-ease);
 }
 
-.settings-category-toggle-grid button:hover,
-.settings-category-toggle-grid button:focus-visible {
+.settings-category-toggle-grid button:hover {
   border-color: var(--outline);
   background: var(--surface-3);
   color: var(--ink);
@@ -1927,8 +1926,7 @@ h2 {
   color: var(--accent-cream);
 }
 
-.settings-category-toggle-grid button.active:hover,
-.settings-category-toggle-grid button.active:focus-visible {
+.settings-category-toggle-grid button.active:hover {
   border-color: var(--primary-border);
   background: var(--primary-hover);
   color: var(--accent-cream);

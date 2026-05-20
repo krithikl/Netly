@@ -1,6 +1,6 @@
 import type { ChangeEvent, TouchEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, ArrowDownUp, CalendarDays, Check, ChevronDown, ReceiptText, Search, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { AlertCircle, ArrowDownUp, ArrowLeft, CalendarDays, Check, ChevronDown, MoreVertical, ReceiptText, Search, Settings, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import { TransactionList } from "@/features/transactions/TransactionList";
@@ -16,11 +16,11 @@ import {
   DrawerTitle
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SelectField } from "@/components/ui/select-field";
+import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
 import { filterTransactionsByDateRange, formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
-import { isIncomeCategoryExcluded } from "@/lib/reporting";
+import { isIncomeCategoryIncluded } from "@/lib/reporting";
 import { type CategoryEditScope } from "@/lib/category-rules";
 import { getTransactionCategory } from "@/lib/transaction-display";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
@@ -48,7 +48,7 @@ type TransactionsPageProps = {
   defaultAccountId: string;
   hasMoreTransactions: boolean;
   initialDateRange: TransactionDateRange;
-  incomeExcludedCategories: string[];
+  incomeIncludedCategories: string[];
   isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
   isLoadingTransactions: boolean;
@@ -57,6 +57,7 @@ type TransactionsPageProps = {
   onMonthRangeChange: (dateRange: TransactionDateRange) => void;
   onLoadAllTransactions: (dateRange: TransactionDateRange) => void;
   onLoadMoreTransactions: (dateRange: TransactionDateRange) => void;
+  onOpenSettings: () => void;
   openPreset: TransactionOpenPreset | null;
   transactions: Transaction[];
 };
@@ -73,7 +74,7 @@ export function TransactionsPage({
   defaultAccountId,
   hasMoreTransactions,
   initialDateRange,
-  incomeExcludedCategories,
+  incomeIncludedCategories,
   isLoadingAllTransactions,
   isLoadingMoreTransactions,
   isLoadingTransactions,
@@ -82,6 +83,7 @@ export function TransactionsPage({
   onMonthRangeChange,
   onLoadAllTransactions,
   onLoadMoreTransactions,
+  onOpenSettings,
   openPreset,
   transactions
 }: TransactionsPageProps) {
@@ -93,24 +95,32 @@ export function TransactionsPage({
   const [dateRange, setDateRange] = useState(initialDateRange);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchDateRange, setSearchDateRange] = useState<TransactionDateRange | null>(null);
   const [sortOpen, setSortOpen] = useState(false);
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value);
   const editableCategoryOptions = useMemo(() => categoryOptions.filter((category) => category !== "All categories"), [categoryOptions]);
   const editableCategorySelectOptions = useMemo(() => getStringOptions(editableCategoryOptions), [editableCategoryOptions]);
   const filterSelectOptions = useMemo(() => getStringOptions(transactionFilters), []);
   const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
+  const isBottomNavigation = useIsBottomNavigation();
   const dateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactions, dateRange), [dateRange, transactions]);
+  const allLoadedDateRange = useMemo(() => getLoadedTransactionDateRange(transactions) || dateRange, [dateRange, transactions]);
+  const activeSearchDateRange = searchDateRange || allLoadedDateRange;
+  const searchDateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactions, activeSearchDateRange), [activeSearchDateRange, transactions]);
   const monthOptions = useMemo(() => getTransactionMonthOptions(dateRange), [dateRange]);
   const monthSummaryTransactions = useMemo(() => filterTransactionsByAccount(dateRangeTransactions, transactionAccounts), [dateRangeTransactions, transactionAccounts]);
-  const monthSummary = useMemo(() => getTransactionMonthSummary(monthSummaryTransactions, incomeExcludedCategories), [incomeExcludedCategories, monthSummaryTransactions]);
+  const monthSummary = useMemo(() => getTransactionMonthSummary(monthSummaryTransactions, incomeIncludedCategories), [incomeIncludedCategories, monthSummaryTransactions]);
   const shownTransactions = useMemo(
-    () => getVisibleTransactions(dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
-    [dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
+    () => getVisibleTransactions(dateRangeTransactions, isBottomNavigation ? "" : query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
+    [dateRangeTransactions, isBottomNavigation, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
+  );
+  const searchShownTransactions = useMemo(
+    () => getVisibleTransactions(searchDateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
+    [query, searchDateRangeTransactions, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
   );
   const shouldShowListLoading = isLoadingTransactions && transactions.length === 0;
   const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionAccounts, transactionCategory);
-  const isBottomNavigation = useIsBottomNavigation();
   const [monthCarouselDirection, setMonthCarouselDirection] = useState<"next" | "previous">("next");
   const [monthCarouselPhase, setMonthCarouselPhase] = useState<"a" | "b">("a");
   const [pageSwipeStart, setPageSwipeStart] = useState<{ x: number; y: number } | null>(null);
@@ -143,6 +153,11 @@ export function TransactionsPage({
   const selectMonth = (monthDate: Date) => changeMonthRange(getMonthDateRange(monthDate));
   const selectPreviousMonth = () => changeMonthRange(getMonthDateRange(addMonths(parseInputDate(dateRange.from) || new Date(), -1)));
   const selectNextMonth = () => changeMonthRange(getMonthDateRange(addMonths(parseInputDate(dateRange.from) || new Date(), 1)));
+  const openSearch = () => {
+    setSearchDateRange(getLoadedTransactionDateRange(transactions) || dateRange);
+    setSearchOpen(true);
+  };
+  const closeSearch = () => setSearchOpen(false);
   const startPageSwipe = (event: TouchEvent<HTMLElement>) => {
     const touch = event.touches[0];
 
@@ -221,11 +236,65 @@ export function TransactionsPage({
       setDateRange(openPreset.dateRange);
       onDateRangeChange(openPreset.dateRange);
     }
-  }, [defaultAccountId, openPreset, onDateRangeChange]);
+
+    if (isBottomNavigation && openPreset.query) {
+      setSearchDateRange(openPreset.dateRange || getLoadedTransactionDateRange(transactions) || dateRange);
+      setSearchOpen(true);
+    }
+  }, [dateRange, defaultAccountId, isBottomNavigation, openPreset, onDateRangeChange, transactions]);
 
   useEffect(() => {
     setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
   }, [defaultAccountId]);
+
+  if (isBottomNavigation && searchOpen) {
+    return (
+      <section className="transaction-search-page view-stack" data-testid="transaction-search-page">
+        <MobileTransactionSearchView
+          activeFilterCount={activeFilterCount}
+          categoryColors={categoryColors}
+          categorySelectOptions={editableCategorySelectOptions}
+          dateRange={activeSearchDateRange}
+          emptyMessage="No transactions match the current search."
+          hasMoreTransactions={hasMoreTransactions}
+          isLoadingAllTransactions={isLoadingAllTransactions}
+          isLoadingMoreTransactions={isLoadingMoreTransactions}
+          isLoadingTransactions={shouldShowListLoading}
+          onBack={closeSearch}
+          onCategoryChange={onCategoryChange}
+          onDateRangeChange={setSearchDateRange}
+          onFilterOpen={() => setFiltersOpen(true)}
+          onLoadAllTransactions={() => onLoadAllTransactions(activeSearchDateRange)}
+          onLoadMoreTransactions={() => onLoadMoreTransactions(activeSearchDateRange)}
+          onOpenSettings={onOpenSettings}
+          onSearchChange={handleSearchChange}
+          onSortOpen={() => setSortOpen(true)}
+          query={query}
+          transactions={searchShownTransactions}
+        />
+        <TransactionFilterDialog
+          accountOptions={accountOptions}
+          categoryOptions={categoryOptions}
+          onAccountToggle={toggleTransactionAccount}
+          onCategoryToggle={toggleTransactionCategory}
+          onOpenChange={setFiltersOpen}
+          onReset={resetFilters}
+          onStatusChange={setTransactionFilter}
+          open={filtersOpen}
+          transactionAccounts={transactionAccounts}
+          transactionCategory={transactionCategory}
+          transactionFilter={transactionFilter}
+        />
+        <TransactionSortDialog
+          onApply={closeSort}
+          onOpenChange={setSortOpen}
+          onSortChange={setTransactionSort}
+          open={sortOpen}
+          transactionSort={transactionSort}
+        />
+      </section>
+    );
+  }
 
   return (
     <section
@@ -235,7 +304,28 @@ export function TransactionsPage({
       onTouchEnd={finishPageSwipe}
       onTouchStart={startPageSwipe}
     >
-      <MobilePageHeader title="Transactions" />
+      <MobilePageHeader
+        actions={(
+          <div className="transaction-mobile-header-actions">
+            <Button aria-label="Search transactions" className="transaction-icon-action" onClick={openSearch} title="Search" type="button" variant="secondary">
+              <Search aria-hidden="true" className="h-5 w-5" />
+            </Button>
+            <TransactionMobileMenu
+              activeFilterCount={activeFilterCount}
+              onFilterOpen={() => setFiltersOpen(true)}
+              onOpenSettings={onOpenSettings}
+              onSortOpen={() => setSortOpen(true)}
+            />
+          </div>
+        )}
+        title="Transactions"
+      >
+        {isBottomNavigation && analytics.needsReviewCount > 0 && (
+          <button className="transaction-review-shortcut transaction-header-review-shortcut" onClick={reviewNeedsReview} type="button">
+            {analytics.needsReviewCount} need review
+          </button>
+        )}
+      </MobilePageHeader>
       <TransactionMonthOverview
         activeDateRange={dateRange}
         monthOptions={monthOptions}
@@ -245,34 +335,6 @@ export function TransactionsPage({
 
       <section className="transaction-workspace">
         <div className="transaction-filter-panel" suppressHydrationWarning>
-          <div className="transaction-mobile-controls">
-            <div className={`transaction-mobile-action-row ${analytics.needsReviewCount > 0 ? "has-review" : "no-review"}`} suppressHydrationWarning>
-              {isBottomNavigation && analytics.needsReviewCount > 0 && (
-                <button className="transaction-review-shortcut" onClick={reviewNeedsReview} type="button">
-                  {analytics.needsReviewCount} need review
-                </button>
-              )}
-              <Button aria-label="Search transactions" className="transaction-icon-action" onClick={() => setSearchOpen(true)} title="Search" type="button" variant="secondary">
-                <Search aria-hidden="true" className="h-5 w-5" />
-              </Button>
-              <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={changeDateRange} />
-              {isBottomNavigation && (
-                <>
-                  <Button aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`} className="transaction-icon-action" data-testid="transaction-filter-button" onClick={() => setFiltersOpen(true)} title="Filters" type="button" variant="secondary">
-                    <SlidersHorizontal aria-hidden="true" className="h-5 w-5" />
-                  </Button>
-                  <Button aria-label="Sort transactions" className="transaction-icon-action" data-testid="transaction-sort-button" onClick={() => setSortOpen(true)} title="Sort" type="button" variant="secondary">
-                    <ArrowDownUp aria-hidden="true" className="h-5 w-5" />
-                  </Button>
-                </>
-              )}
-            </div>
-            {query && (
-              <button className="transaction-active-query" onClick={() => setSearchOpen(true)} type="button">
-                Search: {query}
-              </button>
-            )}
-          </div>
           <div className="transaction-controls transaction-desktop-controls">
             <label className="transaction-search-label">
               Search
@@ -321,12 +383,6 @@ export function TransactionsPage({
           transactionAccounts={transactionAccounts}
           transactionCategory={transactionCategory}
           transactionFilter={transactionFilter}
-        />
-        <TransactionSearchDialog
-          onOpenChange={setSearchOpen}
-          onSearchChange={handleSearchChange}
-          open={searchOpen}
-          query={query}
         />
         <TransactionSortDialog
           onApply={closeSort}
@@ -817,11 +873,11 @@ function addMonths(date: Date, offset: number) {
 }
 
 // Totals money movement for the active month before search/filter narrowing.
-function getTransactionMonthSummary(transactions: Transaction[], incomeExcludedCategories: string[]): TransactionMonthSummary {
+function getTransactionMonthSummary(transactions: Transaction[], incomeIncludedCategories: string[]): TransactionMonthSummary {
   return transactions.reduce<TransactionMonthSummary>((summary, transaction) => {
     if (transaction.amount < 0) {
       summary.expenses += Math.abs(transaction.amount);
-    } else if (!isIncomeCategoryExcluded(getTransactionCategory(transaction), incomeExcludedCategories)) {
+    } else if (isIncomeCategoryIncluded(getTransactionCategory(transaction), incomeIncludedCategories)) {
       summary.income += transaction.amount;
       summary.net += transaction.amount;
       return summary;
@@ -852,45 +908,162 @@ function getMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-type TransactionSearchDialogProps = {
-  onOpenChange: (open: boolean) => void;
+function getLoadedTransactionDateRange(transactions: Transaction[]) {
+  const timestamps = transactions
+    .map((transaction) => parseInputDate(getTransactionDateValue(transaction)))
+    .filter((date): date is Date => Boolean(date));
+
+  if (timestamps.length === 0) {
+    return null;
+  }
+
+  const firstDate = new Date(Math.min(...timestamps.map((date) => date.getTime())));
+  const lastDate = new Date(Math.max(...timestamps.map((date) => date.getTime())));
+
+  return {
+    from: formatDateInputValue(firstDate),
+    to: formatDateInputValue(lastDate)
+  };
+}
+
+function getTransactionDateValue(transaction: Transaction) {
+  return typeof transaction.date === "string" ? transaction.date.slice(0, 10) : "";
+}
+
+type MobileTransactionSearchViewProps = {
+  activeFilterCount: number;
+  categoryColors: Record<string, string>;
+  categorySelectOptions: SelectOption[];
+  dateRange: TransactionDateRange;
+  emptyMessage: string;
+  hasMoreTransactions: boolean;
+  isLoadingAllTransactions: boolean;
+  isLoadingMoreTransactions: boolean;
+  isLoadingTransactions: boolean;
+  onBack: () => void;
+  onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
+  onDateRangeChange: (dateRange: TransactionDateRange) => void;
+  onFilterOpen: () => void;
+  onLoadAllTransactions: () => void;
+  onLoadMoreTransactions: () => void;
+  onOpenSettings: () => void;
   onSearchChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  open: boolean;
+  onSortOpen: () => void;
   query: string;
+  transactions: Transaction[];
 };
 
-// Shows search as a focused mobile drawer instead of a full-width always-on control.
-function TransactionSearchDialog({
-  onOpenChange,
+// Full-screen mobile search surface with controls above all loaded transactions.
+function MobileTransactionSearchView({
+  activeFilterCount,
+  categoryColors,
+  categorySelectOptions,
+  dateRange,
+  emptyMessage,
+  hasMoreTransactions,
+  isLoadingAllTransactions,
+  isLoadingMoreTransactions,
+  isLoadingTransactions,
+  onBack,
+  onCategoryChange,
+  onDateRangeChange,
+  onFilterOpen,
+  onLoadAllTransactions,
+  onLoadMoreTransactions,
+  onOpenSettings,
   onSearchChange,
-  open,
-  query
-}: TransactionSearchDialogProps) {
+  onSortOpen,
+  query,
+  transactions
+}: MobileTransactionSearchViewProps) {
   return (
-    <Drawer onOpenChange={onOpenChange} open={open}>
-      <DrawerContent className="mobile-filter-drawer transaction-search-drawer">
-        <DrawerHeader className="mobile-filter-header centered">
-          <DrawerTitle>Search</DrawerTitle>
-          <DrawerDescription className="sr-only">Search transactions by merchant, bank text, or category.</DrawerDescription>
-          <DrawerHeaderClose className="mobile-filter-close" />
-        </DrawerHeader>
-        <div className="transaction-search-drawer-body">
-          <label className="transaction-search-drawer-field">
-            Search
-            <span className="transaction-search-field">
-              <Search aria-hidden="true" className="h-5 w-5" />
-              <input
-                className="search"
-                data-testid="transaction-search"
-                onChange={onSearchChange}
-                placeholder="Search..."
-                value={query}
-              />
-            </span>
+    <>
+      <MobilePageHeader
+        actions={(
+          <TransactionMobileMenu
+            activeFilterCount={activeFilterCount}
+            onFilterOpen={onFilterOpen}
+            onOpenSettings={onOpenSettings}
+            onSortOpen={onSortOpen}
+          />
+        )}
+        leading={(
+          <Button aria-label="Back to transactions" className="transaction-search-back" onClick={onBack} type="button" variant="ghost">
+            <ArrowLeft aria-hidden="true" className="h-6 w-6" />
+          </Button>
+        )}
+        title="Search"
+      >
+        <div className="transaction-mobile-search-controls">
+          <label className="transaction-mobile-search-field">
+            <span className="sr-only">Search transactions</span>
+            <input
+              autoFocus
+              className="search"
+              data-testid="transaction-search"
+              onChange={onSearchChange}
+              placeholder="Search..."
+              value={query}
+            />
+            <Search aria-hidden="true" className="h-5 w-5" />
           </label>
+          <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
+          <Button aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`} className="transaction-icon-action" data-testid="transaction-filter-button" onClick={onFilterOpen} title="Filters" type="button" variant="secondary">
+            <SlidersHorizontal aria-hidden="true" className="h-5 w-5" />
+          </Button>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </MobilePageHeader>
+      <TransactionList
+        categoryColors={categoryColors}
+        categorySelectOptions={categorySelectOptions}
+        editable
+        emptyMessage={emptyMessage}
+        hasMore={hasMoreTransactions}
+        isLoading={isLoadingTransactions}
+        isLoadingAll={isLoadingAllTransactions}
+        isLoadingMore={isLoadingMoreTransactions}
+        onCategoryChange={onCategoryChange}
+        onLoadAll={onLoadAllTransactions}
+        onLoadMore={onLoadMoreTransactions}
+        transactions={transactions}
+      />
+    </>
+  );
+}
+
+function TransactionMobileMenu({
+  activeFilterCount,
+  onFilterOpen,
+  onOpenSettings,
+  onSortOpen
+}: {
+  activeFilterCount: number;
+  onFilterOpen: () => void;
+  onOpenSettings: () => void;
+  onSortOpen: () => void;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button aria-label="Transaction actions" className="transaction-icon-action" type="button" variant="secondary">
+          <MoreVertical aria-hidden="true" className="h-5 w-5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="transaction-mobile-menu">
+        <button onClick={onFilterOpen} type="button">
+          <SlidersHorizontal aria-hidden="true" className="h-5 w-5" />
+          <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</span>
+        </button>
+        <button onClick={onSortOpen} type="button">
+          <ArrowDownUp aria-hidden="true" className="h-5 w-5" />
+          <span>Sort</span>
+        </button>
+        <button onClick={onOpenSettings} type="button">
+          <Settings aria-hidden="true" className="h-5 w-5" />
+          <span>Settings</span>
+        </button>
+      </PopoverContent>
+    </Popover>
   );
 }
 

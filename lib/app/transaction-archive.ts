@@ -13,7 +13,7 @@ import {
   defaultAccountStorageKey,
   deletedCategoriesStorageKey,
   hideBalancesStorageKey,
-  incomeExcludedCategoriesStorageKey,
+  incomeIncludedCategoriesStorageKey,
   paydayStorageKey
 } from "@/lib/app/constants";
 import { getTransactionDate, getTransactionFallbackSortTimestamp, getTransactionId, getTransactionTimestamp } from "@/lib/transaction-display";
@@ -472,7 +472,7 @@ function readPortableSettings() {
     defaultAccountStorageKey,
     deletedCategoriesStorageKey,
     hideBalancesStorageKey,
-    incomeExcludedCategoriesStorageKey,
+    incomeIncludedCategoriesStorageKey,
     paydayStorageKey
   ];
 
@@ -511,7 +511,7 @@ function isPortableSettingsKey(key: string) {
     defaultAccountStorageKey,
     deletedCategoriesStorageKey,
     hideBalancesStorageKey,
-    incomeExcludedCategoriesStorageKey,
+    incomeIncludedCategoriesStorageKey,
     paydayStorageKey
   ].includes(key);
 }

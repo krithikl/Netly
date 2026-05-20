@@ -103,23 +103,30 @@ export function TransactionList({
       return;
     }
 
+    const canRevealLocalRows = remainingTransactionCount > 0;
+    const canRunFullLoad = hasMore && !hasTriggeredFullLoadRef.current && Boolean(onLoadAll);
+
+    if (!canRevealLocalRows && !canRunFullLoad) {
+      return;
+    }
+
     isAutoLoadingRef.current = true;
     setIsAutoLoading(true);
 
     try {
-      if (hasMore && !hasTriggeredFullLoadRef.current && onLoadAll) {
+      if (canRunFullLoad && onLoadAll) {
         hasTriggeredFullLoadRef.current = true;
         await onLoadAll();
-      } else if (remainingTransactionCount === 0 && hasMore && onLoadMore) {
-        await onLoadMore();
       }
 
-      setVisibleCount((currentCount) => currentCount + visibleTransactionIncrement);
+      if (canRevealLocalRows) {
+        setVisibleCount((currentCount) => currentCount + visibleTransactionIncrement);
+      }
     } finally {
       isAutoLoadingRef.current = false;
       setIsAutoLoading(false);
     }
-  }, [hasMore, isLoadingAll, isLoadingMore, onLoadAll, onLoadMore, remainingTransactionCount]);
+  }, [hasMore, isLoadingAll, isLoadingMore, onLoadAll, remainingTransactionCount]);
 
   useEffect(() => {
     const firstTransactionId = transactions[0] ? getTransactionId(transactions[0]) : "";
@@ -141,7 +148,7 @@ export function TransactionList({
   useEffect(() => {
     const sentinel = loadSentinelRef.current;
 
-    if (!sentinel || (!hasMore && remainingTransactionCount === 0)) {
+    if (!sentinel || (remainingTransactionCount === 0 && (!hasMore || hasTriggeredFullLoadRef.current))) {
       return undefined;
     }
 
@@ -504,7 +511,7 @@ function TransactionDetailsDrawer({
           <DrawerDescription className="sr-only">Selected transaction details.</DrawerDescription>
           <DrawerHeaderClose className="mobile-filter-close" />
         </DrawerHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 overscroll-y-none [touch-action:pan-y] pb-[calc(20px+env(safe-area-inset-bottom))]">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(20px+env(safe-area-inset-bottom))]">
           <TransactionDetailsContent
             categorySelectOptions={categorySelectOptions}
             categoryColors={categoryColors}

@@ -1,5 +1,5 @@
-import clsx from "clsx";
 import { CalendarDays, Sparkles, TrendingUp, WalletCards } from "lucide-react";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { CategoryDonutCard } from "@/features/home/CategoryDonutCard";
 import { HeroBalanceCard } from "@/features/home/HeroBalanceCard";
 import { InsightsPanel } from "@/features/home/InsightsPanel";
@@ -61,10 +61,6 @@ export function HomePage({
   setPayday,
   transactionPreview
 }: HomePageProps) {
-  const hasVisibleHomeData = transactionPreview.length > 0 || chartCategories.length > 0;
-  const shouldHideHomeSections = isLoadingTransactions && !hasVisibleHomeData;
-  const metricGridClassName = getLoadingClassName("metric-grid", shouldHideHomeSections);
-  const dashboardGridClassName = getLoadingClassName("dashboard-grid", shouldHideHomeSections);
   const recentTransactions = [...transactionPreview]
     .sort((first, second) => getTransactionTimestamp(second) - getTransactionTimestamp(first))
     .slice(0, 5);
@@ -73,6 +69,7 @@ export function HomePage({
 
   return (
     <section className="view-stack" data-testid="home-page">
+      <MobilePageHeader title="Netly" />
       <HeroBalanceCard
         availableBalance={availableBalance}
         hideBalances={hideBalances}
@@ -84,7 +81,7 @@ export function HomePage({
         setPayday={setPayday}
       />
 
-      <div className={dashboardGridClassName} aria-busy={shouldHideHomeSections}>
+      <div className="dashboard-grid" aria-busy={isLoadingTransactions}>
         <CategoryDonutCard
           categories={chartCategories}
           categoryColors={categoryColors}
@@ -97,7 +94,7 @@ export function HomePage({
         <InsightsPanel insights={insights} onViewInsights={openTransactionsView} />
       </div>
 
-      <div className={metricGridClassName} aria-busy={shouldHideHomeSections}>
+      <div className="metric-grid" aria-busy={isLoadingTransactions}>
         <MetricCard icon={TrendingUp} label="Spent" note={`${expensesCount} outgoing transactions`} tone="blue" value={formatMoney(monthlySpend)} />
         <MetricCard icon={CalendarDays} label="Average per day" note="Estimated daily spend" tone="orange" value={formatMoney(averageDailySpend, true)} />
         <MetricCard icon={WalletCards} label="Income" note="Credits in this period" tone="green" value={formatMoney(income)} />
@@ -111,8 +108,4 @@ export function HomePage({
       />
     </section>
   );
-}
-
-function getLoadingClassName(baseClassName: string, isLoading: boolean) {
-  return clsx(baseClassName, isLoading && "is-loading");
 }

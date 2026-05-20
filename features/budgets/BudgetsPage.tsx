@@ -155,9 +155,6 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
               <span>Add budget</span>
             </button>
           </div>
-          <Button className="budget-fab" onClick={openNewBudget} type="button" aria-label="Add budget">
-            <Plus aria-hidden="true" size={28} strokeWidth={2.4} />
-          </Button>
         </section>
 
         <section className="material-card budget-recurring-panel">

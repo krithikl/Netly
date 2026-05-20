@@ -20,16 +20,18 @@ export function AppShell() {
       />
 
       <main className="main">
-        <Topbar
-          activeView={shell.activeView}
-          dataSourceLabel={shell.dataSourceLabel}
-          linkedAccountLabel={shell.linkedAccountLabel}
-          linkedUserName={shell.linkedUserName}
-          payday={shell.payday}
-          period={shell.period}
-          setPeriod={shell.setPeriod}
-          showPeriodControl={shell.shouldShowPeriodControl}
-        />
+        {!shell.isBottomNavigation && (
+          <Topbar
+            activeView={shell.activeView}
+            dataSourceLabel={shell.dataSourceLabel}
+            linkedAccountLabel={shell.linkedAccountLabel}
+            linkedUserName={shell.linkedUserName}
+            payday={shell.payday}
+            period={shell.period}
+            setPeriod={shell.setPeriod}
+            showPeriodControl={shell.shouldShowPeriodControl}
+          />
+        )}
 
         <DashboardViewRouter {...app.viewProps} />
       </main>

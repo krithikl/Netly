@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { CloudDownload, CloudUpload, FolderClock, Loader2, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, CloudDownload, CloudUpload, FolderClock, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import {
@@ -61,7 +61,7 @@ type SettingsPageProps = {
   defaultCategories: string[];
   deleteCategory: (category: string) => void;
   driveBackup: DriveBackupState;
-  incomeExcludedCategories: string[];
+  incomeIncludedCategories: string[];
   onConnectDriveBackup: () => Promise<void>;
   onCreateCategory: (category: string) => void;
   onDeleteDriveBackup: (fileId: string) => Promise<DriveBackupEntry[]>;
@@ -73,7 +73,7 @@ type SettingsPageProps = {
   setDashboardPeriod: (period: PeriodOption) => void;
   updateCardFitIncludedCategories: (categories: string[]) => void;
   updateCategoryColor: (category: string, color: string) => void;
-  updateIncomeExcludedCategories: (categories: string[]) => void;
+  updateIncomeIncludedCategories: (categories: string[]) => void;
 };
 
 // Settings screen for managing category colours and hiding unused categories.
@@ -89,7 +89,7 @@ export function SettingsPage({
   defaultCategories,
   deleteCategory,
   driveBackup,
-  incomeExcludedCategories,
+  incomeIncludedCategories,
   onConnectDriveBackup,
   onCreateCategory,
   onDeleteDriveBackup,
@@ -101,10 +101,12 @@ export function SettingsPage({
   setDashboardPeriod,
   updateCardFitIncludedCategories,
   updateCategoryColor,
-  updateIncomeExcludedCategories
+  updateIncomeIncludedCategories
 }: SettingsPageProps) {
   const allCategories = defaultCategories.filter((cat) => cat !== "All categories");
+  const isBottomNavigation = useIsBottomNavigation();
   const [activeColorPicker, setActiveColorPicker] = useState<string | null>(null);
+  const [categoriesPanelOpen, setCategoriesPanelOpen] = useState(false);
   const [newCategory, setNewCategory] = useState("");
   const normalizedNewCategory = normalizeCategoryName(newCategory);
   const duplicateCategory = getMatchingCategory(allCategories, normalizedNewCategory);
@@ -169,9 +171,9 @@ export function SettingsPage({
           accountOptions={accountOptions}
           categoryOptions={allCategories}
           defaultAccountId={defaultAccountId}
-          incomeExcludedCategories={incomeExcludedCategories}
+          incomeIncludedCategories={incomeIncludedCategories}
           onDefaultAccountChange={setDefaultAccountId}
-          onIncomeExcludedCategoriesChange={updateIncomeExcludedCategories}
+          onIncomeIncludedCategoriesChange={updateIncomeIncludedCategories}
         />
       </SettingsSection>
 
@@ -179,17 +181,42 @@ export function SettingsPage({
         <CardFitCategorySettings
           availableCategories={cardFitAvailableCategories}
           includedCategories={cardFitIncludedCategories}
+          isMobile={isBottomNavigation}
           onChange={updateCardFitIncludedCategories}
         />
       </SettingsSection>
 
       <SettingsSection title="Categories" description="Add categories, customize colors, or remove unused categories.">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="m-0 text-base font-semibold text-[var(--ink)]">Categories</h3>
-            <p className="mt-1 text-[13px] text-[var(--muted)]">Add categories, customize colors, or remove unused categories.</p>
-          </div>
-        </div>
+        {isBottomNavigation ? (
+          <>
+            <SettingsNavigationButton
+              description={`${allCategories.length} categories`}
+              onClick={() => setCategoriesPanelOpen(true)}
+              title="Manage categories"
+            />
+            <Drawer onOpenChange={setCategoriesPanelOpen} open={categoriesPanelOpen}>
+              <DrawerContent className="mobile-filter-drawer settings-categories-drawer">
+                <DrawerHeader className="mobile-filter-header">
+                  <DrawerTitle>Categories</DrawerTitle>
+                  <DrawerDescription className="sr-only">Add categories, customize colors, or remove unused categories.</DrawerDescription>
+                  <DrawerHeaderClose className="mobile-filter-close" />
+                </DrawerHeader>
+                <div className="settings-mobile-detail-body">
+                  {getCategorySettingsContent()}
+                </div>
+              </DrawerContent>
+            </Drawer>
+          </>
+        ) : (
+          getCategorySettingsContent()
+        )}
+      </SettingsSection>
+    </section>
+  );
+
+  function getCategorySettingsContent() {
+    return (
+      <>
         <div className="category-create-row settings-category-create-row">
           <label>
             New category
@@ -205,7 +232,7 @@ export function SettingsPage({
             </p>
           )}
         </div>
-        
+
         <div className="stack-list">
           {allCategories.map((category) => (
             <CategoryColorRow
@@ -223,9 +250,9 @@ export function SettingsPage({
             />
           ))}
         </div>
-      </SettingsSection>
-    </section>
-  );
+      </>
+    );
+  }
 }
 
 type SettingsSectionProps = {
@@ -248,6 +275,19 @@ function SettingsSection({ children, description, title }: SettingsSectionProps)
         {children}
       </div>
     </section>
+  );
+}
+
+// Compact mobile row that opens a settings detail surface.
+function SettingsNavigationButton({ description, onClick, title }: { description: string; onClick: () => void; title: string }) {
+  return (
+    <button className="settings-navigation-button" onClick={onClick} type="button">
+      <span>
+        <strong>{title}</strong>
+        <small>{description}</small>
+      </span>
+      <ChevronRight aria-hidden="true" className="h-5 w-5" />
+    </button>
   );
 }
 
@@ -623,9 +663,9 @@ type ReportingSettingsProps = {
   accountOptions: TransactionAccountOption[];
   categoryOptions: string[];
   defaultAccountId: string;
-  incomeExcludedCategories: string[];
+  incomeIncludedCategories: string[];
   onDefaultAccountChange: (accountId: string) => void;
-  onIncomeExcludedCategoriesChange: (categories: string[]) => void;
+  onIncomeIncludedCategoriesChange: (categories: string[]) => void;
 };
 
 // Controls the account and income categories used by reporting summaries.
@@ -633,17 +673,17 @@ function ReportingSettings({
   accountOptions,
   categoryOptions,
   defaultAccountId,
-  incomeExcludedCategories,
+  incomeIncludedCategories,
   onDefaultAccountChange,
-  onIncomeExcludedCategoriesChange
+  onIncomeIncludedCategoriesChange
 }: ReportingSettingsProps) {
   const accountExists = !defaultAccountId || accountOptions.some((account) => account.value === defaultAccountId);
   const toggleIncomeCategory = (category: string) => {
-    const nextCategories = incomeExcludedCategories.includes(category)
-      ? incomeExcludedCategories.filter((item) => item !== category)
-      : [...incomeExcludedCategories, category];
+    const nextCategories = incomeIncludedCategories.includes(category)
+      ? incomeIncludedCategories.filter((item) => item !== category)
+      : [...incomeIncludedCategories, category];
 
-    onIncomeExcludedCategoriesChange(nextCategories);
+    onIncomeIncludedCategoriesChange(nextCategories);
   };
 
   return (
@@ -667,14 +707,14 @@ function ReportingSettings({
       )}
       <div className="settings-income-exclusions">
         <div>
-          <h3>Exclude income categories</h3>
-          <p>Positive transactions in these categories stay visible but are removed from reporting summaries.</p>
+          <h3>Include income categories</h3>
+          <p>Positive transactions in these categories stay visible and count toward reporting summaries.</p>
         </div>
         <div className="settings-category-toggle-grid">
           {categoryOptions.map((category) => (
             <button
-              aria-pressed={incomeExcludedCategories.includes(category)}
-              className={incomeExcludedCategories.includes(category) ? "active" : undefined}
+              aria-pressed={incomeIncludedCategories.includes(category)}
+              className={incomeIncludedCategories.includes(category) ? "active" : undefined}
               key={category}
               onClick={() => toggleIncomeCategory(category)}
               type="button"
@@ -691,11 +731,13 @@ function ReportingSettings({
 type CardFitCategorySettingsProps = {
   availableCategories: string[];
   includedCategories: string[];
+  isMobile: boolean;
   onChange: (categories: string[]) => void;
 };
 
 // Lets users decide which spending categories count toward Card Fit rewards.
-function CardFitCategorySettings({ availableCategories, includedCategories, onChange }: CardFitCategorySettingsProps) {
+function CardFitCategorySettings({ availableCategories, includedCategories, isMobile, onChange }: CardFitCategorySettingsProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const includedSet = new Set(includedCategories);
   const toggleCategory = (category: string) => {
     const nextCategories = includedSet.has(category)
@@ -704,40 +746,115 @@ function CardFitCategorySettings({ availableCategories, includedCategories, onCh
 
     onChange(nextCategories);
   };
-  const selectAll = () => onChange(availableCategories);
-  const clearAll = () => onChange([]);
+  const summary = getCategorySelectionLabel(includedCategories, availableCategories, "All categories");
+
+  if (isMobile) {
+    return (
+      <>
+        <SettingsNavigationButton description={summary} onClick={() => setMobileOpen(true)} title="Card Fit categories" />
+        <Drawer onOpenChange={setMobileOpen} open={mobileOpen}>
+          <DrawerContent className="mobile-filter-drawer settings-card-fit-drawer">
+            <DrawerHeader className="mobile-filter-header">
+              <DrawerTitle>Card Fit categories</DrawerTitle>
+              <DrawerDescription className="sr-only">Choose which categories count toward rewards estimates.</DrawerDescription>
+              <DrawerHeaderClose className="mobile-filter-close" />
+            </DrawerHeader>
+            <div className="settings-mobile-detail-body">
+              <div className="mobile-filter-section">
+                <h3>Categories</h3>
+                <div className="mobile-filter-chips category">
+                  {availableCategories.map((category) => (
+                    <button
+                      aria-pressed={includedSet.has(category)}
+                      className={includedSet.has(category) ? "active" : undefined}
+                      key={category}
+                      onClick={() => toggleCategory(category)}
+                      type="button"
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      </>
+    );
+  }
 
   return (
     <div className="settings-card-fit">
-      <div className="settings-section-heading">
-        <div>
-          <h3>Card Fit categories</h3>
-          <p>Choose which categories count toward rewards estimates.</p>
-        </div>
-        <div className="settings-inline-actions">
-          <Button onClick={selectAll} type="button" variant="outline" size="sm">
-            Select all
-          </Button>
-          <Button onClick={clearAll} type="button" variant="outline" size="sm">
-            Clear
-          </Button>
-        </div>
-      </div>
-      <div className="settings-category-toggle-grid">
-        {availableCategories.map((category) => (
-          <button
-            aria-pressed={includedSet.has(category)}
-            className={includedSet.has(category) ? "active" : undefined}
-            key={category}
-            onClick={() => toggleCategory(category)}
-            type="button"
-          >
-            {category}
-          </button>
-        ))}
-      </div>
+      <CategoryMultiSelectDropdown
+        label={summary}
+        onToggle={toggleCategory}
+        options={availableCategories}
+        selectedValues={includedCategories}
+      />
     </div>
   );
+}
+
+// Dropdown multi-select used by desktop Settings category controls.
+function CategoryMultiSelectDropdown({
+  label,
+  onToggle,
+  options,
+  selectedValues
+}: {
+  label: string;
+  onToggle: (category: string) => void;
+  options: string[];
+  selectedValues: string[];
+}) {
+  const selectedSet = new Set(selectedValues);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button aria-haspopup="listbox" className="category-multi-select-trigger transaction-select-trigger" role="combobox" type="button">
+          <span>{label}</span>
+          <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="category-multi-select-content settings-category-multi-select-content">
+        {options.map((option) => {
+          const isActive = selectedSet.has(option);
+
+          return (
+            <button
+              aria-pressed={isActive}
+              className={isActive ? "active" : undefined}
+              key={option}
+              onClick={() => onToggle(option)}
+              type="button"
+            >
+              <span className="category-multi-select-check">
+                {isActive && <Check aria-hidden="true" className="h-4 w-4" />}
+              </span>
+              <span>{option}</span>
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function getCategorySelectionLabel(selectedValues: string[], options: string[], allLabel: string) {
+  if (selectedValues.length === 0) {
+    return "No categories selected";
+  }
+
+  if (selectedValues.length === options.length) {
+    return allLabel;
+  }
+
+  if (selectedValues.length === 1) {
+    return selectedValues[0];
+  }
+
+  return `${selectedValues.length} selected`;
 }
 
 type AkahuFreshnessCardProps = {

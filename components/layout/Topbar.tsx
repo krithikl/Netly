@@ -1,4 +1,5 @@
 import { TimeRangeTabs } from "@/components/layout/TimeRangeTabs";
+import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import type { View } from "@/lib/app/types";
 import type { PeriodOption } from "@/lib/types";
 
@@ -24,8 +25,13 @@ export function Topbar({
   setPeriod,
   showPeriodControl
 }: TopbarProps) {
+  const isBottomNavigation = useIsBottomNavigation();
   const dateLabel = formatDateLabel(payday);
   const pageCopy = getPageCopy(activeView, linkedUserName);
+
+  if (isBottomNavigation) {
+    return null;
+  }
 
   return (
     <header className="topbar" data-active-view={activeView}>

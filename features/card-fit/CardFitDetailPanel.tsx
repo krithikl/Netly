@@ -76,7 +76,7 @@ export function CardFitDetailPanel({
             <DrawerDescription className="sr-only">{panel.description}</DrawerDescription>
             <DrawerHeaderClose className="mobile-filter-close" />
           </DrawerHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-none [touch-action:pan-y] px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-[calc(20px+env(safe-area-inset-bottom))]">
             <CardFitDetailContent basis={basis} card={card} mode={mode} rank={rank} />
           </div>
         </DrawerContent>

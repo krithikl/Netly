@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { budgetsStorageKey } from "@/lib/app/constants";
 import { formatMoney } from "@/lib/insights";
+import { cn } from "@/lib/utils";
 import type { RecurringMerchant } from "@/lib/types";
 
 type BudgetsPageProps = {
@@ -47,6 +48,9 @@ type BudgetFormState = {
 };
 
 const collapsedBudgetLimit = 3;
+const budgetListToggleButtonClassName = "grid min-h-full cursor-pointer place-items-center rounded-[22px] border border-[var(--outline-soft)] bg-[var(--surface-2)] font-[inherit] text-[1.05rem] font-black text-[var(--accent-cream)] hover:border-[var(--primary-border)] hover:bg-[var(--surface-3)] max-[768px]:min-h-[60px] max-[768px]:rounded-[20px] max-[768px]:text-base";
+const budgetEditorLabelClassName = "grid gap-[7px] text-[11px] font-[850] uppercase tracking-[0.04em] text-[var(--muted)]";
+const budgetEditorInputClassName = "min-h-11 w-full rounded-xl border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3 py-2.5 text-[0.95rem] font-bold text-[var(--ink)] outline-none focus:border-[var(--primary-border)]";
 
 // Budget screen with user-defined budgets calculated from selected categories.
 export function BudgetsPage({ categoryOptions, categories, categoryColors, onRecurringClick, recurring }: BudgetsPageProps) {
@@ -123,8 +127,8 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
     <section className="view-stack budget-page-layout" data-testid="budgets-page">
       <MobilePageHeader title="Budgets" />
       <div className="budget-desktop-grid">
-        <section className="budget-builder">
-          <div className="budget-card-list">
+        <section className="relative grid min-w-0 gap-[18px] max-[768px]:gap-3.5">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] items-stretch gap-3.5 max-[768px]:grid-cols-1">
             {visibleBudgets.map((budget) => (
               <BudgetCard
                 budget={budget}
@@ -135,24 +139,24 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
               />
             ))}
             {hiddenBudgetCount > 0 && (
-              <button className="budget-more-card" onClick={() => setIsBudgetListExpanded(true)} type="button">
+              <button className={budgetListToggleButtonClassName} onClick={() => setIsBudgetListExpanded(true)} type="button">
                 + {hiddenBudgetCount} more
               </button>
             )}
             {isBudgetListExpanded && renderedBudgets.length > collapsedBudgetLimit && (
-              <button className="budget-less-card" onClick={() => setIsBudgetListExpanded(false)} type="button">
+              <button className={budgetListToggleButtonClassName} onClick={() => setIsBudgetListExpanded(false)} type="button">
                 Show less
               </button>
             )}
             {visibleBudgets.length === 0 && (
-              <div className="budget-empty-state">
-                <strong>No budgets yet</strong>
-                <span>Add a monthly budget and choose the categories that count toward it.</span>
+              <div className="grid min-h-[170px] content-center gap-2 rounded-[28px] border border-dashed border-[var(--outline-soft)] bg-[var(--surface-2)] p-[18px] text-[var(--muted)]">
+                <strong className="text-base font-black text-[var(--ink)]">No budgets yet</strong>
+                <span className="text-[0.86rem] font-bold leading-[1.4]">Add a monthly budget and choose the categories that count toward it.</span>
               </div>
             )}
-            <button className="budget-add-card" onClick={openNewBudget} type="button">
-              <Plus aria-hidden="true" size={28} strokeWidth={2.1} />
-              <span>Add budget</span>
+            <button className="grid min-h-full cursor-pointer place-items-center gap-2.5 rounded-[28px] border-2 border-[var(--outline-soft)] bg-transparent font-[inherit] text-[0.95rem] font-[850] text-[var(--muted-2)] transition-[border-color,color,background,transform] duration-[var(--motion-fast)] ease-[var(--motion-ease)] animate-[card-in_var(--motion-medium)_var(--motion-ease)_both] hover:-translate-y-px hover:border-[var(--primary-border)] hover:bg-[rgba(255,255,255,0.03)] hover:text-[var(--accent-cream)] focus-visible:-translate-y-px focus-visible:border-[var(--primary-border)] focus-visible:bg-[rgba(255,255,255,0.03)] focus-visible:text-[var(--accent-cream)] max-[768px]:min-h-[170px]" onClick={openNewBudget} type="button">
+              <Plus aria-hidden="true" className="self-end" size={28} strokeWidth={2.1} />
+              <span className="self-start">Add budget</span>
             </button>
           </div>
         </section>
@@ -177,7 +181,11 @@ export function BudgetsPage({ categoryOptions, categories, categoryColors, onRec
           </div>
         </section>
       </div>
-      {budgetStorageError && <p className="budget-storage-error">{budgetStorageError}</p>}
+      {budgetStorageError && (
+        <p className="rounded-[14px] border border-[rgba(229,184,107,0.28)] bg-[rgba(229,184,107,0.1)] px-3 py-2.5 text-[13px] font-bold text-[var(--warning)]">
+          {budgetStorageError}
+        </p>
+      )}
 
       <BudgetEditor
         availableCategoryOptions={availableCategoryOptions}
@@ -307,14 +315,14 @@ function BudgetEditor({
   };
 
   const formContent = (
-    <form className="budget-editor-form" onSubmit={onSubmit}>
-      <label>
+    <form className={cn("grid gap-3.5 overflow-auto", isMobileEditor ? "px-[18px] pb-[18px]" : "p-0")} onSubmit={onSubmit}>
+      <label className={budgetEditorLabelClassName}>
         Budget name
-        <input autoComplete="off" onChange={changeName} placeholder="Spending money" value={form.name} />
+        <input className={budgetEditorInputClassName} autoComplete="off" onChange={changeName} placeholder="Spending money" value={form.name} />
       </label>
-      <label>
+      <label className={budgetEditorLabelClassName}>
         Amount
-        <input inputMode="decimal" min="0" onChange={changeLimit} placeholder="800" step="0.01" type="number" value={form.limit} />
+        <input className={budgetEditorInputClassName} inputMode="decimal" min="0" onChange={changeLimit} placeholder="800" step="0.01" type="number" value={form.limit} />
       </label>
       <section className="budget-category-selector">
         <div className="budget-category-selector-heading">
@@ -342,14 +350,14 @@ function BudgetEditor({
           ))}
         </div>
       </section>
-      <div className="budget-editor-actions">
+      <div className="flex justify-end gap-2.5 pt-1 max-[768px]:grid max-[768px]:grid-cols-1">
         {editingBudget && (
-          <Button className="budget-delete-button" onClick={onDelete} type="button" variant="outline">
+          <Button className="min-w-[132px] border-[rgba(255,125,145,0.28)] text-[var(--danger)] max-[768px]:w-full max-[768px]:min-w-0" onClick={onDelete} type="button" variant="outline">
             <Trash2 aria-hidden="true" className="h-4 w-4" />
             Delete
           </Button>
         )}
-        <button className="budget-save-button" disabled={!canSaveBudget} onClick={onSave} type="button">
+        <button className="inline-flex min-h-[38px] min-w-[132px] cursor-pointer items-center justify-center rounded-xl border-0 bg-[var(--primary)] px-4 font-[inherit] text-sm font-extrabold text-[var(--accent-cream)] hover:bg-[var(--primary-hover)] disabled:cursor-default disabled:opacity-50 max-[768px]:w-full max-[768px]:min-w-0" disabled={!canSaveBudget} onClick={onSave} type="button">
           Save budget
         </button>
       </div>

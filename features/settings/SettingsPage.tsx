@@ -301,12 +301,16 @@ function SettingsSection({ children, description, title }: SettingsSectionProps)
 // Compact mobile row that opens a settings detail surface.
 function SettingsNavigationButton({ description, onClick, title }: { description: string; onClick: () => void; title: string }) {
   return (
-    <button className="settings-navigation-button" onClick={onClick} type="button">
-      <span>
-        <strong>{title}</strong>
-        <small>{description}</small>
+    <button
+      className="grid min-h-[72px] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-3.5 rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] p-3.5 text-left font-[inherit] text-[var(--ink)]"
+      onClick={onClick}
+      type="button"
+    >
+      <span className="min-w-0">
+        <strong className="block truncate text-base font-black text-[var(--ink)]">{title}</strong>
+        <small className="mt-1 block truncate text-[0.82rem] font-bold text-[var(--muted)]">{description}</small>
       </span>
-      <ChevronRight aria-hidden="true" className="h-5 w-5" />
+      <ChevronRight aria-hidden="true" className="h-5 w-5 text-[var(--accent-cream)]" />
     </button>
   );
 }
@@ -319,6 +323,8 @@ type DataBackupSettingsProps = {
   onRefreshBackups: () => Promise<DriveBackupEntry[]>;
   onRestore: (fileId: string) => Promise<void>;
 };
+
+const backupActionButtonClassName = "grid min-h-[82px] cursor-pointer place-items-center gap-2 rounded-[18px] border border-[var(--outline-soft)] bg-[var(--surface-2)] font-black text-[var(--ink)] transition-[transform,border-color,background] duration-[var(--motion-fast)] ease-[var(--motion-ease)] hover:border-[var(--primary-border)] hover:bg-[var(--surface-3)] focus-visible:border-[var(--primary-border)] focus-visible:bg-[var(--surface-3)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-[0.55] max-[768px]:min-h-[92px] max-[768px]:rounded-2xl max-[768px]:px-1.5 max-[768px]:py-2.5 max-[768px]:text-[0.82rem]";
 
 // Manual Google Drive backup and restore controls for the hidden app data folder.
 function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnect, onRefreshBackups, onRestore }: DataBackupSettingsProps) {
@@ -388,43 +394,43 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
   };
 
   return (
-    <div className="settings-drive-card settings-backup-card">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 max-[768px]:grid-cols-1">
       <div>
-        <h3>Google Drive backup</h3>
-        <p>Backups use Google's hidden app data folder. Netly cannot read your other Drive files.</p>
+        <h3 className="m-0 text-base font-black text-[var(--ink)]">Google Drive backup</h3>
+        <p className="mt-1.5 text-[0.84rem] leading-[1.45] text-[var(--muted)]">Backups use Google's hidden app data folder. Netly cannot read your other Drive files.</p>
       </div>
-      <span className={`settings-drive-status ${driveBackup.status}`}>
+      <span className={`settings-drive-status ${driveBackup.status} max-[768px]:w-fit`}>
         {getDriveBackupStatusLabel(driveBackup.status)}
       </span>
       {!driveBackup.clientConfigured && (
-        <p className="settings-drive-warning">
+        <p className="col-span-full mt-1.5 text-[0.84rem] font-extrabold leading-[1.45] text-[var(--danger)]">
           Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add a Google OAuth client ID before connecting Drive backup.
         </p>
       )}
       {driveBackup.message && (
-        <p aria-live="polite" className="settings-drive-message">
+        <p aria-live="polite" className="col-span-full mt-1.5 text-[0.84rem] leading-[1.45] text-[var(--muted)]">
           {driveBackup.message}
         </p>
       )}
       {driveBackup.lastSyncedAt && (
-        <p className="settings-drive-meta">Last backup {formatDriveSyncTime(driveBackup.lastSyncedAt)}</p>
+        <p className="col-span-full mt-1.5 text-[0.84rem] leading-[1.45] text-[var(--muted)]">Last backup {formatDriveSyncTime(driveBackup.lastSyncedAt)}</p>
       )}
-      <div className="settings-backup-actions">
-        <button disabled={isBusy} onClick={() => void createBackup()} type="button">
-          <CloudUpload aria-hidden="true" className="h-5 w-5" />
+      <div className="col-span-full grid grid-cols-3 gap-3 max-[768px]:gap-2">
+        <button className={backupActionButtonClassName} disabled={isBusy} onClick={() => void createBackup()} type="button">
+          <CloudUpload aria-hidden="true" className="h-5 w-5 text-[var(--accent-cream)]" />
           <span>Backup</span>
         </button>
-        <button disabled={isBusy} onClick={() => openBackupPanel("restore")} type="button">
-          <CloudDownload aria-hidden="true" className="h-5 w-5" />
+        <button className={backupActionButtonClassName} disabled={isBusy} onClick={() => openBackupPanel("restore")} type="button">
+          <CloudDownload aria-hidden="true" className="h-5 w-5 text-[var(--accent-cream)]" />
           <span>Restore</span>
         </button>
-        <button disabled={isBusy} onClick={() => openBackupPanel("backups")} type="button">
-          <FolderClock aria-hidden="true" className="h-5 w-5" />
+        <button className={backupActionButtonClassName} disabled={isBusy} onClick={() => openBackupPanel("backups")} type="button">
+          <FolderClock aria-hidden="true" className="h-5 w-5 text-[var(--accent-cream)]" />
           <span>Backups</span>
         </button>
       </div>
       {canDisconnectDriveBackup && (
-        <div className="settings-drive-actions">
+        <div className="col-span-full flex flex-wrap gap-2.5">
           <Button disabled={isBusy} onClick={onDisconnect} type="button" variant="secondary">
             Disconnect
           </Button>
@@ -463,9 +469,9 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
             </AlertDialogDescription>
           </AlertDialogHeader>
           {backupToDelete && (
-            <div className="settings-restore-summary">
-              <strong>{formatBackupTimestamp(backupToDelete.timestamp)}</strong>
-              <span>{backupToDelete.name}</span>
+            <div className="grid w-full gap-1 rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] px-5 py-4 text-left text-[var(--ink)]">
+              <strong className="block min-w-0 [overflow-wrap:anywhere]">{formatBackupTimestamp(backupToDelete.timestamp)}</strong>
+              <span className="block min-w-0 text-[0.82rem] font-bold text-[var(--muted)] [overflow-wrap:anywhere]">{backupToDelete.name}</span>
             </div>
           )}
           <AlertDialogFooter>
@@ -508,9 +514,9 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
             </DialogDescription>
           </DialogHeader>
           {selectedBackup && (
-            <div className="settings-restore-summary">
-              <strong>{formatBackupTimestamp(selectedBackup.timestamp)}</strong>
-              <span>{selectedBackup.name}</span>
+            <div className="grid w-full gap-1 rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] px-5 py-4 text-left text-[var(--ink)]">
+              <strong className="block min-w-0 [overflow-wrap:anywhere]">{formatBackupTimestamp(selectedBackup.timestamp)}</strong>
+              <span className="block min-w-0 text-[0.82rem] font-bold text-[var(--muted)] [overflow-wrap:anywhere]">{selectedBackup.name}</span>
             </div>
           )}
           <DialogFooter>
@@ -723,7 +729,7 @@ function ReportingSettings({
         />
       </div>
       {!accountExists && (
-        <p className="settings-drive-warning">The saved default account is not available in the current account list.</p>
+        <p className="font-extrabold text-[var(--danger)]">The saved default account is not available in the current account list.</p>
       )}
     </div>
   );
@@ -902,34 +908,34 @@ function AkahuFreshnessCard({ dataMode, freshness }: AkahuFreshnessCardProps) {
   const statusClassName = isDemoMode ? "ready" : getAkahuFreshnessStatusClassName(freshness);
 
   return (
-    <div className="settings-drive-card">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3.5 max-[768px]:grid-cols-1">
       <div>
-        <h3>Akahu data freshness</h3>
-        <p>{isDemoMode ? "Demo mode uses local sample data." : "Latest endpoint retrieval and Akahu account refresh timestamps."}</p>
+        <h3 className="m-0 text-base font-black text-[var(--ink)]">Akahu data freshness</h3>
+        <p className="mt-1.5 text-[0.84rem] leading-[1.45] text-[var(--muted)]">{isDemoMode ? "Demo mode uses local sample data." : "Latest endpoint retrieval and Akahu account refresh timestamps."}</p>
       </div>
-      <span className={`settings-drive-status ${statusClassName}`}>
+      <span className={`settings-drive-status ${statusClassName} max-[768px]:w-fit`}>
         {statusLabel}
       </span>
       {!isDemoMode && (
         <>
-          <div className="settings-freshness-grid" aria-live="polite">
+          <div className="col-span-full grid grid-cols-3 gap-2.5 max-[768px]:grid-cols-1" aria-live="polite">
             <FreshnessMetric label="Retrieved from Akahu" value={formatAkahuFreshnessTime(freshness.retrievedAt)} />
             <FreshnessMetric label="Balance data" value={formatAkahuFreshnessTime(freshness.balanceRefreshedAt)} />
             <FreshnessMetric label="Transactions checked" value={formatAkahuFreshnessTime(freshness.transactionsRefreshedAt)} />
           </div>
           {freshness.status === "failed" && freshness.error && (
-            <p className="settings-drive-warning">{freshness.error}</p>
+            <p className="col-span-full mt-1.5 text-[0.84rem] font-extrabold leading-[1.45] text-[var(--danger)]">{freshness.error}</p>
           )}
           {freshness.accounts.length > 1 && (
-            <details className="settings-freshness-details">
-              <summary>Account timestamps</summary>
-              <div className="settings-freshness-account-list">
+            <details className="col-span-full text-[0.84rem] text-[var(--muted)]">
+              <summary className="cursor-pointer font-black text-[var(--ink)]">Account timestamps</summary>
+              <div className="mt-2.5 grid gap-2">
                 {freshness.accounts.map((account) => (
-                  <div key={account.accountId}>
-                    <strong>{account.displayName}</strong>
-                    <span>{account.status}</span>
-                    <span>Balance {formatAkahuFreshnessTime(account.balanceRefreshedAt)}</span>
-                    <span>Transactions {formatAkahuFreshnessTime(account.transactionsRefreshedAt)}</span>
+                  <div className="rounded-[10px] border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3 py-2.5" key={account.accountId}>
+                    <strong className="mb-1 block text-[0.84rem] text-[var(--ink)]">{account.displayName}</strong>
+                    <span className="block text-[0.74rem] font-extrabold text-[var(--muted)]">{account.status}</span>
+                    <span className="block text-[0.74rem] font-extrabold text-[var(--muted)]">Balance {formatAkahuFreshnessTime(account.balanceRefreshedAt)}</span>
+                    <span className="block text-[0.74rem] font-extrabold text-[var(--muted)]">Transactions {formatAkahuFreshnessTime(account.transactionsRefreshedAt)}</span>
                   </div>
                 ))}
               </div>
@@ -949,9 +955,9 @@ type FreshnessMetricProps = {
 // Renders one compact timestamp field in the Akahu freshness card.
 function FreshnessMetric({ label, value }: FreshnessMetricProps) {
   return (
-    <div className="settings-freshness-metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
+    <div className="rounded-[10px] border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3 py-2.5">
+      <span className="block text-[0.74rem] font-extrabold text-[var(--muted)]">{label}</span>
+      <strong className="mt-1 block text-[0.84rem] font-black text-[var(--ink)]">{value}</strong>
     </div>
   );
 }

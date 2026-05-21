@@ -11,6 +11,7 @@ import {
   getTransactionId,
   getTransactionMerchant
 } from "@/lib/transaction-display";
+import { cn } from "@/lib/utils";
 import type { Transaction } from "@/lib/types";
 
 type RecentActivityStripProps = {
@@ -45,7 +46,7 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
 
   if (transactions.length === 0) {
     return (
-      <Card className="recent-activity-card">
+      <Card className="grid gap-4">
         <RecentActivityHeader onViewAll={onViewAll} />
         <div className="empty-state">No transactions found.</div>
       </Card>
@@ -53,9 +54,9 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
   }
 
   return (
-    <Card className="recent-activity-card">
+    <Card className="grid gap-4">
       <RecentActivityHeader onViewAll={onViewAll} />
-      <div className="recent-strip" data-testid="home-recent-transactions">
+      <div className="grid grid-cols-1 gap-2" data-testid="home-recent-transactions">
         {transactions.map((transaction) => {
           const category = getTransactionCategory(transaction);
           const merchant = getTransactionMerchant(transaction);
@@ -64,22 +65,27 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
           const avatarStyle = { background: getCategoryColor(category, categoryColors) };
 
           return (
-            <button className="recent-item" key={transactionId} onClick={() => openDetails(transactionId)} type="button">
-              <span className="recent-avatar" style={avatarStyle}>
+            <button
+              className="grid min-w-0 grid-cols-[46px_minmax(0,1fr)_max-content] items-center gap-3 rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3 py-2.5 text-left text-[var(--ink)] transition-[transform,background,border-color] duration-[var(--motion-fast)] ease-[var(--motion-ease)] hover:bg-[var(--surface-3)] hover:shadow-[inset_0_0_0_1px_var(--primary-border)] focus-visible:bg-[var(--surface-3)] focus-visible:shadow-[inset_0_0_0_1px_var(--primary-border)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus-ring)] active:scale-[0.985] max-[600px]:grid-cols-[48px_minmax(0,1fr)_max-content] max-[600px]:p-2.5"
+              key={transactionId}
+              onClick={() => openDetails(transactionId)}
+              type="button"
+            >
+              <span className="grid h-[42px] w-[42px] place-items-center rounded-full font-black text-white" style={avatarStyle}>
                 {merchant.slice(0, 1)}
               </span>
-              <span className="recent-copy">
-                <strong>{merchant}</strong>
-                <span>{category}</span>
-                <small>{formatRelativeDate(getTransactionDate(transaction))}</small>
+              <span className="grid min-w-0 gap-[3px]">
+                <strong className="truncate text-[0.98rem]">{merchant}</strong>
+                <span className="truncate text-[0.82rem] font-bold text-[var(--muted)]">{category}</span>
+                <small className="truncate text-[0.82rem] font-bold text-[var(--muted)]">{formatRelativeDate(getTransactionDate(transaction))}</small>
               </span>
-              <b className={`recent-amount ${amountTone}`}>{formatMoney(transaction.amount, true)}</b>
+              <b className={cn("self-center whitespace-nowrap text-base tabular-nums", amountTone)}>{formatMoney(transaction.amount, true)}</b>
             </button>
           );
         })}
       </div>
-      <div className="recent-activity-footer">
-        <Button className="recent-view-all-button" onClick={onViewAll} type="button" variant="secondary">
+      <div className="flex justify-center px-0 pt-0.5 pb-1">
+        <Button className="min-h-[38px] rounded-full px-[26px]" onClick={onViewAll} type="button" variant="secondary">
           View All Transactions
         </Button>
       </div>

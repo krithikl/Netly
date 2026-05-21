@@ -57,16 +57,16 @@ export function CardFitPage({ basis, cardFitSourceLabel, cardFitWindowLabel, car
       <MobilePageHeader title="Card fit" />
       <section className="material-card">
         <CardFitBasisSummary basis={basis} cardFitWindowLabel={cardFitWindowLabel} />
-        <p className="card-fit-summary-copy">{subtitle}</p>
-        <p className="card-fit-disclaimer">
+        <p className="mt-0 mb-3.5 text-[13px] font-bold text-[var(--muted)]">{subtitle}</p>
+        <p className="-mt-1 mb-3.5 text-[13px] font-bold text-[var(--muted)]">
           Rewards are estimated from card-eligible spend. Listed perks are not dollar-valued unless the value is clear from the issuer source.
         </p>
-        <div className="card-fit-controls">
-          <label>
+        <div className="mb-4 grid grid-cols-[repeat(2,minmax(180px,260px))] gap-3 max-[768px]:grid-cols-1">
+          <label className="grid gap-1.5 text-xs font-[850] uppercase text-[var(--muted)]">
             Bank or provider
             <SelectField onChange={setIssuerFilter} options={issuerOptions} value={issuerFilter} />
           </label>
-          <label>
+          <label className="grid gap-1.5 text-xs font-[850] uppercase text-[var(--muted)]">
             Card type
             <SelectField onChange={(value) => setTypeFilter(value as CardTypeFilter)} options={typeOptions} value={typeFilter} />
           </label>
@@ -140,22 +140,22 @@ function getCardType(card: CardValue): Exclude<CardTypeFilter, "All types"> {
 // Explains the spend window and data basis used for the card ranking.
 function CardFitBasisSummary({ basis, cardFitWindowLabel }: { basis: CardFitBasis; cardFitWindowLabel: string }) {
   return (
-    <div className="card-fit-basis" aria-label="Card fit calculation basis">
-      <div>
-        <span>Spend window</span>
-        <strong>{cardFitWindowLabel}</strong>
+    <div className="my-3.5 grid grid-cols-4 gap-2.5 rounded-[18px] border border-[var(--outline-soft)] bg-[var(--surface-2)] p-3 max-[768px]:grid-cols-1" aria-label="Card fit calculation basis">
+      <div className="grid min-w-0 gap-1">
+        <span className="text-xs font-[850] uppercase text-[var(--muted)]">Spend window</span>
+        <strong className="truncate text-[15px] text-[var(--ink)]">{cardFitWindowLabel}</strong>
       </div>
-      <div>
-        <span>Eligible spend</span>
-        <strong>{formatMoney(basis.eligibleSpend, true)}</strong>
+      <div className="grid min-w-0 gap-1">
+        <span className="text-xs font-[850] uppercase text-[var(--muted)]">Eligible spend</span>
+        <strong className="truncate text-[15px] text-[var(--ink)]">{formatMoney(basis.eligibleSpend, true)}</strong>
       </div>
-      <div>
-        <span>Eligible annual spend</span>
-        <strong>{formatMoney(basis.eligibleAnnualSpend)}</strong>
+      <div className="grid min-w-0 gap-1">
+        <span className="text-xs font-[850] uppercase text-[var(--muted)]">Eligible annual spend</span>
+        <strong className="truncate text-[15px] text-[var(--ink)]">{formatMoney(basis.eligibleAnnualSpend)}</strong>
       </div>
-      <div>
-        <span>Rows used</span>
-        <strong>
+      <div className="grid min-w-0 gap-1">
+        <span className="text-xs font-[850] uppercase text-[var(--muted)]">Rows used</span>
+        <strong className="truncate text-[15px] text-[var(--ink)]">
           {basis.eligibleTransactionCount}/{basis.transactionCount}
         </strong>
       </div>

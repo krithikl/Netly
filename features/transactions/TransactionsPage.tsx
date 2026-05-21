@@ -25,6 +25,7 @@ import { filterTransactionsByDateRange, formatDateInputValue, getThisMonthDateRa
 import { isIncomeCategoryIncluded } from "@/lib/reporting";
 import { type CategoryEditScope } from "@/lib/category-rules";
 import { getTransactionCategory, getTransactionDate } from "@/lib/transaction-display";
+import { cn } from "@/lib/utils";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionAccountOption, TransactionFilter, TransactionSort } from "@/lib/app/types";
 import {
@@ -73,6 +74,11 @@ type TransactionsPageProps = {
 
 const transactionFilters: TransactionFilter[] = ["All", "Expenses", "Income"];
 const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount high", "Amount low"];
+const transactionAnalyticsToneClassNames: Record<"green" | "purple" | "red", string> = {
+  green: "bg-[rgba(117,208,141,0.13)] text-[var(--success)]",
+  purple: "bg-[rgba(137,168,255,0.12)] text-[var(--info)]",
+  red: "bg-[rgba(255,125,145,0.12)] text-[var(--danger)]"
+};
 
 // Handles transaction search, filters, sorting, and category creation
 // Full transactions screen: search, filters, date range, category editing, and pagination.
@@ -326,7 +332,7 @@ export function TransactionsPage({
     >
       <MobilePageHeader
         actions={(
-          <div className="transaction-mobile-header-actions">
+          <div className="flex items-center justify-end gap-2">
             <Button aria-label="Search transactions" className="transaction-icon-action" onClick={openSearch} title="Search" type="button" variant="secondary">
               <Search aria-hidden="true" className="h-5 w-5" />
             </Button>
@@ -353,8 +359,8 @@ export function TransactionsPage({
           <div className="transaction-controls transaction-desktop-controls">
             <label className="transaction-search-label">
               Search
-              <span className="transaction-search-field">
-                <Search aria-hidden="true" className="h-4 w-4" />
+              <span className="relative block min-w-0">
+                <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
                 <input
                   className="search"
                   onChange={handleSearchChange}
@@ -439,7 +445,13 @@ function TransactionLoadMessage({ error, notice }: { error: string; notice: stri
   }
 
   return (
-    <div className={error ? "transaction-load-message error" : "transaction-load-message"} role={error ? "alert" : "status"}>
+    <div
+      className={cn(
+        "rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3.5 py-3 text-[0.86rem] font-[760] leading-[1.35] text-[var(--muted)]",
+        error && "border-[rgba(255,125,145,0.38)] text-[var(--danger)]"
+      )}
+      role={error ? "alert" : "status"}
+    >
       {message}
     </div>
   );
@@ -560,7 +572,7 @@ function TransactionAnalyticsSummary({
   onReviewNeedsReview: () => void;
 }) {
   return (
-    <div className="transaction-analytics-grid">
+    <div className="grid grid-cols-4 gap-3.5 max-[768px]:grid-cols-2 max-[768px]:gap-2.5">
       <TransactionAnalyticsCard
         icon={ReceiptText}
         label="Total spending"
@@ -610,19 +622,19 @@ function TransactionAnalyticsCard({
   value: string;
 }) {
   return (
-    <article className="transaction-analytics-card">
-      <span className={`transaction-analytics-icon transaction-analytics-icon-${tone}`}>
+    <article className="grid min-h-28 grid-cols-[46px_minmax(0,1fr)] items-center gap-3.5 rounded-[18px] border border-[var(--outline-soft)] bg-[var(--surface)] p-5 shadow-none max-[768px]:min-h-[116px] max-[768px]:grid-cols-[40px_minmax(0,1fr)] max-[768px]:gap-3 max-[768px]:p-3.5">
+      <span className={cn("grid h-11 w-11 place-items-center rounded-full max-[768px]:h-10 max-[768px]:w-10", transactionAnalyticsToneClassNames[tone])}>
         <Icon aria-hidden="true" className="h-5 w-5" />
       </span>
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
+      <div className="grid min-w-0 gap-1">
+        <span className="text-[0.78rem] font-[850] text-[var(--muted)]">{label}</span>
+        <strong className="truncate text-xl font-black text-[var(--ink)] tabular-nums max-[768px]:text-[1.08rem]">{value}</strong>
         {actionLabel && onAction ? (
-          <button className="metric-action transaction-analytics-action" onClick={onAction} type="button">
+          <button className="mt-1 text-left text-[0.78rem] font-bold text-[var(--muted)]" onClick={onAction} type="button">
             {actionLabel}
           </button>
         ) : (
-          <small>{note}</small>
+          <small className="text-[0.78rem] font-bold text-[var(--muted)]">{note}</small>
         )}
       </div>
     </article>
@@ -1153,17 +1165,17 @@ function MobileTransactionSearchView({
         title="Search"
       >
         <div className="transaction-mobile-search-controls">
-          <label className="transaction-mobile-search-field">
+          <label className="relative min-w-0">
             <span className="sr-only">Search transactions</span>
             <input
               autoFocus
-              className="search"
+              className="min-h-14 w-full rounded-[20px] border-0 bg-[var(--surface-2)] py-0 pr-[52px] pl-[18px] font-[inherit] text-base font-extrabold text-[var(--ink)] outline-none placeholder:text-[var(--muted-2)]"
               data-testid="transaction-search"
               onChange={onSearchChange}
               placeholder="Search..."
               value={query}
             />
-            <Search aria-hidden="true" className="h-5 w-5" />
+            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 right-[17px] h-5 w-5 -translate-y-1/2 text-[var(--accent-cream)]" />
           </label>
           <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
           <Button aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`} className="transaction-icon-action" data-testid="transaction-filter-button" onClick={onFilterOpen} title="Filters" type="button" variant="secondary">

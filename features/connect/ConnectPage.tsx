@@ -69,34 +69,36 @@ export function ConnectPage({
       <section className="material-card" suppressHydrationWarning>
         <PanelTitle title="Akahu connection" subtitle="Read-only account and transaction access" />
         {isAkahuConnected ? (
-          <div className="akahu-connected-card">
-            <div className="akahu-connected-heading">
-              <CheckCircle2 aria-hidden="true" className="h-5 w-5" />
+          <div className="mt-[18px] grid gap-4 rounded-[20px] border border-[var(--outline-soft)] bg-[var(--surface-2)] p-4">
+            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+              <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 text-[var(--success)]" />
               <div>
-                <h3>Akahu connected</h3>
-                <p>{getAkahuConnectionSummary(linkedAccountCount)}</p>
+                <h3 className="m-0 text-base font-black text-[var(--ink)]">Akahu connected</h3>
+                <p className="mt-1 mb-0 text-[0.86rem] leading-[1.45] text-[var(--muted)]">
+                  {getAkahuConnectionSummary(linkedAccountCount)}
+                </p>
               </div>
             </div>
-            <dl className="akahu-connected-details">
+            <dl className="m-0 grid gap-2.5">
               {linkedUserName && (
-                <div>
-                  <dt>Account holder</dt>
-                  <dd>{linkedUserName}</dd>
+                <div className="grid gap-[3px]">
+                  <dt className="text-[0.76rem] font-black text-[var(--muted)]">Account holder</dt>
+                  <dd className="m-0 min-w-0 [overflow-wrap:anywhere] font-extrabold text-[var(--ink)]">{linkedUserName}</dd>
                 </div>
               )}
               {linkedAccountLabel && (
-                <div>
-                  <dt>Primary account</dt>
-                  <dd>{linkedAccountLabel}</dd>
+                <div className="grid gap-[3px]">
+                  <dt className="text-[0.76rem] font-black text-[var(--muted)]">Primary account</dt>
+                  <dd className="m-0 min-w-0 [overflow-wrap:anywhere] font-extrabold text-[var(--ink)]">{linkedAccountLabel}</dd>
                 </div>
               )}
             </dl>
             {syncResult && (
-              <p aria-live="polite" className="sync-result">
+              <p aria-live="polite" className="text-[var(--muted)]">
                 {syncResult}
               </p>
             )}
-            <Button disabled={isLoadingTransactions} onClick={() => void disconnectAkahuConnection()} type="button" variant="secondary">
+            <Button className="w-fit" disabled={isLoadingTransactions} onClick={() => void disconnectAkahuConnection()} type="button" variant="secondary">
               <LogOut aria-hidden="true" className="h-4 w-4" />
               Disconnect Akahu
             </Button>
@@ -117,14 +119,14 @@ export function ConnectPage({
                 Merchant and category fields come from Akahu enrichment when available.
               </FlowStep>
             </div>
-            <Button className="connect-auth-button" onClick={handleAuthorizationStart} type="button">
+            <Button className="mt-[18px]" onClick={handleAuthorizationStart} type="button">
               Open Akahu authorization
             </Button>
-            <p aria-live="polite" className="sync-result">
+            <p aria-live="polite" className="mt-3 min-h-6 text-[var(--muted)]">
               {syncResult}
             </p>
             <form
-              className="completion-box"
+              className="mt-[18px] grid gap-3 rounded-[20px] border border-[var(--outline-soft)] bg-[var(--surface-2)] p-4"
               autoComplete="on"
               onSubmit={handleConnectionComplete}
             >
@@ -132,10 +134,11 @@ export function ConnectPage({
                 title="Development tokens"
                 subtitle="For Personal Apps, enter both Akahu tokens. Netly stores them in encrypted HTTP-only browser cookies, not environment files."
               />
-              <div className="completion-token-fields">
-                <label className="token-field" htmlFor="akahu-app-token">
-                  <span>AKAHU_APP_TOKEN</span>
+              <div className="grid gap-3">
+                <label className="grid gap-[7px]" htmlFor="akahu-app-token">
+                  <span className="text-[0.78rem] font-black text-[var(--muted)]">AKAHU_APP_TOKEN</span>
                   <input
+                    className="w-full rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] p-3 font-[inherit] text-[var(--ink)] placeholder:text-[var(--muted-2)]"
                     id="akahu-app-token"
                     name="username"
                     autoComplete="username"
@@ -146,9 +149,10 @@ export function ConnectPage({
                     value={manualTokens.appToken}
                   />
                 </label>
-                <label className="token-field" htmlFor="akahu-user-token">
-                  <span>AKAHU_USER_TOKEN</span>
+                <label className="grid gap-[7px]" htmlFor="akahu-user-token">
+                  <span className="text-[0.78rem] font-black text-[var(--muted)]">AKAHU_USER_TOKEN</span>
                   <input
+                    className="w-full rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] p-3 font-[inherit] text-[var(--ink)] placeholder:text-[var(--muted-2)]"
                     id="akahu-user-token"
                     name="password"
                     autoComplete="current-password"

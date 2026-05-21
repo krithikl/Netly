@@ -61,6 +61,10 @@ export function useNetlyApp() {
     () => applyCategoryPreferences(banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules),
     [banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules]
   );
+  const transactionSearchSourceTransactions = useMemo(
+    () => applyCategoryPreferences(categorySourceTransactions, categories.categoryOverrides, categories.categoryRules),
+    [categories.categoryOverrides, categories.categoryRules, categorySourceTransactions]
+  );
   const refreshTransactionPageRange = useCallback((dateRange = transactionPageDateRange) => {
     setTransactionPageDateRange(dateRange);
     banking.refreshTransactionPage(banking.dataMode, dateRange).catch((error: unknown) => {
@@ -120,7 +124,6 @@ export function useNetlyApp() {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
   }, []);
-
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
   const cardFitAvailableCategories = useMemo(
     () => categories.settingsCategoryOptions.filter((category) => category !== "All categories"),
@@ -169,18 +172,16 @@ export function useNetlyApp() {
     setActiveView("transactions");
   }, [setActiveView]);
   const openRecurringTransactions = useCallback((merchant: string) => {
-    const recurringDateRange = getTransactionPeriodDateRange(reportingTransactions, "90 days");
-
     transactionOpenPresetIdRef.current += 1;
     setTransactionOpenPreset({
-      dateRange: recurringDateRange,
       id: transactionOpenPresetIdRef.current,
+      openSearch: true,
       query: merchant,
       transactionCategory: [],
       transactionFilter: "All"
     });
     setActiveView("transactions");
-  }, [reportingTransactions, setActiveView]);
+  }, [setActiveView]);
   const clearTransactionOpenPreset = useCallback(() => {
     setTransactionOpenPreset(null);
   }, []);
@@ -237,6 +238,7 @@ export function useNetlyApp() {
       dataMode: banking.dataMode,
       dataSourceLabel: getDataSourceLabel(banking.isLoadingTransactions, banking.dataMode, banking.isConnected),
       isBottomNavigation,
+      isInitializingTransactionHistory: banking.isInitializingTransactionHistory,
       linkedAccountLabel: getLinkedAccountLabel(banking.primaryLinkedAccount, banking.linkedAccounts.length, banking.isConnected),
       linkedUserName,
       payday: paydaySettings.payday,
@@ -264,6 +266,12 @@ export function useNetlyApp() {
       },
       connect: {
         completeAkahuConnection: connection.completeAkahuConnection,
+        disconnectAkahuConnection: connection.disconnectAkahuConnection,
+        isAkahuConnected: banking.isConnected,
+        isLoadingTransactions: banking.isLoadingTransactions,
+        linkedAccountCount: banking.linkedAccounts.length,
+        linkedAccountLabel: getLinkedAccountLabel(banking.primaryLinkedAccount, banking.linkedAccounts.length, banking.isConnected),
+        linkedUserName,
         manualTokens: connection.manualTokens,
         onManualTokensChange: connection.updateManualTokens,
         setSyncResult: connection.setSyncResult,
@@ -340,7 +348,9 @@ export function useNetlyApp() {
         openPreset: transactionOpenPreset,
         transactionLoadError: banking.transactionLoadError,
         transactionLoadNotice: banking.transactionLoadNotice,
+        transactionMonthSourceTransactions: categorySourceTransactions,
         transactionPageLoadedDateRange: banking.transactionPageLoadedDateRange,
+        transactionSearchSourceTransactions,
         transactions: transactionPageWorkingTransactions
       }
     }

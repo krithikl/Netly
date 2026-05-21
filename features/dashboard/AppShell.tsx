@@ -2,6 +2,13 @@
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { DashboardViewRouter } from "@/features/dashboard/DashboardViewRouter";
 import { useNetlyApp } from "@/hooks/useNetlyApp";
 
@@ -35,6 +42,24 @@ export function AppShell() {
 
         <DashboardViewRouter {...app.viewProps} />
       </main>
+      <InitialTransactionSyncAlert open={shell.isInitializingTransactionHistory} />
     </div>
+  );
+}
+
+// Blocks first-run Akahu screens while the encrypted archive is being populated.
+function InitialTransactionSyncAlert({ open }: { open: boolean }) {
+  return (
+    <AlertDialog open={open}>
+      <AlertDialogContent className="initial-transaction-sync-alert">
+        <div className="initial-transaction-sync-spinner" aria-hidden="true" />
+        <AlertDialogHeader>
+          <AlertDialogTitle>Loading transactions</AlertDialogTitle>
+          <AlertDialogDescription>
+            Akahu is retrieving your transaction history. Please wait while Netly builds the encrypted local archive.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

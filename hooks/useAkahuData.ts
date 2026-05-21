@@ -67,6 +67,7 @@ export function useAkahuData() {
   const [availableBalance, setAvailableBalance] = useState<number | null>(null);
   const [dataMode, setDataMode] = useState<DataMode>("user");
   const [isConnected, setIsConnected] = useState(false);
+  const [isInitializingTransactionHistory, setIsInitializingTransactionHistory] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [isLoadingAllTransactions, setIsLoadingAllTransactions] = useState(false);
   const [isLoadingMoreTransactions, setIsLoadingMoreTransactions] = useState(false);
@@ -84,6 +85,7 @@ export function useAkahuData() {
     setPrimaryLinkedAccount(null);
     setAvailableBalance(null);
     setAkahuDataFreshness(emptyAkahuDataFreshness);
+    setIsInitializingTransactionHistory(false);
   }, []);
 
   // Demo mode can fall back to sample data. Akahu mode should show the connection problem
@@ -101,6 +103,7 @@ export function useAkahuData() {
     setIsConnected(false);
     setTransactionLoadError(errorMessage);
     setTransactionLoadNotice("");
+    setIsInitializingTransactionHistory(false);
     setIsLoadingTransactions(false);
     if (!isDemoMode) {
       toast.error(errorMessage);
@@ -113,8 +116,10 @@ export function useAkahuData() {
     refreshRequestIdRef.current = requestId;
     const isCurrentRequest = () => refreshRequestIdRef.current === requestId;
     let incrementalDateRange = dateRange;
+    let shouldLoadFullTransactionHistory = false;
 
     setIsLoadingTransactions(true);
+    setIsInitializingTransactionHistory(false);
 
     // Keep the existing screen populated during same-mode refreshes. Clearing here
     // caused the app to flash empty rows/cards during startup refreshes.
@@ -127,11 +132,14 @@ export function useAkahuData() {
     try {
       if (mode === "user") {
         const { archivedAccountSnapshot, archivedTransactions, archivedTransactionPageTransactions } = await readArchiveHydration(dateRange);
+        shouldLoadFullTransactionHistory = archivedTransactions.length === 0;
         incrementalDateRange = getIncrementalTransactionSyncRange(archivedTransactions, dateRange);
 
         if (!isCurrentRequest()) {
           return;
         }
+
+        setIsInitializingTransactionHistory(shouldLoadFullTransactionHistory);
 
         setTransactions(archivedTransactions);
         setTransactionPageTransactions(archivedTransactionPageTransactions);
@@ -174,21 +182,23 @@ export function useAkahuData() {
           return;
         }
 
-        const { archivedTransactions, archivedTransactionPageTransactions, connected, nextCursor } = await syncVisibleAkahuTransactionsToArchive(incrementalDateRange, dateRange);
+        const syncResult = shouldLoadFullTransactionHistory
+          ? await syncAllAkahuTransactionsToArchive(dateRange)
+          : await syncVisibleAkahuTransactionsToArchive(incrementalDateRange, dateRange);
 
         if (!isCurrentRequest()) {
           return;
         }
 
-        setTransactions(archivedTransactions);
-        setTransactionPageTransactions(archivedTransactionPageTransactions);
+        setTransactions(syncResult.archivedTransactions);
+        setTransactionPageTransactions(syncResult.archivedTransactionPageTransactions);
         setTransactionPageLoadedDateRange(dateRange || null);
-        setTransactionPageNextCursor(nextCursor);
-        if (connected) {
+        setTransactionPageNextCursor("nextCursor" in syncResult ? syncResult.nextCursor : null);
+        if (syncResult.connected) {
           setIsConnected(true);
         }
         setTransactionLoadError("");
-        setTransactionLoadNotice("");
+        setTransactionLoadNotice("notice" in syncResult ? syncResult.notice : "");
         return;
       }
 
@@ -215,6 +225,7 @@ export function useAkahuData() {
       throw error;
     } finally {
       if (isCurrentRequest()) {
+        setIsInitializingTransactionHistory(false);
         setIsLoadingTransactions(false);
       }
     }
@@ -329,7 +340,8 @@ export function useAkahuData() {
 
     try {
       if (dataMode === "user") {
-        const { archivedTransactionPageTransactions, connected } = await syncAllAkahuTransactionsToArchive(dateRange);
+        const { archivedTransactions, archivedTransactionPageTransactions, connected } = await syncAllAkahuTransactionsToArchive(dateRange);
+        setTransactions(archivedTransactions);
         setTransactionPageTransactions(archivedTransactionPageTransactions);
         setTransactionPageNextCursor(null);
         setTransactionLoadError("");
@@ -394,6 +406,7 @@ export function useAkahuData() {
     availableBalance,
     changeDataMode,
     dataMode,
+    isInitializingTransactionHistory,
     isConnected,
     isLoadingAllTransactions,
     isLoadingTransactions,

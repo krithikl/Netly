@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, ArrowDownUp, ArrowLeft, CalendarDays, Check, ChevronDown, MoreVertical, ReceiptText, Search, Settings, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
+import useEmblaCarousel from "embla-carousel-react";
 import { TransactionList } from "@/features/transactions/TransactionList";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ import { formatMoney } from "@/lib/insights";
 import { filterTransactionsByDateRange, formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
 import { isIncomeCategoryIncluded } from "@/lib/reporting";
 import { type CategoryEditScope } from "@/lib/category-rules";
-import { getTransactionCategory } from "@/lib/transaction-display";
+import { getTransactionCategory, getTransactionDate } from "@/lib/transaction-display";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionAccountOption, TransactionFilter, TransactionSort } from "@/lib/app/types";
 import {
@@ -37,6 +38,7 @@ import {
 export type TransactionOpenPreset = {
   dateRange?: TransactionDateRange;
   id: number;
+  openSearch?: boolean;
   query?: string;
   transactionCategory?: string[];
   transactionFilter?: TransactionFilter;
@@ -63,7 +65,9 @@ type TransactionsPageProps = {
   openPreset: TransactionOpenPreset | null;
   transactionLoadError: string;
   transactionLoadNotice: string;
+  transactionMonthSourceTransactions: Transaction[];
   transactionPageLoadedDateRange: TransactionDateRange | null;
+  transactionSearchSourceTransactions: Transaction[];
   transactions: Transaction[];
 };
 
@@ -93,7 +97,9 @@ export function TransactionsPage({
   openPreset,
   transactionLoadError,
   transactionLoadNotice,
+  transactionMonthSourceTransactions,
   transactionPageLoadedDateRange,
+  transactionSearchSourceTransactions,
   transactions
 }: TransactionsPageProps) {
   const [query, setQuery] = useState("");
@@ -117,8 +123,8 @@ export function TransactionsPage({
   const dateRangeTransactions = useMemo(() => filterTransactionsByDateRange(activeRangeTransactions, dateRange), [activeRangeTransactions, dateRange]);
   const allLoadedDateRange = useMemo(() => getLoadedTransactionDateRange(activeRangeTransactions) || dateRange, [activeRangeTransactions, dateRange]);
   const activeSearchDateRange = searchDateRange || allLoadedDateRange;
-  const searchDateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactions, activeSearchDateRange), [activeSearchDateRange, transactions]);
-  const monthOptions = useMemo(() => getTransactionMonthOptions(dateRange), [dateRange]);
+  const searchDateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactionSearchSourceTransactions, activeSearchDateRange), [activeSearchDateRange, transactionSearchSourceTransactions]);
+  const monthOptions = useMemo(() => getTransactionMonthOptions(dateRange, transactionMonthSourceTransactions), [dateRange, transactionMonthSourceTransactions]);
   const monthSummaryTransactions = useMemo(() => filterTransactionsByAccount(dateRangeTransactions, transactionAccounts), [dateRangeTransactions, transactionAccounts]);
   const monthSummary = useMemo(() => getTransactionMonthSummary(monthSummaryTransactions, incomeIncludedCategories), [incomeIncludedCategories, monthSummaryTransactions]);
   const shownTransactions = useMemo(
@@ -162,10 +168,10 @@ export function TransactionsPage({
     setTransactionCategory([]);
   };
   const selectMonth = (monthDate: Date) => changeMonthRange(getMonthDateRange(monthDate));
-  const selectPreviousMonth = () => changeMonthRange(getMonthDateRange(addMonths(parseInputDate(dateRange.from) || new Date(), -1)));
-  const selectNextMonth = () => changeMonthRange(getMonthDateRange(addMonths(parseInputDate(dateRange.from) || new Date(), 1)));
+  const selectPreviousMonth = () => selectBoundedAdjacentMonth(dateRange, monthOptions, -1, changeMonthRange);
+  const selectNextMonth = () => selectBoundedAdjacentMonth(dateRange, monthOptions, 1, changeMonthRange);
   const openSearch = () => {
-    setSearchDateRange(getLoadedTransactionDateRange(transactions) || dateRange);
+    setSearchDateRange(getLoadedTransactionDateRange(transactionSearchSourceTransactions) || dateRange);
     setSearchOpen(true);
   };
   const closeSearch = () => setSearchOpen(false);
@@ -248,19 +254,19 @@ export function TransactionsPage({
       onDateRangeChange(openPreset.dateRange);
     }
 
-    if (isBottomNavigation && openPreset.query) {
-      setSearchDateRange(openPreset.dateRange || getLoadedTransactionDateRange(transactions) || dateRange);
+    if (openPreset.openSearch && openPreset.query) {
+      setSearchDateRange(getLoadedTransactionDateRange(transactionSearchSourceTransactions) || openPreset.dateRange || dateRange);
       setSearchOpen(true);
     }
 
     onOpenPresetConsumed();
-  }, [dateRange, defaultAccountId, isBottomNavigation, onDateRangeChange, onOpenPresetConsumed, openPreset, transactions]);
+  }, [dateRange, defaultAccountId, onDateRangeChange, onOpenPresetConsumed, openPreset, transactionSearchSourceTransactions]);
 
   useEffect(() => {
     setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
   }, [defaultAccountId]);
 
-  if (isBottomNavigation && searchOpen) {
+  if (searchOpen) {
     return (
       <section className="transaction-search-page view-stack" data-testid="transaction-search-page">
         <MobileTransactionSearchView
@@ -473,17 +479,24 @@ function TransactionMonthOverview({
 }) {
   const activeDate = parseInputDate(activeDateRange.from) || new Date();
   const activeMonthKey = getMonthKey(activeDate);
-  const activeMonthButtonRef = useRef<HTMLButtonElement | null>(null);
+  const activeMonthIndex = monthOptions.findIndex((option) => option.monthKey === activeMonthKey);
+  const activeMonthStartIndex = getMonthCarouselStartIndex(activeMonthIndex, monthOptions.length);
+  const [monthEmblaRef, monthEmblaApi] = useEmblaCarousel({
+    align: "start",
+    containScroll: "trimSnaps",
+    dragFree: true,
+    slidesToScroll: 1,
+    startIndex: activeMonthStartIndex
+  });
   const shouldCenterSelectedMonthImmediatelyRef = useRef(false);
 
   useEffect(() => {
-    activeMonthButtonRef.current?.scrollIntoView({
-      behavior: shouldCenterSelectedMonthImmediatelyRef.current ? "auto" : "smooth",
-      block: "nearest",
-      inline: "center"
-    });
+    if (monthEmblaApi && activeMonthStartIndex >= 0) {
+      monthEmblaApi.scrollTo(activeMonthStartIndex, shouldCenterSelectedMonthImmediatelyRef.current);
+    }
+
     shouldCenterSelectedMonthImmediatelyRef.current = false;
-  }, [activeMonthKey]);
+  }, [activeMonthStartIndex, monthEmblaApi]);
   const selectCarouselMonth = (monthDate: Date) => {
     shouldCenterSelectedMonthImmediatelyRef.current = true;
     onMonthSelect(monthDate);
@@ -498,26 +511,25 @@ function TransactionMonthOverview({
         onTouchEnd={(event) => event.stopPropagation()}
         onTouchStart={(event) => event.stopPropagation()}
       >
-        <div className="transaction-month-rail" aria-label="Transaction month">
-          {monthOptions.map((option) => (
-            <button
-              aria-current={option.monthKey === activeMonthKey ? "date" : undefined}
-              className={[
-                option.monthKey === activeMonthKey ? "active" : "",
-                isDesktopMonthOption(activeDate, option.date) ? "" : "transaction-month-mobile-extra"
-              ].filter(Boolean).join(" ")}
-              key={option.monthKey}
-              onClick={() => selectCarouselMonth(option.date)}
-              ref={option.monthKey === activeMonthKey ? activeMonthButtonRef : undefined}
-              type="button"
-            >
-              <span className="transaction-month-label">
-                <span className="transaction-month-label-full">{option.label}</span>
-                <span className="transaction-month-label-short">{option.shortLabel}</span>
-                {option.yearLabel && <span className="transaction-month-year">{option.yearLabel}</span>}
-              </span>
-            </button>
-          ))}
+        <div className="transaction-month-rail" ref={monthEmblaRef}>
+          <div className="transaction-month-track" aria-label="Transaction month">
+            {monthOptions.map((option) => (
+              <div className="transaction-month-slide" key={option.monthKey}>
+                <button
+                  aria-current={option.monthKey === activeMonthKey ? "date" : undefined}
+                  className={option.monthKey === activeMonthKey ? "active" : undefined}
+                  onClick={() => selectCarouselMonth(option.date)}
+                  type="button"
+                >
+                  <span className="transaction-month-label">
+                    <span className="transaction-month-label-full">{option.label}</span>
+                    <span className="transaction-month-label-short">{option.shortLabel}</span>
+                    {option.yearLabel && <span className="transaction-month-year">{option.yearLabel}</span>}
+                  </span>
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <div className="transaction-month-summary" aria-label="Monthly transaction summary">
@@ -906,13 +918,14 @@ function getDraftRangeLabel(dateRange: DateRange | undefined) {
   return `${format(dateRange.from, "d MMM yyyy")} - ${format(dateRange.to, "d MMM yyyy")}`;
 }
 
-// Builds a wider month carousel centered on the selected month.
-function getTransactionMonthOptions(dateRange: TransactionDateRange): TransactionMonthOption[] {
+// Builds a bounded month carousel from the first available transaction month.
+function getTransactionMonthOptions(dateRange: TransactionDateRange, sourceTransactions: Transaction[]): TransactionMonthOption[] {
   const activeDate = parseInputDate(dateRange.from) || new Date();
-  const startDate = new Date(activeDate.getFullYear(), activeDate.getMonth() - 6, 1);
+  const { endDate, startDate } = getTransactionMonthOptionBounds(activeDate, sourceTransactions);
   const currentYear = new Date().getFullYear();
+  const monthCount = getMonthDifference(startDate, endDate) + 1;
 
-  return Array.from({ length: 13 }, (_, index) => {
+  return Array.from({ length: monthCount }, (_, index) => {
     const date = new Date(startDate.getFullYear(), startDate.getMonth() + index, 1);
     const includeYear = date.getFullYear() !== currentYear;
 
@@ -926,11 +939,72 @@ function getTransactionMonthOptions(dateRange: TransactionDateRange): Transactio
   });
 }
 
-// Keeps the desktop rail compact while exposing the full carousel on mobile.
-function isDesktopMonthOption(activeDate: Date, optionDate: Date) {
-  const monthOffset = (optionDate.getFullYear() - activeDate.getFullYear()) * 12 + optionDate.getMonth() - activeDate.getMonth();
+// Uses known transaction history as the lower month bound, with a centered fallback for empty data.
+function getTransactionMonthOptionBounds(activeDate: Date, sourceTransactions: Transaction[]) {
+  const activeMonth = getMonthStart(activeDate);
+  const earliestTransactionMonth = getEarliestTransactionMonth(sourceTransactions);
 
-  return Math.abs(monthOffset) <= 2;
+  if (!earliestTransactionMonth) {
+    return {
+      endDate: addMonths(activeMonth, 6),
+      startDate: addMonths(activeMonth, -6)
+    };
+  }
+
+  const currentMonth = getMonthStart(new Date());
+
+  return {
+    endDate: activeMonth > currentMonth ? activeMonth : currentMonth,
+    startDate: activeMonth < earliestTransactionMonth ? activeMonth : earliestTransactionMonth
+  };
+}
+
+// Finds the first calendar month represented by loaded or archived transactions.
+function getEarliestTransactionMonth(transactions: Transaction[]): Date | null {
+  let earliestMonth: Date | null = null;
+
+  transactions.forEach((transaction) => {
+    const date = parseInputDate(getTransactionDate(transaction));
+
+    if (!date) {
+      return;
+    }
+
+    const month = getMonthStart(date);
+
+    if (!earliestMonth || month < earliestMonth) {
+      earliestMonth = month;
+    }
+  });
+
+  return earliestMonth;
+}
+
+// Moves Embla so the selected month lands in the middle visible slot.
+function getMonthCarouselStartIndex(activeMonthIndex: number, optionCount: number) {
+  if (activeMonthIndex < 0) {
+    return 0;
+  }
+
+  return Math.min(Math.max(activeMonthIndex - 2, 0), Math.max(optionCount - 5, 0));
+}
+
+// Selects adjacent months only when they are represented in the carousel bounds.
+function selectBoundedAdjacentMonth(
+  dateRange: TransactionDateRange,
+  monthOptions: TransactionMonthOption[],
+  offset: -1 | 1,
+  onMonthSelect: (dateRange: TransactionDateRange) => void
+) {
+  const activeMonthKey = getMonthKey(parseInputDate(dateRange.from) || new Date());
+  const activeIndex = monthOptions.findIndex((option) => option.monthKey === activeMonthKey);
+  const nextOption = activeIndex >= 0 ? monthOptions[activeIndex + offset] : null;
+
+  if (!nextOption) {
+    return;
+  }
+
+  onMonthSelect(getMonthDateRange(nextOption.date));
 }
 
 // Converts a month selection into the complete calendar month range.
@@ -944,6 +1018,16 @@ function getMonthDateRange(monthDate: Date): TransactionDateRange {
 // Moves a date by whole calendar months while staying on the first of the month.
 function addMonths(date: Date, offset: number) {
   return new Date(date.getFullYear(), date.getMonth() + offset, 1);
+}
+
+// Normalizes any date to the first day of its calendar month.
+function getMonthStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+// Counts whole calendar months between two month-start dates.
+function getMonthDifference(startDate: Date, endDate: Date) {
+  return (endDate.getFullYear() - startDate.getFullYear()) * 12 + endDate.getMonth() - startDate.getMonth();
 }
 
 // Totals money movement for the active month before search/filter narrowing.

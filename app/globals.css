@@ -1556,6 +1556,20 @@ h2 {
   font-weight: 800;
 }
 
+.initial-transaction-sync-alert {
+  justify-items: center;
+  text-align: center;
+}
+
+.initial-transaction-sync-spinner {
+  width: 42px;
+  height: 42px;
+  border: 4px solid var(--outline-soft);
+  border-top-color: var(--primary);
+  border-radius: 999px;
+  animation: netly-spin 780ms linear infinite;
+}
+
 .info-row {
   position: relative;
   display: grid;
@@ -2177,23 +2191,38 @@ h2 {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .transaction-month-rail {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(92px, 1fr));
-  gap: 8px;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--outline-soft);
   border-radius: 999px;
   background: var(--surface);
-  padding: 6px;
+  padding: 0;
   box-shadow: var(--shadow-soft);
 }
 
+.transaction-month-track {
+  display: flex;
+}
+
+.transaction-month-slide {
+  flex: 0 0 20%;
+  min-width: 0;
+  height: auto;
+}
+
 .transaction-month-rail button {
+  width: calc(100% - 12px);
   min-height: 42px;
   min-width: 0;
+  margin: 6px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -2219,10 +2248,6 @@ h2 {
   color: var(--muted);
   font-size: 0.66rem;
   font-weight: 850;
-}
-
-.transaction-month-mobile-extra {
-  display: none;
 }
 
 .transaction-month-rail button.active {
@@ -4035,6 +4060,76 @@ h2 {
   color: var(--muted);
 }
 
+.akahu-connected-card {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 20px;
+  background: var(--surface-2);
+}
+
+.akahu-connected-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.akahu-connected-heading svg {
+  margin-top: 2px;
+  color: var(--success);
+}
+
+.akahu-connected-heading h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.akahu-connected-heading p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.akahu-connected-details {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.akahu-connected-details div {
+  display: grid;
+  gap: 3px;
+}
+
+.akahu-connected-details dt {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.akahu-connected-details dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.akahu-connected-card .sync-result {
+  min-height: 0;
+  margin-top: 0;
+}
+
+.akahu-connected-card button {
+  width: fit-content;
+}
+
 .completion-box {
   display: grid;
   gap: 12px;
@@ -5073,6 +5168,12 @@ h2 {
   }
 }
 
+@keyframes netly-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -5712,30 +5813,19 @@ body {
   }
 
   .transaction-month-rail {
-    display: flex;
-    gap: 4px;
+    display: block;
     min-width: 0;
-    padding: 5px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    touch-action: pan-x;
-    -webkit-overflow-scrolling: touch;
+    padding: 0;
   }
 
   .transaction-month-rail::-webkit-scrollbar {
     display: none;
   }
 
-  .transaction-month-mobile-extra {
-    display: block;
-  }
-
   .transaction-month-rail button {
-    flex: 0 0 calc((100% - 16px) / 5);
-    min-width: calc((100% - 16px) / 5);
     min-height: 42px;
+    width: calc(100% - 10px);
+    margin: 5px;
     padding-inline: 2px;
     font-size: 0.7rem;
     white-space: nowrap;

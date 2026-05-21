@@ -2166,7 +2166,6 @@ h2 {
 .transaction-page {
   gap: 18px;
   /* padding-inline-end: 18px; */
-  touch-action: pan-y;
 }
 
 .transaction-month-overview {
@@ -2205,7 +2204,24 @@ h2 {
   font-weight: 850;
 }
 
+.transaction-month-label {
+  display: grid;
+  justify-items: center;
+  line-height: 1;
+}
+
 .transaction-month-label-short {
+  display: none;
+}
+
+.transaction-month-year {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 850;
+}
+
+.transaction-month-mobile-extra {
   display: none;
 }
 
@@ -5696,23 +5712,38 @@ body {
   }
 
   .transaction-month-rail {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    display: flex;
     gap: 4px;
     min-width: 0;
     padding: 5px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    -webkit-overflow-scrolling: touch;
   }
 
   .transaction-month-rail::-webkit-scrollbar {
     display: none;
   }
 
+  .transaction-month-mobile-extra {
+    display: block;
+  }
+
   .transaction-month-rail button {
-    min-width: 0;
-    min-height: 38px;
+    flex: 0 0 calc((100% - 16px) / 5);
+    min-width: calc((100% - 16px) / 5);
+    min-height: 42px;
     padding-inline: 2px;
     font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  .transaction-month-year {
+    margin-top: 2px;
+    font-size: 0.55rem;
   }
 
   .transaction-month-rail button.active {

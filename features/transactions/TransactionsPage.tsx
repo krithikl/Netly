@@ -1,5 +1,5 @@
 import type { ChangeEvent, TouchEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, ArrowDownUp, ArrowLeft, CalendarDays, Check, ChevronDown, MoreVertical, ReceiptText, Search, Settings, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
@@ -448,6 +448,7 @@ type TransactionMonthOption = {
   label: string;
   monthKey: string;
   shortLabel: string;
+  yearLabel: string;
 };
 
 type TransactionMonthSummary = {
@@ -472,21 +473,49 @@ function TransactionMonthOverview({
 }) {
   const activeDate = parseInputDate(activeDateRange.from) || new Date();
   const activeMonthKey = getMonthKey(activeDate);
+  const activeMonthButtonRef = useRef<HTMLButtonElement | null>(null);
+  const shouldCenterSelectedMonthImmediatelyRef = useRef(false);
+
+  useEffect(() => {
+    activeMonthButtonRef.current?.scrollIntoView({
+      behavior: shouldCenterSelectedMonthImmediatelyRef.current ? "auto" : "smooth",
+      block: "nearest",
+      inline: "center"
+    });
+    shouldCenterSelectedMonthImmediatelyRef.current = false;
+  }, [activeMonthKey]);
+  const selectCarouselMonth = (monthDate: Date) => {
+    shouldCenterSelectedMonthImmediatelyRef.current = true;
+    onMonthSelect(monthDate);
+  };
 
   return (
     <section className="transaction-month-overview">
-      <div className="transaction-month-carousel" aria-label="Transaction month carousel">
+      <div
+        className="transaction-month-carousel"
+        aria-label="Transaction month carousel"
+        onTouchCancel={(event) => event.stopPropagation()}
+        onTouchEnd={(event) => event.stopPropagation()}
+        onTouchStart={(event) => event.stopPropagation()}
+      >
         <div className="transaction-month-rail" aria-label="Transaction month">
           {monthOptions.map((option) => (
             <button
               aria-current={option.monthKey === activeMonthKey ? "date" : undefined}
-              className={option.monthKey === activeMonthKey ? "active" : undefined}
+              className={[
+                option.monthKey === activeMonthKey ? "active" : "",
+                isDesktopMonthOption(activeDate, option.date) ? "" : "transaction-month-mobile-extra"
+              ].filter(Boolean).join(" ")}
               key={option.monthKey}
-              onClick={() => onMonthSelect(option.date)}
+              onClick={() => selectCarouselMonth(option.date)}
+              ref={option.monthKey === activeMonthKey ? activeMonthButtonRef : undefined}
               type="button"
             >
-              <span className="transaction-month-label-full">{option.label}</span>
-              <span className="transaction-month-label-short">{option.shortLabel}</span>
+              <span className="transaction-month-label">
+                <span className="transaction-month-label-full">{option.label}</span>
+                <span className="transaction-month-label-short">{option.shortLabel}</span>
+                {option.yearLabel && <span className="transaction-month-year">{option.yearLabel}</span>}
+              </span>
             </button>
           ))}
         </div>
@@ -877,21 +906,31 @@ function getDraftRangeLabel(dateRange: DateRange | undefined) {
   return `${format(dateRange.from, "d MMM yyyy")} - ${format(dateRange.to, "d MMM yyyy")}`;
 }
 
-// Builds a five-month rail centered on the selected month.
+// Builds a wider month carousel centered on the selected month.
 function getTransactionMonthOptions(dateRange: TransactionDateRange): TransactionMonthOption[] {
   const activeDate = parseInputDate(dateRange.from) || new Date();
-  const startDate = new Date(activeDate.getFullYear(), activeDate.getMonth() - 2, 1);
+  const startDate = new Date(activeDate.getFullYear(), activeDate.getMonth() - 6, 1);
+  const currentYear = new Date().getFullYear();
 
-  return Array.from({ length: 5 }, (_, index) => {
+  return Array.from({ length: 13 }, (_, index) => {
     const date = new Date(startDate.getFullYear(), startDate.getMonth() + index, 1);
+    const includeYear = date.getFullYear() !== currentYear;
 
     return {
       date,
       label: format(date, "MMMM"),
       monthKey: getMonthKey(date),
-      shortLabel: format(date, "MMM")
+      shortLabel: format(date, "MMM"),
+      yearLabel: includeYear ? format(date, "yyyy") : ""
     };
   });
+}
+
+// Keeps the desktop rail compact while exposing the full carousel on mobile.
+function isDesktopMonthOption(activeDate: Date, optionDate: Date) {
+  const monthOffset = (optionDate.getFullYear() - activeDate.getFullYear()) * 12 + optionDate.getMonth() - activeDate.getMonth();
+
+  return Math.abs(monthOffset) <= 2;
 }
 
 // Converts a month selection into the complete calendar month range.

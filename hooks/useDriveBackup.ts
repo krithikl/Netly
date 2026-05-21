@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import {
   deleteGoogleDriveBackup,
   listGoogleDriveBackups,
@@ -56,7 +55,6 @@ export function useDriveBackup(onArchiveRestored: () => Promise<void>) {
     setStatus("ready");
     setLastSyncedAt(storedConnection.lastSyncedAt);
     setMessage("Google Drive backup is connected.");
-    void refreshBackupList({ silent: true });
   }, []);
 
   const restoreMetadata = useCallback(async () => {
@@ -79,14 +77,11 @@ export function useDriveBackup(onArchiveRestored: () => Promise<void>) {
     } catch (error) {
       setStatus("failed");
       setMessage(options.silent ? "Reconnect Google Drive backup." : getErrorMessage(error, "Could not load Google Drive backups."));
-      if (options.silent) {
-        toast.warning("Reconnect Google Drive backup");
-      }
       return [];
     } finally {
       setIsLoadingBackups(false);
     }
-  }, [clientId]);
+  }, [clientId, lastSyncedAt]);
 
   const connectAndBackUp = useCallback(async () => {
     setStatus("syncing");

@@ -37,7 +37,6 @@ export function useNetlyApp() {
   const { activeView, setActiveView } = useRoutedView();
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
   const isBottomNavigation = useIsBottomNavigation();
-  const previousActiveViewRef = useRef(activeView);
   const lastForegroundRefreshRef = useRef(0);
   const transactionOpenPresetIdRef = useRef(0);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
@@ -59,12 +58,18 @@ export function useNetlyApp() {
     () => applyCategoryPreferences(banking.transactions, categories.categoryOverrides, categories.categoryRules),
     [banking.transactions, categories.categoryOverrides, categories.categoryRules]
   );
+  const transactionPageWorkingTransactions = useMemo(
+    () => applyCategoryPreferences(banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules),
+    [banking.transactionPageTransactions, categories.categoryOverrides, categories.categoryRules]
+  );
   const refreshTransactionPageRange = useCallback((dateRange = transactionPageDateRange) => {
     setTransactionPageDateRange(dateRange);
     banking.refreshTransactionPage(banking.dataMode, dateRange).catch((error: unknown) => {
-      banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
+      console.error("Could not refresh transaction page range.", error);
+      banking.setTransactionLoadError("");
+      banking.setTransactionLoadNotice("No transactions found for this period.");
     });
-  }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage, transactionPageDateRange]);
+  }, [banking.dataMode, banking.refreshTransactionPage, banking.setTransactionLoadError, banking.setTransactionLoadNotice, transactionPageDateRange]);
   const selectTransactionMonthRange = useCallback((dateRange: typeof transactionPageDateRange) => {
     refreshTransactionPageRange(dateRange);
   }, [refreshTransactionPageRange]);
@@ -151,32 +156,6 @@ export function useNetlyApp() {
     };
   }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactions, transactionPageDateRange]);
 
-  useEffect(() => {
-    const previousActiveView = previousActiveViewRef.current;
-
-    if (previousActiveView !== "transactions" && activeView === "transactions") {
-      banking.refreshTransactionPage(banking.dataMode, transactionPageDateRange).catch((error: unknown) => {
-        banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
-      });
-    }
-
-    if (previousActiveView === "transactions" && activeView !== "transactions") {
-      const defaultDateRange = getThisMonthDateRange();
-      const shouldRefreshDateRange = transactionPageDateRange.from !== defaultDateRange.from || transactionPageDateRange.to !== defaultDateRange.to;
-
-      setTransactionOpenPreset(null);
-      setTransactionPageDateRange(defaultDateRange);
-
-      if (shouldRefreshDateRange) {
-        banking.refreshTransactionPage(banking.dataMode, defaultDateRange).catch((error: unknown) => {
-          banking.applyFallbackState(banking.dataMode, error, "Could not load transactions.");
-        });
-      }
-    }
-
-    previousActiveViewRef.current = activeView;
-  }, [activeView, banking.applyFallbackState, banking.dataMode, banking.refreshTransactionPage, transactionPageDateRange]);
-
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
   const cardFitAvailableCategories = useMemo(
     () => categories.settingsCategoryOptions.filter((category) => category !== "All categories"),
@@ -237,6 +216,9 @@ export function useNetlyApp() {
     });
     setActiveView("transactions");
   }, [reportingTransactions, setActiveView]);
+  const clearTransactionOpenPreset = useCallback(() => {
+    setTransactionOpenPreset(null);
+  }, []);
   const updateTransactionCategoryAndSync = useCallback((transaction: Parameters<typeof categories.updateTransactionCategory>[0], category: string, scope: Parameters<typeof categories.updateTransactionCategory>[2]) => {
     categories.updateTransactionCategory(transaction, category, scope);
     void driveBackup.syncAfterArchiveChange();
@@ -388,9 +370,13 @@ export function useNetlyApp() {
         onMonthRangeChange: selectTransactionMonthRange,
         onLoadAllTransactions: loadAllUserTransactions,
         onLoadMoreTransactions: loadMoreAndSyncUserTransactions,
+        onOpenPresetConsumed: clearTransactionOpenPreset,
         onOpenSettings: () => setActiveView("settings"),
         openPreset: transactionOpenPreset,
-        transactions: workingTransactions
+        transactionLoadError: banking.transactionLoadError,
+        transactionLoadNotice: banking.transactionLoadNotice,
+        transactionPageLoadedDateRange: banking.transactionPageLoadedDateRange,
+        transactions: transactionPageWorkingTransactions
       }
     }
   };

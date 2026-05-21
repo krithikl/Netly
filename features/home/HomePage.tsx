@@ -66,6 +66,7 @@ export function HomePage({
     .slice(0, 10);
   const openTransactionsView = () => setActiveView("transactions");
   const openBudgetsView = () => setActiveView("budgets");
+  const heroInsight = insights.find((insight) => insight.trim().length > 0);
 
   return (
     <section className="view-stack" data-testid="home-page">
@@ -80,6 +81,16 @@ export function HomePage({
         setHideBalances={setHideBalances}
         setPayday={setPayday}
       />
+
+      {heroInsight ? (
+        <button className="mobile-home-insight-strip" onClick={openTransactionsView} type="button" aria-label="Open spend insights">
+          <span className="mobile-home-insight-label">
+            <Sparkles aria-hidden="true" size={15} strokeWidth={2.4} />
+            Insight
+          </span>
+          <strong>{heroInsight}</strong>
+        </button>
+      ) : null}
 
       <div className="dashboard-grid" aria-busy={isLoadingTransactions}>
         <CategoryDonutCard

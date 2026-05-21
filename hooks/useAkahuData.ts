@@ -34,11 +34,11 @@ type AccountsPayload = {
 };
 
 type RefreshPayload = {
+  connected?: boolean;
   error?: string;
   notice?: string;
+  requestedAt?: string;
 };
-
-const lastAkahuManualRefreshStorageKey = "netly_last_akahu_manual_refresh_requested_at";
 
 type RefreshTransactionsOptions = {
   forceFullSync?: boolean;
@@ -58,8 +58,10 @@ const emptyAkahuDataFreshness: AkahuDataFreshness = {
 // Central data hook for Akahu/demo transactions, balances, accounts, and pagination.
 export function useAkahuData() {
   const refreshRequestIdRef = useRef(0);
+  const transactionPageRequestIdRef = useRef(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionPageTransactions, setTransactionPageTransactions] = useState<Transaction[]>([]);
+  const [transactionPageLoadedDateRange, setTransactionPageLoadedDateRange] = useState<TransactionDateRange | null>(null);
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
   const [primaryLinkedAccount, setPrimaryLinkedAccount] = useState<LinkedAccount | null>(null);
   const [availableBalance, setAvailableBalance] = useState<number | null>(null);
@@ -76,6 +78,7 @@ export function useAkahuData() {
   const resetBankData = useCallback(() => {
     setTransactions([]);
     setTransactionPageTransactions([]);
+    setTransactionPageLoadedDateRange(null);
     setTransactionPageNextCursor(null);
     setLinkedAccounts([]);
     setPrimaryLinkedAccount(null);
@@ -133,6 +136,7 @@ export function useAkahuData() {
 
         setTransactions(archivedTransactions);
         setTransactionPageTransactions(archivedTransactionPageTransactions);
+        setTransactionPageLoadedDateRange(dateRange || null);
 
         if (archivedAccountSnapshot) {
           setAvailableBalance(archivedAccountSnapshot.availableBalance);
@@ -155,39 +159,49 @@ export function useAkahuData() {
         }
       }
 
-      // Manual Akahu refresh is handled after account freshness is known. This
-      // avoids requesting /api/akahu/refresh on every app entry/navigation.
-
-      const accountsRequest = loadAndApplyAccountSnapshot(mode, isCurrentRequest, {
+      const accountSetters = {
         setAkahuDataFreshness,
         setAvailableBalance,
         setIsConnected,
         setLinkedAccounts,
         setPrimaryLinkedAccount,
         setTransactionLoadNotice
-      });
-      const transactionsRequest = mode === "user"
-        ? syncVisibleAkahuTransactionsToArchive(incrementalDateRange, dateRange).then(({ archivedTransactions, archivedTransactionPageTransactions, connected, nextCursor }) => {
-            if (!isCurrentRequest()) {
-              return;
-            }
+      };
 
-            setTransactions(archivedTransactions);
-            setTransactionPageTransactions(archivedTransactionPageTransactions);
-            setTransactionPageNextCursor(nextCursor);
-            if (connected) {
-              setIsConnected(true);
-            }
-            setTransactionLoadError("");
-            setTransactionLoadNotice("");
-          })
-        : loadDemoTransactions(dateRange).then(({ transactionsPayload, transactionPagePayload }) => {
+      if (mode === "user") {
+        await loadAndApplyAccountSnapshot(mode, isCurrentRequest, accountSetters, { requestManualRefresh: true });
+
+        if (!isCurrentRequest()) {
+          return;
+        }
+
+        const { archivedTransactions, archivedTransactionPageTransactions, connected, nextCursor } = await syncVisibleAkahuTransactionsToArchive(incrementalDateRange, dateRange);
+
+        if (!isCurrentRequest()) {
+          return;
+        }
+
+        setTransactions(archivedTransactions);
+        setTransactionPageTransactions(archivedTransactionPageTransactions);
+        setTransactionPageLoadedDateRange(dateRange || null);
+        setTransactionPageNextCursor(nextCursor);
+        if (connected) {
+          setIsConnected(true);
+        }
+        setTransactionLoadError("");
+        setTransactionLoadNotice("");
+        return;
+      }
+
+      const accountsRequest = loadAndApplyAccountSnapshot(mode, isCurrentRequest, accountSetters);
+      const transactionsRequest = loadDemoTransactions(dateRange).then(({ transactionsPayload, transactionPagePayload }) => {
           if (!isCurrentRequest()) {
             return;
           }
 
           setTransactions(transactionsPayload.transactions);
           setTransactionPageTransactions(transactionPagePayload.transactions);
+          setTransactionPageLoadedDateRange(dateRange || null);
           setTransactionPageNextCursor(transactionPagePayload.nextCursor || null);
           setTransactionLoadError("");
           setTransactionLoadNotice(transactionsPayload.notice || transactionPagePayload.notice || "");
@@ -208,17 +222,35 @@ export function useAkahuData() {
   }, [akahuDataFreshness, dataMode, resetBankData]);
 
   const refreshTransactionPage = useCallback(async (mode: DataMode = dataMode, dateRange?: TransactionDateRange) => {
+    const requestId = transactionPageRequestIdRef.current + 1;
+    transactionPageRequestIdRef.current = requestId;
+    const isCurrentRequest = () => transactionPageRequestIdRef.current === requestId;
+
     setIsLoadingTransactions(true);
     setTransactionPageNextCursor(null);
 
     try {
       if (mode === "user") {
+        const archivedPageTransactions = await readArchivedTransactions(dateRange);
+
+        if (!isCurrentRequest()) {
+          return;
+        }
+
+        setTransactionPageTransactions(archivedPageTransactions);
+        setTransactionPageLoadedDateRange(dateRange || null);
         const { archivedTransactionPageTransactions, nextCursor } = await syncVisibleAkahuTransactionsToArchive(dateRange, dateRange);
+
+        if (!isCurrentRequest()) {
+          return;
+        }
+
         setTransactionPageTransactions(archivedTransactionPageTransactions);
+        setTransactionPageLoadedDateRange(dateRange || null);
         setTransactionPageNextCursor(nextCursor);
         setTransactionLoadError("");
         setTransactionLoadNotice("");
-        await loadAndApplyAccountSnapshot(mode, () => true, {
+        await loadAndApplyAccountSnapshot(mode, isCurrentRequest, {
           setAkahuDataFreshness,
           setAvailableBalance,
           setIsConnected,
@@ -233,12 +265,28 @@ export function useAkahuData() {
       const payload = await readJsonResponse<TransactionsPayload>(response, "transactions");
 
       assertAkahuResponse(response, payload.error, "Could not load transactions.");
+      if (!isCurrentRequest()) {
+        return;
+      }
+
       setTransactionPageTransactions(payload.transactions);
+      setTransactionPageLoadedDateRange(dateRange || null);
       setTransactionPageNextCursor(payload.nextCursor || null);
       setTransactionLoadError(payload.error || "");
       setTransactionLoadNotice(payload.notice || "");
+    } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
+
+      console.error("Could not load transaction range.", error);
+      setTransactionLoadError("");
+      setTransactionLoadNotice("No transactions found for this period.");
+      throw error;
     } finally {
-      setIsLoadingTransactions(false);
+      if (isCurrentRequest()) {
+        setIsLoadingTransactions(false);
+      }
     }
   }, [dataMode]);
 
@@ -308,6 +356,7 @@ export function useAkahuData() {
     try {
       setTransactions(await archiveAndMergeTransactions([]));
       setTransactionPageTransactions(await archiveAndMergeTransactions([], dateRange));
+      setTransactionPageLoadedDateRange(dateRange || null);
       setTransactionPageNextCursor(null);
     } finally {
       setIsLoadingTransactions(false);
@@ -355,6 +404,7 @@ export function useAkahuData() {
     setTransactionLoadNotice,
     transactionLoadError,
     transactionLoadNotice,
+    transactionPageLoadedDateRange,
     transactionPageNextCursor,
     transactionPageTransactions,
     transactions
@@ -385,11 +435,12 @@ type AccountSnapshotStateSetters = {
   setTransactionLoadNotice: (notice: string) => void;
 };
 
-// Loads account data, requests one stale-data refresh if allowed, then rechecks accounts.
+// Loads account data and optionally requests a manual Akahu refresh for launch/foreground syncs.
 async function loadAndApplyAccountSnapshot(
   mode: DataMode,
   isCurrentRequest: () => boolean,
-  setters: AccountSnapshotStateSetters
+  setters: AccountSnapshotStateSetters,
+  options: { requestManualRefresh?: boolean } = {}
 ) {
   const accountsPayload = await loadAccountsPayload(mode);
 
@@ -399,7 +450,7 @@ async function loadAndApplyAccountSnapshot(
 
   applyAccountSnapshot(mode, accountsPayload, "refreshed", setters);
 
-  if (mode !== "user" || !accountsPayload.isStale || !canRequestManualRefresh(accountsPayload.manualRefreshCooldownMs)) {
+  if (mode !== "user" || !accountsPayload.connected || !options.requestManualRefresh) {
     return;
   }
 
@@ -425,8 +476,11 @@ async function loadAndApplyAccountSnapshot(
     return;
   }
 
-  recordManualRefreshRequestedAt();
-  setters.setTransactionLoadNotice(refreshPayload.notice || "Akahu refresh requested. Rechecking account data.");
+  console.info("Akahu refresh endpoint completed.", {
+    notice: refreshPayload.notice || "",
+    requestedAt: refreshPayload.requestedAt || ""
+  });
+  setters.setTransactionLoadNotice(refreshPayload.notice || "Akahu refresh requested. Loading updated transactions.");
   const refreshedAccountsPayload = await loadAccountsPayload(mode);
 
   if (!isCurrentRequest()) {
@@ -496,29 +550,6 @@ function getFreshnessState(payload: AccountsPayload, status: AkahuDataFreshness[
     status,
     transactionsRefreshedAt: payload.transactionsRefreshedAt
   };
-}
-
-// Uses a local cooldown so stale data cannot trigger repeated manual refresh requests.
-function canRequestManualRefresh(cooldownMs: number) {
-  const lastRequestedAt = window.localStorage.getItem(lastAkahuManualRefreshStorageKey);
-
-  if (!lastRequestedAt) {
-    return true;
-  }
-
-  const timestamp = Date.parse(lastRequestedAt);
-
-  if (!Number.isFinite(timestamp)) {
-    window.localStorage.removeItem(lastAkahuManualRefreshStorageKey);
-    return true;
-  }
-
-  return Date.now() - timestamp >= cooldownMs;
-}
-
-// Records the refresh request timestamp without storing account or balance data.
-function recordManualRefreshRequestedAt() {
-  window.localStorage.setItem(lastAkahuManualRefreshStorageKey, new Date().toISOString());
 }
 
 // Builds a loud freshness error state for failed user-mode loads.

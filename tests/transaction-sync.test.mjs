@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { test } from "node:test";
 import {
   getIncrementalTransactionSyncRange,
@@ -45,6 +45,15 @@ test("foreground refresh does not contain the retired automatic full-sync path",
   assert.match(source, /getTransactionsUrl\("user", undefined, undefined, true\)/);
 });
 
+test("launch sync requests Akahu refresh before incremental transaction fetch", async () => {
+  const source = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+
+  assert.match(source, /requestManualRefresh: true/);
+  assert.match(source, /console\.info\("Akahu refresh endpoint completed\."/);
+  assert.doesNotMatch(source, /lastAkahuManualRefreshStorageKey|canRequestManualRefresh|recordManualRefreshRequestedAt/);
+  assert.match(source, /await loadAndApplyAccountSnapshot\(mode, isCurrentRequest, accountSetters, \{ requestManualRefresh: true \}\)[\s\S]*?await syncVisibleAkahuTransactionsToArchive/);
+});
+
 test("Drive access token remains memory-only", async () => {
   const driveSource = await readFile(new URL("../lib/app/drive-backup.ts", import.meta.url), "utf8");
   const backupHookSource = await readFile(new URL("../hooks/useDriveBackup.ts", import.meta.url), "utf8");
@@ -62,9 +71,11 @@ test("Home mobile preview shows ten recent transactions and a view-all action", 
 
   assert.match(homeSource, /\.slice\(0, 10\)/);
   assert.match(homeSource, /insights=\{insights\}/);
+  assert.match(homeSource, /mobile-home-insight-strip/);
   assert.match(heroSource, /hero-insight-preview/);
   assert.match(heroSource, /has-hero-insight/);
-  assert.match(css, /\.hero-card\.has-hero-insight[\s\S]*?grid-template-columns: minmax\(0, 1fr\) minmax\(112px, 0\.46fr\)/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.dashboard-grid > \.insights-panel,\s*\.hero-insight-preview[\s\S]*?display: none/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.mobile-home-insight-strip[\s\S]*?display: grid/);
   assert.match(recentSource, /View All Transactions/);
   assert.match(recentSource, /home-recent-transactions/);
 });
@@ -77,9 +88,73 @@ test("mobile layout regressions are covered by fixed spacing and budget columns"
   assert.match(css, /padding-top: 112px/);
   assert.match(css, /grid-template-columns: 52px minmax\(0, 1fr\) 58px/);
   assert.match(css, /width: min\(280px, calc\(100vw - 32px\)\) !important/);
+  assert.match(css, /\[data-sonner-toaster\]\[data-x-position="center"\][\s\S]*?left: 50% !important/);
   assert.doesNotMatch(appSource, /window\.scrollTo|scrollTop/);
-  assert.match(routedViewSource, /const activeView = getViewForPathname\(pathname\)/);
-  assert.doesNotMatch(routedViewSource, /setLocalActiveView\(view\)/);
+  assert.match(routedViewSource, /setLocalActiveView\(view\)/);
+  assert.match(routedViewSource, /useEffect\(\(\) => \{[\s\S]*?setLocalActiveView\(getViewForPathname\(pathname\)\)/);
+});
+
+test("navigation does not remount pages or trigger transaction page fetches", async () => {
+  const routerSource = await readFile(new URL("../features/dashboard/DashboardViewRouter.tsx", import.meta.url), "utf8");
+  const appSource = await readFile(new URL("../hooks/useNetlyApp.ts", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.doesNotMatch(routerSource, /key=\{props\.activeView\}/);
+  assert.doesNotMatch(routerSource, /route-transition/);
+  assert.doesNotMatch(css, /\.route-transition/);
+  assert.doesNotMatch(css, /\.view-stack\s*>\s*\*/);
+  assert.doesNotMatch(appSource, /previousActiveView/);
+  assert.doesNotMatch(appSource, /activeView[\s\S]{0,240}refreshTransactionPage/);
+});
+
+test("Transactions page receives the dedicated date-range transaction set", async () => {
+  const appSource = await readFile(new URL("../hooks/useNetlyApp.ts", import.meta.url), "utf8");
+  const dataHookSource = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+  const transactionsSource = await readFile(new URL("../features/transactions/TransactionsPage.tsx", import.meta.url), "utf8");
+
+  assert.match(appSource, /transactionPageWorkingTransactions/);
+  assert.match(appSource, /transactions: transactionPageWorkingTransactions/);
+  assert.match(appSource, /setTransactionLoadNotice\("No transactions found for this period\."\)/);
+  assert.match(dataHookSource, /transactionPageRequestIdRef/);
+  assert.match(dataHookSource, /transactionPageLoadedDateRange/);
+  assert.match(transactionsSource, /hasLoadedActiveDateRange/);
+  assert.match(transactionsSource, /getDateRangesMatch/);
+  assert.match(transactionsSource, /transactionLoadError/);
+  assert.match(transactionsSource, /transaction-list-review-shortcut/);
+});
+
+test("transaction details include pending and booked lifecycle timing", async () => {
+  const displaySource = await readFile(new URL("../lib/transaction-display.ts", import.meta.url), "utf8");
+  const clientSource = await readFile(new URL("../lib/akahu/client.ts", import.meta.url), "utf8");
+
+  assert.match(clientSource, /getPendingTransactions/);
+  assert.match(clientSource, /markPendingTransactions/);
+  assert.match(displaySource, /label: "Made"/);
+  assert.match(displaySource, /label: "Pending since"/);
+  assert.match(displaySource, /label: "Booked \/ resolved"/);
+});
+
+test("Drive startup restores metadata without silent auth or reconnect toast", async () => {
+  const backupHookSource = await readFile(new URL("../hooks/useDriveBackup.ts", import.meta.url), "utf8");
+
+  assert.match(backupHookSource, /readStoredDriveConnection/);
+  assert.match(backupHookSource, /setStatus\("ready"\)/);
+  assert.doesNotMatch(backupHookSource, /refreshBackupList\(\{ silent: true \}\)/);
+  assert.doesNotMatch(backupHookSource, /toast\.warning\("Reconnect Google Drive backup"\)/);
+});
+
+test("app icons use only the provided SVG asset", async () => {
+  const layoutSource = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const manifestSource = await readFile(new URL("../app/manifest.ts", import.meta.url), "utf8");
+  const serviceWorkerSource = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
+  const iconFiles = await readdir(new URL("../public/icons", import.meta.url));
+
+  for (const source of [layoutSource, manifestSource, serviceWorkerSource]) {
+    assert.match(source, /\/icons\/icon\.svg/);
+    assert.doesNotMatch(source, /icon-\d+\.png|maskable-icon-\d+\.png|apple-touch-icon\.png/);
+  }
+
+  assert.deepEqual(iconFiles, ["icon.svg"]);
 });
 
 test("Home and budget visual regressions keep the compact mobile layout intact", async () => {

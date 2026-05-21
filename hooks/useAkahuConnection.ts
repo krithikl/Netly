@@ -46,9 +46,7 @@ export function useAkahuConnection({
     setSyncResult(completionMessage);
 
     if (response.ok) {
-      toast.success("Akahu connected", {
-        description: completionMessage
-      });
+      toast.success("Akahu connected");
       setManualTokens({
         appToken: "",
         userToken: ""
@@ -60,17 +58,15 @@ export function useAkahuConnection({
         await refreshTransactions("user", transactionDateRange, { forceFullSync: true });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Akahu connected, but transactions could not be loaded.";
+        console.error("Akahu connected, but transactions could not be loaded.", error);
         setSyncResult(message);
-        toast.error("Akahu connected, but loading failed", {
-          description: message
-        });
+        toast.error("Could not load transactions");
       }
       return;
     }
 
-    toast.error("Akahu connection failed", {
-      description: completionMessage
-    });
+    console.error("Akahu connection failed.", completionMessage);
+    toast.error("Akahu connection failed");
   }, [manualTokens, refreshTransactions, setDataMode, transactionDateRange]);
 
   const updateManualTokens = useCallback((tokens: AkahuManualTokens) => {

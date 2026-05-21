@@ -131,6 +131,9 @@ export function getTransactionSummaryMeta(transaction: Transaction) {
 // Builds transaction detail rows and skips empty fields
 export function getTransactionDetailRows(transaction: Transaction) {
   return [
+    { label: "Status", value: getTransactionStatus(transaction) },
+    { label: "Made", value: getLifecycleDateValue(getTransactionDate(transaction)) },
+    ...getTransactionLifecycleRows(transaction),
     { label: "Account", value: getTransactionAccountLabel(transaction) },
     { label: "Currency", value: getTransactionCurrency(transaction) },
     { label: "Type", value: transaction.type },
@@ -147,6 +150,19 @@ export function getTransactionDetailRows(transaction: Transaction) {
     { label: "Account ID", value: transaction._account },
     { label: "Connection ID", value: transaction._connection }
   ].filter(hasDetailValue);
+}
+
+// Builds timing rows that distinguish pending creation from booked resolution.
+function getTransactionLifecycleRows(transaction: Transaction) {
+  if (transaction.pending) {
+    return [
+      { label: "Pending since", value: getLifecycleDateValue(transaction.created_at || transaction.updated_at) }
+    ];
+  }
+
+  return [
+    { label: "Booked / resolved", value: getLifecycleDateValue(transaction.updated_at || transaction.created_at) }
+  ];
 }
 
 // Combines bank-provided text into one string for search and details
@@ -294,6 +310,27 @@ function getPaymentReferenceValue(transaction: Transaction) {
   ]
     .filter(isUsefulText)
     .join(" ");
+}
+
+function getLifecycleDateValue(value: string | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const hasTime = value.includes("T");
+  const timestamp = Date.parse(hasTime ? value : `${value}T12:00:00`);
+
+  if (!Number.isFinite(timestamp)) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-NZ", {
+    day: "numeric",
+    hour: hasTime ? "numeric" : undefined,
+    minute: hasTime ? "2-digit" : undefined,
+    month: "short",
+    year: "numeric"
+  }).format(new Date(timestamp));
 }
 
 function hasDetailValue(row: { label: string; value?: unknown }): row is { label: string; value: string } {

@@ -58,8 +58,12 @@ type TransactionsPageProps = {
   onMonthRangeChange: (dateRange: TransactionDateRange) => void;
   onLoadAllTransactions: (dateRange: TransactionDateRange) => void;
   onLoadMoreTransactions: (dateRange: TransactionDateRange) => void;
+  onOpenPresetConsumed: () => void;
   onOpenSettings: () => void;
   openPreset: TransactionOpenPreset | null;
+  transactionLoadError: string;
+  transactionLoadNotice: string;
+  transactionPageLoadedDateRange: TransactionDateRange | null;
   transactions: Transaction[];
 };
 
@@ -84,8 +88,12 @@ export function TransactionsPage({
   onMonthRangeChange,
   onLoadAllTransactions,
   onLoadMoreTransactions,
+  onOpenPresetConsumed,
   onOpenSettings,
   openPreset,
+  transactionLoadError,
+  transactionLoadNotice,
+  transactionPageLoadedDateRange,
   transactions
 }: TransactionsPageProps) {
   const [query, setQuery] = useState("");
@@ -104,8 +112,10 @@ export function TransactionsPage({
   const filterSelectOptions = useMemo(() => getStringOptions(transactionFilters), []);
   const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
   const isBottomNavigation = useIsBottomNavigation();
-  const dateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactions, dateRange), [dateRange, transactions]);
-  const allLoadedDateRange = useMemo(() => getLoadedTransactionDateRange(transactions) || dateRange, [dateRange, transactions]);
+  const hasLoadedActiveDateRange = getDateRangesMatch(dateRange, transactionPageLoadedDateRange);
+  const activeRangeTransactions = hasLoadedActiveDateRange ? transactions : [];
+  const dateRangeTransactions = useMemo(() => filterTransactionsByDateRange(activeRangeTransactions, dateRange), [activeRangeTransactions, dateRange]);
+  const allLoadedDateRange = useMemo(() => getLoadedTransactionDateRange(activeRangeTransactions) || dateRange, [activeRangeTransactions, dateRange]);
   const activeSearchDateRange = searchDateRange || allLoadedDateRange;
   const searchDateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactions, activeSearchDateRange), [activeSearchDateRange, transactions]);
   const monthOptions = useMemo(() => getTransactionMonthOptions(dateRange), [dateRange]);
@@ -119,7 +129,8 @@ export function TransactionsPage({
     () => getVisibleTransactions(searchDateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
     [query, searchDateRangeTransactions, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
   );
-  const shouldShowListLoading = isLoadingTransactions && transactions.length === 0;
+  const shouldShowListLoading = isLoadingTransactions && (!hasLoadedActiveDateRange || transactions.length === 0);
+  const dateRangeAnalytics = useMemo(() => getTransactionAnalytics(dateRangeTransactions, dateRange), [dateRangeTransactions, dateRange]);
   const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionAccounts, transactionCategory);
   const [monthCarouselDirection, setMonthCarouselDirection] = useState<"next" | "previous">("next");
@@ -242,7 +253,9 @@ export function TransactionsPage({
       setSearchDateRange(openPreset.dateRange || getLoadedTransactionDateRange(transactions) || dateRange);
       setSearchOpen(true);
     }
-  }, [dateRange, defaultAccountId, isBottomNavigation, openPreset, onDateRangeChange, transactions]);
+
+    onOpenPresetConsumed();
+  }, [dateRange, defaultAccountId, isBottomNavigation, onDateRangeChange, onOpenPresetConsumed, openPreset, transactions]);
 
   useEffect(() => {
     setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
@@ -304,6 +317,7 @@ export function TransactionsPage({
       onTouchCancel={() => setPageSwipeStart(null)}
       onTouchEnd={finishPageSwipe}
       onTouchStart={startPageSwipe}
+      suppressHydrationWarning
     >
       <MobilePageHeader
         actions={(
@@ -320,15 +334,10 @@ export function TransactionsPage({
           </div>
         )}
         title="Transactions"
-      >
-        {isBottomNavigation && analytics.needsReviewCount > 0 && (
-          <button className="transaction-review-shortcut transaction-header-review-shortcut" onClick={reviewNeedsReview} type="button">
-            {analytics.needsReviewCount} need review
-          </button>
-        )}
-      </MobilePageHeader>
+      />
       <TransactionMonthOverview
         activeDateRange={dateRange}
+        isLoading={!hasLoadedActiveDateRange && isLoadingTransactions}
         monthOptions={monthOptions}
         monthSummary={monthSummary}
         onMonthSelect={selectMonth}
@@ -392,11 +401,17 @@ export function TransactionsPage({
           open={sortOpen}
           transactionSort={transactionSort}
         />
+        <TransactionLoadMessage error={transactionLoadError} notice={transactionLoadNotice} />
+        {dateRangeAnalytics.needsReviewCount > 0 && (
+          <button className="transaction-review-shortcut transaction-list-review-shortcut" onClick={reviewNeedsReview} type="button">
+            {dateRangeAnalytics.needsReviewCount} need review
+          </button>
+        )}
         <TransactionList
           categoryColors={categoryColors}
           editable
           categorySelectOptions={editableCategorySelectOptions}
-          emptyMessage="No transactions match the current filters."
+          emptyMessage={transactionLoadNotice ? "No transactions found for this period." : "No transactions match the current filters."}
           onCategoryChange={onCategoryChange}
           hasMore={hasMoreTransactions}
           isLoading={shouldShowListLoading}
@@ -409,6 +424,24 @@ export function TransactionsPage({
       </section>
     </section>
   );
+}
+
+function TransactionLoadMessage({ error, notice }: { error: string; notice: string }) {
+  const message = error || notice;
+
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div className={error ? "transaction-load-message error" : "transaction-load-message"} role={error ? "alert" : "status"}>
+      {message}
+    </div>
+  );
+}
+
+function getDateRangesMatch(first: TransactionDateRange, second: TransactionDateRange | null) {
+  return Boolean(second && first.from === second.from && first.to === second.to);
 }
 
 type TransactionMonthOption = {
@@ -427,11 +460,13 @@ type TransactionMonthSummary = {
 // Month-first navigation and totals for the active transaction period.
 function TransactionMonthOverview({
   activeDateRange,
+  isLoading,
   monthOptions,
   monthSummary,
   onMonthSelect
 }: {
   activeDateRange: TransactionDateRange;
+  isLoading: boolean;
   monthOptions: TransactionMonthOption[];
   monthSummary: TransactionMonthSummary;
   onMonthSelect: (monthDate: Date) => void;
@@ -458,9 +493,9 @@ function TransactionMonthOverview({
         </div>
       </div>
       <div className="transaction-month-summary" aria-label="Monthly transaction summary">
-        <TransactionMonthMetric label="Money out" tone="expense" value={formatMoney(monthSummary.expenses, true)} />
-        <TransactionMonthMetric label="Money in" tone="income" value={formatMoney(monthSummary.income, true)} />
-        <TransactionMonthMetric label="Net movement" tone={monthSummary.net < 0 ? "expense" : "income"} value={formatMoney(monthSummary.net, true)} />
+        <TransactionMonthMetric label="Money out" tone="expense" value={isLoading ? "Loading" : formatMoney(monthSummary.expenses, true)} />
+        <TransactionMonthMetric label="Money in" tone="income" value={isLoading ? "Loading" : formatMoney(monthSummary.income, true)} />
+        <TransactionMonthMetric label="Net movement" tone={monthSummary.net < 0 ? "expense" : "income"} value={isLoading ? "Loading" : formatMoney(monthSummary.net, true)} />
       </div>
     </section>
   );

@@ -2,12 +2,7 @@ const CACHE_NAME = "netly-pwa-v2";
 const APP_ASSETS = [
   "/",
   "/manifest.webmanifest",
-  "/icons/icon-32.png",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/maskable-icon-192.png",
-  "/icons/maskable-icon-512.png",
-  "/icons/apple-touch-icon.png"
+  "/icons/icon.svg"
 ];
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
 const IS_LOCALHOST = LOCAL_HOSTNAMES.has(self.location.hostname);

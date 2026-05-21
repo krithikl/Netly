@@ -73,7 +73,7 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
                 <span>{category}</span>
                 <small>{formatRelativeDate(getTransactionDate(transaction))}</small>
               </span>
-              <b className={`recent-amount ${amountTone}`}>{formatMoney(transaction.amount)}</b>
+              <b className={`recent-amount ${amountTone}`}>{formatMoney(transaction.amount, true)}</b>
             </button>
           );
         })}

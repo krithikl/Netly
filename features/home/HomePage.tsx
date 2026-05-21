@@ -6,7 +6,7 @@ import { InsightsPanel } from "@/features/home/InsightsPanel";
 import { MetricCard } from "@/features/home/MetricCard";
 import { RecentActivityStrip } from "@/features/home/RecentActivityStrip";
 import { formatMoney } from "@/lib/insights";
-import { getTransactionTimestamp } from "@/lib/transaction-display";
+import { compareTransactionsNewestFirst } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 import type { View } from "@/lib/app/types";
 
@@ -62,7 +62,7 @@ export function HomePage({
   transactionPreview
 }: HomePageProps) {
   const recentTransactions = [...transactionPreview]
-    .sort((first, second) => getTransactionTimestamp(second) - getTransactionTimestamp(first))
+    .sort(compareTransactionsNewestFirst)
     .slice(0, 10);
   const openTransactionsView = () => setActiveView("transactions");
   const openBudgetsView = () => setActiveView("budgets");

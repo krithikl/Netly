@@ -36,13 +36,16 @@ test("newest archived transaction date fails loud on malformed dates", () => {
   );
 });
 
-test("foreground refresh does not contain the retired automatic full-sync path", async () => {
-  const source = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+test("lifecycle refresh runs on launch only", async () => {
+  const dataSource = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+  const appSource = await readFile(new URL("../hooks/useNetlyApp.ts", import.meta.url), "utf8");
 
-  assert.doesNotMatch(source, /runBackgroundFullTransactionSync/);
-  assert.doesNotMatch(source, /lastFullTransactionSync/);
-  assert.match(source, /getIncrementalTransactionSyncRange/);
-  assert.match(source, /getTransactionsUrl\("user", undefined, undefined, true\)/);
+  assert.doesNotMatch(dataSource, /runBackgroundFullTransactionSync/);
+  assert.doesNotMatch(dataSource, /lastFullTransactionSync/);
+  assert.match(dataSource, /getIncrementalTransactionSyncRange/);
+  assert.match(dataSource, /getTransactionsUrl\("user", undefined, undefined, true\)/);
+  assert.doesNotMatch(appSource, /visibilitychange|addEventListener\("focus"|foregroundRefreshCooldownMs|lastForegroundRefreshRef/);
+  assert.match(appSource, /banking\.refreshTransactions\(initialDataMode, transactionPageDateRange\)/);
 });
 
 test("launch sync requests Akahu refresh before incremental transaction fetch", async () => {
@@ -50,6 +53,7 @@ test("launch sync requests Akahu refresh before incremental transaction fetch", 
 
   assert.match(source, /requestManualRefresh: true/);
   assert.match(source, /console\.info\("Akahu refresh endpoint completed\."/);
+  assert.doesNotMatch(source, /setTransactionLoadNotice\(refreshPayload\.notice|Akahu refresh requested\. Loading updated transactions/);
   assert.doesNotMatch(source, /lastAkahuManualRefreshStorageKey|canRequestManualRefresh|recordManualRefreshRequestedAt/);
   assert.match(source, /await loadAndApplyAccountSnapshot\(mode, isCurrentRequest, accountSetters, \{ requestManualRefresh: true \}\)[\s\S]*?await syncVisibleAkahuTransactionsToArchive/);
 });
@@ -59,8 +63,28 @@ test("Drive access token remains memory-only", async () => {
   const backupHookSource = await readFile(new URL("../hooks/useDriveBackup.ts", import.meta.url), "utf8");
 
   assert.doesNotMatch(driveSource, /localStorage\.setItem\([^)]*access/i);
+  assert.doesNotMatch(driveSource, /accounts\.oauth2|initTokenClient|googleIdentityScriptUrl/);
+  assert.match(driveSource, /\/api\/google-drive\/upload/);
+  assert.match(driveSource, /\/api\/google-drive\/backups/);
   assert.doesNotMatch(backupHookSource, /access_token|cachedDriveAccessToken/);
   assert.match(backupHookSource, /driveBackupConnectionStorageKey/);
+});
+
+test("Google Drive backup uses server OAuth refresh-token routes", async () => {
+  const serverSource = await readFile(new URL("../lib/google-drive/server.ts", import.meta.url), "utf8");
+  const startSource = await readFile(new URL("../app/api/google-drive/start/route.ts", import.meta.url), "utf8");
+  const callbackSource = await readFile(new URL("../app/api/google-drive/callback/route.ts", import.meta.url), "utf8");
+
+  assert.match(serverSource, /access_type", "offline"/);
+  assert.match(serverSource, /prompt", "consent"/);
+  assert.match(serverSource, /refresh_token/);
+  assert.match(serverSource, /NEXT_PUBLIC_GOOGLE_CLIENT_ID/);
+  assert.match(serverSource, /GOOGLE_CLIENT_SECRET/);
+  assert.match(serverSource, /GOOGLE_REDIRECT_URI/);
+  assert.match(serverSource, /GOOGLE_COOKIE_SECRET/);
+  assert.match(serverSource, /thirtyDayCookieMaxAgeSeconds/);
+  assert.match(startSource, /getGoogleDriveAuthorizationUrl/);
+  assert.match(callbackSource, /saveGoogleDriveRefreshToken/);
 });
 
 test("Home mobile preview shows ten recent transactions and a view-all action", async () => {
@@ -70,8 +94,10 @@ test("Home mobile preview shows ten recent transactions and a view-all action", 
   const recentSource = await readFile(new URL("../features/home/RecentActivityStrip.tsx", import.meta.url), "utf8");
 
   assert.match(homeSource, /\.slice\(0, 10\)/);
+  assert.match(homeSource, /compareTransactionsNewestFirst/);
   assert.match(homeSource, /insights=\{insights\}/);
   assert.match(homeSource, /mobile-home-insight-strip/);
+  assert.match(recentSource, /formatMoney\(transaction\.amount, true\)/);
   assert.match(heroSource, /hero-insight-preview/);
   assert.match(heroSource, /has-hero-insight/);
   assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.dashboard-grid > \.insights-panel,\s*\.hero-insight-preview[\s\S]*?display: none/);
@@ -110,6 +136,7 @@ test("navigation does not remount pages or trigger transaction page fetches", as
 test("Transactions page receives the dedicated date-range transaction set", async () => {
   const appSource = await readFile(new URL("../hooks/useNetlyApp.ts", import.meta.url), "utf8");
   const dataHookSource = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+  const displaySource = await readFile(new URL("../lib/transaction-display.ts", import.meta.url), "utf8");
   const transactionsSource = await readFile(new URL("../features/transactions/TransactionsPage.tsx", import.meta.url), "utf8");
 
   assert.match(appSource, /transactionPageWorkingTransactions/);
@@ -117,8 +144,15 @@ test("Transactions page receives the dedicated date-range transaction set", asyn
   assert.match(appSource, /setTransactionLoadNotice\("No transactions found for this period\."\)/);
   assert.match(dataHookSource, /transactionPageRequestIdRef/);
   assert.match(dataHookSource, /transactionPageLoadedDateRange/);
+  assert.match(dataHookSource, /isFutureTransactionRange\(dateRange\)/);
+  assert.match(dataHookSource, /setTransactionLoadNotice\(archivedPageTransactions\.length === 0 \? "No transactions found for this period\." : ""\)/);
   assert.match(transactionsSource, /hasLoadedActiveDateRange/);
   assert.match(transactionsSource, /getDateRangesMatch/);
+  assert.doesNotMatch(transactionsSource, /reviewShortcutTransactions|reviewShortcutAnalytics/);
+  assert.match(transactionsSource, /shownTransactions = useMemo\([\s\S]*?getVisibleTransactions\(dateRangeTransactions[\s\S]*?transactionAccounts/);
+  assert.match(transactionsSource, /analytics = useMemo\(\(\) => getTransactionAnalytics\(shownTransactions, dateRange\)/);
+  assert.match(transactionsSource, /analytics\.needsReviewCount > 0/);
+  assert.match(displaySource, /compareTransactionsNewestFirst/);
   assert.match(transactionsSource, /transactionLoadError/);
   assert.match(transactionsSource, /transaction-list-review-shortcut/);
 });
@@ -138,7 +172,11 @@ test("Drive startup restores metadata without silent auth or reconnect toast", a
   const backupHookSource = await readFile(new URL("../hooks/useDriveBackup.ts", import.meta.url), "utf8");
 
   assert.match(backupHookSource, /readStoredDriveConnection/);
-  assert.match(backupHookSource, /setStatus\("ready"\)/);
+  assert.match(backupHookSource, /setStatus\("disconnected"\)/);
+  assert.match(backupHookSource, /getGoogleDriveConnectionStatus/);
+  assert.match(backupHookSource, /ensureDriveAuthorized/);
+  assert.match(backupHookSource, /Opening Google Drive authorization/);
+  assert.match(backupHookSource, /Google Drive backup was used before/);
   assert.doesNotMatch(backupHookSource, /refreshBackupList\(\{ silent: true \}\)/);
   assert.doesNotMatch(backupHookSource, /toast\.warning\("Reconnect Google Drive backup"\)/);
 });

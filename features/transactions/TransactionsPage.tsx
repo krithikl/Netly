@@ -130,7 +130,6 @@ export function TransactionsPage({
     [query, searchDateRangeTransactions, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
   );
   const shouldShowListLoading = isLoadingTransactions && (!hasLoadedActiveDateRange || transactions.length === 0);
-  const dateRangeAnalytics = useMemo(() => getTransactionAnalytics(dateRangeTransactions, dateRange), [dateRangeTransactions, dateRange]);
   const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionAccounts, transactionCategory);
   const [monthCarouselDirection, setMonthCarouselDirection] = useState<"next" | "previous">("next");
@@ -402,9 +401,9 @@ export function TransactionsPage({
           transactionSort={transactionSort}
         />
         <TransactionLoadMessage error={transactionLoadError} notice={transactionLoadNotice} />
-        {dateRangeAnalytics.needsReviewCount > 0 && (
+        {analytics.needsReviewCount > 0 && (
           <button className="transaction-review-shortcut transaction-list-review-shortcut" onClick={reviewNeedsReview} type="button">
-            {dateRangeAnalytics.needsReviewCount} need review
+            {analytics.needsReviewCount} need review
           </button>
         )}
         <TransactionList

@@ -37,7 +37,6 @@ export function useNetlyApp() {
   const { activeView, setActiveView } = useRoutedView();
   const [period, setPeriod] = useState<PeriodOption>(periods[0]);
   const isBottomNavigation = useIsBottomNavigation();
-  const lastForegroundRefreshRef = useRef(0);
   const transactionOpenPresetIdRef = useRef(0);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [transactionPageDateRange, setTransactionPageDateRange] = useState(getThisMonthDateRange);
@@ -121,40 +120,6 @@ export function useNetlyApp() {
       banking.applyFallbackState(initialDataMode, error, "Could not load Akahu transactions.");
     });
   }, []);
-
-  // Refreshes quietly when the installed app/browser returns to the foreground.
-  useEffect(() => {
-    const foregroundRefreshCooldownMs = 60 * 1000;
-    const refreshForegroundData = () => {
-      if (banking.dataMode !== "user") {
-        return;
-      }
-
-      const now = Date.now();
-
-      if (now - lastForegroundRefreshRef.current < foregroundRefreshCooldownMs) {
-        return;
-      }
-
-      lastForegroundRefreshRef.current = now;
-      banking.refreshTransactions("user", transactionPageDateRange).catch((error: unknown) => {
-        banking.applyFallbackState("user", error, "Could not refresh Akahu transactions.");
-      });
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        refreshForegroundData();
-      }
-    };
-
-    window.addEventListener("focus", refreshForegroundData);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("focus", refreshForegroundData);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [banking.applyFallbackState, banking.dataMode, banking.refreshTransactions, transactionPageDateRange]);
 
   const recurring = useMemo(() => detectRecurring(recurringTransactions), [recurringTransactions]);
   const cardFitAvailableCategories = useMemo(

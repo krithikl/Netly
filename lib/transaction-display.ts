@@ -56,6 +56,23 @@ export function getTransactionFallbackSortTimestamp(transaction: Transaction) {
   return 0;
 }
 
+// Matches the Transactions page default order: newest transaction date first, then source timing.
+export function compareTransactionsNewestFirst(first: Transaction, second: Transaction) {
+  const dateDifference = getTransactionTimestamp(second) - getTransactionTimestamp(first);
+
+  if (dateDifference !== 0) {
+    return dateDifference;
+  }
+
+  const fallbackDifference = getTransactionFallbackSortTimestamp(second) - getTransactionFallbackSortTimestamp(first);
+
+  if (fallbackDifference !== 0) {
+    return fallbackDifference;
+  }
+
+  return getTransactionId(second).localeCompare(getTransactionId(first));
+}
+
 function getUsableTransactionTimestamp(value: string | undefined) {
   if (!value) {
     return Number.NaN;

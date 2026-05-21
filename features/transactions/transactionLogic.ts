@@ -3,11 +3,9 @@ import { categoriesMatch } from "@/lib/category-rules";
 import {
   getTransactionAccountLabel,
   getTransactionCategory,
-  getTransactionFallbackSortTimestamp,
-  getTransactionId,
+  compareTransactionsNewestFirst,
   getTransactionMerchant,
   getTransactionSearchText,
-  getTransactionTimestamp,
   transactionNeedsReview
 } from "@/lib/transaction-display";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
@@ -150,7 +148,7 @@ function matchesTransactionFilter(transaction: Transaction, transactionFilter: T
 
 // Sorts transaction rows according to the active Transactions page sort option.
 function compareTransactions(first: Transaction, second: Transaction, transactionSort: TransactionSort) {
-  const newestFirst = compareTransactionTimeDescending(first, second);
+  const newestFirst = compareTransactionsNewestFirst(first, second);
 
   switch (transactionSort) {
     case "Oldest":
@@ -162,22 +160,6 @@ function compareTransactions(first: Transaction, second: Transaction, transactio
     default:
       return newestFirst;
   }
-}
-
-function compareTransactionTimeDescending(first: Transaction, second: Transaction) {
-  const dateDifference = getTransactionTimestamp(second) - getTransactionTimestamp(first);
-
-  if (dateDifference !== 0) {
-    return dateDifference;
-  }
-
-  const fallbackDifference = getTransactionFallbackSortTimestamp(second) - getTransactionFallbackSortTimestamp(first);
-
-  if (fallbackDifference !== 0) {
-    return fallbackDifference;
-  }
-
-  return getTransactionId(second).localeCompare(getTransactionId(first));
 }
 
 function compareByAmount(first: Transaction, second: Transaction) {

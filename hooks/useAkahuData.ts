@@ -117,8 +117,7 @@ export function useAkahuData() {
     setIsLoadingTransactions(true);
 
     // Keep the existing screen populated during same-mode refreshes. Clearing here
-    // caused the app to flash empty rows/cards whenever a tab regained focus or a
-    // view triggered a reload. Only clear when changing data source.
+    // caused the app to flash empty rows/cards during startup refreshes.
     if (mode !== dataMode) {
       resetBankData();
     }
@@ -239,6 +238,14 @@ export function useAkahuData() {
 
         setTransactionPageTransactions(archivedPageTransactions);
         setTransactionPageLoadedDateRange(dateRange || null);
+
+        if (isFutureTransactionRange(dateRange)) {
+          setTransactionPageNextCursor(null);
+          setTransactionLoadError("");
+          setTransactionLoadNotice(archivedPageTransactions.length === 0 ? "No transactions found for this period." : "");
+          return;
+        }
+
         const { archivedTransactionPageTransactions, nextCursor } = await syncVisibleAkahuTransactionsToArchive(dateRange, dateRange);
 
         if (!isCurrentRequest()) {
@@ -435,7 +442,7 @@ type AccountSnapshotStateSetters = {
   setTransactionLoadNotice: (notice: string) => void;
 };
 
-// Loads account data and optionally requests a manual Akahu refresh for launch/foreground syncs.
+// Loads account data and optionally requests a manual Akahu refresh for launch syncs.
 async function loadAndApplyAccountSnapshot(
   mode: DataMode,
   isCurrentRequest: () => boolean,
@@ -466,7 +473,6 @@ async function loadAndApplyAccountSnapshot(
         ...getFreshnessState(accountsPayload, "failed"),
         error: message
       });
-      setters.setTransactionLoadNotice(message);
     }
 
     return;
@@ -480,7 +486,6 @@ async function loadAndApplyAccountSnapshot(
     notice: refreshPayload.notice || "",
     requestedAt: refreshPayload.requestedAt || ""
   });
-  setters.setTransactionLoadNotice(refreshPayload.notice || "Akahu refresh requested. Loading updated transactions.");
   const refreshedAccountsPayload = await loadAccountsPayload(mode);
 
   if (!isCurrentRequest()) {
@@ -561,8 +566,17 @@ function getFailedFreshnessState(error: unknown, fallbackMessage: string): Akahu
   };
 }
 
-// Syncs only the visible transaction range so foreground pages update quickly.
+// Syncs only the visible transaction range so launch refreshes update quickly.
 async function syncVisibleAkahuTransactionsToArchive(syncDateRange: TransactionDateRange | undefined, pageDateRange: TransactionDateRange | undefined = syncDateRange) {
+  if (isFutureTransactionRange(syncDateRange)) {
+    return {
+      archivedTransactions: await readArchivedTransactions(),
+      archivedTransactionPageTransactions: await readArchivedTransactions(pageDateRange),
+      connected: false,
+      nextCursor: null
+    };
+  }
+
   const response = await fetch(getTransactionsUrl("user", syncDateRange));
   const payload = await readJsonResponse<TransactionsPayload>(response, "transactions");
 
@@ -671,6 +685,23 @@ function mergeTransactionPages(currentTransactions: Transaction[], nextTransacti
   nextTransactions.forEach((transaction) => byId.set(getTransactionPageId(transaction), transaction));
 
   return [...byId.values()];
+}
+
+// Akahu rejects transaction ranges whose start date is in the future.
+function isFutureTransactionRange(dateRange: TransactionDateRange | undefined) {
+  if (!dateRange?.from) {
+    return false;
+  }
+
+  const rangeStart = new Date(`${dateRange.from}T00:00:00`);
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  if (Number.isNaN(rangeStart.getTime())) {
+    throw new Error(`Invalid transaction range start date "${dateRange.from}".`);
+  }
+
+  return rangeStart.getTime() > todayStart.getTime();
 }
 
 function getTransactionPageId(transaction: Transaction) {

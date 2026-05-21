@@ -2219,18 +2219,28 @@ h2 {
 }
 
 .transaction-month-rail button {
+  position: relative;
+  display: grid;
+  place-items: center;
   width: calc(100% - 12px);
   min-height: 42px;
   min-width: 0;
   margin: 6px;
   border: 0;
   border-radius: 999px;
+  padding: 7px 4px 10px;
   background: transparent;
   color: var(--muted-2);
   cursor: pointer;
   font: inherit;
   font-size: 1rem;
   font-weight: 850;
+}
+
+.transaction-month-rail button:hover,
+.transaction-month-rail button:focus-visible {
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .transaction-month-label {
@@ -2251,11 +2261,23 @@ h2 {
 }
 
 .transaction-month-rail button.active {
-  background: var(--accent-cream);
-  color: #21180f;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
-  font-size: 1.05rem;
+  background: transparent;
+  color: var(--ink);
+  box-shadow: none;
+  font-size: 1rem;
   font-weight: 950;
+}
+
+.transaction-month-rail button.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 28px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--primary);
+  transform: translateX(-50%);
 }
 
 .transaction-month-summary {
@@ -5826,7 +5848,7 @@ body {
     min-height: 42px;
     width: calc(100% - 10px);
     margin: 5px;
-    padding-inline: 2px;
+    padding: 7px 2px 10px;
     font-size: 0.7rem;
     white-space: nowrap;
   }
@@ -5837,7 +5859,7 @@ body {
   }
 
   .transaction-month-rail button.active {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
   }
 
   .transaction-month-label-full {

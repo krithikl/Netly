@@ -41,3 +41,5 @@ export const incomeExcludedCategoriesStorageKey = "netly_income_excluded_categor
 export const paydayStorageKey = "netly_payday";
 
 export const budgetsStorageKey = "netly_user_budgets";
+
+export const driveBackupConnectionStorageKey = "netly_drive_backup_connection";

@@ -63,7 +63,7 @@ export function HomePage({
 }: HomePageProps) {
   const recentTransactions = [...transactionPreview]
     .sort((first, second) => getTransactionTimestamp(second) - getTransactionTimestamp(first))
-    .slice(0, 5);
+    .slice(0, 10);
   const openTransactionsView = () => setActiveView("transactions");
   const openBudgetsView = () => setActiveView("budgets");
 
@@ -73,8 +73,8 @@ export function HomePage({
       <HeroBalanceCard
         availableBalance={availableBalance}
         hideBalances={hideBalances}
+        insights={insights}
         isConnected={isConnected}
-        onReviewSpend={openTransactionsView}
         payday={payday}
         paydayPatternDate={paydayPatternDate}
         setHideBalances={setHideBalances}

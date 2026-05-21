@@ -18,6 +18,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
+import { useCloseOnPageScroll } from "@/hooks/useCloseOnPageScroll";
 import { formatMoney } from "@/lib/insights";
 import { filterTransactionsByDateRange, formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
 import { isIncomeCategoryIncluded } from "@/lib/reporting";
@@ -1232,9 +1233,11 @@ function FilterMultiSelect({
   selectedValues: string[];
 }) {
   const label = getFilterMultiSelectLabel(selectedValues, options, allLabel);
+  const [open, setOpen] = useState(false);
+  useCloseOnPageScroll(open, () => setOpen(false));
 
   return (
-    <Popover>
+    <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <button aria-haspopup="listbox" className="category-multi-select-trigger transaction-select-trigger" role="combobox" type="button">
           <span>{label}</span>

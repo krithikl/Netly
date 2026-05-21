@@ -210,6 +210,7 @@ function BudgetCard({
   const left = Math.max(0, budget.limit - spent);
   const remaining = budget.limit - spent;
   const progress = budget.limit > 0 ? (spent / budget.limit) * 100 : 0;
+  const progressWidth = Math.min(100, Math.max(0, progress));
   const budgetStatusLabel = remaining >= 0
     ? `${formatMoney(remaining, true)} left of ${formatMoney(budget.limit, true)}`
     : `${formatMoney(Math.abs(remaining), true)} over of ${formatMoney(budget.limit, true)}`;
@@ -235,7 +236,7 @@ function BudgetCard({
         <div className="budget-period-row">
           <span>{monthPeriod.startLabel}</span>
           <div className="budget-progress-track">
-            <span className="budget-progress-fill" style={{ width: `${progress}%` }}>
+            <span className="budget-progress-fill" style={{ width: `${progressWidth}%` }}>
               <strong>{Math.round(progress)}%</strong>
             </span>
             <span className="budget-today-marker" style={{ left: `${todayProgress}%` }}>

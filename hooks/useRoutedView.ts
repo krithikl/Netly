@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { startTransition, useCallback, useEffect, useState } from "react";
+import { startTransition, useCallback } from "react";
 import { getRouteForView, getViewForPathname } from "@/lib/app/routes";
 import type { View } from "@/lib/app/types";
 
@@ -9,19 +9,13 @@ import type { View } from "@/lib/app/types";
 export function useRoutedView() {
   const pathname = usePathname();
   const router = useRouter();
-  const pathnameView = getViewForPathname(pathname);
-  const [activeView, setLocalActiveView] = useState<View>(pathnameView);
+  const activeView = getViewForPathname(pathname);
 
   const setActiveView = useCallback((view: View) => {
-    setLocalActiveView(view);
     startTransition(() => {
       router.push(getRouteForView(view));
     });
   }, [router]);
-
-  useEffect(() => {
-    setLocalActiveView(pathnameView);
-  }, [pathnameView]);
 
   return {
     activeView,

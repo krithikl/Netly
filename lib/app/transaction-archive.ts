@@ -48,6 +48,7 @@ export type TransactionArchiveMetadata = {
   backupTransactionCount?: number;
   deviceId: string;
   lastDriveSyncAt: string;
+  lastIncrementalTransactionSyncAt: string;
   lastLocalUpdateAt: string;
   schemaVersion: number;
 };
@@ -194,6 +195,13 @@ export async function importTransactionArchiveSnapshot(snapshot: TransactionArch
 export async function markArchiveDriveSynced() {
   await updateArchiveMetadata({
     lastDriveSyncAt: new Date().toISOString()
+  });
+}
+
+// Records that the launch/foreground incremental transaction sync completed.
+export async function markArchiveIncrementalTransactionSynced() {
+  await updateArchiveMetadata({
+    lastIncrementalTransactionSyncAt: new Date().toISOString()
   });
 }
 
@@ -441,6 +449,7 @@ function normalizeArchiveMetadata(metadata: StoredArchiveMetadata | undefined): 
     accountSnapshot: metadata?.accountSnapshot,
     deviceId: metadata?.deviceId || getArchiveDeviceId(),
     lastDriveSyncAt: metadata?.lastDriveSyncAt || "",
+    lastIncrementalTransactionSyncAt: metadata?.lastIncrementalTransactionSyncAt || "",
     lastLocalUpdateAt: metadata?.lastLocalUpdateAt || "",
     schemaVersion
   };

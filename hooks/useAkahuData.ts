@@ -2,7 +2,8 @@
 
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import { archiveAndMergeTransactions, readArchivedAccountSnapshot, readArchivedTransactions, writeArchivedAccountSnapshot } from "@/lib/app/transaction-archive";
+import { archiveAndMergeTransactions, markArchiveIncrementalTransactionSynced, readArchivedAccountSnapshot, readArchivedTransactions, writeArchivedAccountSnapshot } from "@/lib/app/transaction-archive";
+import { getIncrementalTransactionSyncRange } from "@/lib/app/transaction-sync";
 import { currentBalance as fallbackBalance, transactions as fallbackTransactions } from "@/lib/mock-data";
 import { readInitialDataMode } from "@/lib/app/browser-state";
 import type { AccountDataFreshness, AkahuDataFreshness, DataMode, LinkedAccount } from "@/lib/app/types";
@@ -38,8 +39,6 @@ type RefreshPayload = {
 };
 
 const lastAkahuManualRefreshStorageKey = "netly_last_akahu_manual_refresh_requested_at";
-const lastFullTransactionSyncStorageKey = "netly_last_full_transaction_sync_at";
-const fullTransactionSyncCooldownMs = 3 * 60 * 60 * 1000;
 
 type RefreshTransactionsOptions = {
   forceFullSync?: boolean;
@@ -110,8 +109,7 @@ export function useAkahuData() {
     const requestId = refreshRequestIdRef.current + 1;
     refreshRequestIdRef.current = requestId;
     const isCurrentRequest = () => refreshRequestIdRef.current === requestId;
-    let shouldSyncFullTransactions = options.forceFullSync;
-    let visibleSyncConnected = false;
+    let incrementalDateRange = dateRange;
 
     setIsLoadingTransactions(true);
 
@@ -126,8 +124,8 @@ export function useAkahuData() {
 
     try {
       if (mode === "user") {
-        const { archivedAccountSnapshot, archivedTransactions, archivedTransactionPageTransactions, hasArchivedTransactions } = await readArchiveHydration(dateRange);
-        shouldSyncFullTransactions = options.forceFullSync || shouldRunFullTransactionSync(hasArchivedTransactions);
+        const { archivedAccountSnapshot, archivedTransactions, archivedTransactionPageTransactions } = await readArchiveHydration(dateRange);
+        incrementalDateRange = getIncrementalTransactionSyncRange(archivedTransactions, dateRange);
 
         if (!isCurrentRequest()) {
           return;
@@ -151,7 +149,7 @@ export function useAkahuData() {
           });
         }
 
-        if (hasArchivedTransactions || archivedAccountSnapshot) {
+        if (archivedTransactions.length > 0 || archivedTransactionPageTransactions.length > 0 || archivedAccountSnapshot) {
           setIsLoadingTransactions(false);
           // setTransactionLoadNotice("Showing encrypted archived data while checking Akahu for fresh data.");
         }
@@ -169,12 +167,11 @@ export function useAkahuData() {
         setTransactionLoadNotice
       });
       const transactionsRequest = mode === "user"
-        ? syncVisibleAkahuTransactionsToArchive(dateRange).then(({ archivedTransactions, archivedTransactionPageTransactions, connected, nextCursor }) => {
+        ? syncVisibleAkahuTransactionsToArchive(incrementalDateRange, dateRange).then(({ archivedTransactions, archivedTransactionPageTransactions, connected, nextCursor }) => {
             if (!isCurrentRequest()) {
               return;
             }
 
-            visibleSyncConnected = connected;
             setTransactions(archivedTransactions);
             setTransactionPageTransactions(archivedTransactionPageTransactions);
             setTransactionPageNextCursor(nextCursor);
@@ -197,16 +194,6 @@ export function useAkahuData() {
         });
 
       await Promise.all([accountsRequest, transactionsRequest]);
-
-      if (mode === "user" && shouldSyncFullTransactions && visibleSyncConnected) {
-        runBackgroundFullTransactionSync(dateRange, isCurrentRequest, {
-          setIsConnected,
-          setTransactionLoadError,
-          setTransactionPageNextCursor,
-          setTransactionPageTransactions,
-          setTransactions
-        });
-      }
     } catch (error) {
       if (!isCurrentRequest()) {
         return;
@@ -226,7 +213,7 @@ export function useAkahuData() {
 
     try {
       if (mode === "user") {
-        const { archivedTransactionPageTransactions, nextCursor } = await syncVisibleAkahuTransactionsToArchive(dateRange);
+        const { archivedTransactionPageTransactions, nextCursor } = await syncVisibleAkahuTransactionsToArchive(dateRange, dateRange);
         setTransactionPageTransactions(archivedTransactionPageTransactions);
         setTransactionPageNextCursor(nextCursor);
         setTransactionLoadError("");
@@ -374,14 +361,6 @@ export function useAkahuData() {
   };
 }
 
-type BackgroundSyncSetters = {
-  setIsConnected: (isConnected: boolean) => void;
-  setTransactionLoadError: (message: string) => void;
-  setTransactionPageNextCursor: (cursor: string | null) => void;
-  setTransactionPageTransactions: (transactions: Transaction[]) => void;
-  setTransactions: (transactions: Transaction[]) => void;
-};
-
 // Reads archived Akahu data so only the active request applies it to state.
 async function readArchiveHydration(dateRange: TransactionDateRange | undefined) {
   const [archivedAccountSnapshot, archivedTransactions, archivedTransactionPageTransactions] = await Promise.all([
@@ -393,8 +372,7 @@ async function readArchiveHydration(dateRange: TransactionDateRange | undefined)
   return {
     archivedAccountSnapshot,
     archivedTransactions,
-    archivedTransactionPageTransactions,
-    hasArchivedTransactions: archivedTransactions.length > 0 || archivedTransactionPageTransactions.length > 0
+    archivedTransactionPageTransactions
   };
 }
 
@@ -552,39 +530,17 @@ function getFailedFreshnessState(error: unknown, fallbackMessage: string): Akahu
   };
 }
 
-function shouldRunFullTransactionSync(hasArchivedTransactions: boolean) {
-  if (!hasArchivedTransactions) {
-    return true;
-  }
-
-  const lastSyncedAt = window.localStorage.getItem(lastFullTransactionSyncStorageKey);
-
-  if (!lastSyncedAt) {
-    return true;
-  }
-
-  const timestamp = Date.parse(lastSyncedAt);
-
-  if (!Number.isFinite(timestamp)) {
-    window.localStorage.removeItem(lastFullTransactionSyncStorageKey);
-    return true;
-  }
-
-  return Date.now() - timestamp >= fullTransactionSyncCooldownMs;
-}
-
-function recordFullTransactionSync() {
-  window.localStorage.setItem(lastFullTransactionSyncStorageKey, new Date().toISOString());
-}
-
 // Syncs only the visible transaction range so foreground pages update quickly.
-async function syncVisibleAkahuTransactionsToArchive(dateRange: TransactionDateRange | undefined) {
-  const response = await fetch(getTransactionsUrl("user", dateRange));
+async function syncVisibleAkahuTransactionsToArchive(syncDateRange: TransactionDateRange | undefined, pageDateRange: TransactionDateRange | undefined = syncDateRange) {
+  const response = await fetch(getTransactionsUrl("user", syncDateRange));
   const payload = await readJsonResponse<TransactionsPayload>(response, "transactions");
 
   assertAkahuResponse(response, payload.error, "Could not sync visible Akahu transactions.");
-  const archivedTransactionPageTransactions = await archiveAndMergeTransactions(payload.transactions, dateRange);
+  const archivedTransactionPageTransactions = await archiveAndMergeTransactions(payload.transactions, pageDateRange);
   const archivedTransactions = await readArchivedTransactions();
+  if (payload.connected) {
+    await markArchiveIncrementalTransactionSynced();
+  }
 
   return {
     archivedTransactions,
@@ -594,45 +550,12 @@ async function syncVisibleAkahuTransactionsToArchive(dateRange: TransactionDateR
   };
 }
 
-// Continues the larger archive sync without blocking the visible page refresh.
-function runBackgroundFullTransactionSync(
-  dateRange: TransactionDateRange | undefined,
-  isCurrentRequest: () => boolean,
-  setters: BackgroundSyncSetters
-) {
-  syncAllAkahuTransactionsToArchive(dateRange).then(({ archivedTransactions, archivedTransactionPageTransactions, connected }) => {
-    if (!isCurrentRequest()) {
-      return;
-    }
-
-    setters.setTransactions(archivedTransactions);
-    setters.setTransactionPageTransactions(archivedTransactionPageTransactions);
-    setters.setTransactionPageNextCursor(null);
-    setters.setTransactionLoadError("");
-    if (connected) {
-      setters.setIsConnected(true);
-    }
-    if (connected) {
-      toast.success("Transactions synced");
-    }
-  }).catch((error: unknown) => {
-    if (!isCurrentRequest()) {
-      return;
-    }
-
-    const message = error instanceof Error ? error.message : "Background transaction sync failed.";
-    setters.setTransactionLoadError(message);
-    toast.error(message);
-  });
-}
-
 // Syncs the full Akahu transaction history into the encrypted local archive, then serves the active range from the archive.
 async function syncAllAkahuTransactionsToArchive(dateRange: TransactionDateRange | undefined) {
   const response = await fetch(getTransactionsUrl("user", undefined, undefined, true));
   const payload = await readJsonResponse<TransactionsPayload>(response, "all transactions");
 
   assertAkahuResponse(response, payload.error, "Could not sync Akahu transactions.");
-  recordFullTransactionSync();
   const archivedTransactions = await archiveAndMergeTransactions(payload.transactions);
   const archivedTransactionPageTransactions = dateRange
     ? await readArchivedTransactions(dateRange)

@@ -39,7 +39,9 @@ import {
   SheetHeader,
   SheetTitle
 } from "@/components/ui/sheet";
+import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
+import { useCloseOnPageScroll } from "@/hooks/useCloseOnPageScroll";
 import { netlyPalette } from "@/lib/categories";
 import { categoriesMatch } from "@/lib/category-rules";
 import { periods } from "@/lib/app/constants";
@@ -169,20 +171,8 @@ export function SettingsPage({
       <SettingsSection title="Transaction reporting" description="Choose what Netly includes in dashboard and summary totals.">
         <ReportingSettings
           accountOptions={accountOptions}
-          categoryOptions={allCategories}
           defaultAccountId={defaultAccountId}
-          incomeIncludedCategories={incomeIncludedCategories}
           onDefaultAccountChange={setDefaultAccountId}
-          onIncomeIncludedCategoriesChange={updateIncomeIncludedCategories}
-        />
-      </SettingsSection>
-
-      <SettingsSection title="Card Fit" description="Choose which categories count toward rewards estimates.">
-        <CardFitCategorySettings
-          availableCategories={cardFitAvailableCategories}
-          includedCategories={cardFitIncludedCategories}
-          isMobile={isBottomNavigation}
-          onChange={updateCardFitIncludedCategories}
         />
       </SettingsSection>
 
@@ -206,9 +196,39 @@ export function SettingsPage({
                 </div>
               </DrawerContent>
             </Drawer>
+            <CategorySelectionSettings
+              availableCategories={allCategories}
+              drawerDescription="Choose which positive transaction categories count toward dashboard and summary totals."
+              includedCategories={incomeIncludedCategories}
+              isMobile={isBottomNavigation}
+              onChange={updateIncomeIncludedCategories}
+              title="Income categories"
+            />
+            <CardFitCategorySettings
+              availableCategories={cardFitAvailableCategories}
+              includedCategories={cardFitIncludedCategories}
+              isMobile={isBottomNavigation}
+              onChange={updateCardFitIncludedCategories}
+            />
           </>
         ) : (
-          getCategorySettingsContent()
+          <>
+            {getCategorySettingsContent()}
+            <CategorySelectionSettings
+              availableCategories={allCategories}
+              drawerDescription="Choose which positive transaction categories count toward dashboard and summary totals."
+              includedCategories={incomeIncludedCategories}
+              isMobile={isBottomNavigation}
+              onChange={updateIncomeIncludedCategories}
+              title="Income categories"
+            />
+            <CardFitCategorySettings
+              availableCategories={cardFitAvailableCategories}
+              includedCategories={cardFitIncludedCategories}
+              isMobile={isBottomNavigation}
+              onChange={updateCardFitIncludedCategories}
+            />
+          </>
         )}
       </SettingsSection>
     </section>
@@ -310,6 +330,10 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
   const [backupPanelMode, setBackupPanelMode] = useState<"backups" | "restore" | null>(null);
   const isBottomNavigation = useIsBottomNavigation();
   const isBusy = driveBackup.status === "syncing" || driveBackup.isLoadingBackups;
+  const canDisconnectDriveBackup = driveBackup.status === "ready"
+    || driveBackup.status === "synced"
+    || driveBackup.lastSyncedAt.length > 0
+    || driveBackup.backups.length > 0;
   const isRestoringBackup = restoringBackupId.length > 0;
   const selectedBackup = driveBackup.backups.find((backup) => backup.id === selectedBackupId) || driveBackup.backups[0] || null;
   const openBackupPanel = (mode: "backups" | "restore") => {
@@ -399,11 +423,13 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
           <span>Backups</span>
         </button>
       </div>
-      <div className="settings-drive-actions">
-        <Button disabled={isBusy} onClick={onDisconnect} type="button" variant="secondary">
-          Disconnect
-        </Button>
-      </div>
+      {canDisconnectDriveBackup && (
+        <div className="settings-drive-actions">
+          <Button disabled={isBusy} onClick={onDisconnect} type="button" variant="secondary">
+            Disconnect
+          </Button>
+        </div>
+      )}
       <BackupPanel
         backups={driveBackup.backups}
         deletingBackupId={deletingBackupId}
@@ -661,82 +687,66 @@ function BackupList({ backups, deletingBackupId, mode, onDeleteBackup, onRestore
 
 type ReportingSettingsProps = {
   accountOptions: TransactionAccountOption[];
-  categoryOptions: string[];
   defaultAccountId: string;
-  incomeIncludedCategories: string[];
   onDefaultAccountChange: (accountId: string) => void;
-  onIncomeIncludedCategoriesChange: (categories: string[]) => void;
 };
 
-// Controls the account and income categories used by reporting summaries.
+// Controls the account used by reporting summaries.
 function ReportingSettings({
   accountOptions,
-  categoryOptions,
   defaultAccountId,
-  incomeIncludedCategories,
-  onDefaultAccountChange,
-  onIncomeIncludedCategoriesChange
+  onDefaultAccountChange
 }: ReportingSettingsProps) {
   const accountExists = !defaultAccountId || accountOptions.some((account) => account.value === defaultAccountId);
-  const toggleIncomeCategory = (category: string) => {
-    const nextCategories = incomeIncludedCategories.includes(category)
-      ? incomeIncludedCategories.filter((item) => item !== category)
-      : [...incomeIncludedCategories, category];
-
-    onIncomeIncludedCategoriesChange(nextCategories);
+  const allAccountsSelectValue = "__all_accounts__";
+  const defaultAccountOptions: SelectOption[] = [
+    { label: "All accounts", value: allAccountsSelectValue },
+    ...accountOptions
+  ];
+  const changeDefaultAccount = (value: string) => {
+    onDefaultAccountChange(value === allAccountsSelectValue ? "" : value);
   };
 
   return (
     <div className="settings-reporting-grid">
-      <label className="settings-select-row">
+      <div className="settings-select-row">
         <span>
           <strong>Default account</strong>
           <small>Used by dashboard summaries and the default Transactions view.</small>
         </span>
-        <select onChange={(event) => onDefaultAccountChange(event.target.value)} value={defaultAccountId}>
-          <option value="">All accounts</option>
-          {accountOptions.map((account) => (
-            <option key={account.value} value={account.value}>
-              {account.label}
-            </option>
-          ))}
-        </select>
-      </label>
+        <SelectField
+          ariaLabel="Default account"
+          className="settings-select-trigger"
+          onChange={changeDefaultAccount}
+          options={defaultAccountOptions}
+          value={defaultAccountId || allAccountsSelectValue}
+        />
+      </div>
       {!accountExists && (
         <p className="settings-drive-warning">The saved default account is not available in the current account list.</p>
       )}
-      <div className="settings-income-exclusions">
-        <div>
-          <h3>Include income categories</h3>
-          <p>Positive transactions in these categories stay visible and count toward reporting summaries.</p>
-        </div>
-        <div className="settings-category-toggle-grid">
-          {categoryOptions.map((category) => (
-            <button
-              aria-pressed={incomeIncludedCategories.includes(category)}
-              className={incomeIncludedCategories.includes(category) ? "active" : undefined}
-              key={category}
-              onClick={() => toggleIncomeCategory(category)}
-              type="button"
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
 
-type CardFitCategorySettingsProps = {
+type CategorySelectionSettingsProps = {
   availableCategories: string[];
+  drawerDescription: string;
   includedCategories: string[];
   isMobile: boolean;
   onChange: (categories: string[]) => void;
+  title: string;
 };
 
-// Lets users decide which spending categories count toward Card Fit rewards.
-function CardFitCategorySettings({ availableCategories, includedCategories, isMobile, onChange }: CardFitCategorySettingsProps) {
+// Shared category multi-select with mobile drawer and desktop dropdown modes.
+function CategorySelectionSettings({
+  availableCategories,
+  drawerDescription,
+  includedCategories,
+  isMobile,
+  onChange,
+  title
+}: CategorySelectionSettingsProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const includedSet = new Set(includedCategories);
   const toggleCategory = (category: string) => {
@@ -750,18 +760,21 @@ function CardFitCategorySettings({ availableCategories, includedCategories, isMo
 
   if (isMobile) {
     return (
-      <>
-        <SettingsNavigationButton description={summary} onClick={() => setMobileOpen(true)} title="Card Fit categories" />
+      <div className="settings-category-selection">
+        <div>
+          <h3>{title}</h3>
+          <p>{drawerDescription}</p>
+        </div>
+        <SettingsNavigationButton description={summary} onClick={() => setMobileOpen(true)} title={title} />
         <Drawer onOpenChange={setMobileOpen} open={mobileOpen}>
           <DrawerContent className="mobile-filter-drawer settings-card-fit-drawer">
             <DrawerHeader className="mobile-filter-header">
-              <DrawerTitle>Card Fit categories</DrawerTitle>
-              <DrawerDescription className="sr-only">Choose which categories count toward rewards estimates.</DrawerDescription>
+              <DrawerTitle>{title}</DrawerTitle>
+              <DrawerDescription className="sr-only">{drawerDescription}</DrawerDescription>
               <DrawerHeaderClose className="mobile-filter-close" />
             </DrawerHeader>
             <div className="settings-mobile-detail-body">
               <div className="mobile-filter-section">
-                <h3>Categories</h3>
                 <div className="mobile-filter-chips category">
                   {availableCategories.map((category) => (
                     <button
@@ -779,12 +792,16 @@ function CardFitCategorySettings({ availableCategories, includedCategories, isMo
             </div>
           </DrawerContent>
         </Drawer>
-      </>
+      </div>
     );
   }
 
   return (
-    <div className="settings-card-fit">
+    <div className="settings-card-fit settings-category-selection">
+      <div>
+        <h3>{title}</h3>
+        <p>{drawerDescription}</p>
+      </div>
       <CategoryMultiSelectDropdown
         label={summary}
         onToggle={toggleCategory}
@@ -792,6 +809,20 @@ function CardFitCategorySettings({ availableCategories, includedCategories, isMo
         selectedValues={includedCategories}
       />
     </div>
+  );
+}
+
+// Lets users decide which spending categories count toward Card Fit rewards.
+function CardFitCategorySettings({ availableCategories, includedCategories, isMobile, onChange }: Omit<CategorySelectionSettingsProps, "drawerDescription" | "title">) {
+  return (
+    <CategorySelectionSettings
+      availableCategories={availableCategories}
+      drawerDescription="Choose which categories count toward rewards estimates."
+      includedCategories={includedCategories}
+      isMobile={isMobile}
+      onChange={onChange}
+      title="Card Fit categories"
+    />
   );
 }
 
@@ -808,9 +839,11 @@ function CategoryMultiSelectDropdown({
   selectedValues: string[];
 }) {
   const selectedSet = new Set(selectedValues);
+  const [open, setOpen] = useState(false);
+  useCloseOnPageScroll(open, () => setOpen(false));
 
   return (
-    <Popover>
+    <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <button aria-haspopup="listbox" className="category-multi-select-trigger transaction-select-trigger" role="combobox" type="button">
           <span>{label}</span>

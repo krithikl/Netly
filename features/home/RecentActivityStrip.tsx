@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { TransactionDetailsOverlay } from "@/features/transactions/TransactionList";
@@ -56,7 +55,7 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
   return (
     <Card className="recent-activity-card">
       <RecentActivityHeader onViewAll={onViewAll} />
-      <div className="recent-strip">
+      <div className="recent-strip" data-testid="home-recent-transactions">
         {transactions.map((transaction) => {
           const category = getTransactionCategory(transaction);
           const merchant = getTransactionMerchant(transaction);
@@ -72,12 +71,17 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
               <span className="recent-copy">
                 <strong>{merchant}</strong>
                 <span>{category}</span>
-                <b className={amountTone}>{formatMoney(transaction.amount)}</b>
                 <small>{formatRelativeDate(getTransactionDate(transaction))}</small>
               </span>
+              <b className={`recent-amount ${amountTone}`}>{formatMoney(transaction.amount)}</b>
             </button>
           );
         })}
+      </div>
+      <div className="recent-activity-footer">
+        <Button className="recent-view-all-button" onClick={onViewAll} type="button" variant="secondary">
+          View All Transactions
+        </Button>
       </div>
       {detailsTransaction && (
         <TransactionDetailsOverlay
@@ -95,10 +99,6 @@ function RecentActivityHeader({ onViewAll }: { onViewAll: () => void }) {
   return (
     <CardHeader>
       <CardTitle>Recent activity</CardTitle>
-      <Button className="text-link" onClick={onViewAll} type="button" variant="ghost">
-        View all transactions
-        <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
-      </Button>
     </CardHeader>
   );
 }

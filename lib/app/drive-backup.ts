@@ -56,6 +56,10 @@ type DriveListResponse = {
   files?: DriveFile[];
 };
 
+type DriveAuthOptions = {
+  silent?: boolean;
+};
+
 export type DriveBackupEntry = {
   createdTime: string;
   id: string;
@@ -94,8 +98,8 @@ export async function uploadArchiveToGoogleDrive(clientId: string) {
 }
 
 // Lists timestamped Netly backups stored in Google Drive app data.
-export async function listGoogleDriveBackups(clientId: string) {
-  const accessToken = await requestDriveAccessToken(clientId);
+export async function listGoogleDriveBackups(clientId: string, options: DriveAuthOptions = {}) {
+  const accessToken = await requestDriveAccessToken(clientId, options);
   return listDriveBackupsWithAccessToken(accessToken);
 }
 
@@ -122,7 +126,7 @@ export async function deleteGoogleDriveBackup(clientId: string, fileId: string) 
 }
 
 // Requests the narrow Drive appDataFolder scope through Google Identity Services.
-async function requestDriveAccessToken(clientId: string) {
+async function requestDriveAccessToken(clientId: string, options: DriveAuthOptions = {}) {
   if (!clientId.trim()) {
     throw new Error("Missing NEXT_PUBLIC_GOOGLE_CLIENT_ID. Add it before connecting Google Drive backup.");
   }
@@ -177,7 +181,7 @@ async function requestDriveAccessToken(clientId: string) {
       }
     });
 
-    tokenClient.requestAccessToken({ prompt: "" });
+    tokenClient.requestAccessToken({ prompt: options.silent ? "none" : "" });
   });
 }
 

@@ -9,8 +9,15 @@ const APP_ASSETS = [
   "/icons/maskable-icon-512.png",
   "/icons/apple-touch-icon.png"
 ];
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
+const IS_LOCALHOST = LOCAL_HOSTNAMES.has(self.location.hostname);
 
 self.addEventListener("install", (event) => {
+  if (IS_LOCALHOST) {
+    self.skipWaiting();
+    return;
+  }
+
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_ASSETS))
   );
@@ -18,6 +25,11 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
+  if (IS_LOCALHOST) {
+    event.waitUntil(clearNetlyCaches().then(() => self.registration.unregister()).then(() => self.clients.claim()));
+    return;
+  }
+
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
       keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
@@ -27,6 +39,10 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  if (IS_LOCALHOST) {
+    return;
+  }
+
   const request = event.request;
   const url = new URL(request.url);
 
@@ -70,4 +86,10 @@ async function networkFirst(request) {
     const cached = await cache.match(request);
     return cached || cache.match("/");
   }
+}
+
+// Keeps localhost development from being controlled by stale production assets.
+async function clearNetlyCaches() {
+  const keys = await caches.keys();
+  await Promise.all(keys.filter((key) => key.startsWith("netly-pwa-")).map((key) => caches.delete(key)));
 }

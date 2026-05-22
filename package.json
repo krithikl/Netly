@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --hostname localhost --port 3000",
+    "dev:fresh": "node scripts/clear-next-cache.mjs && next dev --hostname localhost --port 3000",
     "build": "next build",
     "start": "next start",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/*.test.mjs",

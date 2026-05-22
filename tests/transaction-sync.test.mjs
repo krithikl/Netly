@@ -264,6 +264,10 @@ test("app icons use only the provided SVG asset", async () => {
 test("Home and budget visual regressions keep the compact mobile layout intact", async () => {
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
+  assert.match(css, /\.chart-layout[\s\S]*?grid-template-columns: minmax\(240px, 0\.95fr\) minmax\(0, 1\.05fr\)/);
+  assert.match(css, /\.chart-panel \.legend-list[\s\S]*?overflow: hidden/);
+  assert.match(css, /\.legend-row[\s\S]*?overflow: hidden/);
+  assert.match(css, /\.legend-topline strong[\s\S]*?text-overflow: ellipsis/);
   assert.match(css, /\.topbar h1,\s*\.mobile-page-header h2[\s\S]*?color: var\(--accent-cream\)/);
   assert.match(css, /\.hero-payday-pill[\s\S]*?margin-top: 4px/);
   assert.match(css, /\.chart-panel,\s*\.chart-layout,\s*\.chart-visual,\s*\.donut-wrap[\s\S]*?overflow: visible/);

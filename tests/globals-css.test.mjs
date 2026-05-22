@@ -10,6 +10,7 @@ test("dev server binds to localhost for local browser verification", async () =>
   const packageJson = JSON.parse(await readFile(packageJsonUrl, "utf8"));
 
   assert.equal(packageJson.scripts.dev, "next dev --hostname localhost --port 3000");
+  assert.equal(packageJson.scripts["dev:fresh"], "node scripts/clear-next-cache.mjs && next dev --hostname localhost --port 3000");
 });
 
 test("globals CSS has no stale migration section or duplicate root-level selector properties", async () => {

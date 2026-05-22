@@ -28,6 +28,12 @@ npm run build
 npm run dev
 ```
 
+If the local Next.js cache serves stale styles during development, restart with a clean cache:
+
+```bash
+npm run dev:fresh
+```
+
 Open:
 
 ```text

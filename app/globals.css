@@ -647,7 +647,7 @@ h2 {
 
 .chart-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 0.95fr) minmax(250px, 1.05fr);
+  grid-template-columns: minmax(240px, 0.95fr) minmax(0, 1.05fr);
   gap: 24px;
   align-items: center;
   justify-content: stretch;
@@ -999,6 +999,7 @@ h2 {
   width: 100%;
   max-width: 420px;
   min-width: 0;
+  overflow: hidden;
   align-self: stretch;
   align-content: center;
   justify-self: center;
@@ -1169,6 +1170,7 @@ h2 {
   align-items: start;
   gap: 12px;
   min-width: 0;
+  overflow: hidden;
   border-radius: 14px;
   color: var(--ink);
   cursor: default;
@@ -1197,10 +1199,15 @@ h2 {
 }
 
 .legend-topline strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
 .legend-track {
+  min-width: 0;
   overflow: hidden;
   height: 7px;
   border-radius: 999px;

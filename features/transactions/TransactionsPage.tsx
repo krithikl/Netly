@@ -545,22 +545,36 @@ function TransactionMonthOverview({
         </div>
       </div>
       <div className="transaction-month-summary" aria-label="Monthly transaction summary">
-        <TransactionMonthMetric label="Money out" tone="expense" value={isLoading ? "Loading" : formatMoney(monthSummary.expenses, true)} />
-        <TransactionMonthMetric label="Money in" tone="income" value={isLoading ? "Loading" : formatMoney(monthSummary.income, true)} />
-        <TransactionMonthMetric label="Net movement" tone={monthSummary.net < 0 ? "expense" : "income"} value={isLoading ? "Loading" : formatMoney(monthSummary.net, true)} />
+        <TransactionMonthMetric kind="out" label="Money out" tone="expense" value={isLoading ? "Loading" : formatMoney(monthSummary.expenses, true)} />
+        <TransactionMonthMetric kind="in" label="Money in" tone="income" value={isLoading ? "Loading" : formatMoney(monthSummary.income, true)} />
+        <TransactionMonthMetric kind="net" label="Net movement" tone={monthSummary.net < 0 ? "expense" : "income"} value={isLoading ? "Loading" : formatMoney(monthSummary.net, true)} />
       </div>
     </section>
   );
 }
 
 // One desktop/mobile monthly cashflow metric.
-function TransactionMonthMetric({ label, tone, value }: { label: string; tone: "expense" | "income"; value: string }) {
+function TransactionMonthMetric({ kind, label, tone, value }: { kind: "in" | "net" | "out"; label: string; tone: "expense" | "income"; value: string }) {
   return (
-    <article className={`transaction-month-metric ${tone}`}>
-      <span>{label}</span>
+    <article aria-label={`${label}: ${value}`} className={`transaction-month-metric ${tone} ${kind}`}>
+      <span className="transaction-month-metric-label">{label}</span>
+      <span aria-hidden="true" className="transaction-month-metric-symbol">{getTransactionMonthMetricSymbol(kind)}</span>
       <strong>{value}</strong>
     </article>
   );
+}
+
+// Compact mobile symbols keep the summary dense while labels remain accessible.
+function getTransactionMonthMetricSymbol(kind: "in" | "net" | "out") {
+  if (kind === "in") {
+    return "+";
+  }
+
+  if (kind === "out") {
+    return "-";
+  }
+
+  return "=";
 }
 
 // Compact KPI strip shown above the transaction table/list.

@@ -742,7 +742,9 @@ h2 {
 .donut-wrap {
   position: relative;
   width: clamp(240px, 21vw, 320px);
-  height: clamp(240px, 21vw, 320px);
+  max-width: 100%;
+  aspect-ratio: 1;
+  height: auto;
   margin: 0 auto;
 }
 
@@ -773,7 +775,7 @@ h2 {
 
 .chart-tooltip {
   position: absolute;
-  z-index: 2;
+  z-index: 80;
   min-width: 150px;
   display: grid;
   gap: 2px;
@@ -1773,11 +1775,11 @@ h2 {
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--outline-soft);
-  border-radius: 999px;
-  background: var(--surface);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   padding: 0;
-  box-shadow: var(--shadow-soft);
+  box-shadow: none;
 }
 
 .transaction-month-track {
@@ -1794,13 +1796,13 @@ h2 {
   position: relative;
   display: grid;
   place-items: center;
-  width: calc(100% - 12px);
-  min-height: 42px;
+  width: 100%;
+  min-height: 54px;
   min-width: 0;
-  margin: 6px;
+  margin: 0;
   border: 0;
   border-radius: 999px;
-  padding: 7px 4px 10px;
+  padding: 8px 2px 13px;
   background: transparent;
   color: var(--muted-2);
   cursor: pointer;
@@ -1816,8 +1818,8 @@ h2 {
 }
 
 .transaction-month-label {
-  display: grid;
-  justify-items: center;
+  position: relative;
+  display: block;
   line-height: 1;
 }
 
@@ -1826,7 +1828,11 @@ h2 {
 }
 
 .transaction-month-year {
-  margin-top: 3px;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  margin-top: 0;
+  transform: translateX(-50%);
   color: var(--muted);
   font-size: 0.66rem;
   font-weight: 850;
@@ -1871,11 +1877,15 @@ h2 {
   font-variant-numeric: tabular-nums;
 }
 
-.transaction-month-metric span {
+.transaction-month-metric-label {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 850;
   text-transform: uppercase;
+}
+
+.transaction-month-metric-symbol {
+  display: none;
 }
 
 .transaction-month-metric strong {
@@ -1893,6 +1903,18 @@ h2 {
 
 .transaction-month-metric.income strong {
   color: var(--success);
+}
+
+.transaction-month-metric.expense .transaction-month-metric-symbol {
+  color: var(--danger);
+}
+
+.transaction-month-metric.income .transaction-month-metric-symbol {
+  color: var(--success);
+}
+
+.transaction-month-metric.net .transaction-month-metric-symbol {
+  color: var(--ink);
 }
 
 .transaction-workspace {
@@ -3357,8 +3379,7 @@ h2 {
   }
 
   .donut-wrap {
-    width: clamp(280px, 31vw, 360px);
-    height: clamp(280px, 31vw, 360px);
+    width: min(100%, clamp(280px, 31vw, 360px));
     margin-top: 0;
   }
 
@@ -3474,8 +3495,15 @@ h2 {
     display: none;
   }
 
+  .transaction-merchant-copy strong {
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
   .transaction-mobile-row-meta {
     display: block;
+    font-size: 0.82rem;
+    line-height: 1.25;
   }
 
   .transaction-mobile-category-chip.transaction-mobile-category-chip {
@@ -3485,6 +3513,9 @@ h2 {
   .transaction-ledger-amount {
     grid-area: amount;
     align-self: center;
+    font-size: 1.34rem;
+    font-weight: 950;
+    line-height: 1;
   }
 
   .transaction-ledger-chevron {
@@ -3830,8 +3861,7 @@ h2 {
   }
 
   .donut-wrap {
-    width: min(58vw, 230px);
-    height: min(58vw, 230px);
+    width: min(100%, 58vw, 230px);
     margin-top: 0;
   }
 
@@ -3939,6 +3969,7 @@ h2 {
   .transaction-detail-amount {
     grid-column: 2;
     justify-self: start;
+    font-size: 1.72rem;
   }
 
   .transaction-detail-rows div {
@@ -3995,8 +4026,7 @@ h2 {
   }
 
   .donut-wrap {
-    width: min(62vw, 190px);
-    height: min(62vw, 190px);
+    width: min(100%, 62vw, 190px);
   }
 
   .chart-panel .legend-list {
@@ -4686,7 +4716,7 @@ body {
 
   .mobile-page-header h2 {
     color: var(--accent-cream);
-    font-size: clamp(2rem, 7vw, 2.45rem);
+    font-size: 2.35rem;
     line-height: 1;
     font-weight: 950;
     letter-spacing: 0;
@@ -4705,62 +4735,108 @@ body {
 
   .transaction-month-carousel {
     grid-template-columns: minmax(0, 1fr);
-    padding-inline: 12px;
+    padding-inline: 0;
   }
 
   .transaction-month-rail {
     display: block;
     min-width: 0;
+    border: 0;
+    border-radius: 0;
     padding: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .transaction-month-rail::-webkit-scrollbar {
     display: none;
   }
 
+  .transaction-month-slide {
+    flex-basis: 20%;
+  }
+
   .transaction-month-rail button {
-    min-height: 42px;
-    width: calc(100% - 10px);
-    margin: 5px;
-    padding: 7px 2px 10px;
-    font-size: 0.7rem;
+    min-height: 54px;
+    width: 100%;
+    margin: 0;
+    padding: 8px 2px 13px;
+    font-size: 0.84rem;
+    font-weight: 850;
     white-space: nowrap;
   }
 
   .transaction-month-year {
-    margin-top: 2px;
-    font-size: 0.55rem;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    margin-top: 0;
+    transform: translateX(-50%);
+    font-size: 0.64rem;
   }
 
   .transaction-month-rail button.active {
-    font-size: 0.7rem;
+    font-size: 0.84rem;
   }
 
   .transaction-month-label-full {
-    display: none;
+    display: inline;
+  }
+
+  .transaction-month-label {
+    position: relative;
+    display: block;
+    line-height: 1;
   }
 
   .transaction-month-label-short {
-    display: inline;
+    display: none;
   }
 
   .transaction-month-summary {
     margin-inline: 12px;
-    gap: 6px;
+    gap: 0;
+    min-height: 48px;
+    border: 1px solid var(--outline-soft);
+    border-radius: 18px;
+    padding: 8px 10px;
+    background: var(--surface-2);
   }
 
   .transaction-month-metric {
-    min-height: 72px;
-    border-radius: 14px;
-    padding: 10px;
+    display: flex;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 0;
+    border-radius: 0;
+    padding: 0 4px;
+    background: transparent;
+    box-shadow: none;
   }
 
-  .transaction-month-metric span {
-    font-size: 0.66rem;
+  .transaction-month-metric-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .transaction-month-metric-symbol {
+    display: inline-flex;
+    min-width: 12px;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 0.98rem;
+    font-weight: 950;
+    line-height: 1;
   }
 
   .transaction-month-metric strong {
-    font-size: clamp(0.95rem, 3.4vw, 1.18rem);
+    font-size: 1.14rem;
   }
 
   .transaction-list-layout,
@@ -5102,7 +5178,7 @@ body {
   }
 
   .category-panel {
-    overflow: hidden;
+    overflow: visible;
   }
 
   .category-panel > .section-heading {
@@ -5117,13 +5193,13 @@ body {
   }
 
   .chart-visual {
+    width: 100%;
     min-height: min(68vw, 270px);
     justify-self: end;
   }
 
   .donut-wrap {
-    width: min(68vw, 270px);
-    height: min(68vw, 270px);
+    width: min(100%, 68vw, 270px);
   }
 
   .chart-panel .legend-list {
@@ -5183,8 +5259,7 @@ body {
   }
 
   .donut-wrap {
-    width: min(64vw, 242px);
-    height: min(64vw, 242px);
+    width: min(100%, 64vw, 242px);
   }
 
   .chart-panel .legend-list {
@@ -5320,6 +5395,13 @@ body {
 .chart-layout,
 .chart-visual,
 .donut-wrap {
+  overflow: visible;
+}
+
+.category-panel,
+.category-panel .chart-layout,
+.category-panel .chart-visual,
+.category-panel .donut-wrap {
   overflow: visible;
 }
 

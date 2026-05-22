@@ -268,8 +268,8 @@ test("Home and budget visual regressions keep the compact mobile layout intact",
   assert.match(css, /\.chart-panel \.legend-list[\s\S]*?overflow: hidden/);
   assert.match(css, /\.legend-row[\s\S]*?overflow: hidden/);
   assert.match(css, /\.legend-topline strong[\s\S]*?text-overflow: ellipsis/);
-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-summary[\s\S]*?border: 0;[\s\S]*?border-radius: 0;[\s\S]*?background: transparent/);
-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-metric strong[\s\S]*?font-size: 0\.98rem/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-summary[\s\S]*?display: flex;[\s\S]*?justify-content: space-between;[\s\S]*?margin: -4px 12px 0;[\s\S]*?background: transparent/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-metric strong[\s\S]*?font-size: clamp\(0\.8rem, 3\.6vw, 0\.9rem\);[\s\S]*?font-weight: 680/);
   assert.match(css, /\.topbar h1,\s*\.mobile-page-header h2[\s\S]*?color: var\(--accent-cream\)/);
   assert.match(css, /\.hero-payday-pill[\s\S]*?margin-top: 4px/);
   assert.match(css, /\.chart-panel,\s*\.chart-layout,\s*\.chart-visual,\s*\.donut-wrap[\s\S]*?overflow: visible/);

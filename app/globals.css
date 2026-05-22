@@ -4560,9 +4560,12 @@ body {
   }
 
   .transaction-month-summary {
-    margin-inline: 12px;
-    gap: 8px;
-    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: -4px 12px 0;
+    gap: clamp(6px, 2vw, 10px);
+    min-height: 30px;
     border: 0;
     border-radius: 0;
     padding: 0;
@@ -4571,15 +4574,25 @@ body {
 
   .transaction-month-metric {
     display: flex;
+    flex: 0 1 auto;
     min-height: 0;
     align-items: center;
     justify-content: center;
-    gap: 7px;
+    gap: 5px;
+    min-width: 0;
     border: 0;
     border-radius: 0;
-    padding: 0 4px;
+    padding: 0;
     background: transparent;
     box-shadow: none;
+  }
+
+  .transaction-month-metric.out {
+    justify-content: flex-start;
+  }
+
+  .transaction-month-metric.net {
+    justify-content: flex-end;
   }
 
   .transaction-month-metric-label {
@@ -4593,16 +4606,22 @@ body {
 
   .transaction-month-metric-symbol {
     display: inline-flex;
-    min-width: 10px;
+    flex: 0 0 auto;
+    min-width: 8px;
     justify-content: center;
     color: var(--muted);
-    font-size: 0.82rem;
-    font-weight: 760;
+    font-size: 0.74rem;
+    font-weight: 680;
     line-height: 1;
   }
 
   .transaction-month-metric strong {
-    font-size: 0.98rem;
+    min-width: 0;
+    overflow: hidden;
+    font-size: clamp(0.8rem, 3.6vw, 0.9rem);
+    font-weight: 680;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .transaction-list-layout,

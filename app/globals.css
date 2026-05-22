@@ -1670,6 +1670,8 @@ h2 {
 
 .transaction-month-rail {
   --transaction-month-active-line-width: min(84px, calc(100% - 10px));
+  --transaction-month-slide-basis: 20%;
+  --transaction-month-edge-spacer: calc((100% - var(--transaction-month-slide-basis)) / 2);
 
   display: block;
   width: 100%;
@@ -1677,6 +1679,7 @@ h2 {
   min-width: 0;
   overflow: hidden;
   border: 0;
+  border-bottom: 2px solid var(--outline-soft);
   border-radius: 0;
   background: transparent;
   padding: 0;
@@ -1687,8 +1690,14 @@ h2 {
   display: flex;
 }
 
+.transaction-month-spacer {
+  flex: 0 0 var(--transaction-month-edge-spacer);
+  min-width: 0;
+  pointer-events: none;
+}
+
 .transaction-month-slide {
-  flex: 0 0 20%;
+  flex: 0 0 var(--transaction-month-slide-basis);
   min-width: 0;
   height: auto;
 }
@@ -1757,10 +1766,11 @@ h2 {
   left: 50%;
   bottom: 0;
   width: var(--transaction-month-active-line-width);
-  height: 3px;
+  height: 4px;
   border-radius: 999px;
-  background: var(--primary);
+  background: var(--accent-cream);
   transform: translateX(-50%);
+  z-index: 2;
 }
 
 .transaction-month-summary {
@@ -4496,7 +4506,7 @@ body {
 
   .transaction-month-overview {
     margin-inline: -12px;
-    gap: 10px;
+    gap: 12px;
   }
 
   .transaction-month-carousel {
@@ -4505,9 +4515,12 @@ body {
   }
 
   .transaction-month-rail {
+    --transaction-month-slide-basis: 25%;
+
     display: block;
     min-width: 0;
     border: 0;
+    border-bottom: 2px solid var(--outline-soft);
     border-radius: 0;
     padding: 0;
     background: transparent;
@@ -4526,7 +4539,7 @@ body {
     min-height: 54px;
     width: 100%;
     margin: 0;
-    padding: 8px 2px 13px;
+    padding: 8px 2px 12px;
     font-size: 0.84rem;
     font-weight: 850;
     white-space: nowrap;
@@ -4543,6 +4556,10 @@ body {
 
   .transaction-month-rail button.active {
     font-size: 0.84rem;
+  }
+
+  .transaction-month-rail button.active::after {
+    bottom: -2px;
   }
 
   .transaction-month-label-full {
@@ -4563,7 +4580,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: -4px 22px 0;
+    margin: 2px 22px 0;
     gap: clamp(6px, 2vw, 10px);
     min-height: 34px;
     border: 1px solid var(--outline-soft);
@@ -4627,9 +4644,14 @@ body {
   .transaction-list-layout,
   .transaction-list-panel,
   .transaction-ledger,
-  .transaction-ledger-row,
-  .empty-state {
+  .transaction-ledger-row {
     max-width: 100%;
+  }
+
+  .transaction-load-message,
+  .transaction-workspace > .empty-state {
+    width: calc(100% - 20px);
+    margin-inline: 10px;
   }
 
   .transaction-mobile-action-row {
@@ -4653,6 +4675,11 @@ body {
     border-radius: 14px;
     padding-inline: 8px;
     font-size: 11px;
+  }
+
+  .transaction-list-review-shortcut {
+    width: calc(100% - 20px);
+    margin-inline: 10px;
   }
 
   .hero-card {

@@ -240,6 +240,15 @@ test("navigation does not remount pages or trigger transaction page fetches", as
   assert.doesNotMatch(appSource, /activeView[\s\S]{0,240}refreshTransactionPage/);
 });
 
+test("overlapping transaction sources are deduped before range fallbacks", async () => {
+  const appSource = await readFile(new URL("../hooks/useNetlyApp.ts", import.meta.url), "utf8");
+
+  assert.match(appSource, /mergeUniqueTransactions\(banking\.transactions, banking\.transactionPageTransactions\)/);
+  assert.match(appSource, /function mergeUniqueTransactions\(baseTransactions: Transaction\[\], pageTransactions: Transaction\[\]\)/);
+  assert.match(appSource, /byId\.set\(getTransactionId\(transaction\), transaction\)/);
+  assert.doesNotMatch(appSource, /\[\.\.\.banking\.transactions,\s*\.\.\.banking\.transactionPageTransactions\]/);
+});
+
 test("Transactions page receives the dedicated date-range transaction set", async () => {
   const appSource = await readFile(new URL("../hooks/useNetlyApp.ts", import.meta.url), "utf8");
   const dataHookSource = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
@@ -289,16 +298,21 @@ test("transaction lists use date groups without chevrons for date-sorted views",
   assert.match(css, /\.home-recent-date-heading/);
 });
 
-test("mobile transaction month rail centers the active month and keeps summary inset", async () => {
+test("transaction month rail centers the active month and keeps mobile summary inset", async () => {
   const transactionsSource = await readFile(new URL("../features/transactions/TransactionsPage.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(transactionsSource, /align: "center"/);
-  assert.match(transactionsSource, /getMonthCarouselSnapIndex/);
-  assert.match(transactionsSource, /Math\.max\(activeMonthIndex - 1, 0\)/);
+  assert.match(transactionsSource, /activeMonthSnapIndex = activeMonthIndex < 0 \? 0 : activeMonthIndex/);
+  assert.match(transactionsSource, /slides: "\.transaction-month-slide"/);
+  assert.match(transactionsSource, /className="transaction-month-spacer"/);
+  assert.doesNotMatch(transactionsSource, /containScroll:\s*"trimSnaps"/);
+  assert.doesNotMatch(transactionsSource, /activeMonthIndex - 1/);
   assert.doesNotMatch(transactionsSource, /optionCount - 4/);
-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-slide \{[\s\S]*?flex-basis: 25%/);
-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-summary[\s\S]*?margin: -4px 22px 0;[\s\S]*?border-radius: 12px;[\s\S]*?background: var\(--surface-2\)/);
+  assert.match(css, /--transaction-month-slide-basis: 20%/);
+  assert.match(css, /\.transaction-month-spacer \{[\s\S]*?flex: 0 0 var\(--transaction-month-edge-spacer\)/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-rail \{[\s\S]*?--transaction-month-slide-basis: 25%/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-summary[\s\S]*?margin: 2px 22px 0;[\s\S]*?border-radius: 12px;[\s\S]*?background: var\(--surface-2\)/);
 });
 
 test("unavailable saved default accounts do not hide the active data source", async () => {
@@ -359,6 +373,8 @@ test("Home and budget visual regressions keep the compact mobile layout intact",
   assert.match(css, /\.legend-row[\s\S]*?overflow: hidden/);
   assert.match(css, /\.legend-topline strong[\s\S]*?text-overflow: ellipsis/);
   assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-summary[\s\S]*?display: flex;[\s\S]*?justify-content: space-between/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-list-review-shortcut[\s\S]*?width: calc\(100% - 20px\);[\s\S]*?margin-inline: 10px/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-load-message,\s*\.transaction-workspace > \.empty-state[\s\S]*?width: calc\(100% - 20px\);[\s\S]*?margin-inline: 10px/);
   assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-metric strong[\s\S]*?font-size: clamp\(0\.8rem, 3\.6vw, 0\.9rem\);[\s\S]*?font-weight: 680/);
   assert.match(css, /\.topbar h1,\s*\.mobile-page-header h2[\s\S]*?color: var\(--accent-cream\)/);
   assert.match(css, /\.hero-payday-pill[\s\S]*?margin-top: 4px/);
@@ -394,8 +410,11 @@ test("transaction month rail keeps hover transparent and uses a fixed bottom und
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(css, /--transaction-month-active-line-width: min\(84px, calc\(100% - 10px\)\)/);
+  assert.match(css, /\.transaction-month-rail \{[\s\S]*?border-bottom: 2px solid var\(--outline-soft\)/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-rail \{[\s\S]*?border-bottom: 2px solid var\(--outline-soft\)/);
   assert.doesNotMatch(css, /\.transaction-month-rail button:hover[^{]*\{[^}]*background:/);
-  assert.match(css, /\.transaction-month-rail button\.active::after[\s\S]*?bottom: 0;[\s\S]*?width: var\(--transaction-month-active-line-width\)/);
+  assert.match(css, /\.transaction-month-rail button\.active::after[\s\S]*?bottom: 0;[\s\S]*?width: var\(--transaction-month-active-line-width\);[\s\S]*?height: 4px;[\s\S]*?background: var\(--accent-cream\)/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-rail button\.active::after[\s\S]*?bottom: -2px/);
 });
 
 test("income category settings live in Categories and use the shared category selector", async () => {

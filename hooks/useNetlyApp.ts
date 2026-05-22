@@ -16,7 +16,7 @@ import { cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, getDefaultCardFitIncludedCategories, spendByCategory, sum } from "@/lib/insights";
 import { filterTransactionsByDateRange, filterTransactionsByPeriod, getThisMonthDateRange, getTransactionPeriodDateRange } from "@/lib/periods";
 import { isIncomeCategoryIncluded } from "@/lib/reporting";
-import { getTransactionCategory, getTransactionDate, transactionNeedsReview } from "@/lib/transaction-display";
+import { getTransactionCategory, getTransactionDate, getTransactionId, transactionNeedsReview } from "@/lib/transaction-display";
 import { defaultAccountStorageKey, hideBalancesStorageKey, incomeIncludedCategoriesStorageKey, periods } from "@/lib/app/constants";
 import { getTransactionAccountOptions } from "@/features/transactions/transactionLogic";
 import { useAkahuConnection } from "@/hooks/useAkahuConnection";
@@ -27,7 +27,7 @@ import { useDriveBackup } from "@/hooks/useDriveBackup";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { usePaydaySettings } from "@/hooks/usePaydaySettings";
 import { useRoutedView } from "@/hooks/useRoutedView";
-import type { PeriodOption } from "@/lib/types";
+import type { PeriodOption, Transaction } from "@/lib/types";
 import type { TransactionOpenPreset } from "@/features/transactions/TransactionsPage";
 
 const topCategoryLimit = 5;
@@ -48,7 +48,7 @@ export function useNetlyApp() {
   const banking = useAkahuData();
   // Use all loaded transaction sets so category options stay consistent across pages.
   const categorySourceTransactions = useMemo(
-    () => [...banking.transactions, ...banking.transactionPageTransactions],
+    () => mergeUniqueTransactions(banking.transactions, banking.transactionPageTransactions),
     [banking.transactionPageTransactions, banking.transactions]
   );
   const categories = useCategorySettings(categorySourceTransactions, []);
@@ -381,6 +381,16 @@ function getAverageDailySpend(expenses: ReturnType<typeof debitTransactions>, to
   const dayCount = Math.max(1, Math.round((lastDay - firstDay) / dayMs) + 1);
 
   return totalSpend / dayCount;
+}
+
+// Combines overlapping transaction sources without rendering duplicate Akahu rows.
+function mergeUniqueTransactions(baseTransactions: Transaction[], pageTransactions: Transaction[]) {
+  const byId = new Map<string, Transaction>();
+
+  baseTransactions.forEach((transaction) => byId.set(getTransactionId(transaction), transaction));
+  pageTransactions.forEach((transaction) => byId.set(getTransactionId(transaction), transaction));
+
+  return [...byId.values()];
 }
 
 // Narrows reporting surfaces to the user's preferred account while leaving source data intact.

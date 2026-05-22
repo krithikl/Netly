@@ -462,7 +462,7 @@ function TransactionLoadMessage({ error, notice }: { error: string; notice: stri
   return (
     <div
       className={cn(
-        "rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3.5 py-3 text-[0.86rem] font-[760] leading-[1.35] text-[var(--muted)]",
+        "transaction-load-message rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3.5 py-3 text-[0.86rem] font-[760] leading-[1.35] text-[var(--muted)]",
         error && "border-[rgba(255,125,145,0.38)] text-[var(--danger)]"
       )}
       role={error ? "alert" : "status"}
@@ -503,11 +503,11 @@ function TransactionMonthOverview({
   const activeDate = parseInputDate(activeDateRange.from) || new Date();
   const activeMonthKey = getMonthKey(activeDate);
   const activeMonthIndex = monthOptions.findIndex((option) => option.monthKey === activeMonthKey);
-  const activeMonthSnapIndex = getMonthCarouselSnapIndex(activeMonthIndex);
+  const activeMonthSnapIndex = activeMonthIndex < 0 ? 0 : activeMonthIndex;
   const [monthEmblaRef, monthEmblaApi] = useEmblaCarousel({
     align: "center",
-    containScroll: "trimSnaps",
     dragFree: true,
+    slides: ".transaction-month-slide",
     slidesToScroll: 1,
     startIndex: activeMonthSnapIndex
   });
@@ -536,6 +536,7 @@ function TransactionMonthOverview({
       >
         <div className="transaction-month-rail" ref={monthEmblaRef}>
           <div className="transaction-month-track" aria-label="Transaction month">
+            <div aria-hidden="true" className="transaction-month-spacer" />
             {monthOptions.map((option) => (
               <div className="transaction-month-slide" key={option.monthKey}>
                 <button
@@ -552,6 +553,7 @@ function TransactionMonthOverview({
                 </button>
               </div>
             ))}
+            <div aria-hidden="true" className="transaction-month-spacer" />
           </div>
         </div>
       </div>
@@ -1015,15 +1017,6 @@ function getEarliestTransactionMonth(transactions: Transaction[]): Date | null {
   });
 
   return earliestMonth;
-}
-
-// Moves Embla so the selected month is centered with partial months at both edges.
-function getMonthCarouselSnapIndex(activeMonthIndex: number) {
-  if (activeMonthIndex < 0) {
-    return 0;
-  }
-
-  return Math.max(activeMonthIndex - 1, 0);
 }
 
 // Selects adjacent months only when they are represented in the carousel bounds.

@@ -48,7 +48,6 @@ export type AkahuTransaction = {
 };
 
 export type Transaction = AkahuTransaction & {
-  pending?: boolean;
   netly?: {
     accountName?: string;
     accountCurrency?: string;

@@ -1,14 +1,10 @@
 import type { AkahuAccount } from "@/lib/akahu/accounts";
 import type { AkahuTransaction, Transaction } from "@/lib/types";
 
-type AkahuTransactionPayload = AkahuTransaction & {
-  pending?: boolean;
-};
-
 export type AkahuTransactionsResponse = {
   success?: boolean;
-  items?: AkahuTransactionPayload[];
-  item?: AkahuTransactionPayload;
+  items?: AkahuTransaction[];
+  item?: AkahuTransaction;
   cursor?: {
     next?: string;
   };
@@ -31,7 +27,7 @@ export function getAkahuTransactions(response: AkahuTransactionsResponse, accoun
 }
 
 // Keeps Akahu-owned values at the top level and leaves app-owned data under transaction.netly.
-export function normalizeAkahuTransaction(transaction: AkahuTransactionPayload): Transaction {
+export function normalizeAkahuTransaction(transaction: AkahuTransaction): Transaction {
   return {
     _account: transaction._account,
     _connection: transaction._connection,
@@ -44,7 +40,6 @@ export function normalizeAkahuTransaction(transaction: AkahuTransactionPayload):
     description: transaction.description,
     merchant: transaction.merchant,
     meta: transaction.meta,
-    pending: transaction.pending,
     type: transaction.type,
     updated_at: transaction.updated_at
   };
@@ -66,7 +61,7 @@ export function attachNetlyFields(transaction: Transaction, fields: NonNullable<
   };
 }
 
-// Removes duplicate transactions from booked and pending feeds
+// Removes duplicate transactions from Akahu transaction pages.
 export function dedupeAkahuTransactions(transactions: Transaction[]) {
   const seen = new Set<string>();
 
@@ -88,8 +83,7 @@ function getAkahuTransactionStableKey(transaction: Transaction) {
     transaction._account || "account",
     transaction.date,
     transaction.description,
-    transaction.amount.toFixed(2),
-    transaction.pending ? "pending" : "booked"
+    transaction.amount.toFixed(2)
   ].join(":");
 }
 

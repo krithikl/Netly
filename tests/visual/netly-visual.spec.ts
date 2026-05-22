@@ -34,6 +34,7 @@ const styleProbeProperties = [
 ];
 
 test.beforeEach(async ({ page }) => {
+  await mockDisconnectedAkahu(page);
   await page.addInitScript(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
@@ -85,6 +86,55 @@ async function waitForStableApp(page: import("@playwright/test").Page) {
   await page.waitForLoadState("networkidle");
   await page.locator("body").waitFor({ state: "visible" });
   await page.waitForTimeout(300);
+}
+
+// Keeps visual tests independent from local Akahu credentials and network access.
+async function mockDisconnectedAkahu(page: import("@playwright/test").Page) {
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: false,
+        availableBalance: null,
+        accounts: [],
+        accountFreshness: [],
+        balanceRefreshedAt: null,
+        isStale: false,
+        manualRefreshCooldownMs: 900000,
+        primaryAccount: null,
+        retrievedAt: null,
+        transactionsRefreshedAt: null,
+        notice: "No Akahu app token or user token is connected. Connect Akahu or switch to demo data."
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: false,
+        rawCount: 0,
+        nextCursor: null,
+        transactions: [],
+        notice: "No Akahu app token or user token is connected. Connect Akahu or switch to demo data."
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 401,
+      json: {
+        source: "akahu",
+        connected: false,
+        notice: "No Akahu app token or user token is connected. Connect Akahu or switch to demo data."
+      }
+    });
+  });
 }
 
 // Captures a focused computed-style snapshot for selectors with known cascade risk.

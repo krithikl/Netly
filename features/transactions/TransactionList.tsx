@@ -412,20 +412,20 @@ function CategorySelect({
   onClose: () => void;
   transaction: Transaction;
 }) {
-  const [pendingCategory, setPendingCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
   const handleCategoryChange = (category: string) => {
-    setPendingCategory(category);
+    setSelectedCategory(category);
     setScopeDialogOpen(true);
   };
   const applyCategoryChange = (scope: CategoryEditScope) => {
-    if (!pendingCategory) {
+    if (!selectedCategory) {
       return;
     }
 
-    onCategoryChange?.(transaction, pendingCategory, scope);
+    onCategoryChange?.(transaction, selectedCategory, scope);
     setScopeDialogOpen(false);
-    setPendingCategory("");
+    setSelectedCategory("");
     onClose();
   };
 

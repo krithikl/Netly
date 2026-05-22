@@ -7,6 +7,11 @@ import {
   incrementalTransactionOverlapDays
 } from "../lib/app/transaction-sync.ts";
 import {
+  akahuRefreshPollingIntervalMs,
+  akahuRefreshPollingTimeoutMs,
+  hasRefreshTimestampAdvanced
+} from "../lib/app/akahu-refresh-polling.ts";
+import {
   formatTransactionDateHeading,
   groupTransactionsByDate
 } from "../lib/transaction-date-groups.ts";
@@ -160,9 +165,26 @@ test("launch sync requests Akahu refresh before incremental transaction fetch", 
 
   assert.match(source, /requestManualRefresh: true/);
   assert.match(source, /console\.info\("Akahu refresh endpoint completed\."/);
+  assert.match(source, /pollAccountsUntilTransactionsRefresh/);
+  assert.match(source, /akahuRefreshStillProcessingNotice/);
   assert.doesNotMatch(source, /setTransactionLoadNotice\(refreshPayload\.notice|Akahu refresh requested\. Loading updated transactions/);
   assert.doesNotMatch(source, /lastAkahuManualRefreshStorageKey|canRequestManualRefresh|recordManualRefreshRequestedAt/);
   assert.match(source, /await loadAndApplyAccountSnapshot\(mode, isCurrentRequest, accountSetters, \{ requestManualRefresh: true \}\)[\s\S]*?await syncVisibleAkahuTransactionsToArchive/);
+  assert.match(source, /applyAccountSnapshot\("user", payload, "refreshing", setters\)[\s\S]*?hasRefreshTimestampAdvanced\(baselinePayload\.transactionsRefreshedAt, payload\.transactionsRefreshedAt/);
+  assert.match(source, /timedOut: true/);
+});
+
+test("Akahu refresh polling uses bounded freshness timestamp rules", () => {
+  assert.equal(akahuRefreshPollingIntervalMs, 5000);
+  assert.equal(akahuRefreshPollingTimeoutMs, 60000);
+  assert.equal(hasRefreshTimestampAdvanced(null, "2026-05-22T09:13:00.000Z", "transactionsRefreshedAt"), true);
+  assert.equal(hasRefreshTimestampAdvanced("2026-05-22T09:13:00.000Z", "2026-05-22T09:13:00.000Z", "transactionsRefreshedAt"), false);
+  assert.equal(hasRefreshTimestampAdvanced("2026-05-22T09:13:00.000Z", "2026-05-22T09:14:00.000Z", "transactionsRefreshedAt"), true);
+  assert.equal(hasRefreshTimestampAdvanced("2026-05-22T09:13:00.000Z", null, "transactionsRefreshedAt"), false);
+  assert.throws(
+    () => hasRefreshTimestampAdvanced("not-a-date", "2026-05-22T09:14:00.000Z", "transactionsRefreshedAt"),
+    /Invalid Akahu transactionsRefreshedAt timestamp/
+  );
 });
 
 test("Drive access token remains memory-only", async () => {
@@ -327,14 +349,17 @@ test("unavailable saved default accounts do not hide the active data source", as
   assert.match(css, /\.transaction-month-metric-label[\s\S]*?font-weight: 760/);
 });
 
-test("transaction details include pending and booked lifecycle timing", async () => {
+test("transaction details and Akahu client exclude pending transaction paths", async () => {
   const displaySource = await readFile(new URL("../lib/transaction-display.ts", import.meta.url), "utf8");
   const clientSource = await readFile(new URL("../lib/akahu/client.ts", import.meta.url), "utf8");
+  const normalizeSource = await readFile(new URL("../lib/akahu/normalize.ts", import.meta.url), "utf8");
+  const typesSource = await readFile(new URL("../lib/types.ts", import.meta.url), "utf8");
 
-  assert.match(clientSource, /getPendingTransactions/);
-  assert.match(clientSource, /markPendingTransactions/);
+  assert.doesNotMatch(clientSource, /getPendingTransactions|markPendingTransactions|transactions\/pending/);
+  assert.doesNotMatch(normalizeSource, /pending/);
+  assert.doesNotMatch(typesSource, /pending/);
   assert.match(displaySource, /label: "Made"/);
-  assert.match(displaySource, /label: "Pending since"/);
+  assert.doesNotMatch(displaySource, /Pending|pending|Pending since/);
   assert.match(displaySource, /label: "Booked \/ resolved"/);
 });
 

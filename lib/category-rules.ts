@@ -128,7 +128,7 @@ function getCategoryTransactionId(transaction: Transaction) {
   }
 
   return [
-    "pending",
+    "transaction",
     transaction._account || "account",
     transaction.date,
     transaction.description,

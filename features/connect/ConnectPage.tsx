@@ -113,7 +113,7 @@ export function ConnectPage({
                 Netly reads Akahu accounts directly, including balances and account metadata.
               </FlowStep>
               <FlowStep number="3" title="Read transactions">
-                Settled and pending Akahu transactions are loaded from connected accounts.
+                Settled Akahu transactions are loaded from connected accounts.
               </FlowStep>
               <FlowStep number="4" title="Use enrichment">
                 Merchant and category fields come from Akahu enrichment when available.

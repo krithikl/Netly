@@ -62,13 +62,7 @@ Visual/browser tests use Playwright and target `http://localhost:3000`:
 npm run test:visual
 ```
 
-For focused pending-transaction coverage:
-
-```bash
-npx playwright test tests/visual/akahu-pending.spec.ts --project=desktop
-```
-
-When a dev server is already running on `http://localhost:3000`, Playwright reuses it. If local UI behaviour looks stale, restart with `npm run dev:fresh` before rerunning browser checks.
+The visual wrapper owns the `http://localhost:3000` dev server for the run. Stop any existing local server before running it.
 
 ---
 
@@ -260,7 +254,6 @@ Fields like these may not always exist:
 - `balance`
 - `refreshed`
 - enrichment fields
-- pending transaction flags
 
 Useful docs:
 - Transaction model: `https://developers.akahu.nz/docs/the-transaction-model`

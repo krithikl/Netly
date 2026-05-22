@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
+import { akahuRefreshPollingIntervalMs, akahuRefreshPollingTimeoutMs, akahuRefreshStillProcessingNotice, hasRefreshTimestampAdvanced } from "@/lib/app/akahu-refresh-polling";
 import { archiveAndMergeTransactions, markArchiveIncrementalTransactionSynced, readArchivedAccountSnapshot, readArchivedTransactions, writeArchivedAccountSnapshot } from "@/lib/app/transaction-archive";
 import { getIncrementalTransactionSyncRange } from "@/lib/app/transaction-sync";
 import { currentBalance as fallbackBalance, transactions as fallbackTransactions } from "@/lib/mock-data";
@@ -186,7 +187,7 @@ export function useAkahuData() {
           return;
         }
 
-        const syncResult = shouldLoadFullTransactionHistory
+        const syncResult = shouldLoadFullTransactionHistory || options.forceFullSync
           ? await syncAllAkahuTransactionsToArchive(dateRange)
           : await syncVisibleAkahuTransactionsToArchive(incrementalDateRange, dateRange);
 
@@ -202,7 +203,7 @@ export function useAkahuData() {
           setIsConnected(true);
         }
         setTransactionLoadError("");
-        setTransactionLoadNotice("notice" in syncResult ? syncResult.notice : "");
+        setTransactionLoadNotice("notice" in syncResult ? syncResult.notice || "" : "");
         return;
       }
 
@@ -460,6 +461,11 @@ type AccountSnapshotStateSetters = {
   setTransactionLoadNotice: (notice: string) => void;
 };
 
+type AccountRefreshPollingResult = {
+  payload: AccountsPayload;
+  timedOut: boolean;
+};
+
 // Loads account data and optionally requests a manual Akahu refresh for launch syncs.
 async function loadAndApplyAccountSnapshot(
   mode: DataMode,
@@ -493,7 +499,7 @@ async function loadAndApplyAccountSnapshot(
       });
     }
 
-    return;
+    throw error;
   }
 
   if (!isCurrentRequest()) {
@@ -504,13 +510,17 @@ async function loadAndApplyAccountSnapshot(
     notice: refreshPayload.notice || "",
     requestedAt: refreshPayload.requestedAt || ""
   });
-  const refreshedAccountsPayload = await loadAccountsPayload(mode);
+  const pollingResult = await pollAccountsUntilTransactionsRefresh(accountsPayload, isCurrentRequest, setters);
 
-  if (!isCurrentRequest()) {
+  if (!pollingResult || !isCurrentRequest()) {
     return;
   }
 
-  applyAccountSnapshot(mode, refreshedAccountsPayload, "refreshed", setters);
+  applyAccountSnapshot(mode, pollingResult.payload, "refreshed", setters);
+
+  if (pollingResult.timedOut) {
+    setters.setTransactionLoadNotice(akahuRefreshStillProcessingNotice);
+  }
 }
 
 // Applies the Akahu account snapshot to balance, account labels, and freshness state.
@@ -553,6 +563,58 @@ async function loadAccountsPayload(mode: DataMode) {
   return payload;
 }
 
+// Polls Akahu account freshness until transactions advance or the bounded window ends.
+async function pollAccountsUntilTransactionsRefresh(
+  baselinePayload: AccountsPayload,
+  isCurrentRequest: () => boolean,
+  setters: AccountSnapshotStateSetters
+): Promise<AccountRefreshPollingResult | null> {
+  const deadline = Date.now() + akahuRefreshPollingTimeoutMs;
+  let latestPayload = baselinePayload;
+
+  while (isCurrentRequest()) {
+    try {
+      const payload = await loadAccountsPayload("user");
+
+      if (!isCurrentRequest()) {
+        return null;
+      }
+
+      latestPayload = payload;
+      applyAccountSnapshot("user", payload, "refreshing", setters);
+
+      if (hasRefreshTimestampAdvanced(baselinePayload.transactionsRefreshedAt, payload.transactionsRefreshedAt, "transactionsRefreshedAt")) {
+        return {
+          payload,
+          timedOut: false
+        };
+      }
+    } catch (error) {
+      if (isCurrentRequest()) {
+        setters.setAkahuDataFreshness({
+          ...getFreshnessState(latestPayload, "failed"),
+          error: error instanceof Error ? error.message : "Could not poll Akahu account refresh."
+        });
+      }
+
+      throw error;
+    }
+
+    const remainingMs = deadline - Date.now();
+
+    if (remainingMs <= 0) {
+      return {
+        payload: latestPayload,
+        timedOut: true
+      };
+    }
+
+    await waitForAkahuRefreshPoll(Math.min(akahuRefreshPollingIntervalMs, remainingMs));
+  }
+
+  return null;
+}
+
 // Calls Akahu's manual refresh route and fails loudly if it is rejected.
 async function requestAkahuRefresh() {
   const response = await fetch("/api/akahu/refresh", { method: "POST" });
@@ -560,6 +622,13 @@ async function requestAkahuRefresh() {
 
   assertAkahuResponse(response, payload.error, "Could not request Akahu refresh.");
   return payload;
+}
+
+// Waits between bounded Akahu freshness polling attempts.
+function waitForAkahuRefreshPoll(durationMs: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, durationMs);
+  });
 }
 
 // Converts account payload freshness into app state for Settings.
@@ -609,7 +678,8 @@ async function syncVisibleAkahuTransactionsToArchive(syncDateRange: TransactionD
     archivedTransactions,
     archivedTransactionPageTransactions,
     connected: Boolean(payload.connected),
-    nextCursor: payload.nextCursor || null
+    nextCursor: payload.nextCursor || null,
+    notice: payload.notice || ""
   };
 }
 
@@ -728,7 +798,7 @@ function getTransactionPageId(transaction: Transaction) {
   }
 
   return [
-    "pending",
+    "transaction",
     transaction._account || "account",
     transaction.date,
     transaction.description,

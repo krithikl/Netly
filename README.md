@@ -46,6 +46,32 @@ The app also supports demo/local fallback data so most UI work can be done witho
 
 ---
 
+## Testing
+
+Use these checks before handing off changes:
+
+```bash
+npm test
+npm run typecheck
+npm run build
+```
+
+Visual/browser tests use Playwright and target `http://localhost:3000`:
+
+```bash
+npm run test:visual
+```
+
+For focused pending-transaction coverage:
+
+```bash
+npx playwright test tests/visual/akahu-pending.spec.ts --project=desktop
+```
+
+When a dev server is already running on `http://localhost:3000`, Playwright reuses it. If local UI behaviour looks stale, restart with `npm run dev:fresh` before rerunning browser checks.
+
+---
+
 ## Environment Variables
 
 Do not commit real secrets. Keep `.env.local` local, and configure deployment values in Vercel per environment.
@@ -80,7 +106,7 @@ APP_BASE_URL=https://netly.krithikl.com
 | `AKAHU_REDIRECT_URI` | Required for Akahu OAuth | All OAuth envs | Must exactly match the URI registered in Akahu. |
 | `AKAHU_COOKIE_SECRET` | Yes when saving Akahu tokens | All real-data envs | At least 32 characters. Keep stable or saved Akahu cookies stop decrypting. |
 | `AKAHU_REQUEST_TIMEOUT_MS` | Optional | All | Request timeout, e.g. `12000`. |
-| `AKAHU_MANUAL_REFRESH_COOLDOWN_MINUTES` | Optional | All | Defaults to 60 minutes without `AKAHU_APP_SECRET`, 15 minutes with it. |
+| `AKAHU_MANUAL_REFRESH_COOLDOWN_MINUTES` | Optional | All | Defaults to 15 minutes. |
 | `AKAHU_OAUTH_SCOPE` | Optional | All | Use `ENDURING_CONSENT` for normal enduring connections. |
 | `AKAHU_USER_TOKEN` | Optional | Local only | Personal App token fallback. Prefer pasting through Connect during local testing. |
 

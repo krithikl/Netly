@@ -10,6 +10,9 @@ import {
   formatTransactionDateHeading,
   groupTransactionsByDate
 } from "../lib/transaction-date-groups.ts";
+import {
+  getTransactionRangeState
+} from "../features/transactions/transactionRangeLogic.ts";
 
 const visibleRange = {
   from: "2026-05-01",
@@ -69,6 +72,75 @@ test("transaction date grouping preserves the incoming transaction order", () =>
       transactions: [getTransaction("txn-d", "2026-05-22")]
     }
   ]);
+});
+
+test("transaction range state uses exact page transactions when the active range is loaded", () => {
+  const state = getTransactionRangeState({
+    activeDateRange: visibleRange,
+    hasMoreTransactions: true,
+    isLoadingTransactionPageRange: true,
+    isLoadingTransactions: false,
+    loadedDateRange: visibleRange,
+    pageTransactions: [getTransaction("txn-page", "2026-05-12")],
+    sourceTransactions: [getTransaction("txn-source", "2026-05-13")]
+  });
+
+  assert.equal(state.hasLoadedActiveDateRange, true);
+  assert.equal(state.hasMoreTransactions, true);
+  assert.equal(state.shouldShowListLoading, false);
+  assert.equal(state.shouldShowMonthSummaryLoading, false);
+  assert.deepEqual(state.transactions.map((transaction) => transaction._id), ["txn-page"]);
+});
+
+test("transaction range state falls back to local source transactions while range refresh is pending", () => {
+  const state = getTransactionRangeState({
+    activeDateRange: visibleRange,
+    hasMoreTransactions: true,
+    isLoadingTransactionPageRange: true,
+    isLoadingTransactions: false,
+    loadedDateRange: {
+      from: "2026-04-01",
+      to: "2026-04-30"
+    },
+    pageTransactions: [getTransaction("txn-old-page", "2026-04-12")],
+    sourceTransactions: [
+      getTransaction("txn-april", "2026-04-18"),
+      getTransaction("txn-may", "2026-05-14"),
+      getTransaction("txn-june", "2026-06-01")
+    ]
+  });
+
+  assert.equal(state.hasLoadedActiveDateRange, false);
+  assert.equal(state.hasMoreTransactions, false);
+  assert.equal(state.shouldShowListLoading, false);
+  assert.equal(state.shouldShowMonthSummaryLoading, false);
+  assert.deepEqual(state.transactions.map((transaction) => transaction._id), ["txn-may"]);
+});
+
+test("transaction range state only shows loading when no local rows can cover the selected range", () => {
+  const loadingWithRows = getTransactionRangeState({
+    activeDateRange: visibleRange,
+    hasMoreTransactions: false,
+    isLoadingTransactionPageRange: true,
+    isLoadingTransactions: false,
+    loadedDateRange: null,
+    pageTransactions: [],
+    sourceTransactions: [getTransaction("txn-local", "2026-05-20")]
+  });
+  const loadingWithoutRows = getTransactionRangeState({
+    activeDateRange: visibleRange,
+    hasMoreTransactions: false,
+    isLoadingTransactionPageRange: true,
+    isLoadingTransactions: false,
+    loadedDateRange: null,
+    pageTransactions: [],
+    sourceTransactions: [getTransaction("txn-outside", "2026-04-20")]
+  });
+
+  assert.equal(loadingWithRows.shouldShowListLoading, false);
+  assert.equal(loadingWithRows.shouldShowMonthSummaryLoading, false);
+  assert.equal(loadingWithoutRows.shouldShowListLoading, true);
+  assert.equal(loadingWithoutRows.shouldShowMonthSummaryLoading, true);
 });
 
 test("lifecycle refresh runs on launch only", async () => {
@@ -173,16 +245,22 @@ test("Transactions page receives the dedicated date-range transaction set", asyn
   const dataHookSource = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
   const displaySource = await readFile(new URL("../lib/transaction-display.ts", import.meta.url), "utf8");
   const transactionsSource = await readFile(new URL("../features/transactions/TransactionsPage.tsx", import.meta.url), "utf8");
+  const refreshTransactionPageSource = dataHookSource.match(/const refreshTransactionPage[\s\S]*?\n  \}, \[dataMode\]\);/)?.[0] || "";
 
   assert.match(appSource, /transactionPageWorkingTransactions/);
   assert.match(appSource, /transactions: transactionPageWorkingTransactions/);
+  assert.match(appSource, /isLoadingTransactionPageRange: banking\.isLoadingTransactionPageRange/);
   assert.match(appSource, /setTransactionLoadNotice\("No transactions found for this period\."\)/);
   assert.match(dataHookSource, /transactionPageRequestIdRef/);
   assert.match(dataHookSource, /transactionPageLoadedDateRange/);
+  assert.match(dataHookSource, /isLoadingTransactionPageRange/);
+  assert.match(refreshTransactionPageSource, /setIsLoadingTransactionPageRange\(true\)/);
+  assert.match(refreshTransactionPageSource, /setIsLoadingTransactionPageRange\(false\)/);
+  assert.doesNotMatch(refreshTransactionPageSource, /setIsLoadingTransactions/);
   assert.match(dataHookSource, /isFutureTransactionRange\(dateRange\)/);
   assert.match(dataHookSource, /setTransactionLoadNotice\(archivedPageTransactions\.length === 0 \? "No transactions found for this period\." : ""\)/);
-  assert.match(transactionsSource, /hasLoadedActiveDateRange/);
-  assert.match(transactionsSource, /getDateRangesMatch/);
+  assert.match(transactionsSource, /getTransactionRangeState/);
+  assert.match(transactionsSource, /isLoadingTransactionPageRange/);
   assert.doesNotMatch(transactionsSource, /reviewShortcutTransactions|reviewShortcutAnalytics/);
   assert.match(transactionsSource, /shownTransactions = useMemo\([\s\S]*?getVisibleTransactions\(dateRangeTransactions[\s\S]*?transactionAccounts/);
   assert.match(transactionsSource, /analytics = useMemo\(\(\) => getTransactionAnalytics\(shownTransactions, dateRange\)/);

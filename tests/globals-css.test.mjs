@@ -4,6 +4,7 @@ import { test } from "node:test";
 import postcss from "postcss";
 
 const globalsCssUrl = new URL("../app/globals.css", import.meta.url);
+const layoutUrl = new URL("../app/layout.tsx", import.meta.url);
 const packageJsonUrl = new URL("../package.json", import.meta.url);
 
 test("dev server binds to localhost for local browser verification", async () => {
@@ -11,6 +12,13 @@ test("dev server binds to localhost for local browser verification", async () =>
 
   assert.equal(packageJson.scripts.dev, "next dev --hostname localhost --port 3000");
   assert.equal(packageJson.scripts["dev:fresh"], "node scripts/clear-next-cache.mjs && next dev --hostname localhost --port 3000");
+});
+
+test("root layout imports lowercase globals CSS for Next", async () => {
+  const layoutSource = await readFile(layoutUrl, "utf8");
+
+  assert.match(layoutSource, /import "\.\/globals\.css";/);
+  assert.doesNotMatch(layoutSource, /Globals\.css/);
 });
 
 test("globals CSS has no stale migration section or duplicate root-level selector properties", async () => {

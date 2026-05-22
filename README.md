@@ -28,7 +28,7 @@ npm run build
 npm run dev
 ```
 
-If the local Next.js cache serves stale styles during development, restart with a clean cache:
+`app/globals.css` is intentionally lowercase because Next imports it from `app/layout.tsx` as `./globals.css`. If local styles look stale during development, the cause is usually the Next `.next` cache or an old browser/PWA cache, not CSS filename casing. Restart with a clean Next cache:
 
 ```bash
 npm run dev:fresh

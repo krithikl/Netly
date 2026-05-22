@@ -341,6 +341,7 @@ export function useNetlyApp() {
         incomeIncludedCategories,
         isLoadingAllTransactions: banking.isLoadingAllTransactions,
         isLoadingMoreTransactions: banking.isLoadingMoreTransactions,
+        isLoadingTransactionPageRange: banking.isLoadingTransactionPageRange,
         isLoadingTransactions: banking.isLoadingTransactions,
         onCategoryChange: updateTransactionCategoryAndSync,
         onDateRangeChange: refreshTransactionPageRange,

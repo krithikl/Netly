@@ -69,6 +69,7 @@ export function useAkahuData() {
   const [isConnected, setIsConnected] = useState(false);
   const [isInitializingTransactionHistory, setIsInitializingTransactionHistory] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
+  const [isLoadingTransactionPageRange, setIsLoadingTransactionPageRange] = useState(false);
   const [isLoadingAllTransactions, setIsLoadingAllTransactions] = useState(false);
   const [isLoadingMoreTransactions, setIsLoadingMoreTransactions] = useState(false);
   const [akahuDataFreshness, setAkahuDataFreshness] = useState<AkahuDataFreshness>(emptyAkahuDataFreshness);
@@ -81,6 +82,7 @@ export function useAkahuData() {
     setTransactionPageTransactions([]);
     setTransactionPageLoadedDateRange(null);
     setTransactionPageNextCursor(null);
+    setIsLoadingTransactionPageRange(false);
     setLinkedAccounts([]);
     setPrimaryLinkedAccount(null);
     setAvailableBalance(null);
@@ -104,6 +106,7 @@ export function useAkahuData() {
     setTransactionLoadError(errorMessage);
     setTransactionLoadNotice("");
     setIsInitializingTransactionHistory(false);
+    setIsLoadingTransactionPageRange(false);
     setIsLoadingTransactions(false);
     if (!isDemoMode) {
       toast.error(errorMessage);
@@ -119,6 +122,7 @@ export function useAkahuData() {
     let shouldLoadFullTransactionHistory = false;
 
     setIsLoadingTransactions(true);
+    setIsLoadingTransactionPageRange(false);
     setIsInitializingTransactionHistory(false);
 
     // Keep the existing screen populated during same-mode refreshes. Clearing here
@@ -236,7 +240,7 @@ export function useAkahuData() {
     transactionPageRequestIdRef.current = requestId;
     const isCurrentRequest = () => transactionPageRequestIdRef.current === requestId;
 
-    setIsLoadingTransactions(true);
+    setIsLoadingTransactionPageRange(true);
     setTransactionPageNextCursor(null);
 
     try {
@@ -303,7 +307,7 @@ export function useAkahuData() {
       throw error;
     } finally {
       if (isCurrentRequest()) {
-        setIsLoadingTransactions(false);
+        setIsLoadingTransactionPageRange(false);
       }
     }
   }, [dataMode]);
@@ -409,6 +413,7 @@ export function useAkahuData() {
     isInitializingTransactionHistory,
     isConnected,
     isLoadingAllTransactions,
+    isLoadingTransactionPageRange,
     isLoadingTransactions,
     isLoadingMoreTransactions,
     linkedAccounts,

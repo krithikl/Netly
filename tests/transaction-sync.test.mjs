@@ -200,7 +200,8 @@ test("Home and budget visual regressions keep the compact mobile layout intact",
 
   assert.match(css, /\.topbar h1,\s*\.mobile-page-header h2[\s\S]*?color: var\(--accent-cream\)/);
   assert.match(css, /\.hero-payday-pill[\s\S]*?margin-top: 4px/);
-  assert.match(css, /\.chart-panel,\s*\.category-panel,\s*\.chart-layout,\s*\.chart-visual,\s*\.donut-wrap[\s\S]*?overflow: visible/);
+  assert.match(css, /\.chart-panel,\s*\.chart-layout,\s*\.chart-visual,\s*\.donut-wrap[\s\S]*?overflow: visible/);
+  assert.match(css, /\.category-panel,\s*\.category-panel \.chart-layout,\s*\.category-panel \.chart-visual,\s*\.category-panel \.donut-wrap[\s\S]*?overflow: visible/);
   assert.match(css, /\.chart-panel \.legend-row,\s*\.chart-panel \.legend-row\.selected[\s\S]*?border: 0/);
   assert.match(css, /\.budget-desktop-grid[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
   assert.match(css, /\.budget-recurring-panel \.stack-list[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);

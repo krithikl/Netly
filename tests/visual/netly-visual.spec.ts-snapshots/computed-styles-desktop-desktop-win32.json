@@ -1,0 +1,153 @@
+{
+  "project": "desktop",
+  "home": {
+    ".hero-card": {
+      "backgroundColor": "rgb(23, 23, 23)",
+      "borderColor": "rgba(255, 255, 255, 0.07)",
+      "borderRadius": "26px",
+      "boxShadow": "none",
+      "color": "rgb(244, 239, 232)",
+      "display": "grid",
+      "gap": "18px",
+      "gridTemplateColumns": "1019px",
+      "minHeight": "0px",
+      "overflow": "hidden",
+      "padding": "24px"
+    },
+    ".nav-item.active": {
+      "backgroundColor": "rgba(168, 139, 80, 0.14)",
+      "borderColor": "rgb(216, 193, 148)",
+      "borderRadius": "14px",
+      "boxShadow": "rgba(194, 164, 100, 0.36) 0px 0px 0px 1px inset",
+      "color": "rgb(216, 193, 148)",
+      "display": "grid",
+      "gap": "10px",
+      "gridTemplateColumns": "30px 159px",
+      "minHeight": "auto",
+      "overflow": "visible",
+      "padding": "12px 14px"
+    },
+    ".period-tab[data-state='active']": {
+      "backgroundColor": "rgba(168, 139, 80, 0.14)",
+      "borderColor": "rgba(194, 164, 100, 0.36)",
+      "borderRadius": "3.35544e+07px",
+      "boxShadow": "none",
+      "color": "rgb(216, 193, 148)",
+      "display": "flex",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "minHeight": "auto",
+      "overflow": "visible",
+      "padding": "6px 16px"
+    },
+    ".metric-grid": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(244, 239, 232)",
+      "borderRadius": "18px",
+      "boxShadow": "none",
+      "color": "rgb(244, 239, 232)",
+      "display": "grid",
+      "gap": "10px",
+      "gridTemplateColumns": "259.75px 259.75px 259.75px 259.75px",
+      "minHeight": "auto",
+      "overflow": "visible",
+      "padding": "0px"
+    },
+    ".budget-desktop-grid": null,
+    ".budget-recurring-panel": null,
+    ".chart-layout": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(244, 239, 232)",
+      "borderRadius": "0px",
+      "boxShadow": "none",
+      "color": "rgb(244, 239, 232)",
+      "display": "grid",
+      "gap": "24px",
+      "gridTemplateColumns": "280px 270.078px",
+      "minHeight": "310px",
+      "overflow": "visible",
+      "padding": "18px 0px 0px"
+    },
+    ".transaction-ledger-row": null
+  },
+  "transactions": {
+    ".hero-card": null,
+    ".nav-item.active": {
+      "backgroundColor": "rgba(168, 139, 80, 0.14)",
+      "borderColor": "rgb(216, 193, 148)",
+      "borderRadius": "14px",
+      "boxShadow": "rgba(194, 164, 100, 0.36) 0px 0px 0px 1px inset",
+      "color": "rgb(216, 193, 148)",
+      "display": "grid",
+      "gap": "10px",
+      "gridTemplateColumns": "30px 159px",
+      "minHeight": "auto",
+      "overflow": "visible",
+      "padding": "12px 14px"
+    },
+    ".period-tab[data-state='active']": null,
+    ".metric-grid": null,
+    ".budget-desktop-grid": null,
+    ".budget-recurring-panel": null,
+    ".chart-layout": null,
+    ".transaction-ledger-row": null
+  },
+  "budgets": {
+    ".hero-card": null,
+    ".nav-item.active": {
+      "backgroundColor": "rgba(168, 139, 80, 0.14)",
+      "borderColor": "rgb(216, 193, 148)",
+      "borderRadius": "14px",
+      "boxShadow": "rgba(194, 164, 100, 0.36) 0px 0px 0px 1px inset",
+      "color": "rgb(216, 193, 148)",
+      "display": "grid",
+      "gap": "10px",
+      "gridTemplateColumns": "30px 159px",
+      "minHeight": "auto",
+      "overflow": "visible",
+      "padding": "12px 14px"
+    },
+    ".period-tab[data-state='active']": {
+      "backgroundColor": "rgba(168, 139, 80, 0.14)",
+      "borderColor": "rgba(194, 164, 100, 0.36)",
+      "borderRadius": "3.35544e+07px",
+      "boxShadow": "none",
+      "color": "rgb(216, 193, 148)",
+      "display": "flex",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "minHeight": "auto",
+      "overflow": "visible",
+      "padding": "6px 16px"
+    },
+    ".metric-grid": null,
+    ".budget-desktop-grid": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderColor": "rgb(244, 239, 232)",
+      "borderRadius": "0px",
+      "boxShadow": "none",
+      "color": "rgb(244, 239, 232)",
+      "display": "grid",
+      "gap": "18px",
+      "gridTemplateColumns": "1069px",
+      "minHeight": "auto",
+      "overflow": "visible",
+      "padding": "0px"
+    },
+    ".budget-recurring-panel": {
+      "backgroundColor": "rgb(23, 23, 23)",
+      "borderColor": "rgba(255, 255, 255, 0.07)",
+      "borderRadius": "20px",
+      "boxShadow": "none",
+      "color": "rgb(244, 239, 232)",
+      "display": "block",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "minHeight": "auto",
+      "overflow": "visible",
+      "padding": "22px"
+    },
+    ".chart-layout": null,
+    ".transaction-ledger-row": null
+  }
+}

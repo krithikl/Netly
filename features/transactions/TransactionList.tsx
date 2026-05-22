@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ChevronDown, ChevronRight, CreditCard, LoaderCircle } from "lucide-react";
+import { ChevronDown, CreditCard, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import {
@@ -36,8 +36,9 @@ import {
   getTransactionId,
   getTransactionMerchant,
   getTransactionRawBankText,
-  getTransactionSearchText,
-  getTransactionStatus
+  getTransactionStatus,
+  groupTransactionsByDate,
+  formatTransactionDateHeading
 } from "@/lib/transaction-display";
 import type { CategoryEditScope } from "@/lib/category-rules";
 import type { Transaction } from "@/lib/types";
@@ -47,6 +48,7 @@ type TransactionListProps = {
   categorySelectOptions?: SelectOption[];
   editable?: boolean;
   emptyMessage?: string;
+  groupByDate?: boolean;
   hasMore?: boolean;
   isLoading?: boolean;
   isLoadingAll?: boolean;
@@ -73,6 +75,7 @@ export function TransactionList({
   categorySelectOptions = [],
   editable = false,
   emptyMessage = "No transactions to show.",
+  groupByDate = false,
   hasMore = false,
   isLoading = false,
   isLoadingAll = false,
@@ -91,6 +94,7 @@ export function TransactionList({
   const hasTriggeredFullLoadRef = useRef(false);
   const previousTransactionSignatureRef = useRef("");
   const visibleTransactions = useMemo(() => transactions.slice(0, visibleCount), [transactions, visibleCount]);
+  const visibleTransactionGroups = useMemo(() => groupTransactionsByDate(visibleTransactions), [visibleTransactions]);
   const remainingTransactionCount = Math.max(0, transactions.length - visibleTransactions.length);
   const selectedTransaction = useMemo(
     () => transactions.find((transaction) => getTransactionId(transaction) === selectedTransactionId) || null,
@@ -192,27 +196,49 @@ export function TransactionList({
   return (
     <div className="transaction-list-layout">
       <div className="transaction-list-panel">
-        <div className="transaction-ledger" role="table" aria-label="Transactions">
-          <div className="transaction-ledger-header" role="row">
-            <span role="columnheader">Date</span>
-            <span role="columnheader">Merchant</span>
-            <span role="columnheader">Category</span>
-            <span role="columnheader">Account</span>
-            <span role="columnheader">Amount</span>
-            <span aria-hidden="true" />
-          </div>
-          {visibleTransactions.map((transaction) => {
-            const transactionId = getTransactionId(transaction);
+        <div className={`transaction-ledger ${groupByDate ? "grouped" : ""}`} role="table" aria-label="Transactions">
+          {!groupByDate && (
+            <div className="transaction-ledger-header" role="row">
+              <span role="columnheader">Date</span>
+              <span role="columnheader">Merchant</span>
+              <span role="columnheader">Category</span>
+              <span role="columnheader">Account</span>
+              <span role="columnheader">Amount</span>
+            </div>
+          )}
+          {groupByDate
+            ? visibleTransactionGroups.map((group) => (
+              <div className="transaction-date-group" key={group.date} role="rowgroup">
+                <div className="transaction-date-group-heading" role="row">
+                  <span role="cell">{formatTransactionDateHeading(group.date)}</span>
+                </div>
+                {group.transactions.map((transaction) => {
+                  const transactionId = getTransactionId(transaction);
 
-            return (
-              <TransactionRow
-                categoryColors={categoryColors}
-                key={transactionId}
-                onOpenDetails={openDetails}
-                transaction={transaction}
-              />
-            );
-          })}
+                  return (
+                    <TransactionRow
+                      categoryColors={categoryColors}
+                      key={transactionId}
+                      onOpenDetails={openDetails}
+                      showDate={false}
+                      transaction={transaction}
+                    />
+                  );
+                })}
+              </div>
+            ))
+            : visibleTransactions.map((transaction) => {
+              const transactionId = getTransactionId(transaction);
+
+              return (
+                <TransactionRow
+                  categoryColors={categoryColors}
+                  key={transactionId}
+                  onOpenDetails={openDetails}
+                  transaction={transaction}
+                />
+              );
+            })}
         </div>
         {(remainingTransactionCount > 0 || hasMore) && (
           <div className="transaction-load-actions" ref={loadSentinelRef}>
@@ -291,12 +317,14 @@ export function TransactionDetailsOverlay({
 type TransactionRowProps = {
   categoryColors: Record<string, string>;
   onOpenDetails: (transactionId: string) => void;
+  showDate?: boolean;
   transaction: Transaction;
 };
 
 const TransactionRow = memo(function TransactionRow({
   categoryColors,
   onOpenDetails,
+  showDate = true,
   transaction
 }: TransactionRowProps) {
   const transactionId = getTransactionId(transaction);
@@ -305,7 +333,7 @@ const TransactionRow = memo(function TransactionRow({
 
   return (
     <button className="transaction-ledger-row" data-testid="transaction-row" onClick={openDetails} role="row" type="button">
-      <span className="transaction-ledger-date" role="cell">{row.date}</span>
+      {showDate && <span className="transaction-ledger-date" role="cell">{row.date}</span>}
       <span className="transaction-ledger-merchant" role="cell">
         <span className="transaction-merchant-avatar" style={row.colorStyle}>{row.initial}</span>
         <span className="transaction-merchant-copy">
@@ -315,7 +343,7 @@ const TransactionRow = memo(function TransactionRow({
             <span aria-hidden="true" />
             {row.category}
           </span>
-          <small className="transaction-mobile-row-meta">{row.date} · {row.account}</small>
+          <small className="transaction-mobile-row-meta">{showDate ? `${row.date} · ${row.account}` : row.account}</small>
         </span>
       </span>
       <span className="transaction-category-chip transaction-desktop-category-cell" role="cell" style={row.colorStyle}>
@@ -327,7 +355,6 @@ const TransactionRow = memo(function TransactionRow({
         {row.account}
       </span>
       <strong className={`transaction-ledger-amount ${row.valueTone}`} role="cell">{row.amount}</strong>
-      <ChevronRight aria-hidden="true" className="transaction-ledger-chevron h-4 w-4" />
     </button>
   );
 });

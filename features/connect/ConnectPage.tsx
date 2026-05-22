@@ -1,9 +1,10 @@
 import type { ChangeEvent, SubmitEvent } from "react";
-import { CheckCircle2, LogOut } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { FlowStep } from "@/components/ui/flow-step";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
+import { DisconnectButton } from "@/components/ui/disconnect-button";
 import type { AkahuManualTokens } from "@/hooks/useAkahuConnection";
 
 type ConnectPageProps = {
@@ -98,10 +99,9 @@ export function ConnectPage({
                 {syncResult}
               </p>
             )}
-            <Button className="w-fit" disabled={isLoadingTransactions} onClick={() => void disconnectAkahuConnection()} type="button" variant="secondary">
-              <LogOut aria-hidden="true" className="h-4 w-4" />
+            <DisconnectButton className="w-fit" disabled={isLoadingTransactions} onClick={() => void disconnectAkahuConnection()}>
               Disconnect Akahu
-            </Button>
+            </DisconnectButton>
           </div>
         ) : (
           <>

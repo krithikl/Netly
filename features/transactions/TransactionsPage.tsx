@@ -141,6 +141,7 @@ export function TransactionsPage({
     () => getVisibleTransactions(searchDateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
     [query, searchDateRangeTransactions, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
   );
+  const shouldGroupTransactionsByDate = transactionSort === "Newest" || transactionSort === "Oldest";
   const shouldShowListLoading = isLoadingTransactions && (!hasLoadedActiveDateRange || transactions.length === 0);
   const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionAccounts, transactionCategory);
@@ -282,6 +283,7 @@ export function TransactionsPage({
           dateRange={activeSearchDateRange}
           emptyMessage="No transactions match the current search."
           hasMoreTransactions={hasMoreTransactions}
+          groupByDate={shouldGroupTransactionsByDate}
           isLoadingAllTransactions={isLoadingAllTransactions}
           isLoadingMoreTransactions={isLoadingMoreTransactions}
           isLoadingTransactions={shouldShowListLoading}
@@ -423,6 +425,7 @@ export function TransactionsPage({
           editable
           categorySelectOptions={editableCategorySelectOptions}
           emptyMessage={transactionLoadNotice ? "No transactions found for this period." : "No transactions match the current filters."}
+          groupByDate={shouldGroupTransactionsByDate}
           onCategoryChange={onCategoryChange}
           hasMore={hasMoreTransactions}
           isLoading={shouldShowListLoading}
@@ -1120,6 +1123,7 @@ type MobileTransactionSearchViewProps = {
   categorySelectOptions: SelectOption[];
   dateRange: TransactionDateRange;
   emptyMessage: string;
+  groupByDate: boolean;
   hasMoreTransactions: boolean;
   isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
@@ -1144,6 +1148,7 @@ function MobileTransactionSearchView({
   categorySelectOptions,
   dateRange,
   emptyMessage,
+  groupByDate,
   hasMoreTransactions,
   isLoadingAllTransactions,
   isLoadingMoreTransactions,
@@ -1202,6 +1207,7 @@ function MobileTransactionSearchView({
         categorySelectOptions={categorySelectOptions}
         editable
         emptyMessage={emptyMessage}
+        groupByDate={groupByDate}
         hasMore={hasMoreTransactions}
         isLoading={isLoadingTransactions}
         isLoadingAll={isLoadingAllTransactions}

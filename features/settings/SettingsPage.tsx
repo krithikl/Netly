@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Check, ChevronDown, ChevronRight, CloudDownload, CloudUpload, FolderClock, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
+import { DisconnectButton } from "@/components/ui/disconnect-button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -431,9 +432,9 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
       </div>
       {canDisconnectDriveBackup && (
         <div className="col-span-full flex flex-wrap gap-2.5">
-          <Button disabled={isBusy} onClick={onDisconnect} type="button" variant="secondary">
-            Disconnect
-          </Button>
+          <DisconnectButton disabled={isBusy} onClick={onDisconnect}>
+            Disconnect Google Drive
+          </DisconnectButton>
         </div>
       )}
       <BackupPanel

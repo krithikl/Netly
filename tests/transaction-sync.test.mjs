@@ -6,6 +6,10 @@ import {
   getNewestTransactionDate,
   incrementalTransactionOverlapDays
 } from "../lib/app/transaction-sync.ts";
+import {
+  formatTransactionDateHeading,
+  groupTransactionsByDate
+} from "../lib/transaction-date-groups.ts";
 
 const visibleRange = {
   from: "2026-05-01",
@@ -34,6 +38,37 @@ test("newest archived transaction date fails loud on malformed dates", () => {
     () => getNewestTransactionDate([getTransaction("txn-bad", "not-a-date")]),
     /Invalid archived transaction date/
   );
+});
+
+test("transaction date headings include the year only outside the current year", () => {
+  const now = new Date("2026-05-22T12:00:00");
+
+  assert.equal(formatTransactionDateHeading("2026-05-22", now), "Friday, 22 May");
+  assert.equal(formatTransactionDateHeading("2025-10-31", now), "Friday, 31 October 2025");
+  assert.throws(() => formatTransactionDateHeading("2026-02-31", now), /Invalid transaction date/);
+  assert.throws(() => formatTransactionDateHeading("not-a-date", now), /Expected YYYY-MM-DD/);
+});
+
+test("transaction date grouping preserves the incoming transaction order", () => {
+  assert.deepEqual(groupTransactionsByDate([
+    getTransaction("txn-a", "2026-05-22"),
+    getTransaction("txn-b", "2026-05-22"),
+    getTransaction("txn-c", "2026-05-21"),
+    getTransaction("txn-d", "2026-05-22")
+  ]), [
+    {
+      date: "2026-05-22",
+      transactions: [getTransaction("txn-a", "2026-05-22"), getTransaction("txn-b", "2026-05-22")]
+    },
+    {
+      date: "2026-05-21",
+      transactions: [getTransaction("txn-c", "2026-05-21")]
+    },
+    {
+      date: "2026-05-22",
+      transactions: [getTransaction("txn-d", "2026-05-22")]
+    }
+  ]);
 });
 
 test("lifecycle refresh runs on launch only", async () => {
@@ -157,6 +192,37 @@ test("Transactions page receives the dedicated date-range transaction set", asyn
   assert.match(transactionsSource, /transaction-list-review-shortcut/);
 });
 
+test("transaction lists use date groups without chevrons for date-sorted views", async () => {
+  const transactionListSource = await readFile(new URL("../features/transactions/TransactionList.tsx", import.meta.url), "utf8");
+  const transactionsSource = await readFile(new URL("../features/transactions/TransactionsPage.tsx", import.meta.url), "utf8");
+  const recentSource = await readFile(new URL("../features/home/RecentActivityStrip.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.doesNotMatch(transactionListSource, /ChevronRight|transaction-ledger-chevron/);
+  assert.match(transactionListSource, /groupTransactionsByDate/);
+  assert.match(transactionListSource, /formatTransactionDateHeading/);
+  assert.match(transactionsSource, /shouldGroupTransactionsByDate = transactionSort === "Newest" \|\| transactionSort === "Oldest"/);
+  assert.match(transactionsSource, /groupByDate=\{shouldGroupTransactionsByDate\}/);
+  assert.match(recentSource, /groupTransactionsByDate/);
+  assert.match(recentSource, /formatTransactionDateHeading/);
+  assert.doesNotMatch(recentSource, /formatRelativeDate/);
+  assert.match(css, /grid-template-columns: minmax\(0, 1fr\) auto/);
+  assert.match(css, /\.transaction-date-group-heading/);
+  assert.match(css, /\.home-recent-date-heading/);
+});
+
+test("unavailable saved default accounts do not hide the active data source", async () => {
+  const appSource = await readFile(new URL("../hooks/useNetlyApp.ts", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(appSource, /getAvailableDefaultAccountId/);
+  assert.match(appSource, /defaultAccountId: activeDefaultAccountId/);
+  assert.match(appSource, /filterTransactionsByDefaultAccount\(workingTransactions, activeDefaultAccountId\)/);
+  assert.match(appSource, /accountOptions\.some\(\(account\) => account\.value === defaultAccountId\)/);
+  assert.match(css, /\.transaction-month-metric strong[\s\S]*?font-weight: 760/);
+  assert.match(css, /\.transaction-month-metric-label[\s\S]*?font-weight: 760/);
+});
+
 test("transaction details include pending and booked lifecycle timing", async () => {
   const displaySource = await readFile(new URL("../lib/transaction-display.ts", import.meta.url), "utf8");
   const clientSource = await readFile(new URL("../lib/akahu/client.ts", import.meta.url), "utf8");
@@ -228,6 +294,14 @@ test("selected mobile controls use the subtle selected chip treatment", async ()
   assert.match(css, /\.calendar-range-start \.calendar-day-button[\s\S]*?background: var\(--selected-chip-bg\) !important/);
 });
 
+test("transaction month rail keeps hover transparent and uses a fixed bottom underline", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(css, /--transaction-month-active-line-width: min\(84px, calc\(100% - 10px\)\)/);
+  assert.doesNotMatch(css, /\.transaction-month-rail button:hover[^{]*\{[^}]*background:/);
+  assert.match(css, /\.transaction-month-rail button\.active::after[\s\S]*?bottom: 0;[\s\S]*?width: var\(--transaction-month-active-line-width\)/);
+});
+
 test("income category settings live in Categories and use the shared category selector", async () => {
   const settingsSource = await readFile(new URL("../features/settings/SettingsPage.tsx", import.meta.url), "utf8");
 
@@ -250,6 +324,18 @@ test("settings default account uses the styled select component", async () => {
   assert.match(settingsSource, /__all_accounts__/);
   assert.doesNotMatch(settingsSource, /value: ""/);
   assert.match(selectFieldSource, /<SelectContent position="popper">/);
+});
+
+test("external service disconnect buttons share the danger action component", async () => {
+  const connectSource = await readFile(new URL("../features/connect/ConnectPage.tsx", import.meta.url), "utf8");
+  const settingsSource = await readFile(new URL("../features/settings/SettingsPage.tsx", import.meta.url), "utf8");
+  const disconnectButtonSource = await readFile(new URL("../components/ui/disconnect-button.tsx", import.meta.url), "utf8");
+
+  assert.match(connectSource, /<DisconnectButton[\s\S]*?Disconnect Akahu[\s\S]*?<\/DisconnectButton>/);
+  assert.match(settingsSource, /<DisconnectButton[\s\S]*?Disconnect Google Drive[\s\S]*?<\/DisconnectButton>/);
+  assert.match(disconnectButtonSource, /LogOut/);
+  assert.match(disconnectButtonSource, /bg-\[rgba\(255,125,145,0\.14\)\]/);
+  assert.match(disconnectButtonSource, /border-\[rgba\(255,125,145,0\.38\)\]/);
 });
 
 function getTransaction(id, date) {

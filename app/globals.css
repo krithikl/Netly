@@ -810,7 +810,7 @@ h2 {
 .transaction-ledger-header,
 .transaction-ledger-row {
   display: grid;
-  grid-template-columns: minmax(88px, 0.7fr) minmax(178px, 1.7fr) minmax(112px, 0.88fr) minmax(112px, 0.82fr) minmax(82px, 0.62fr) 14px;
+  grid-template-columns: minmax(88px, 0.7fr) minmax(178px, 1.7fr) minmax(112px, 0.88fr) minmax(112px, 0.82fr) minmax(82px, 0.62fr);
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -849,8 +849,7 @@ h2 {
   outline-offset: -2px;
 }
 
-.transaction-ledger-date,
-.transaction-ledger-chevron {
+.transaction-ledger-date {
   color: var(--muted);
 }
 
@@ -954,8 +953,46 @@ h2 {
   white-space: nowrap;
 }
 
-.transaction-ledger-chevron {
-  justify-self: end;
+.transaction-ledger.grouped {
+  gap: 10px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.transaction-date-group {
+  display: grid;
+  gap: 6px;
+  background: transparent;
+}
+
+.transaction-date-group-heading {
+  padding: 4px 4px 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.transaction-ledger.grouped .transaction-ledger-row {
+  grid-template-columns: minmax(178px, 1.8fr) minmax(112px, 0.9fr) minmax(112px, 0.84fr) minmax(82px, 0.64fr);
+  border: 1px solid var(--outline-soft);
+  border-radius: 16px;
+}
+
+.home-recent-date-group {
+  display: grid;
+  gap: 8px;
+}
+
+.home-recent-date-heading {
+  margin: 2px 2px 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 850;
+  line-height: 1.2;
 }
 
 .chart-panel .legend-list {
@@ -1625,6 +1662,8 @@ h2 {
 }
 
 .transaction-month-rail {
+  --transaction-month-active-line-width: min(84px, calc(100% - 10px));
+
   display: block;
   width: 100%;
   max-width: 100%;
@@ -1668,8 +1707,12 @@ h2 {
 
 .transaction-month-rail button:hover,
 .transaction-month-rail button:focus-visible {
-  background: var(--surface-2);
   color: var(--ink);
+}
+
+.transaction-month-rail button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
 }
 
 .transaction-month-label {
@@ -1705,8 +1748,8 @@ h2 {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 4px;
-  width: 28px;
+  bottom: 0;
+  width: var(--transaction-month-active-line-width);
   height: 3px;
   border-radius: 999px;
   background: var(--primary);
@@ -1735,7 +1778,7 @@ h2 {
 .transaction-month-metric-label {
   color: var(--muted);
   font-size: 0.78rem;
-  font-weight: 850;
+  font-weight: 760;
   text-transform: uppercase;
 }
 
@@ -1746,7 +1789,7 @@ h2 {
 .transaction-month-metric strong {
   overflow: hidden;
   font-size: clamp(1.35rem, 2.2vw, 2.15rem);
-  font-weight: 950;
+  font-weight: 760;
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3206,10 +3249,10 @@ h2 {
   }
 
   .transaction-ledger-row {
-    grid-template-columns: 40px minmax(0, 1fr) auto 16px;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "merchant merchant amount chevron"
-      "merchant merchant amount chevron";
+      "merchant amount"
+      "merchant amount";
     gap: 6px 10px;
     min-height: 88px;
     border: 0;
@@ -3217,6 +3260,15 @@ h2 {
     border-radius: 18px;
     padding: 12px;
     background: var(--surface);
+  }
+
+  .transaction-ledger.grouped .transaction-ledger-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .transaction-date-group-heading {
+    padding: 6px 2px 0;
+    font-size: 0.94rem;
   }
 
   .transaction-ledger-row:first-of-type {
@@ -3244,7 +3296,7 @@ h2 {
   }
 
   .transaction-merchant-copy strong {
-    font-size: 1rem;
+    font-size: 0.95rem;
     line-height: 1.2;
   }
 
@@ -3261,14 +3313,9 @@ h2 {
   .transaction-ledger-amount {
     grid-area: amount;
     align-self: center;
-    font-size: 1.34rem;
+    font-size: 1.18rem;
     font-weight: 950;
     line-height: 1;
-  }
-
-  .transaction-ledger-chevron {
-    grid-area: chevron;
-    align-self: center;
   }
 
   .category-create-row {
@@ -4543,7 +4590,7 @@ body {
     justify-content: center;
     color: var(--muted);
     font-size: 0.98rem;
-    font-weight: 950;
+    font-weight: 760;
     line-height: 1;
   }
 

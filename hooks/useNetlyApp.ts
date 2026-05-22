@@ -65,6 +65,14 @@ export function useNetlyApp() {
     () => applyCategoryPreferences(categorySourceTransactions, categories.categoryOverrides, categories.categoryRules),
     [categories.categoryOverrides, categories.categoryRules, categorySourceTransactions]
   );
+  const accountOptions = useMemo(
+    () => getTransactionAccountOptions(banking.linkedAccounts, workingTransactions),
+    [banking.linkedAccounts, workingTransactions]
+  );
+  const activeDefaultAccountId = useMemo(
+    () => getAvailableDefaultAccountId(defaultAccountId, accountOptions),
+    [accountOptions, defaultAccountId]
+  );
   const refreshTransactionPageRange = useCallback((dateRange = transactionPageDateRange) => {
     setTransactionPageDateRange(dateRange);
     banking.refreshTransactionPage(banking.dataMode, dateRange).catch((error: unknown) => {
@@ -94,7 +102,7 @@ export function useNetlyApp() {
   }, [banking.restoreArchivedTransactions, categories.restoreCategorySettings, categories.settingsCategoryOptions, dashboardPeriodSettings.restoreDashboardPeriod, paydaySettings.restorePaydaySettings, transactionPageDateRange]);
   const driveBackup = useDriveBackup(restoreSettingsFromStorage);
   const activeDashboardPeriod = isBottomNavigation ? dashboardPeriodSettings.dashboardPeriod : period;
-  const reportingTransactions = useMemo(() => filterTransactionsByDefaultAccount(workingTransactions, defaultAccountId), [defaultAccountId, workingTransactions]);
+  const reportingTransactions = useMemo(() => filterTransactionsByDefaultAccount(workingTransactions, activeDefaultAccountId), [activeDefaultAccountId, workingTransactions]);
   const periodTransactions = useMemo(() => filterTransactionsByPeriod(reportingTransactions, activeDashboardPeriod), [activeDashboardPeriod, reportingTransactions]);
   const budgetMonthTransactions = useMemo(() => filterTransactionsByDateRange(reportingTransactions, getThisMonthDateRange()), [reportingTransactions]);
   const recurringTransactions = useMemo(() => filterTransactionsByPeriod(reportingTransactions, "90 days"), [reportingTransactions]);
@@ -226,10 +234,6 @@ export function useNetlyApp() {
     window.localStorage.setItem(incomeIncludedCategoriesStorageKey, JSON.stringify(nextCategories));
   }, []);
   const linkedUserName = getLinkedUserName(banking.primaryLinkedAccount, banking.dataMode);
-  const accountOptions = useMemo(
-    () => getTransactionAccountOptions(banking.linkedAccounts, workingTransactions),
-    [banking.linkedAccounts, workingTransactions]
-  );
   const shouldShowPeriodControl = (activeView === "home" || activeView === "budgets") && !isBottomNavigation;
   return {
     shell: {
@@ -331,7 +335,7 @@ export function useNetlyApp() {
         accountOptions,
         categoryColors: categories.categoryColors,
         categoryOptions: categories.transactionCategoryOptions,
-        defaultAccountId,
+        defaultAccountId: activeDefaultAccountId,
         hasMoreTransactions: Boolean(banking.transactionPageNextCursor),
         initialDateRange: transactionPageDateRange,
         incomeIncludedCategories,
@@ -385,6 +389,15 @@ function filterTransactionsByDefaultAccount(transactions: ReturnType<typeof appl
   }
 
   return transactions.filter((transaction) => transaction._account === defaultAccountId);
+}
+
+// Ignores a saved default account when the active data source does not expose it.
+function getAvailableDefaultAccountId(defaultAccountId: string, accountOptions: ReturnType<typeof getTransactionAccountOptions>) {
+  if (!defaultAccountId) {
+    return "";
+  }
+
+  return accountOptions.some((account) => account.value === defaultAccountId) ? defaultAccountId : "";
 }
 
 // Keeps only configured income categories in summaries without hiding rows.

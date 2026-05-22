@@ -5,6 +5,11 @@ import {
   getTransactionCategory as getEffectiveTransactionCategory,
   transactionNeedsReview as getEffectiveTransactionNeedsReview
 } from "@/lib/category-rules";
+export {
+  formatTransactionDateHeading,
+  groupTransactionsByDate,
+  type TransactionDateGroup
+} from "@/lib/transaction-date-groups";
 
 export type TransactionStatus = "Booked" | "Pending";
 

@@ -495,23 +495,23 @@ function TransactionMonthOverview({
   const activeDate = parseInputDate(activeDateRange.from) || new Date();
   const activeMonthKey = getMonthKey(activeDate);
   const activeMonthIndex = monthOptions.findIndex((option) => option.monthKey === activeMonthKey);
-  const activeMonthStartIndex = getMonthCarouselStartIndex(activeMonthIndex, monthOptions.length);
+  const activeMonthSnapIndex = getMonthCarouselSnapIndex(activeMonthIndex);
   const [monthEmblaRef, monthEmblaApi] = useEmblaCarousel({
-    align: "start",
+    align: "center",
     containScroll: "trimSnaps",
     dragFree: true,
     slidesToScroll: 1,
-    startIndex: activeMonthStartIndex
+    startIndex: activeMonthSnapIndex
   });
   const shouldCenterSelectedMonthImmediatelyRef = useRef(false);
 
   useEffect(() => {
-    if (monthEmblaApi && activeMonthStartIndex >= 0) {
-      monthEmblaApi.scrollTo(activeMonthStartIndex, shouldCenterSelectedMonthImmediatelyRef.current);
+    if (monthEmblaApi && activeMonthSnapIndex >= 0) {
+      monthEmblaApi.scrollTo(activeMonthSnapIndex, shouldCenterSelectedMonthImmediatelyRef.current);
     }
 
     shouldCenterSelectedMonthImmediatelyRef.current = false;
-  }, [activeMonthStartIndex, monthEmblaApi]);
+  }, [activeMonthSnapIndex, monthEmblaApi]);
   const selectCarouselMonth = (monthDate: Date) => {
     shouldCenterSelectedMonthImmediatelyRef.current = true;
     onMonthSelect(monthDate);
@@ -1009,13 +1009,13 @@ function getEarliestTransactionMonth(transactions: Transaction[]): Date | null {
   return earliestMonth;
 }
 
-// Moves Embla so the selected month lands in the middle visible slot.
-function getMonthCarouselStartIndex(activeMonthIndex: number, optionCount: number) {
+// Moves Embla so the selected month is centered with partial months at both edges.
+function getMonthCarouselSnapIndex(activeMonthIndex: number) {
   if (activeMonthIndex < 0) {
     return 0;
   }
 
-  return Math.min(Math.max(activeMonthIndex - 2, 0), Math.max(optionCount - 5, 0));
+  return Math.max(activeMonthIndex - 1, 0);
 }
 
 // Selects adjacent months only when they are represented in the carousel bounds.

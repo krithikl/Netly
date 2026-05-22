@@ -4519,7 +4519,7 @@ body {
   }
 
   .transaction-month-slide {
-    flex-basis: 20%;
+    flex-basis: 25%;
   }
 
   .transaction-month-rail button {
@@ -4563,13 +4563,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: -4px 12px 0;
+    margin: -4px 22px 0;
     gap: clamp(6px, 2vw, 10px);
-    min-height: 30px;
-    border: 0;
-    border-radius: 0;
-    padding: 0;
-    background: transparent;
+    min-height: 34px;
+    border: 1px solid var(--outline-soft);
+    border-radius: 12px;
+    padding: 7px 10px;
+    background: var(--surface-2);
   }
 
   .transaction-month-metric {

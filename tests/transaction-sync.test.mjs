@@ -211,6 +211,18 @@ test("transaction lists use date groups without chevrons for date-sorted views",
   assert.match(css, /\.home-recent-date-heading/);
 });
 
+test("mobile transaction month rail centers the active month and keeps summary inset", async () => {
+  const transactionsSource = await readFile(new URL("../features/transactions/TransactionsPage.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(transactionsSource, /align: "center"/);
+  assert.match(transactionsSource, /getMonthCarouselSnapIndex/);
+  assert.match(transactionsSource, /Math\.max\(activeMonthIndex - 1, 0\)/);
+  assert.doesNotMatch(transactionsSource, /optionCount - 4/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-slide \{[\s\S]*?flex-basis: 25%/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-summary[\s\S]*?margin: -4px 22px 0;[\s\S]*?border-radius: 12px;[\s\S]*?background: var\(--surface-2\)/);
+});
+
 test("unavailable saved default accounts do not hide the active data source", async () => {
   const appSource = await readFile(new URL("../hooks/useNetlyApp.ts", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
@@ -268,7 +280,7 @@ test("Home and budget visual regressions keep the compact mobile layout intact",
   assert.match(css, /\.chart-panel \.legend-list[\s\S]*?overflow: hidden/);
   assert.match(css, /\.legend-row[\s\S]*?overflow: hidden/);
   assert.match(css, /\.legend-topline strong[\s\S]*?text-overflow: ellipsis/);
-  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-summary[\s\S]*?display: flex;[\s\S]*?justify-content: space-between;[\s\S]*?margin: -4px 12px 0;[\s\S]*?background: transparent/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-summary[\s\S]*?display: flex;[\s\S]*?justify-content: space-between/);
   assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-metric strong[\s\S]*?font-size: clamp\(0\.8rem, 3\.6vw, 0\.9rem\);[\s\S]*?font-weight: 680/);
   assert.match(css, /\.topbar h1,\s*\.mobile-page-header h2[\s\S]*?color: var\(--accent-cream\)/);
   assert.match(css, /\.hero-payday-pill[\s\S]*?margin-top: 4px/);

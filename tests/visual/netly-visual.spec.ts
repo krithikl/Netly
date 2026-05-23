@@ -81,6 +81,72 @@ test("high-risk CSS selectors keep expected computed styles", async ({ page }, t
   expect(JSON.stringify(probe, null, 2)).toMatchSnapshot(`computed-styles-${testInfo.project.name}.json`);
 });
 
+test("Akahu freshness leaves refreshing state before bounded transaction timestamp polling completes", async ({ page }) => {
+  await page.unroute("**/api/akahu/accounts?source=user");
+  await page.unroute("**/api/akahu/transactions?source=user**");
+  await page.unroute("**/api/akahu/refresh");
+
+  let accountCalls = 0;
+  let refreshCalls = 0;
+  let transactionCalls = 0;
+
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    accountCalls += 1;
+    const payload = accountCalls >= 3
+      ? getConnectedAccountPayload({
+          balanceRefreshedAt: "2026-05-23T10:14:00.000Z",
+          transactionsRefreshedAt: "2026-05-23T10:18:00.000Z"
+        })
+      : accountCalls === 2
+        ? getConnectedAccountPayload({
+            balanceRefreshedAt: "2026-05-23T10:14:00.000Z",
+            transactionsRefreshedAt: "2026-05-23T10:13:00.000Z"
+          })
+        : getConnectedAccountPayload({
+            balanceRefreshedAt: "2026-05-23T10:13:00.000Z",
+            transactionsRefreshedAt: "2026-05-23T10:13:00.000Z"
+          });
+
+    await route.fulfill({ contentType: "application/json", json: payload });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    refreshCalls += 1;
+    await page.waitForTimeout(300);
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        connected: true,
+        notice: "Akahu refresh accepted.",
+        requestedAt: "2026-05-23T10:14:05.000Z"
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    transactionCalls += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 0,
+        nextCursor: null,
+        transactions: []
+      }
+    });
+  });
+
+  await page.goto("/settings");
+
+  await expect(page.getByText("Refreshing", { exact: true })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("Current", { exact: true })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("Refreshing", { exact: true })).not.toBeVisible();
+  await expect.poll(() => transactionCalls, { timeout: 8000 }).toBeGreaterThanOrEqual(2);
+
+  expect(refreshCalls).toBe(1);
+});
+
 // Waits for the app shell to finish rendering before screenshots or probes run.
 async function waitForStableApp(page: import("@playwright/test").Page) {
   await page.waitForLoadState("networkidle");
@@ -135,6 +201,49 @@ async function mockDisconnectedAkahu(page: import("@playwright/test").Page) {
       }
     });
   });
+}
+
+// Builds a connected Akahu account payload with explicit freshness timestamps.
+function getConnectedAccountPayload({
+  balanceRefreshedAt,
+  transactionsRefreshedAt
+}: {
+  balanceRefreshedAt: string;
+  transactionsRefreshedAt: string;
+}) {
+  return {
+    source: "akahu",
+    connected: true,
+    availableBalance: 1234.56,
+    accounts: [
+      {
+        id: "acc-main",
+        name: "Everyday",
+        formattedAccount: "00-0000-0000000-00",
+        balance: 1234.56
+      }
+    ],
+    accountFreshness: [
+      {
+        accountId: "acc-main",
+        displayName: "Everyday",
+        status: "ready",
+        balanceRefreshedAt,
+        transactionsRefreshedAt
+      }
+    ],
+    balanceRefreshedAt,
+    isStale: false,
+    manualRefreshCooldownMs: 900000,
+    primaryAccount: {
+      id: "acc-main",
+      name: "Everyday",
+      formattedAccount: "00-0000-0000000-00",
+      balance: 1234.56
+    },
+    retrievedAt: balanceRefreshedAt,
+    transactionsRefreshedAt
+  };
 }
 
 // Captures a focused computed-style snapshot for selectors with known cascade risk.

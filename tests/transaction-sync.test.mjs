@@ -166,11 +166,15 @@ test("launch sync requests Akahu refresh before incremental transaction fetch", 
   assert.match(source, /requestManualRefresh: true/);
   assert.match(source, /console\.info\("Akahu refresh endpoint completed\."/);
   assert.match(source, /pollAccountsUntilTransactionsRefresh/);
+  assert.match(source, /pollAndResyncAfterAkahuRefresh/);
   assert.match(source, /akahuRefreshStillProcessingNotice/);
   assert.doesNotMatch(source, /setTransactionLoadNotice\(refreshPayload\.notice|Akahu refresh requested\. Loading updated transactions/);
   assert.doesNotMatch(source, /lastAkahuManualRefreshStorageKey|canRequestManualRefresh|recordManualRefreshRequestedAt/);
   assert.match(source, /await loadAndApplyAccountSnapshot\(mode, isCurrentRequest, accountSetters, \{ requestManualRefresh: true \}\)[\s\S]*?await syncVisibleAkahuTransactionsToArchive/);
-  assert.match(source, /applyAccountSnapshot\("user", payload, "refreshing", setters\)[\s\S]*?hasRefreshTimestampAdvanced\(baselinePayload\.transactionsRefreshedAt, payload\.transactionsRefreshedAt/);
+  assert.match(source, /void pollAndResyncAfterAkahuRefresh\(/);
+  assert.match(source, /shouldPollForTransactionFreshness/);
+  assert.doesNotMatch(source, /applyAccountSnapshot\("user", payload, "refreshing", setters\)/);
+  assert.match(source, /applyAccountSnapshot\("user", payload, "refreshed", setters\)[\s\S]*?hasRefreshTimestampAdvanced\(baselinePayload\.transactionsRefreshedAt, payload\.transactionsRefreshedAt/);
   assert.match(source, /timedOut: true/);
 });
 

@@ -181,13 +181,14 @@ export function useAkahuData() {
       };
 
       if (mode === "user") {
-        await loadAndApplyAccountSnapshot(mode, isCurrentRequest, accountSetters, { requestManualRefresh: true });
+        const manualRefreshResult = await loadAndApplyAccountSnapshot(mode, isCurrentRequest, accountSetters, { requestManualRefresh: true });
 
         if (!isCurrentRequest()) {
           return;
         }
 
-        const syncResult = shouldLoadFullTransactionHistory || options.forceFullSync
+        const shouldSyncFullHistory = shouldLoadFullTransactionHistory || options.forceFullSync;
+        const syncResult = shouldSyncFullHistory
           ? await syncAllAkahuTransactionsToArchive(dateRange)
           : await syncVisibleAkahuTransactionsToArchive(incrementalDateRange, dateRange);
 
@@ -204,6 +205,25 @@ export function useAkahuData() {
         }
         setTransactionLoadError("");
         setTransactionLoadNotice("notice" in syncResult ? syncResult.notice || "" : "");
+
+        if (manualRefreshResult?.shouldPollForTransactionFreshness) {
+          void pollAndResyncAfterAkahuRefresh({
+            accountSetters,
+            baselinePayload: manualRefreshResult.baselinePayload,
+            isCurrentRequest,
+            latestPayload: manualRefreshResult.latestPayload,
+            pageDateRange: dateRange,
+            setIsConnected,
+            setTransactionLoadError,
+            setTransactionLoadNotice,
+            setTransactionPageLoadedDateRange,
+            setTransactionPageNextCursor,
+            setTransactionPageTransactions,
+            setTransactions,
+            shouldSyncFullHistory,
+            syncDateRange: incrementalDateRange
+          });
+        }
         return;
       }
 
@@ -466,23 +486,46 @@ type AccountRefreshPollingResult = {
   timedOut: boolean;
 };
 
+type ManualRefreshResult = {
+  baselinePayload: AccountsPayload;
+  latestPayload: AccountsPayload;
+  shouldPollForTransactionFreshness: boolean;
+};
+
+type PostRefreshPollingOptions = {
+  accountSetters: AccountSnapshotStateSetters;
+  baselinePayload: AccountsPayload;
+  isCurrentRequest: () => boolean;
+  latestPayload: AccountsPayload;
+  pageDateRange: TransactionDateRange | undefined;
+  setIsConnected: (isConnected: boolean) => void;
+  setTransactionLoadError: (error: string) => void;
+  setTransactionLoadNotice: (notice: string) => void;
+  setTransactionPageLoadedDateRange: (dateRange: TransactionDateRange | null) => void;
+  setTransactionPageNextCursor: (nextCursor: string | null) => void;
+  setTransactionPageTransactions: (transactions: Transaction[]) => void;
+  setTransactions: (transactions: Transaction[]) => void;
+  shouldSyncFullHistory: boolean | undefined;
+  syncDateRange: TransactionDateRange | undefined;
+};
+
 // Loads account data and optionally requests a manual Akahu refresh for launch syncs.
 async function loadAndApplyAccountSnapshot(
   mode: DataMode,
   isCurrentRequest: () => boolean,
   setters: AccountSnapshotStateSetters,
   options: { requestManualRefresh?: boolean } = {}
-) {
+): Promise<ManualRefreshResult | null> {
   const accountsPayload = await loadAccountsPayload(mode);
 
   if (!isCurrentRequest()) {
-    return;
+    return null;
   }
 
   applyAccountSnapshot(mode, accountsPayload, "refreshed", setters);
 
   if (mode !== "user" || !accountsPayload.connected || !options.requestManualRefresh) {
-    return;
+    return null;
   }
 
   setters.setAkahuDataFreshness(getFreshnessState(accountsPayload, "refreshing"));
@@ -503,24 +546,31 @@ async function loadAndApplyAccountSnapshot(
   }
 
   if (!isCurrentRequest()) {
-    return;
+    return null;
   }
 
   console.info("Akahu refresh endpoint completed.", {
     notice: refreshPayload.notice || "",
     requestedAt: refreshPayload.requestedAt || ""
   });
-  const pollingResult = await pollAccountsUntilTransactionsRefresh(accountsPayload, isCurrentRequest, setters);
 
-  if (!pollingResult || !isCurrentRequest()) {
-    return;
+  const refreshedAccountsPayload = await loadAccountsPayload(mode);
+
+  if (!isCurrentRequest()) {
+    return null;
   }
 
-  applyAccountSnapshot(mode, pollingResult.payload, "refreshed", setters);
+  applyAccountSnapshot(mode, refreshedAccountsPayload, "refreshed", setters);
 
-  if (pollingResult.timedOut) {
-    setters.setTransactionLoadNotice(akahuRefreshStillProcessingNotice);
-  }
+  return {
+    baselinePayload: accountsPayload,
+    latestPayload: refreshedAccountsPayload,
+    shouldPollForTransactionFreshness: !hasRefreshTimestampAdvanced(
+      accountsPayload.transactionsRefreshedAt,
+      refreshedAccountsPayload.transactionsRefreshedAt,
+      "transactionsRefreshedAt"
+    )
+  };
 }
 
 // Applies the Akahu account snapshot to balance, account labels, and freshness state.
@@ -566,11 +616,12 @@ async function loadAccountsPayload(mode: DataMode) {
 // Polls Akahu account freshness until transactions advance or the bounded window ends.
 async function pollAccountsUntilTransactionsRefresh(
   baselinePayload: AccountsPayload,
+  latestPayload: AccountsPayload,
   isCurrentRequest: () => boolean,
   setters: AccountSnapshotStateSetters
 ): Promise<AccountRefreshPollingResult | null> {
   const deadline = Date.now() + akahuRefreshPollingTimeoutMs;
-  let latestPayload = baselinePayload;
+  let currentPayload = latestPayload;
 
   while (isCurrentRequest()) {
     try {
@@ -580,8 +631,8 @@ async function pollAccountsUntilTransactionsRefresh(
         return null;
       }
 
-      latestPayload = payload;
-      applyAccountSnapshot("user", payload, "refreshing", setters);
+      currentPayload = payload;
+      applyAccountSnapshot("user", payload, "refreshed", setters);
 
       if (hasRefreshTimestampAdvanced(baselinePayload.transactionsRefreshedAt, payload.transactionsRefreshedAt, "transactionsRefreshedAt")) {
         return {
@@ -592,7 +643,7 @@ async function pollAccountsUntilTransactionsRefresh(
     } catch (error) {
       if (isCurrentRequest()) {
         setters.setAkahuDataFreshness({
-          ...getFreshnessState(latestPayload, "failed"),
+          ...getFreshnessState(currentPayload, "failed"),
           error: error instanceof Error ? error.message : "Could not poll Akahu account refresh."
         });
       }
@@ -604,7 +655,7 @@ async function pollAccountsUntilTransactionsRefresh(
 
     if (remainingMs <= 0) {
       return {
-        payload: latestPayload,
+        payload: currentPayload,
         timedOut: true
       };
     }
@@ -613,6 +664,55 @@ async function pollAccountsUntilTransactionsRefresh(
   }
 
   return null;
+}
+
+// Continues a bounded Akahu freshness poll after the visible transaction sync has completed.
+async function pollAndResyncAfterAkahuRefresh(options: PostRefreshPollingOptions) {
+  try {
+    const pollingResult = await pollAccountsUntilTransactionsRefresh(
+      options.baselinePayload,
+      options.latestPayload,
+      options.isCurrentRequest,
+      options.accountSetters
+    );
+
+    if (!pollingResult || !options.isCurrentRequest()) {
+      return;
+    }
+
+    applyAccountSnapshot("user", pollingResult.payload, "refreshed", options.accountSetters);
+
+    if (pollingResult.timedOut) {
+      options.setTransactionLoadNotice(akahuRefreshStillProcessingNotice);
+      return;
+    }
+
+    const syncResult = options.shouldSyncFullHistory
+      ? await syncAllAkahuTransactionsToArchive(options.pageDateRange)
+      : await syncVisibleAkahuTransactionsToArchive(options.syncDateRange, options.pageDateRange);
+
+    if (!options.isCurrentRequest()) {
+      return;
+    }
+
+    options.setTransactions(syncResult.archivedTransactions);
+    options.setTransactionPageTransactions(syncResult.archivedTransactionPageTransactions);
+    options.setTransactionPageLoadedDateRange(options.pageDateRange || null);
+    options.setTransactionPageNextCursor("nextCursor" in syncResult ? syncResult.nextCursor : null);
+    if (syncResult.connected) {
+      options.setIsConnected(true);
+    }
+    options.setTransactionLoadError("");
+    options.setTransactionLoadNotice("notice" in syncResult ? syncResult.notice || "" : "");
+  } catch (error) {
+    if (!options.isCurrentRequest()) {
+      return;
+    }
+
+    const message = error instanceof Error ? error.message : "Could not finish Akahu refresh polling.";
+    options.setTransactionLoadError(message);
+    toast.error(message);
+  }
 }
 
 // Calls Akahu's manual refresh route and fails loudly if it is rejected.

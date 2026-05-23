@@ -2,7 +2,6 @@
 
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import { akahuRefreshPollingIntervalMs, akahuRefreshPollingTimeoutMs, akahuRefreshStillProcessingNotice, hasRefreshTimestampAdvanced } from "@/lib/app/akahu-refresh-polling";
 import { archiveAndMergeTransactions, markArchiveIncrementalTransactionSynced, readArchivedAccountSnapshot, readArchivedTransactions, writeArchivedAccountSnapshot } from "@/lib/app/transaction-archive";
 import { getIncrementalTransactionSyncRange } from "@/lib/app/transaction-sync";
 import { currentBalance as fallbackBalance, transactions as fallbackTransactions } from "@/lib/mock-data";
@@ -44,6 +43,10 @@ type RefreshPayload = {
 type RefreshTransactionsOptions = {
   forceFullSync?: boolean;
 };
+
+const akahuRefreshPollingIntervalMs = 5 * 1000;
+const akahuRefreshPollingTimeoutMs = 60 * 1000;
+const akahuRefreshStillProcessingNotice = "Akahu accepted the refresh request, but transaction updates are still processing. Try again shortly if the latest transactions are not visible.";
 
 const emptyAkahuDataFreshness: AkahuDataFreshness = {
   accounts: [],
@@ -206,10 +209,9 @@ export function useAkahuData() {
         setTransactionLoadError("");
         setTransactionLoadNotice("notice" in syncResult ? syncResult.notice || "" : "");
 
-        if (manualRefreshResult?.shouldPollForTransactionFreshness) {
+        if (manualRefreshResult?.shouldPollForFreshness) {
           void pollAndResyncAfterAkahuRefresh({
             accountSetters,
-            baselinePayload: manualRefreshResult.baselinePayload,
             isCurrentRequest,
             latestPayload: manualRefreshResult.latestPayload,
             pageDateRange: dateRange,
@@ -487,14 +489,12 @@ type AccountRefreshPollingResult = {
 };
 
 type ManualRefreshResult = {
-  baselinePayload: AccountsPayload;
   latestPayload: AccountsPayload;
-  shouldPollForTransactionFreshness: boolean;
+  shouldPollForFreshness: boolean;
 };
 
 type PostRefreshPollingOptions = {
   accountSetters: AccountSnapshotStateSetters;
-  baselinePayload: AccountsPayload;
   isCurrentRequest: () => boolean;
   latestPayload: AccountsPayload;
   pageDateRange: TransactionDateRange | undefined;
@@ -509,7 +509,7 @@ type PostRefreshPollingOptions = {
   syncDateRange: TransactionDateRange | undefined;
 };
 
-// Loads account data and optionally requests a manual Akahu refresh for launch syncs.
+// Loads account data and optionally requests an on-demand Akahu refresh for launch syncs.
 async function loadAndApplyAccountSnapshot(
   mode: DataMode,
   isCurrentRequest: () => boolean,
@@ -524,7 +524,7 @@ async function loadAndApplyAccountSnapshot(
 
   applyAccountSnapshot(mode, accountsPayload, "refreshed", setters);
 
-  if (mode !== "user" || !accountsPayload.connected || !options.requestManualRefresh) {
+  if (mode !== "user" || !accountsPayload.connected || !options.requestManualRefresh || !accountsPayload.isStale) {
     return null;
   }
 
@@ -560,16 +560,11 @@ async function loadAndApplyAccountSnapshot(
     return null;
   }
 
-  applyAccountSnapshot(mode, refreshedAccountsPayload, "refreshed", setters);
+  applyAccountSnapshot(mode, refreshedAccountsPayload, refreshedAccountsPayload.isStale ? "refreshing" : "refreshed", setters);
 
   return {
-    baselinePayload: accountsPayload,
     latestPayload: refreshedAccountsPayload,
-    shouldPollForTransactionFreshness: !hasRefreshTimestampAdvanced(
-      accountsPayload.transactionsRefreshedAt,
-      refreshedAccountsPayload.transactionsRefreshedAt,
-      "transactionsRefreshedAt"
-    )
+    shouldPollForFreshness: refreshedAccountsPayload.isStale
   };
 }
 
@@ -613,9 +608,8 @@ async function loadAccountsPayload(mode: DataMode) {
   return payload;
 }
 
-// Polls Akahu account freshness until transactions advance or the bounded window ends.
-async function pollAccountsUntilTransactionsRefresh(
-  baselinePayload: AccountsPayload,
+// Polls Akahu account freshness until both balance and transaction timestamps are current.
+async function pollAccountsUntilFresh(
   latestPayload: AccountsPayload,
   isCurrentRequest: () => boolean,
   setters: AccountSnapshotStateSetters
@@ -632,14 +626,15 @@ async function pollAccountsUntilTransactionsRefresh(
       }
 
       currentPayload = payload;
-      applyAccountSnapshot("user", payload, "refreshed", setters);
 
-      if (hasRefreshTimestampAdvanced(baselinePayload.transactionsRefreshedAt, payload.transactionsRefreshedAt, "transactionsRefreshedAt")) {
+      if (!payload.isStale) {
         return {
           payload,
           timedOut: false
         };
       }
+
+      applyAccountSnapshot("user", payload, "refreshing", setters);
     } catch (error) {
       if (isCurrentRequest()) {
         setters.setAkahuDataFreshness({
@@ -669,8 +664,7 @@ async function pollAccountsUntilTransactionsRefresh(
 // Continues a bounded Akahu freshness poll after the visible transaction sync has completed.
 async function pollAndResyncAfterAkahuRefresh(options: PostRefreshPollingOptions) {
   try {
-    const pollingResult = await pollAccountsUntilTransactionsRefresh(
-      options.baselinePayload,
+    const pollingResult = await pollAccountsUntilFresh(
       options.latestPayload,
       options.isCurrentRequest,
       options.accountSetters
@@ -715,7 +709,7 @@ async function pollAndResyncAfterAkahuRefresh(options: PostRefreshPollingOptions
   }
 }
 
-// Calls Akahu's manual refresh route and fails loudly if it is rejected.
+// Calls Akahu's on-demand refresh route and fails loudly if it is rejected.
 async function requestAkahuRefresh() {
   const response = await fetch("/api/akahu/refresh", { method: "POST" });
   const payload = await readJsonResponse<RefreshPayload>(response, "Akahu refresh");

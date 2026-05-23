@@ -3,7 +3,6 @@ import { getAvailableBalance, toAccountDataFreshness, toLinkedAccount, type Akah
 import { createAkahuProviderFromEnv } from "@/lib/akahu/provider";
 import { getMissingAkahuCredentialsNotice, getValidAccessToken } from "@/lib/akahu/token";
 
-const staleDataThresholdMs = 12 * 60 * 60 * 1000;
 const personalAppManualRefreshCooldownMs = 60 * 60 * 1000;
 const fullAppManualRefreshCooldownMs = 15 * 60 * 1000;
 const demoAccounts: AkahuAccount[] = [
@@ -128,13 +127,14 @@ function getDemoAccountSnapshotPayload(accounts: AkahuAccount[]) {
 // Builds the account snapshot fields shared by demo and Akahu user mode.
 function getAccountSnapshotPayload(accounts: AkahuAccount[]) {
   const accountFreshness = accounts.map(toAccountDataFreshness);
+  const manualRefreshCooldownMs = getManualRefreshCooldownMs();
 
   return {
     availableBalance: getAvailableBalance(accounts),
     accountFreshness,
     balanceRefreshedAt: getOldestTimestamp(accountFreshness.map((account) => account.balanceRefreshedAt)),
-    isStale: hasStaleTimestamp(accountFreshness),
-    manualRefreshCooldownMs: getManualRefreshCooldownMs(),
+    isStale: hasStaleTimestamp(accountFreshness, manualRefreshCooldownMs),
+    manualRefreshCooldownMs,
     retrievedAt: new Date().toISOString(),
     transactionsRefreshedAt: getOldestTimestamp(accountFreshness.map((account) => account.transactionsRefreshedAt))
   };
@@ -164,13 +164,13 @@ function getOldestTimestamp(values: Array<string | null>) {
   return new Date(Math.min(...timestamps)).toISOString();
 }
 
-// Treats missing or old Akahu refresh metadata as stale so the UI can surface it.
-function hasStaleTimestamp(accounts: ReturnType<typeof toAccountDataFreshness>[]) {
+// Treats missing or cooldown-expired Akahu refresh metadata as stale so the UI can surface it.
+function hasStaleTimestamp(accounts: ReturnType<typeof toAccountDataFreshness>[], refreshCooldownMs: number) {
   if (accounts.length === 0) {
     return false;
   }
 
-  const staleCutoff = Date.now() - staleDataThresholdMs;
+  const staleCutoff = Date.now() - refreshCooldownMs;
 
   return accounts.some((account) => {
     return isMissingOrStale(account.balanceRefreshedAt, staleCutoff)
@@ -187,7 +187,7 @@ function isMissingOrStale(value: string | null, staleCutoff: number) {
   const timestamp = Date.parse(value);
 
   if (!Number.isFinite(timestamp)) {
-    return true;
+    throw new Error(`Invalid Akahu refresh timestamp "${value}".`);
   }
 
   return timestamp < staleCutoff;

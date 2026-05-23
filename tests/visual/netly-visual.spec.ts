@@ -81,31 +81,45 @@ test("high-risk CSS selectors keep expected computed styles", async ({ page }, t
   expect(JSON.stringify(probe, null, 2)).toMatchSnapshot(`computed-styles-${testInfo.project.name}.json`);
 });
 
-test("Akahu freshness leaves refreshing state before bounded transaction timestamp polling completes", async ({ page }) => {
+test("Akahu freshness stays refreshing until balance and transaction timestamps advance", async ({ page }) => {
   await page.unroute("**/api/akahu/accounts?source=user");
   await page.unroute("**/api/akahu/transactions?source=user**");
   await page.unroute("**/api/akahu/refresh");
 
   let accountCalls = 0;
+  let releaseFinalAccountSnapshot: (() => void) | null = null;
   let refreshCalls = 0;
   let transactionCalls = 0;
 
   await page.route("**/api/akahu/accounts?source=user", async (route) => {
     accountCalls += 1;
-    const payload = accountCalls >= 3
-      ? getConnectedAccountPayload({
-          balanceRefreshedAt: "2026-05-23T10:14:00.000Z",
-          transactionsRefreshedAt: "2026-05-23T10:18:00.000Z"
+
+    if (accountCalls >= 3) {
+      await new Promise<void>((resolve) => {
+        releaseFinalAccountSnapshot = resolve;
+      });
+      await route.fulfill({
+        contentType: "application/json",
+        json: getConnectedAccountPayload({
+          balanceRefreshedAt: "2020-01-01T10:14:00.000Z",
+          isStale: false,
+          transactionsRefreshedAt: "2020-01-01T10:18:00.000Z"
         })
-      : accountCalls === 2
-        ? getConnectedAccountPayload({
-            balanceRefreshedAt: "2026-05-23T10:14:00.000Z",
-            transactionsRefreshedAt: "2026-05-23T10:13:00.000Z"
-          })
-        : getConnectedAccountPayload({
-            balanceRefreshedAt: "2026-05-23T10:13:00.000Z",
-            transactionsRefreshedAt: "2026-05-23T10:13:00.000Z"
-          });
+      });
+      return;
+    }
+
+    const payload = accountCalls === 2
+      ? getConnectedAccountPayload({
+          balanceRefreshedAt: "2020-01-01T10:14:00.000Z",
+          isStale: true,
+          transactionsRefreshedAt: "2020-01-01T10:13:00.000Z"
+        })
+      : getConnectedAccountPayload({
+          balanceRefreshedAt: "2020-01-01T10:13:00.000Z",
+          isStale: true,
+          transactionsRefreshedAt: "2020-01-01T10:13:00.000Z"
+        });
 
     await route.fulfill({ contentType: "application/json", json: payload });
   });
@@ -140,11 +154,76 @@ test("Akahu freshness leaves refreshing state before bounded transaction timesta
   await page.goto("/settings");
 
   await expect(page.getByText("Refreshing", { exact: true })).toBeVisible({ timeout: 5000 });
+  await expect.poll(() => accountCalls, { timeout: 8000 }).toBe(3);
+  await expect.poll(() => transactionCalls, { timeout: 8000 }).toBe(1);
+  await expect(page.getByText("Current", { exact: true })).not.toBeVisible();
+  const releaseFinalSnapshot = releaseFinalAccountSnapshot as (() => void) | null;
+  if (!releaseFinalSnapshot) {
+    throw new Error("Final Akahu account snapshot request was not waiting.");
+  }
+  releaseFinalSnapshot();
   await expect(page.getByText("Current", { exact: true })).toBeVisible({ timeout: 5000 });
   await expect(page.getByText("Refreshing", { exact: true })).not.toBeVisible();
   await expect.poll(() => transactionCalls, { timeout: 8000 }).toBeGreaterThanOrEqual(2);
 
   expect(refreshCalls).toBe(1);
+});
+
+test("Akahu freshness skips refresh when timestamps are still fresh", async ({ page }) => {
+  await page.unroute("**/api/akahu/accounts?source=user");
+  await page.unroute("**/api/akahu/transactions?source=user**");
+  await page.unroute("**/api/akahu/refresh");
+
+  let accountCalls = 0;
+  let refreshCalls = 0;
+  let transactionCalls = 0;
+  const recentTimestamp = new Date().toISOString();
+
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    accountCalls += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      json: getConnectedAccountPayload({
+        balanceRefreshedAt: recentTimestamp,
+        isStale: false,
+        transactionsRefreshedAt: recentTimestamp
+      })
+    });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    refreshCalls += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        connected: true,
+        notice: "Akahu refresh accepted.",
+        requestedAt: new Date().toISOString()
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    transactionCalls += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 0,
+        nextCursor: null,
+        transactions: []
+      }
+    });
+  });
+
+  await page.goto("/settings");
+
+  await expect(page.getByText("Current", { exact: true })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("Refreshing", { exact: true })).not.toBeVisible();
+  expect(accountCalls).toBe(1);
+  expect(refreshCalls).toBe(0);
+  expect(transactionCalls).toBe(1);
 });
 
 // Waits for the app shell to finish rendering before screenshots or probes run.
@@ -206,9 +285,11 @@ async function mockDisconnectedAkahu(page: import("@playwright/test").Page) {
 // Builds a connected Akahu account payload with explicit freshness timestamps.
 function getConnectedAccountPayload({
   balanceRefreshedAt,
+  isStale = false,
   transactionsRefreshedAt
 }: {
   balanceRefreshedAt: string;
+  isStale?: boolean;
   transactionsRefreshedAt: string;
 }) {
   return {
@@ -233,7 +314,7 @@ function getConnectedAccountPayload({
       }
     ],
     balanceRefreshedAt,
-    isStale: false,
+    isStale,
     manualRefreshCooldownMs: 900000,
     primaryAccount: {
       id: "acc-main",

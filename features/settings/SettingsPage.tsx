@@ -912,7 +912,7 @@ function AkahuFreshnessCard({ dataMode, freshness }: AkahuFreshnessCardProps) {
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3.5 max-[768px]:grid-cols-1">
       <div>
         <h3 className="m-0 text-base font-black text-[var(--ink)]">Akahu data freshness</h3>
-        <p className="mt-1.5 text-[0.84rem] leading-[1.45] text-[var(--muted)]">{isDemoMode ? "Demo mode uses local sample data." : "Latest endpoint retrieval and Akahu account refresh timestamps."}</p>
+        <p className="mt-1.5 text-[0.84rem] leading-[1.45] text-[var(--muted)]">{isDemoMode ? "Demo mode uses local sample data." : "Last check by Netly and latest Akahu refresh times."}</p>
       </div>
       <span className={`settings-drive-status ${statusClassName} max-[768px]:w-fit`}>
         {statusLabel}
@@ -920,9 +920,9 @@ function AkahuFreshnessCard({ dataMode, freshness }: AkahuFreshnessCardProps) {
       {!isDemoMode && (
         <>
           <div className="col-span-full grid grid-cols-3 gap-2.5 max-[768px]:grid-cols-1" aria-live="polite">
-            <FreshnessMetric label="Retrieved from Akahu" value={formatAkahuFreshnessTime(freshness.retrievedAt)} />
-            <FreshnessMetric label="Balance data" value={formatAkahuFreshnessTime(freshness.balanceRefreshedAt)} />
-            <FreshnessMetric label="Transactions checked" value={formatAkahuFreshnessTime(freshness.transactionsRefreshedAt)} />
+            <FreshnessMetric label="Checked Akahu" value={formatAkahuFreshnessTime(freshness.retrievedAt)} />
+            <FreshnessMetric label="Balance refreshed" value={formatAkahuFreshnessTime(freshness.balanceRefreshedAt)} />
+            <FreshnessMetric label="Transactions refreshed" value={formatAkahuFreshnessTime(freshness.transactionsRefreshedAt)} />
           </div>
           {freshness.status === "failed" && freshness.error && (
             <p className="col-span-full mt-1.5 text-[0.84rem] font-extrabold leading-[1.45] text-[var(--danger)]">{freshness.error}</p>
@@ -935,8 +935,8 @@ function AkahuFreshnessCard({ dataMode, freshness }: AkahuFreshnessCardProps) {
                   <div className="rounded-[10px] border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3 py-2.5" key={account.accountId}>
                     <strong className="mb-1 block text-[0.84rem] text-[var(--ink)]">{account.displayName}</strong>
                     <span className="block text-[0.74rem] font-extrabold text-[var(--muted)]">{account.status}</span>
-                    <span className="block text-[0.74rem] font-extrabold text-[var(--muted)]">Balance {formatAkahuFreshnessTime(account.balanceRefreshedAt)}</span>
-                    <span className="block text-[0.74rem] font-extrabold text-[var(--muted)]">Transactions {formatAkahuFreshnessTime(account.transactionsRefreshedAt)}</span>
+                    <span className="block text-[0.74rem] font-extrabold text-[var(--muted)]">Balance refreshed {formatAkahuFreshnessTime(account.balanceRefreshedAt)}</span>
+                    <span className="block text-[0.74rem] font-extrabold text-[var(--muted)]">Transactions refreshed {formatAkahuFreshnessTime(account.transactionsRefreshedAt)}</span>
                   </div>
                 ))}
               </div>

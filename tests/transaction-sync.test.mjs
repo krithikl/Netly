@@ -7,11 +7,6 @@ import {
   incrementalTransactionOverlapDays
 } from "../lib/app/transaction-sync.ts";
 import {
-  akahuRefreshPollingIntervalMs,
-  akahuRefreshPollingTimeoutMs,
-  hasRefreshTimestampAdvanced
-} from "../lib/app/akahu-refresh-polling.ts";
-import {
   formatTransactionDateHeading,
   groupTransactionsByDate
 } from "../lib/transaction-date-groups.ts";
@@ -162,33 +157,34 @@ test("lifecycle refresh runs on launch only", async () => {
 
 test("launch sync requests Akahu refresh before incremental transaction fetch", async () => {
   const source = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+  const accountsRouteSource = await readFile(new URL("../app/api/akahu/accounts/route.ts", import.meta.url), "utf8");
 
   assert.match(source, /requestManualRefresh: true/);
+  assert.match(source, /!accountsPayload\.isStale/);
   assert.match(source, /console\.info\("Akahu refresh endpoint completed\."/);
-  assert.match(source, /pollAccountsUntilTransactionsRefresh/);
+  assert.match(source, /pollAccountsUntilFresh/);
   assert.match(source, /pollAndResyncAfterAkahuRefresh/);
   assert.match(source, /akahuRefreshStillProcessingNotice/);
   assert.doesNotMatch(source, /setTransactionLoadNotice\(refreshPayload\.notice|Akahu refresh requested\. Loading updated transactions/);
   assert.doesNotMatch(source, /lastAkahuManualRefreshStorageKey|canRequestManualRefresh|recordManualRefreshRequestedAt/);
   assert.match(source, /await loadAndApplyAccountSnapshot\(mode, isCurrentRequest, accountSetters, \{ requestManualRefresh: true \}\)[\s\S]*?await syncVisibleAkahuTransactionsToArchive/);
   assert.match(source, /void pollAndResyncAfterAkahuRefresh\(/);
-  assert.match(source, /shouldPollForTransactionFreshness/);
-  assert.doesNotMatch(source, /applyAccountSnapshot\("user", payload, "refreshing", setters\)/);
-  assert.match(source, /applyAccountSnapshot\("user", payload, "refreshed", setters\)[\s\S]*?hasRefreshTimestampAdvanced\(baselinePayload\.transactionsRefreshedAt, payload\.transactionsRefreshedAt/);
+  assert.match(source, /shouldPollForFreshness/);
+  assert.doesNotMatch(source, /shouldPollForTransactionFreshness|pollAccountsUntilTransactionsRefresh|hasRefreshTimestampAdvanced|haveRefreshTimestampsAdvanced/);
+  assert.match(source, /applyAccountSnapshot\(mode, refreshedAccountsPayload, refreshedAccountsPayload\.isStale \? "refreshing" : "refreshed", setters\)/);
+  assert.match(source, /shouldPollForFreshness: refreshedAccountsPayload\.isStale/);
+  assert.match(source, /if \(!payload\.isStale\)/);
+  assert.match(accountsRouteSource, /const manualRefreshCooldownMs = getManualRefreshCooldownMs\(\)/);
+  assert.match(accountsRouteSource, /isStale: hasStaleTimestamp\(accountFreshness, manualRefreshCooldownMs\)/);
+  assert.doesNotMatch(accountsRouteSource, /12 \* 60 \* 60 \* 1000|staleDataThresholdMs =/);
   assert.match(source, /timedOut: true/);
 });
 
-test("Akahu refresh polling uses bounded freshness timestamp rules", () => {
-  assert.equal(akahuRefreshPollingIntervalMs, 5000);
-  assert.equal(akahuRefreshPollingTimeoutMs, 60000);
-  assert.equal(hasRefreshTimestampAdvanced(null, "2026-05-22T09:13:00.000Z", "transactionsRefreshedAt"), true);
-  assert.equal(hasRefreshTimestampAdvanced("2026-05-22T09:13:00.000Z", "2026-05-22T09:13:00.000Z", "transactionsRefreshedAt"), false);
-  assert.equal(hasRefreshTimestampAdvanced("2026-05-22T09:13:00.000Z", "2026-05-22T09:14:00.000Z", "transactionsRefreshedAt"), true);
-  assert.equal(hasRefreshTimestampAdvanced("2026-05-22T09:13:00.000Z", null, "transactionsRefreshedAt"), false);
-  assert.throws(
-    () => hasRefreshTimestampAdvanced("not-a-date", "2026-05-22T09:14:00.000Z", "transactionsRefreshedAt"),
-    /Invalid Akahu transactionsRefreshedAt timestamp/
-  );
+test("Akahu refresh polling keeps bounded timing constants", async () => {
+  const source = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+
+  assert.match(source, /const akahuRefreshPollingIntervalMs = 5 \* 1000/);
+  assert.match(source, /const akahuRefreshPollingTimeoutMs = 60 \* 1000/);
 });
 
 test("Drive access token remains memory-only", async () => {

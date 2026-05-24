@@ -153,13 +153,16 @@ test("budget card opens category spending breakdown with donut chart", async ({ 
   await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Gifts" })).toHaveCount(0);
   await expect(foodBreakdown.locator(".budget-breakdown-chevron")).toHaveCount(0);
 
+  const chartTopBeforeExpansion = await page.locator(".budget-breakdown-chart").evaluate((element) => element.getBoundingClientRect().top);
   await foodBreakdown.locator(".budget-breakdown-row").click();
   await expect(page.getByTestId("budget-selected-category-indicator")).toBeVisible();
-  await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toHaveCount(0);
+  await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toContainText("1 transaction");
   await expect(page.locator(".budget-breakdown-dropdown")).toHaveCount(0);
+  await expect(page.locator("[data-testid='budget-category-transaction-expansion'][data-state='open']")).toBeVisible();
   await expect(page.getByTestId("budget-selected-transactions")).toContainText("food-1");
   await expect(page.getByTestId("budget-selected-transactions")).toContainText("food-2");
   await expect(page.getByTestId("budget-selected-transactions").locator(".transaction-ledger-row")).toHaveCount(2);
+  await expect.poll(async () => page.locator(".budget-breakdown-chart").evaluate((element) => element.getBoundingClientRect().top)).toBeCloseTo(chartTopBeforeExpansion, 1);
 
   await page.getByTestId("budget-selected-transactions").locator(".transaction-ledger-row").filter({ hasText: "food-1" }).click();
   await expect(page.getByTestId("transaction-details-drawer")).toBeVisible();
@@ -173,6 +176,77 @@ test("budget card opens category spending breakdown with donut chart", async ({ 
 
   await page.getByRole("button", { name: /Back to budgets/ }).click();
   await expect(page.getByTestId("budgets-page")).toBeVisible();
+});
+
+test("mobile transaction filter multi-selects stay inside dropdown menus", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "Mobile drawer behavior is covered in the mobile project.");
+
+  await routeBudgetBreakdownAkahu(page);
+  await page.goto("/transactions");
+  await waitForStableApp(page);
+
+  await page.getByLabel("Transaction actions").click();
+  await page.getByRole("button", { name: /^Filters/ }).click();
+  await expect(page.locator(".mobile-filter-drawer")).toBeVisible();
+  expect(await getOverflowProbe(page.locator(".mobile-filter-drawer-body"))).toEqual({
+    overflowY: "visible",
+    scrolls: false
+  });
+
+  await page.getByTestId("transaction-account-filter-trigger").click();
+  await expect(page.getByTestId("transaction-account-filter-options")).toBeVisible();
+  await page.getByTestId("transaction-account-filter-options").locator("button").nth(1).click();
+  await expect(page.getByTestId("transaction-account-filter-trigger")).not.toContainText("All accounts");
+
+  await page.getByTestId("transaction-category-filter-trigger").click();
+  await expect(page.getByTestId("transaction-category-filter-options")).toBeVisible();
+  await page.getByTestId("transaction-category-filter-options").getByRole("button", { name: "Food" }).click();
+  await expect(page.getByTestId("transaction-category-filter-trigger")).toContainText("Food");
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("transaction-category-filter-options")).toBeHidden();
+  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByLabel("Transaction actions").click();
+  await expect(page.getByRole("button", { name: "Filters (2)" })).toBeVisible();
+});
+
+test("mobile budget editor uses a compact category dropdown", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "Mobile drawer behavior is covered in the mobile project.");
+
+  await routeBudgetBreakdownAkahu(page);
+  await page.goto("/budgets");
+  await waitForStableApp(page);
+
+  await page.getByRole("button", { name: "Add budget" }).click();
+  await expect(page.locator(".budget-editor-drawer")).toBeVisible();
+  expect((await getOverflowProbe(page.locator(".budget-editor-drawer"))).overflowY).toBe("visible");
+
+  await expect(page.getByTestId("budget-category-multi-select-trigger")).toContainText("No categories selected");
+  await page.getByTestId("budget-category-multi-select-trigger").click();
+  await expect(page.getByTestId("budget-category-multi-select-content")).toBeVisible();
+  await page.getByTestId("budget-category-multi-select-content").getByRole("button", { name: "Food" }).click();
+  await expect(page.getByTestId("budget-category-multi-select-trigger")).toContainText("Food");
+
+  await page.getByRole("button", { name: "Save budget" }).click();
+  await expect(page.locator(".budget-progress-card").filter({ hasText: "Spending money" })).toBeVisible();
+});
+
+test("mobile settings category selectors use dropdown multi-selects", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "Mobile Settings category controls are covered in the mobile project.");
+
+  await routeBudgetBreakdownAkahu(page);
+  await page.goto("/settings");
+  await waitForStableApp(page);
+
+  await page.getByLabel("Income categories").click();
+  await expect(page.getByTestId("settings-income-category-options")).toBeVisible();
+  await page.getByTestId("settings-income-category-options").getByRole("button", { name: "Food" }).click();
+  await expect(page.getByLabel("Income categories")).not.toContainText("All categories");
+  await expect(page.locator(".settings-card-fit-drawer")).toHaveCount(0);
+
+  await page.keyboard.press("Escape");
+  await page.getByLabel("Card Fit categories").click();
+  await expect(page.getByTestId("settings-card-fit-category-options")).toBeVisible();
 });
 
 test("Akahu freshness stays refreshing until balance and transaction timestamps advance", async ({ page }) => {
@@ -430,6 +504,7 @@ async function routeBudgetBreakdownAkahu(page: import("@playwright/test").Page) 
 function getBudgetTransaction(id: string, category: string, amount: number) {
   return {
     _id: id,
+    _account: "acc-main",
     amount,
     category: {
       groups: {
@@ -440,7 +515,10 @@ function getBudgetTransaction(id: string, category: string, amount: number) {
       name: category
     },
     date: "2026-05-12",
-    description: id
+    description: id,
+    netly: {
+      accountName: "Everyday"
+    }
   };
 }
 
@@ -460,7 +538,13 @@ function getConnectedAccountPayload({
     availableBalance: 1234.56,
     accounts: [
       {
+        accountId: "acc-main",
+        accountSubType: "checking",
+        accountType: "bank",
         id: "acc-main",
+        currency: "NZD",
+        displayName: "Everyday",
+        identification: "00-0000-0000000-00",
         name: "Everyday",
         formattedAccount: "00-0000-0000000-00",
         balance: 1234.56
@@ -512,4 +596,16 @@ async function getComputedStyleProbe(page: import("@playwright/test").Page) {
     },
     { selectors: styleProbeSelectors, properties: styleProbeProperties }
   );
+}
+
+// Reports whether a drawer body is acting as the scroll container.
+async function getOverflowProbe(locator: import("@playwright/test").Locator) {
+  return locator.evaluate((element) => {
+    const style = window.getComputedStyle(element);
+
+    return {
+      overflowY: style.overflowY,
+      scrolls: element.scrollHeight > element.clientHeight + 1
+    };
+  });
 }

@@ -1586,54 +1586,6 @@ h2 {
   gap: 8px;
 }
 
-.settings-category-toggle-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.settings-category-toggle-grid button {
-  min-height: 36px;
-  border: 1px solid var(--outline-soft);
-  border-radius: 14px;
-  background: var(--surface-2);
-  color: var(--muted);
-  cursor: pointer;
-  padding: 8px 12px;
-  font-size: 0.82rem;
-  font-weight: 850;
-  transition:
-    border-color var(--motion-fast) var(--motion-ease),
-    background var(--motion-fast) var(--motion-ease),
-    color var(--motion-fast) var(--motion-ease);
-}
-
-.settings-category-toggle-grid button:hover {
-  border-color: var(--outline);
-  background: var(--surface-3);
-  color: var(--ink);
-}
-
-.settings-category-toggle-grid button.active:hover {
-  border-color: rgba(194, 164, 100, 0.48);
-  background: rgba(168, 139, 80, 0.18);
-  color: var(--accent-cream);
-}
-
-@media (hover: none) {
-  .settings-category-toggle-grid button:hover {
-    border-color: var(--outline-soft);
-    background: var(--surface-2);
-    color: var(--muted);
-  }
-
-  .settings-category-toggle-grid button.active:hover {
-    border-color: var(--selected-chip-border);
-    background: var(--selected-chip-bg);
-    color: var(--selected-chip-text);
-  }
-}
-
 .settings-drive-status {
   border: 1px solid var(--outline);
   border-radius: 999px;
@@ -2032,6 +1984,10 @@ h2 {
   overscroll-behavior: contain;
   padding: 8px;
   scrollbar-gutter: stable;
+}
+
+.category-multi-select-trigger {
+  min-width: 0;
 }
 
 .category-multi-select-content button {
@@ -2666,15 +2622,23 @@ h2 {
   white-space: nowrap;
 }
 
-.budget-progress-track {
+.budget-progress-shell {
   position: relative;
+  min-width: 0;
+}
+
+.budget-progress-track {
   height: 26px;
   min-width: 0;
   border-radius: 999px;
   background: #444;
 }
 
-.budget-progress-fill {
+.budget-progress-track [data-slot="progress-indicator"] {
+  background: var(--accent-cream);
+}
+
+.budget-progress-fill-label {
   position: absolute;
   inset-block: 0;
   left: 0;
@@ -2683,12 +2647,11 @@ h2 {
   place-items: center;
   overflow: hidden;
   border-radius: inherit;
-  background: var(--accent-cream);
   color: #6a4c2d;
-  transition: width var(--motion-medium) var(--motion-ease);
+  pointer-events: none;
 }
 
-.budget-progress-fill strong {
+.budget-progress-fill-label strong {
   font-size: 0.9rem;
   font-weight: 950;
   line-height: 1;
@@ -2778,7 +2741,7 @@ h2 {
 .budget-breakdown-panel {
   display: grid;
   grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   gap: 24px;
   min-width: 0;
 }
@@ -2786,6 +2749,7 @@ h2 {
 .budget-breakdown-chart {
   display: grid;
   min-height: 340px;
+  align-self: start;
   place-items: center;
 }
 
@@ -2803,6 +2767,76 @@ h2 {
   display: grid;
   gap: 10px;
   min-width: 0;
+}
+
+.budget-category-transaction-expansion {
+  min-width: 0;
+  overflow: hidden;
+  will-change: height;
+}
+
+.budget-category-transaction-expansion[data-state="open"] {
+  animation: budget-category-expand 360ms var(--motion-ease) both;
+}
+
+.budget-category-transaction-expansion[data-state="closed"] {
+  animation: budget-category-collapse 360ms var(--motion-ease) both;
+}
+
+.budget-category-transaction-expansion > div {
+  will-change: opacity, transform;
+}
+
+.budget-category-transaction-expansion[data-state="open"] > div {
+  animation: budget-category-content-in 360ms var(--motion-ease) both;
+}
+
+.budget-category-transaction-expansion[data-state="closed"] > div {
+  animation: budget-category-content-out 360ms var(--motion-ease) both;
+}
+
+@keyframes budget-category-expand {
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
+}
+
+@keyframes budget-category-collapse {
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+
+  to {
+    height: 0;
+  }
+}
+
+@keyframes budget-category-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes budget-category-content-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 .budget-breakdown-item {
@@ -2932,9 +2966,9 @@ h2 {
 
 .budget-editor-drawer {
   display: grid;
-  gap: 18px;
+  gap: 10px;
   max-height: min(88vh, 760px);
-  overflow: auto;
+  overflow: visible;
   border-color: var(--outline-soft);
   background: var(--surface);
   color: var(--ink);
@@ -2942,6 +2976,10 @@ h2 {
 
 .budget-editor-sheet {
   gap: 18px;
+}
+
+.budget-editor-drawer .mobile-filter-header.centered {
+  padding-bottom: 2px;
 }
 
 .budget-cadence-selector {
@@ -3006,35 +3044,13 @@ h2 {
   gap: 8px;
 }
 
-.budget-category-selector-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-height: min(32vh, 240px);
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.budget-category-selector button {
-  min-height: 34px;
-  border: 1px solid var(--outline-soft);
-  border-radius: 12px;
-  padding: 7px 10px;
+.budget-category-multi-select-trigger {
+  width: 100%;
   background: var(--surface-2);
-  color: var(--muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 850;
 }
 
-.budget-category-selector button:hover {
-  background: var(--surface-3);
-  color: var(--ink);
-}
-
-.budget-editor-sheet .budget-category-selector-options {
-  max-height: 220px;
+.budget-category-multi-select-content {
+  max-height: min(360px, calc(100vh - 120px));
 }
 
 .budget-recurring-panel {
@@ -3599,9 +3615,8 @@ h2 {
     min-height: 0;
     display: grid;
     gap: 20px;
-    overflow-y: auto;
+    overflow-y: visible;
     padding: 6px 16px 16px;
-    scrollbar-gutter: stable;
   }
 
   .mobile-filter-header {
@@ -3693,12 +3708,6 @@ h2 {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .mobile-filter-chips.category {
-    max-height: none;
-    overflow: visible;
-    padding-right: 4px;
   }
 
   .mobile-filter-chips button {
@@ -4978,7 +4987,7 @@ body {
     height: 28px;
   }
 
-  .budget-progress-fill strong {
+  .budget-progress-fill-label strong {
     font-size: 0.98rem;
   }
 
@@ -5111,7 +5120,7 @@ body {
   overflow: hidden;
 }
 
-.budget-progress-fill {
+.budget-progress-fill-label {
   max-width: 100%;
 }
 
@@ -5282,7 +5291,7 @@ body {
     font-size: 0.84rem;
   }
 
-  .budget-progress-fill strong {
+  .budget-progress-fill-label strong {
     font-size: 0.92rem;
   }
 }
@@ -5428,8 +5437,6 @@ body {
 .settings-period-options button.active,
 .mobile-filter-chips button.active,
 .transaction-filter-chip.active,
-.settings-category-toggle-grid button.active,
-.budget-category-selector button.active,
 .category-multi-select-content button.active {
   border-color: var(--selected-chip-border);
   background: var(--selected-chip-bg);

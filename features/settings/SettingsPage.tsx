@@ -42,7 +42,6 @@ import {
 } from "@/components/ui/sheet";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
-import { useCloseOnPageScroll } from "@/hooks/useCloseOnPageScroll";
 import { netlyPalette } from "@/lib/categories";
 import { categoriesMatch } from "@/lib/category-rules";
 import { periods } from "@/lib/app/constants";
@@ -745,7 +744,7 @@ type CategorySelectionSettingsProps = {
   title: string;
 };
 
-// Shared category multi-select with mobile drawer and desktop dropdown modes.
+// Shared category multi-select used by Settings category controls.
 function CategorySelectionSettings({
   availableCategories,
   drawerDescription,
@@ -754,7 +753,6 @@ function CategorySelectionSettings({
   onChange,
   title
 }: CategorySelectionSettingsProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const includedSet = new Set(includedCategories);
   const toggleCategory = (category: string) => {
     const nextCategories = includedSet.has(category)
@@ -765,51 +763,15 @@ function CategorySelectionSettings({
   };
   const summary = getCategorySelectionLabel(includedCategories, availableCategories, "All categories");
 
-  if (isMobile) {
-    return (
-      <div className="settings-category-selection">
-        <div>
-          <h3>{title}</h3>
-          <p>{drawerDescription}</p>
-        </div>
-        <SettingsNavigationButton description={summary} onClick={() => setMobileOpen(true)} title={title} />
-        <Drawer onOpenChange={setMobileOpen} open={mobileOpen}>
-          <DrawerContent className="mobile-filter-drawer settings-card-fit-drawer">
-            <DrawerHeader className="mobile-filter-header">
-              <DrawerTitle>{title}</DrawerTitle>
-              <DrawerDescription className="sr-only">{drawerDescription}</DrawerDescription>
-              <DrawerHeaderClose className="mobile-filter-close" />
-            </DrawerHeader>
-            <div className="settings-mobile-detail-body">
-              <div className="mobile-filter-section">
-                <div className="mobile-filter-chips category">
-                  {availableCategories.map((category) => (
-                    <button
-                      aria-pressed={includedSet.has(category)}
-                      className={includedSet.has(category) ? "active" : undefined}
-                      key={category}
-                      onClick={() => toggleCategory(category)}
-                      type="button"
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </div>
-    );
-  }
-
   return (
-    <div className="settings-card-fit settings-category-selection">
+    <div className={cn("settings-category-selection", !isMobile && "settings-card-fit")}>
       <div>
         <h3>{title}</h3>
         <p>{drawerDescription}</p>
       </div>
       <CategoryMultiSelectDropdown
+        ariaLabel={title}
+        contentTestId={getCategorySelectionTestId(title)}
         label={summary}
         onToggle={toggleCategory}
         options={availableCategories}
@@ -835,11 +797,15 @@ function CardFitCategorySettings({ availableCategories, includedCategories, isMo
 
 // Dropdown multi-select used by desktop Settings category controls.
 function CategoryMultiSelectDropdown({
+  ariaLabel,
+  contentTestId,
   label,
   onToggle,
   options,
   selectedValues
 }: {
+  ariaLabel: string;
+  contentTestId: string;
   label: string;
   onToggle: (category: string) => void;
   options: string[];
@@ -847,17 +813,16 @@ function CategoryMultiSelectDropdown({
 }) {
   const selectedSet = new Set(selectedValues);
   const [open, setOpen] = useState(false);
-  useCloseOnPageScroll(open, () => setOpen(false));
 
   return (
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
-        <button aria-haspopup="listbox" className="category-multi-select-trigger transaction-select-trigger" role="combobox" type="button">
+        <button aria-haspopup="listbox" aria-label={ariaLabel} className="category-multi-select-trigger transaction-select-trigger" role="combobox" type="button">
           <span>{label}</span>
           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="category-multi-select-content settings-category-multi-select-content">
+      <PopoverContent align="start" className="category-multi-select-content settings-category-multi-select-content" data-testid={contentTestId}>
         {options.map((option) => {
           const isActive = selectedSet.has(option);
 
@@ -879,6 +844,10 @@ function CategoryMultiSelectDropdown({
       </PopoverContent>
     </Popover>
   );
+}
+
+function getCategorySelectionTestId(title: string) {
+  return title === "Income categories" ? "settings-income-category-options" : "settings-card-fit-category-options";
 }
 
 function getCategorySelectionLabel(selectedValues: string[], options: string[], allLabel: string) {

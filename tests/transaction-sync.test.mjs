@@ -427,7 +427,7 @@ test("selected mobile controls use the subtle selected chip treatment", async ()
 
   assert.match(css, /--selected-chip-bg: rgba\(168, 139, 80, 0\.14\)/);
   assert.match(css, /\.mobile-nav \.nav-item\.active[\s\S]*?background: var\(--selected-chip-bg\)/);
-  assert.match(css, /\.budget-category-selector button\.active[\s\S]*?background: var\(--selected-chip-bg\)/);
+  assert.match(css, /\.category-multi-select-content button\.active[\s\S]*?background: var\(--selected-chip-bg\)/);
   assert.match(css, /\.calendar-range-start \.calendar-day-button[\s\S]*?background: var\(--selected-chip-bg\) !important/);
 });
 
@@ -450,7 +450,8 @@ test("income category settings live in Categories and use the shared category se
   assert.match(settingsSource, /title="Income categories"/);
   assert.match(settingsSource, /title="Card Fit categories"/);
   assert.doesNotMatch(settingsSource, /mobile-filter-description/);
-  assert.match(settingsSource, /<div className="settings-category-selection">[\s\S]*?<h3>\{title\}<\/h3>[\s\S]*?<p>\{drawerDescription\}<\/p>[\s\S]*?<SettingsNavigationButton/);
+  assert.doesNotMatch(settingsSource, /setMobileOpen|settings-card-fit-drawer/);
+  assert.match(settingsSource, /<div className=\{cn\("settings-category-selection"[\s\S]*?<h3>\{title\}<\/h3>[\s\S]*?<p>\{drawerDescription\}<\/p>[\s\S]*?<CategoryMultiSelectDropdown/);
   assert.match(settingsSource, /function CategorySelectionSettings/);
   assert.match(settingsSource, /function CardFitCategorySettings/);
 });

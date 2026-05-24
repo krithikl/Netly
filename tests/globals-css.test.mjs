@@ -58,3 +58,12 @@ test("globals CSS has no stale migration section or duplicate root-level selecto
 
   assert.deepEqual(duplicates, []);
 });
+
+test("budget category expansion uses matching open and close animation timing", async () => {
+  const source = await readFile(globalsCssUrl, "utf8");
+
+  assert.match(source, /\.budget-category-transaction-expansion\[data-state="open"\]\s*{\s*animation: budget-category-expand 360ms var\(--motion-ease\) both;/);
+  assert.match(source, /\.budget-category-transaction-expansion\[data-state="closed"\]\s*{\s*animation: budget-category-collapse 360ms var\(--motion-ease\) both;/);
+  assert.match(source, /\.budget-category-transaction-expansion\[data-state="open"\] > div\s*{\s*animation: budget-category-content-in 360ms var\(--motion-ease\) both;/);
+  assert.match(source, /\.budget-category-transaction-expansion\[data-state="closed"\] > div\s*{\s*animation: budget-category-content-out 360ms var\(--motion-ease\) both;/);
+});

@@ -1,14 +1,18 @@
 "use client";
 
 import { type ChangeEvent, type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { InfoRow } from "@/components/ui/info-row";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import { DonutChart } from "@/components/ui/donut-chart";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
 import { TransactionList } from "@/features/transactions/TransactionList";
 import type { SelectOption } from "@/components/ui/select-field";
+import { useCloseOnPageScroll } from "@/hooks/useCloseOnPageScroll";
 import {
   Drawer,
   DrawerContent,
@@ -301,12 +305,10 @@ function BudgetCard({
   const left = Math.max(0, budget.limit - spent);
   const remaining = budget.limit - spent;
   const progress = budget.limit > 0 ? (spent / budget.limit) * 100 : 0;
-  const progressWidth = Math.min(100, Math.max(0, progress));
   const budgetStatusLabel = remaining >= 0
     ? `${formatMoney(remaining, true)} left of ${formatMoney(budget.limit, true)}`
     : `${formatMoney(Math.abs(remaining), true)} over of ${formatMoney(budget.limit, true)}`;
   const budgetPeriod = getBudgetPeriod(budget.cadence, budget.periodAnchorDate);
-  const todayProgress = getBudgetPeriodProgress(budgetPeriod);
   const daysLeft = getBudgetDaysLeft(budgetPeriod);
   const dailyAmount = getDailyAmount(left, daysLeft);
   const openOnKeyboard = (event: KeyboardEvent<HTMLElement>) => {
@@ -336,18 +338,7 @@ function BudgetCard({
         </button>
       </div>
       <div className="budget-progress-body">
-        <div className="budget-period-row">
-          <span>{formatPeriodDate(budgetPeriod.startDate)}</span>
-          <div className="budget-progress-track">
-            <span className="budget-progress-fill" style={{ width: `${progressWidth}%` }}>
-              <strong>{Math.round(progress)}%</strong>
-            </span>
-            <span className="budget-today-marker" style={{ left: `${todayProgress}%` }}>
-              <small>Today</small>
-            </span>
-          </div>
-          <span>{formatPeriodDate(budgetPeriod.endDate)}</span>
-        </div>
+        <BudgetTimelineProgress budgetName={budget.name} budgetPeriod={budgetPeriod} progress={progress} />
         <p className="budget-daily-note">
           {remaining > 0 ? `You can spend ${formatMoney(dailyAmount, true)}/day for ${daysLeft} more days` : `${formatMoney(Math.abs(remaining), true)} over this month`}
         </p>
@@ -378,18 +369,11 @@ function BudgetDetailView({
   const left = Math.max(0, budget.limit - spent);
   const remaining = budget.limit - spent;
   const progress = budget.limit > 0 ? (spent / budget.limit) * 100 : 0;
-  const progressWidth = Math.min(100, Math.max(0, progress));
   const budgetPeriod = getBudgetPeriod(budget.cadence, budget.periodAnchorDate);
-  const todayProgress = getBudgetPeriodProgress(budgetPeriod);
   const daysLeft = getBudgetDaysLeft(budgetPeriod);
   const dailyAmount = getDailyAmount(left, daysLeft);
   const chartCategories = getBudgetChartCategories(breakdown);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const selectedBreakdown = useMemo(
-    () => selectedCategory ? breakdown.find((item) => item.category === selectedCategory) || null : null,
-    [breakdown, selectedCategory]
-  );
-  const visibleBreakdown = selectedBreakdown ? [selectedBreakdown] : breakdown;
 
   useEffect(() => {
     if (selectedCategory && !breakdown.some((item) => item.category === selectedCategory)) {
@@ -433,18 +417,7 @@ function BudgetDetailView({
             <p>{getBudgetStatusLabel(remaining, budget.limit)}</p>
           </div>
         </div>
-        <div className="budget-period-row">
-          <span>{formatPeriodDate(budgetPeriod.startDate)}</span>
-          <div className="budget-progress-track">
-            <span className="budget-progress-fill" style={{ width: `${progressWidth}%` }}>
-              <strong>{Math.round(progress)}%</strong>
-            </span>
-            <span className="budget-today-marker" style={{ left: `${todayProgress}%` }}>
-              <small>Today</small>
-            </span>
-          </div>
-          <span>{formatPeriodDate(budgetPeriod.endDate)}</span>
-        </div>
+        <BudgetTimelineProgress budgetName={budget.name} budgetPeriod={budgetPeriod} progress={progress} />
         <p className="budget-daily-note">
           {remaining > 0 ? `You can spend ${formatMoney(dailyAmount, true)}/day for ${daysLeft} more days` : `${formatMoney(Math.abs(remaining), true)} over this month`}
         </p>
@@ -464,7 +437,7 @@ function BudgetDetailView({
           <div className="empty-state">No spending found for this budget this month.</div>
         )}
         <div className="budget-breakdown-list">
-          {visibleBreakdown.map((item) => (
+          {breakdown.map((item) => (
             <div className="budget-breakdown-stack" key={item.category}>
               <BudgetBreakdownRow
                 categoryColors={categoryColors}
@@ -472,18 +445,80 @@ function BudgetDetailView({
                 item={item}
                 onToggle={() => selectCategory(item.category)}
               />
-              {selectedCategory === item.category && (
-                <BudgetCategoryTransactions
-                  categoryColors={categoryColors}
-                  categorySelectOptions={categorySelectOptions}
-                  onCategoryChange={onCategoryChange}
-                  transactions={item.transactions}
-                />
-              )}
+              <BudgetCategoryTransactionExpansion
+                categoryColors={categoryColors}
+                categorySelectOptions={categorySelectOptions}
+                isOpen={selectedCategory === item.category}
+                onCategoryChange={onCategoryChange}
+                transactions={item.transactions}
+              />
             </div>
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+// Uses Radix Collapsible state so the open and close transitions stay symmetric.
+function BudgetCategoryTransactionExpansion({
+  categoryColors,
+  categorySelectOptions,
+  isOpen,
+  onCategoryChange,
+  transactions
+}: {
+  categoryColors: Record<string, string>;
+  categorySelectOptions: SelectOption[];
+  isOpen: boolean;
+  onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
+  transactions: Transaction[];
+}) {
+  return (
+    <Collapsible open={isOpen}>
+      <CollapsibleContent
+        className="budget-category-transaction-expansion"
+        data-testid="budget-category-transaction-expansion"
+      >
+        <div>
+          <BudgetCategoryTransactions
+            categoryColors={categoryColors}
+            categorySelectOptions={categorySelectOptions}
+            onCategoryChange={onCategoryChange}
+            transactions={transactions}
+          />
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+// Timeline progress bar that keeps the spend amount and today marker together.
+function BudgetTimelineProgress({
+  budgetName,
+  budgetPeriod,
+  progress
+}: {
+  budgetName: string;
+  budgetPeriod: ReturnType<typeof getBudgetPeriod>;
+  progress: number;
+}) {
+  const progressWidth = Math.min(100, Math.max(0, progress));
+  const todayProgress = getBudgetPeriodProgress(budgetPeriod);
+
+  return (
+    <div className="budget-period-row">
+      <span>{formatPeriodDate(budgetPeriod.startDate)}</span>
+      <div className="budget-progress-shell">
+        <Progress aria-label={`${budgetName} budget progress`} className="budget-progress-track" value={progressWidth} />
+        <span className="budget-progress-fill-label" style={{ width: `${progressWidth}%` }}>
+          <strong>{Math.round(progress)}%</strong>
+        </span>
+        <span className="budget-today-marker" style={{ left: `${todayProgress}%` }}>
+          <small>Today</small>
+        </span>
+      </div>
+      <span>{formatPeriodDate(budgetPeriod.endDate)}</span>
     </div>
   );
 }
@@ -595,7 +630,7 @@ function BudgetEditor({
   };
 
   const formContent = (
-    <form className={cn("grid gap-3.5 overflow-auto", isMobileEditor ? "px-[18px] pb-[18px]" : "p-0")} onSubmit={onSubmit}>
+    <form className={cn("grid gap-3.5", isMobileEditor ? "px-[18px] pb-[18px]" : "p-0")} onSubmit={onSubmit}>
       <label className={budgetEditorLabelClassName}>
         Budget name
         <input className={budgetEditorInputClassName} autoComplete="off" onChange={changeName} placeholder="Spending money" value={form.name} />
@@ -632,19 +667,11 @@ function BudgetEditor({
             </Button>
           </div>
         </div>
-        <div className="budget-category-selector-options">
-          {availableCategoryOptions.map((category) => (
-            <button
-              aria-pressed={form.categoryNames.includes(category)}
-              className={form.categoryNames.includes(category) ? "active" : undefined}
-              key={category}
-              onClick={() => toggleCategory(category)}
-              type="button"
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        <BudgetCategoryMultiSelectDropdown
+          onToggle={toggleCategory}
+          options={availableCategoryOptions}
+          selectedValues={form.categoryNames}
+        />
       </section>
       <div className="flex justify-end gap-2.5 pt-1 max-[768px]:grid max-[768px]:grid-cols-1">
         {editingBudget && (
@@ -694,6 +721,53 @@ function BudgetEditor({
   );
 }
 
+// Compact dropdown for budget category multi-selects in sheets and drawers.
+function BudgetCategoryMultiSelectDropdown({
+  onToggle,
+  options,
+  selectedValues
+}: {
+  onToggle: (category: string) => void;
+  options: string[];
+  selectedValues: string[];
+}) {
+  const selectedSet = new Set(selectedValues);
+  const [open, setOpen] = useState(false);
+  const label = getCategorySelectionLabel(selectedValues, options, "All categories");
+  useCloseOnPageScroll(open, () => setOpen(false));
+
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger asChild>
+        <button aria-haspopup="listbox" aria-label="Budget categories" className="category-multi-select-trigger transaction-select-trigger budget-category-multi-select-trigger" data-testid="budget-category-multi-select-trigger" role="combobox" type="button">
+          <span>{label}</span>
+          <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="category-multi-select-content budget-category-multi-select-content" data-testid="budget-category-multi-select-content">
+        {options.map((option) => {
+          const isActive = selectedSet.has(option);
+
+          return (
+            <button
+              aria-pressed={isActive}
+              className={isActive ? "active" : undefined}
+              key={option}
+              onClick={() => onToggle(option)}
+              type="button"
+            >
+              <span className="category-multi-select-check">
+                {isActive && <Check aria-hidden="true" className="h-4 w-4" />}
+              </span>
+              <span>{option}</span>
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // Uses a true mobile cutoff so narrow desktop windows still get a side sheet.
 function useBudgetMobileEditor() {
   const [isMobileEditor, setIsMobileEditor] = useState(false);
@@ -739,6 +813,23 @@ function getSelectOptions(values: string[]): SelectOption[] {
     label: value,
     value
   }));
+}
+
+// Summarizes category multi-select state for compact trigger labels.
+function getCategorySelectionLabel(selectedValues: string[], options: string[], allLabel: string) {
+  if (selectedValues.length === 0) {
+    return "No categories selected";
+  }
+
+  if (selectedValues.length === options.length) {
+    return allLabel;
+  }
+
+  if (selectedValues.length === 1) {
+    return selectedValues[0];
+  }
+
+  return `${selectedValues.length} selected`;
 }
 
 // Creates the form state used for a new monthly budget.

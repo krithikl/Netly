@@ -1305,33 +1305,27 @@ function TransactionFilterDialog({
       </div>
       <div className="mobile-filter-section">
         <h3>Account</h3>
-        <div className="mobile-filter-chips category">
-          {getAccountFilterOptions(accountOptions).map((account) => (
-            <button
-              className={getFilterOptionIsActive(account.value, allAccountsValue, transactionAccounts) ? "active" : undefined}
-              key={account.value}
-              onClick={() => onAccountToggle(account.value)}
-              type="button"
-            >
-              {account.label}
-            </button>
-          ))}
-        </div>
+        <FilterMultiSelect
+          allLabel="All accounts"
+          allValue={allAccountsValue}
+          contentTestId="transaction-account-filter-options"
+          onToggle={onAccountToggle}
+          options={getAccountFilterOptions(accountOptions)}
+          selectedValues={transactionAccounts}
+          triggerTestId="transaction-account-filter-trigger"
+        />
       </div>
       <div className="mobile-filter-section">
         <h3>Category</h3>
-        <div className="mobile-filter-chips category">
-          {categoryOptions.map((category) => (
-            <button
-              className={getFilterOptionIsActive(category, "All categories", transactionCategory) ? "active" : undefined}
-              key={category}
-              onClick={() => onCategoryToggle(category)}
-              type="button"
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        <FilterMultiSelect
+          allLabel="All categories"
+          allValue="All categories"
+          contentTestId="transaction-category-filter-options"
+          onToggle={onCategoryToggle}
+          options={getCategoryFilterOptions(categoryOptions)}
+          selectedValues={transactionCategory}
+          triggerTestId="transaction-category-filter-trigger"
+        />
       </div>
     </div>
   );
@@ -1412,15 +1406,19 @@ const allAccountsValue = "__all_accounts__";
 function FilterMultiSelect({
   allLabel,
   allValue,
+  contentTestId,
   onToggle,
   options,
-  selectedValues
+  selectedValues,
+  triggerTestId
 }: {
   allLabel: string;
   allValue: string;
+  contentTestId?: string;
   onToggle: (value: string) => void;
   options: TransactionAccountOption[];
   selectedValues: string[];
+  triggerTestId?: string;
 }) {
   const label = getFilterMultiSelectLabel(selectedValues, options, allLabel);
   const [open, setOpen] = useState(false);
@@ -1429,12 +1427,12 @@ function FilterMultiSelect({
   return (
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
-        <button aria-haspopup="listbox" className="category-multi-select-trigger transaction-select-trigger" role="combobox" type="button">
+        <button aria-haspopup="listbox" className="category-multi-select-trigger transaction-select-trigger" data-testid={triggerTestId} role="combobox" type="button">
           <span>{label}</span>
           <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="category-multi-select-content">
+      <PopoverContent align="start" className="category-multi-select-content" data-testid={contentTestId}>
         {options.map((option) => {
           const isActive = getFilterOptionIsActive(option.value, allValue, selectedValues);
 

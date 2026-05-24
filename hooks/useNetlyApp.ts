@@ -104,10 +104,8 @@ export function useNetlyApp() {
   const activeDashboardPeriod = isBottomNavigation ? dashboardPeriodSettings.dashboardPeriod : period;
   const reportingTransactions = useMemo(() => filterTransactionsByDefaultAccount(workingTransactions, activeDefaultAccountId), [activeDefaultAccountId, workingTransactions]);
   const periodTransactions = useMemo(() => filterTransactionsByPeriod(reportingTransactions, activeDashboardPeriod), [activeDashboardPeriod, reportingTransactions]);
-  const budgetMonthTransactions = useMemo(() => filterTransactionsByDateRange(reportingTransactions, getThisMonthDateRange()), [reportingTransactions]);
   const recurringTransactions = useMemo(() => filterTransactionsByPeriod(reportingTransactions, "90 days"), [reportingTransactions]);
   const categoryTotals = useMemo(() => spendByCategory(periodTransactions), [periodTransactions]);
-  const budgetCategoryTotals = useMemo(() => spendByCategory(budgetMonthTransactions), [budgetMonthTransactions]);
 
   // Loads saved settings and the first data source when the app starts
   useEffect(() => {
@@ -255,10 +253,11 @@ export function useNetlyApp() {
       activeView,
       budgets: {
         categoryOptions: categories.settingsCategoryOptions,
-        categories: budgetCategoryTotals,
         categoryColors: categories.categoryColors,
+        onCategoryChange: updateTransactionCategoryAndSync,
         onRecurringClick: openRecurringTransactions,
-        recurring
+        recurring,
+        transactions: reportingTransactions
       },
       cards: {
         basis: cardFit.basis,

@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { DonutChart } from "@/features/home/DonutChart";
+import { DonutChart } from "@/components/ui/donut-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/insights";

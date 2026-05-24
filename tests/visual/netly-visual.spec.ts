@@ -81,6 +81,100 @@ test("high-risk CSS selectors keep expected computed styles", async ({ page }, t
   expect(JSON.stringify(probe, null, 2)).toMatchSnapshot(`computed-styles-${testInfo.project.name}.json`);
 });
 
+test("budget card opens category spending breakdown with donut chart", async ({ page }) => {
+  await routeBudgetBreakdownAkahu(page);
+  await page.goto("/");
+  await waitForStableApp(page);
+  await page.evaluate(() => {
+    window.localStorage.setItem("netly_user_budgets", JSON.stringify([
+      {
+        categoryNames: ["Food", "Transport", "Gifts", "Shopping", "Health"],
+        cadence: "monthly",
+        id: "budget-spending-money",
+        limit: 800,
+        name: "Spending money",
+        periodAnchorDate: "2026-05-01"
+      }
+    ]));
+  });
+
+  await page.getByRole("button", { name: /Budgets/ }).first().click();
+  await expect(page.getByTestId("budgets-page")).toBeVisible();
+
+  const budgetCard = page.locator(".budget-progress-card").filter({ hasText: "Spending money" });
+  await expect(budgetCard).not.toContainText("Food");
+  await expect.poll(async () => budgetCard.evaluate((element) => element.getBoundingClientRect().width)).toBeLessThanOrEqual(430);
+  await expect.poll(async () => budgetCard.locator(".budget-progress-top").evaluate((element) => getComputedStyle(element).backgroundImage)).toBe("none");
+
+  await budgetCard.click();
+
+  await expect(page.getByTestId("budget-detail-page")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Spending money category spending donut chart" })).toBeVisible();
+  const layoutProbe = await page.evaluate(() => {
+    const detail = document.querySelector(".budget-detail-view");
+    const hero = document.querySelector(".budget-detail-hero");
+    const mobileHeader = document.querySelector(".budget-detail-view .mobile-page-header");
+    const mobileTitle = mobileHeader?.querySelector("h2");
+
+    return {
+      detailWidth: detail?.getBoundingClientRect().width || 0,
+      heroBackgroundImage: hero ? getComputedStyle(hero).backgroundImage : "",
+      mobileHeaderBackgroundImage: mobileHeader ? getComputedStyle(mobileHeader).backgroundImage : "",
+      mobileHeaderDisplay: mobileHeader ? getComputedStyle(mobileHeader).display : "none",
+      mobileTitleClipped: mobileTitle
+        ? isClippingOverflow(getComputedStyle(mobileTitle)) && (
+            mobileTitle.scrollWidth > mobileTitle.clientWidth + 1
+            || mobileTitle.scrollHeight > mobileTitle.clientHeight + 1
+          )
+        : false,
+      viewportWidth: window.innerWidth
+    };
+
+    function isClippingOverflow(style: CSSStyleDeclaration) {
+      return style.overflowX !== "visible" || style.overflowY !== "visible" || style.whiteSpace === "nowrap";
+    }
+  });
+
+  expect(layoutProbe.heroBackgroundImage).toBe("none");
+
+  if (layoutProbe.mobileHeaderDisplay !== "none") {
+    expect(layoutProbe.mobileHeaderBackgroundImage).toBe("none");
+    expect(layoutProbe.mobileTitleClipped).toBe(false);
+  }
+
+  if (layoutProbe.viewportWidth >= 1181) {
+    expect(layoutProbe.detailWidth).toBeLessThan(layoutProbe.viewportWidth);
+    expect(layoutProbe.detailWidth).toBeLessThanOrEqual(1040);
+  }
+
+  const foodBreakdown = page.locator(".budget-breakdown-item").filter({ hasText: "Food" });
+  await expect(foodBreakdown).toContainText("2 transactions");
+  await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toContainText("1 transaction");
+  await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Gifts" })).toHaveCount(0);
+  await expect(foodBreakdown.locator(".budget-breakdown-chevron")).toHaveCount(0);
+
+  await foodBreakdown.locator(".budget-breakdown-row").click();
+  await expect(page.getByTestId("budget-selected-category-indicator")).toBeVisible();
+  await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toHaveCount(0);
+  await expect(page.locator(".budget-breakdown-dropdown")).toHaveCount(0);
+  await expect(page.getByTestId("budget-selected-transactions")).toContainText("food-1");
+  await expect(page.getByTestId("budget-selected-transactions")).toContainText("food-2");
+  await expect(page.getByTestId("budget-selected-transactions").locator(".transaction-ledger-row")).toHaveCount(2);
+
+  await page.getByTestId("budget-selected-transactions").locator(".transaction-ledger-row").filter({ hasText: "food-1" }).click();
+  await expect(page.getByTestId("transaction-details-drawer")).toBeVisible();
+  await expect(page.getByTestId("transaction-details-drawer")).toContainText("food-1");
+  await expect(page.getByLabel("Set category for food-1")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("transaction-details-drawer")).toBeHidden();
+
+  await foodBreakdown.locator(".budget-breakdown-row").click();
+  await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toContainText("1 transaction");
+
+  await page.getByRole("button", { name: /Back to budgets/ }).click();
+  await expect(page.getByTestId("budgets-page")).toBeVisible();
+});
+
 test("Akahu freshness stays refreshing until balance and transaction timestamps advance", async ({ page }) => {
   await page.unroute("**/api/akahu/accounts?source=user");
   await page.unroute("**/api/akahu/transactions?source=user**");
@@ -280,6 +374,74 @@ async function mockDisconnectedAkahu(page: import("@playwright/test").Page) {
       }
     });
   });
+}
+
+// Serves deterministic user-mode transactions so the budget detail can show real counts.
+async function routeBudgetBreakdownAkahu(page: import("@playwright/test").Page) {
+  await page.unroute("**/api/akahu/accounts?source=user");
+  await page.unroute("**/api/akahu/transactions?source=user**");
+  await page.unroute("**/api/akahu/refresh");
+
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: getConnectedAccountPayload({
+        balanceRefreshedAt: "2026-05-24T10:14:00.000Z",
+        isStale: false,
+        transactionsRefreshedAt: "2026-05-24T10:14:00.000Z"
+      })
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 6,
+        nextCursor: null,
+        transactions: [
+          getBudgetTransaction("food-1", "Food", -40),
+          getBudgetTransaction("food-2", "Food", -35),
+          getBudgetTransaction("transport-1", "Transport", -25),
+          getBudgetTransaction("shopping-1", "Shopping", -20),
+          getBudgetTransaction("health-1", "Health", -15),
+          getBudgetTransaction("income-1", "Food", 100)
+        ]
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 200,
+      json: {
+        connected: true,
+        notice: "Akahu refresh accepted.",
+        requestedAt: "2026-05-24T10:14:05.000Z"
+      }
+    });
+  });
+}
+
+// Creates a minimal Akahu-shaped transaction for budget UI tests.
+function getBudgetTransaction(id: string, category: string, amount: number) {
+  return {
+    _id: id,
+    amount,
+    category: {
+      groups: {
+        personal_finance: {
+          name: category
+        }
+      },
+      name: category
+    },
+    date: "2026-05-12",
+    description: id
+  };
 }
 
 // Builds a connected Akahu account payload with explicit freshness timestamps.

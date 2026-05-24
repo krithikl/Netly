@@ -2561,6 +2561,14 @@ h2 {
   align-items: start;
 }
 
+.budget-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 390px));
+  align-items: stretch;
+  justify-content: start;
+  gap: 14px;
+}
+
 .budget-progress-card {
   min-width: 0;
   overflow: hidden;
@@ -2570,6 +2578,22 @@ h2 {
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
 }
 
+.budget-progress-card.clickable {
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.budget-progress-card.clickable:hover,
+.budget-progress-card.clickable:focus-visible {
+  border-color: var(--primary-border);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.42);
+  outline: none;
+  transform: translateY(-1px);
+}
+
 .budget-progress-top {
   display: flex;
   min-height: 106px;
@@ -2577,7 +2601,7 @@ h2 {
   justify-content: space-between;
   gap: 12px;
   padding: 20px 20px 18px;
-  background: linear-gradient(180deg, #a17a49, #8a6840);
+  background: var(--primary);
   color: white;
 }
 
@@ -2704,37 +2728,206 @@ h2 {
   text-align: center;
 }
 
-.budget-category-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  max-height: 72px;
-  overflow: hidden;
+.budget-detail-view {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  min-width: 0;
 }
 
-.budget-category-pills span {
-  display: inline-flex;
-  max-width: 100%;
-  min-height: 32px;
+.budget-detail-desktop-header {
+  display: none;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.budget-detail-hero {
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--primary-border);
+  border-radius: 28px;
+  padding: 24px;
+  background: var(--primary);
+  color: white;
+  box-shadow: var(--shadow-soft);
+}
+
+.budget-detail-title-row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.budget-detail-title-row h2 {
+  color: white;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  line-height: 1.05;
+  font-weight: 950;
+}
+
+.budget-detail-title-row p {
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.budget-breakdown-panel {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
+}
+
+.budget-breakdown-chart {
+  display: grid;
+  min-height: 340px;
+  place-items: center;
+}
+
+.budget-breakdown-chart .donut-wrap {
+  width: clamp(280px, 32vw, 380px);
+}
+
+.budget-breakdown-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.budget-breakdown-stack {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.budget-breakdown-item {
+  display: grid;
+  min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--outline-soft);
+  border: 1px solid transparent;
+  border-radius: 18px;
+  transition:
+    background var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease);
+}
+
+.budget-breakdown-item.selected {
+  border-color: var(--outline-soft);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.budget-breakdown-row {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  padding: 10px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.budget-breakdown-row:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.budget-breakdown-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.budget-breakdown-avatar {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
   border-radius: 999px;
-  padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--muted);
-  font-size: 12px;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 950;
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 255, 255, 0.1),
+    0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.budget-breakdown-copy,
+.budget-breakdown-value {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.budget-breakdown-copy strong,
+.budget-breakdown-value strong {
+  overflow: hidden;
+  font-weight: 900;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.budget-breakdown-copy strong {
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+
+.budget-breakdown-copy span,
+.budget-breakdown-value span {
+  overflow: hidden;
+  color: var(--muted-2);
+  font-size: 0.9rem;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.budget-category-pills i {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 auto;
+.budget-breakdown-value {
+  justify-items: end;
+  text-align: right;
+}
+
+.budget-breakdown-value strong {
+  color: white;
+  font-size: 1.28rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-breakdown-selection-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  border: 1px solid var(--selected-chip-border);
   border-radius: 999px;
+  padding: 5px 10px;
+  background: var(--selected-chip-bg);
+  color: var(--selected-chip-text);
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.budget-selected-transactions {
+  min-width: 0;
+}
+
+.budget-selected-transactions .transaction-list-layout {
+  gap: 0;
+}
+
+.budget-selected-transactions .transaction-ledger {
+  border-color: var(--outline-soft);
 }
 
 .budget-editor-drawer {
@@ -2749,6 +2942,42 @@ h2 {
 
 .budget-editor-sheet {
   gap: 18px;
+}
+
+.budget-cadence-selector {
+  display: grid;
+  gap: 10px;
+}
+
+.budget-cadence-selector h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.budget-cadence-selector > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.budget-cadence-selector button {
+  min-height: 38px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.budget-cadence-selector button.active,
+.budget-cadence-selector button:hover {
+  border-color: var(--primary-border);
+  background: var(--selected-chip-bg);
+  color: var(--selected-chip-text);
 }
 
 .budget-category-selector {
@@ -4706,33 +4935,33 @@ body {
   }
 
   .budget-progress-card {
-    border-radius: 28px;
+    border-radius: 24px;
   }
 
   .budget-progress-top {
-    min-height: 152px;
-    gap: 16px;
-    padding: 32px 28px 28px;
+    min-height: 108px;
+    gap: 14px;
+    padding: 22px 22px 18px;
   }
 
   .budget-progress-top strong {
-    font-size: clamp(2rem, 10.5vw, 2.65rem);
+    font-size: clamp(1.55rem, 7vw, 1.9rem);
   }
 
   .budget-progress-top p {
-    font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+    font-size: 1rem;
   }
 
   .budget-progress-top button {
-    width: 50px;
-    height: 50px;
+    width: 42px;
+    height: 42px;
     border: 0;
-    border-radius: 18px;
+    border-radius: 15px;
   }
 
   .budget-progress-body {
-    gap: 16px;
-    padding: 30px 28px 28px;
+    gap: 13px;
+    padding: 22px;
   }
 
   .budget-period-row {
@@ -4746,16 +4975,11 @@ body {
   }
 
   .budget-progress-track {
-    height: 34px;
+    height: 28px;
   }
 
   .budget-progress-fill strong {
-    font-size: 1.05rem;
-  }
-
-  .budget-category-pills {
-    max-height: 78px;
-    overflow: hidden;
+    font-size: 0.98rem;
   }
 
   .budget-recurring-panel {
@@ -5060,6 +5284,109 @@ body {
 
   .budget-progress-fill strong {
     font-size: 0.92rem;
+  }
+}
+
+@media (min-width: 1181px) {
+  .budget-detail-desktop-header {
+    display: flex;
+  }
+}
+
+@media (max-width: 768px) {
+  .budget-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .budget-detail-view {
+    gap: 0;
+  }
+
+  .budget-detail-view .mobile-page-header {
+    margin: -14px -12px 0;
+    padding: 52px 22px 20px;
+    background: var(--primary);
+  }
+
+  .budget-detail-view .mobile-page-header h2 {
+    overflow: visible;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: clamp(1.7rem, 8.6vw, 2.3rem);
+    line-height: 1.16;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .budget-detail-header-action.budget-detail-header-action {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    background: transparent;
+    color: var(--accent-cream);
+  }
+
+  .budget-detail-hero {
+    margin: 0 -12px;
+    gap: 18px;
+    border-inline: 0;
+    border-top: 0;
+    border-radius: 0;
+    padding: 0 22px 28px;
+    background: var(--primary);
+    box-shadow: none;
+  }
+
+  .budget-detail-title-row {
+    display: none;
+  }
+
+  .budget-breakdown-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding: 28px 0 0;
+  }
+
+  .budget-breakdown-chart {
+    min-height: min(84vw, 360px);
+  }
+
+  .budget-breakdown-chart .donut-wrap {
+    width: min(90vw, 360px);
+  }
+
+  .budget-breakdown-list {
+    gap: 8px;
+  }
+
+  .budget-breakdown-row {
+    grid-template-columns: 58px minmax(0, 1fr) minmax(90px, auto);
+    gap: 12px;
+    padding: 8px 4px;
+  }
+
+  .budget-breakdown-avatar {
+    width: 52px;
+    height: 52px;
+  }
+
+  .budget-breakdown-copy strong {
+    font-size: 1.1rem;
+  }
+
+  .budget-breakdown-copy span,
+  .budget-breakdown-value span {
+    font-size: 0.84rem;
+  }
+
+  .budget-breakdown-value strong {
+    font-size: 1.2rem;
+  }
+
+  .budget-breakdown-selection-mark {
+    grid-column: 2 / -1;
+    justify-self: start;
   }
 }
 

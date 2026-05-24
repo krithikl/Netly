@@ -7,7 +7,7 @@ The app connects to Akahu for account and transaction data, uses Akahu merchant/
 Main features:
 - Spending dashboard with balances, income tracking, spend rhythm, and review signals
 - Transaction feed with merchant/category enrichment
-- Budget and recurring payment tracking
+- Weekly, fortnightly, and monthly budget tracking with category breakdowns and recurring payment detection
 - Card comparison and rewards-fit analysis
 - Custom category overrides and colour settings
 - Demo mode for local testing without live bank connections

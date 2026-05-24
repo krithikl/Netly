@@ -952,6 +952,8 @@ button.money-movement-card {
 .money-movement-value {
   display: grid;
   min-width: 0;
+  align-self: stretch;
+  align-content: center;
   justify-items: end;
   gap: 5px;
   text-align: right;
@@ -992,19 +994,6 @@ button.money-movement-card {
   padding: 4px 4px 0;
   color: var(--muted);
   font-size: 0.88rem;
-  font-weight: 850;
-  line-height: 1.2;
-}
-
-.home-recent-date-group {
-  display: grid;
-  gap: 8px;
-}
-
-.home-recent-date-heading {
-  margin: 2px 2px 0;
-  color: var(--muted);
-  font-size: 0.86rem;
   font-weight: 850;
   line-height: 1.2;
 }
@@ -1241,6 +1230,7 @@ button.money-movement-card {
 .legend-dot {
   width: 12px;
   height: 12px;
+  flex: 0 0 12px;
   border-radius: 999px;
 }
 
@@ -2849,6 +2839,10 @@ button.money-movement-card {
   align-content: center;
 }
 
+.budget-breakdown-card.has-amount-detail .money-movement-value {
+  align-content: start;
+}
+
 .budget-breakdown-card .money-movement-copy > small,
 .budget-breakdown-card .money-movement-value small,
 .budget-breakdown-card .money-movement-amount {
@@ -3411,7 +3405,7 @@ button.money-movement-card {
     min-height: 88px;
     border-radius: 18px;
     padding: 12px;
-    background: var(--surface);
+    background: var(--surface-2);
   }
 
   .transaction-date-group-heading {
@@ -4113,6 +4107,13 @@ body {
   box-shadow: none;
 }
 
+.home-recent-empty {
+  border: 0;
+  padding-inline: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 .budget-grid article {
   border-color: var(--outline-soft);
   box-shadow: none;
@@ -4508,7 +4509,7 @@ body {
   .money-movement-card {
     min-height: 76px;
     border-radius: 18px;
-    background: var(--surface);
+    background: var(--surface-2);
   }
 }
 

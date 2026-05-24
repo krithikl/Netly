@@ -43,7 +43,7 @@ export function MoneyMovementCard({
   testId,
   title
 }: MoneyMovementCardProps) {
-  const cardClassName = cn("money-movement-card", onClick && "clickable", selected && "selected", className);
+  const cardClassName = cn("money-movement-card", amountDetail && "has-amount-detail", onClick && "clickable", selected && "selected", className);
   const colorStyle = { "--transaction-color": categoryColor } as CSSProperties;
   const initial = (avatarLabel || title).trim().slice(0, 1).toUpperCase();
   const hasMetaRow = showCategoryChip || Boolean(detail);

@@ -234,6 +234,10 @@ test("Home mobile preview shows ten recent transactions and a view-all action", 
   assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.mobile-home-insight-strip[\s\S]*?display: grid/);
   assert.match(recentSource, /View All Transactions/);
   assert.match(recentSource, /home-recent-transactions/);
+  assert.match(recentSource, /transaction-date-group/);
+  assert.match(recentSource, /transaction-date-group-heading/);
+  assert.doesNotMatch(recentSource, /Recent activity/);
+  assert.doesNotMatch(recentSource, /CardHeader|CardTitle|<Card/);
 });
 
 test("mobile layout regressions are covered by fixed spacing and budget columns", async () => {
@@ -326,9 +330,12 @@ test("transaction lists use date groups without chevrons for date-sorted views",
   assert.match(css, /\.money-movement-card\s*{[\s\S]*?grid-template-columns: 38px minmax\(0, 1fr\) max-content/);
   assert.match(css, /\.money-movement-card\s*{[\s\S]*?align-items: start/);
   assert.match(css, /\.money-movement-value\s*{[\s\S]*?justify-items: end/);
+  assert.match(css, /\.money-movement-value\s*{[\s\S]*?align-self: stretch/);
+  assert.match(css, /\.money-movement-value\s*{[\s\S]*?align-content: center/);
+  assert.match(css, /\.budget-breakdown-card\.has-amount-detail \.money-movement-value\s*{[\s\S]*?align-content: start/);
   assert.doesNotMatch(css, /transaction-ledger|budget-breakdown-copy|budget-breakdown-value/);
   assert.match(css, /\.transaction-date-group-heading/);
-  assert.match(css, /\.home-recent-date-heading/);
+  assert.doesNotMatch(css, /\.home-recent-date-heading|\.home-recent-date-group/);
 });
 
 test("transaction month rail centers the active month and keeps mobile summary inset", async () => {

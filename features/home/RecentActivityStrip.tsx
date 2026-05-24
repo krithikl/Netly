@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { TransactionDetailsOverlay } from "@/features/transactions/TransactionList";
 import { MoneyMovementCard } from "@/components/MoneyMovementCard";
 import {
@@ -48,20 +47,19 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
 
   if (transactions.length === 0) {
     return (
-      <Card className="grid gap-4">
-        <RecentActivityHeader onViewAll={onViewAll} />
-        <div className="empty-state">No transactions found.</div>
-      </Card>
+      <section className="transaction-list-layout">
+        <div className="empty-state home-recent-empty">No transactions found.</div>
+        <ViewAllTransactionsButton onViewAll={onViewAll} />
+      </section>
     );
   }
 
   return (
-    <Card className="grid gap-4">
-      <RecentActivityHeader onViewAll={onViewAll} />
+    <section className="transaction-list-layout">
       <div className="money-movement-list home-recent-transactions" data-testid="home-recent-transactions">
         {transactionGroups.map((group) => (
-          <div className="home-recent-date-group" key={group.date}>
-            <h3 className="home-recent-date-heading">{formatTransactionDateHeading(group.date)}</h3>
+          <div className="transaction-date-group" key={group.date}>
+            <h3 className="transaction-date-group-heading">{formatTransactionDateHeading(group.date)}</h3>
             {group.transactions.map((transaction) => {
               const category = getTransactionCategory(transaction);
               const merchant = getTransactionMerchant(transaction);
@@ -83,11 +81,7 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
           </div>
         ))}
       </div>
-      <div className="flex justify-center px-0 pt-0.5 pb-1">
-        <Button className="min-h-[38px] rounded-full px-[26px]" onClick={onViewAll} type="button" variant="secondary">
-          View All Transactions
-        </Button>
-      </div>
+      <ViewAllTransactionsButton onViewAll={onViewAll} />
       {detailsTransaction && (
         <TransactionDetailsOverlay
           categoryColors={categoryColors}
@@ -96,15 +90,17 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
           transaction={detailsTransaction}
         />
       )}
-    </Card>
+    </section>
   );
 }
 
-function RecentActivityHeader({ onViewAll }: { onViewAll: () => void }) {
+function ViewAllTransactionsButton({ onViewAll }: { onViewAll: () => void }) {
   return (
-    <CardHeader>
-      <CardTitle>Recent activity</CardTitle>
-    </CardHeader>
+    <div className="flex justify-center px-0 pt-0.5 pb-1">
+      <Button className="min-h-[38px] rounded-full px-[26px]" onClick={onViewAll} type="button" variant="secondary">
+        View All Transactions
+      </Button>
+    </div>
   );
 }
 

@@ -206,6 +206,16 @@ test("budget card opens category spending breakdown with donut chart", async ({ 
   await expect(page.getByTestId("budget-selected-transactions")).toContainText("food-1");
   await expect(page.getByTestId("budget-selected-transactions")).toContainText("food-2");
   await expect(page.getByTestId("budget-selected-transactions").locator(".money-movement-card")).toHaveCount(2);
+  const selectedTransactionRowProbe = await page.getByTestId("budget-selected-transactions").locator(".money-movement-card").filter({ hasText: "food-1" }).evaluate((element) => {
+    const amount = element.querySelector(".money-movement-amount");
+    const cardRect = element.getBoundingClientRect();
+    const amountRect = amount?.getBoundingClientRect();
+
+    return {
+      amountCenterDelta: amountRect ? Math.abs((amountRect.top + amountRect.height / 2) - (cardRect.top + cardRect.height / 2)) : -1
+    };
+  });
+  expect(selectedTransactionRowProbe.amountCenterDelta).toBeLessThanOrEqual(2);
   await expect.poll(() => getDocumentTop(page.locator(".budget-breakdown-chart"))).toBeCloseTo(chartDocumentTopBeforeExpansion, 1);
 
   await page.getByTestId("budget-selected-transactions").locator(".money-movement-card").filter({ hasText: "food-1" }).click();

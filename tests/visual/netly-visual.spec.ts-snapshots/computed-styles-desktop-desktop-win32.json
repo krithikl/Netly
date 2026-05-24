@@ -68,7 +68,7 @@
       "overflow": "visible",
       "padding": "18px 0px 0px"
     },
-    ".transaction-ledger-row": null
+    ".money-movement-card": null
   },
   "transactions": {
     ".hero-card": null,
@@ -90,7 +90,7 @@
     ".budget-desktop-grid": null,
     ".budget-recurring-panel": null,
     ".chart-layout": null,
-    ".transaction-ledger-row": null
+    ".money-movement-card": null
   },
   "budgets": {
     ".hero-card": null,
@@ -148,6 +148,6 @@
       "padding": "22px"
     },
     ".chart-layout": null,
-    ".transaction-ledger-row": null
+    ".money-movement-card": null
   }
 }

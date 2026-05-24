@@ -64,6 +64,12 @@ npm run test:visual
 
 The visual wrapper owns the `http://localhost:3000` dev server for the run. Stop any existing local server before running it.
 
+When a dev server is already running on `http://localhost:3000`, run targeted Playwright checks directly against it instead of stopping the server:
+
+```bash
+NETLY_PLAYWRIGHT_MANAGED_SERVER=0 npx playwright test tests/visual/netly-visual.spec.ts
+```
+
 ---
 
 ## Environment Variables

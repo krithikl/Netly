@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProper
 import { ChevronDown, CreditCard, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
+import { MoneyMovementCard, type MoneyMovementAmountTone } from "@/components/MoneyMovementCard";
 import {
   Drawer,
   DrawerContent,
@@ -196,22 +197,11 @@ export function TransactionList({
   return (
     <div className="transaction-list-layout">
       <div className="transaction-list-panel">
-        <div className={`transaction-ledger ${groupByDate ? "grouped" : ""}`} role="table" aria-label="Transactions">
-          {!groupByDate && (
-            <div className="transaction-ledger-header" role="row">
-              <span role="columnheader">Date</span>
-              <span role="columnheader">Merchant</span>
-              <span role="columnheader">Category</span>
-              <span role="columnheader">Account</span>
-              <span role="columnheader">Amount</span>
-            </div>
-          )}
+        <div className={`money-movement-list ${groupByDate ? "grouped" : ""}`} role="list" aria-label="Transactions">
           {groupByDate
             ? visibleTransactionGroups.map((group) => (
-              <div className="transaction-date-group" key={group.date} role="rowgroup">
-                <div className="transaction-date-group-heading" role="row">
-                  <span role="cell">{formatTransactionDateHeading(group.date)}</span>
-                </div>
+              <div className="transaction-date-group" key={group.date}>
+                <h3 className="transaction-date-group-heading">{formatTransactionDateHeading(group.date)}</h3>
                 {group.transactions.map((transaction) => {
                   const transactionId = getTransactionId(transaction);
 
@@ -332,30 +322,17 @@ const TransactionRow = memo(function TransactionRow({
   const openDetails = useCallback(() => onOpenDetails(transactionId), [onOpenDetails, transactionId]);
 
   return (
-    <button className="transaction-ledger-row" data-testid="transaction-row" onClick={openDetails} role="row" type="button">
-      {showDate && <span className="transaction-ledger-date" role="cell">{row.date}</span>}
-      <span className="transaction-ledger-merchant" role="cell">
-        <span className="letter-avatar transaction-merchant-avatar" style={row.colorStyle}>{row.initial}</span>
-        <span className="transaction-merchant-copy">
-          <strong>{row.merchant}</strong>
-          <small className="transaction-row-status">{row.statusLabel}</small>
-          <span className="transaction-category-chip transaction-mobile-category-chip" style={row.colorStyle}>
-            <span aria-hidden="true" />
-            {row.category}
-          </span>
-          <small className="transaction-mobile-row-meta">{showDate ? `${row.date} · ${row.account}` : row.account}</small>
-        </span>
-      </span>
-      <span className="transaction-category-chip transaction-desktop-category-cell" role="cell" style={row.colorStyle}>
-        <span aria-hidden="true" />
-        {row.category}
-      </span>
-      <span className="transaction-account-chip" role="cell">
-        <CreditCard aria-hidden="true" className="h-3.5 w-3.5" />
-        {row.account}
-      </span>
-      <strong className={`transaction-ledger-amount ${row.valueTone}`} role="cell">{row.amount}</strong>
-    </button>
+    <MoneyMovementCard
+      amount={row.amount}
+      amountTone={row.valueTone}
+      avatarLabel={row.initial}
+      category={row.category}
+      categoryColor={row.color}
+      detail={showDate ? `${row.date} · ${row.account}` : row.account}
+      onClick={openDetails}
+      testId="transaction-row"
+      title={row.merchant}
+    />
   );
 });
 
@@ -368,12 +345,11 @@ function getTransactionRowModel(transaction: Transaction, categoryColors: Record
     account: getTransactionAccountLabel(transaction),
     amount: getTransactionAmountLabel(transaction),
     category,
-    colorStyle: { "--transaction-color": color } as CSSProperties,
+    color,
     date: formatTransactionDate(getTransactionDate(transaction)),
     initial: merchant.slice(0, 1).toUpperCase(),
     merchant,
-    statusLabel: getTransactionRowStatusLabel(transaction),
-    valueTone: transaction.amount < 0 ? "negative" : "positive"
+    valueTone: (transaction.amount < 0 ? "expense" : "income") as MoneyMovementAmountTone
   };
 }
 

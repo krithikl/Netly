@@ -798,72 +798,55 @@ h2 {
   font-weight: 850;
 }
 
-.transaction-ledger {
+.money-movement-list {
   display: grid;
   max-width: 100%;
   min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--outline);
-  border-radius: 18px;
+  gap: 12px;
 }
 
-.transaction-ledger-header,
-.transaction-ledger-row {
+.money-movement-card {
   display: grid;
-  grid-template-columns: minmax(88px, 0.7fr) minmax(178px, 1.7fr) minmax(112px, 0.88fr) minmax(112px, 0.82fr) minmax(82px, 0.62fr);
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.transaction-ledger-header {
-  min-height: 42px;
-  padding: 0 12px;
-  background: var(--surface-2);
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 850;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.transaction-ledger-header span:nth-child(5) {
-  text-align: right;
-}
-
-.transaction-ledger-row {
+  grid-template-columns: 38px minmax(0, 1fr) max-content;
+  align-items: start;
+  gap: 12px;
   width: 100%;
+  min-width: 0;
   min-height: 68px;
-  border: 0;
-  border-top: 1px solid var(--outline);
-  padding: 11px 12px;
-  background: var(--surface);
+  border: 1px solid var(--outline-soft);
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--surface-2);
   color: var(--ink);
-  cursor: pointer;
   font: inherit;
   text-align: left;
 }
 
-.transaction-ledger-row:focus-visible {
+button.money-movement-card {
+  cursor: pointer;
+}
+
+.money-movement-card.clickable {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease);
+}
+
+.money-movement-card.clickable:hover,
+.money-movement-card.clickable:focus-visible {
+  border-color: var(--primary-border);
+  background: var(--surface-3);
+}
+
+.money-movement-card:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
 
-.transaction-ledger-date {
-  color: var(--muted);
-}
-
-.transaction-ledger-date {
-  font-size: 0.84rem;
-  font-weight: 750;
-}
-
-.transaction-ledger-merchant {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
+.money-movement-card.selected {
+  border-color: var(--primary-border);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .letter-avatar {
@@ -888,28 +871,37 @@ h2 {
   font-size: 0.95rem;
 }
 
-.transaction-merchant-copy {
+.money-movement-copy {
   display: grid;
   min-width: 0;
-  gap: 4px;
+  gap: 5px;
 }
 
-.transaction-merchant-copy strong {
+.money-movement-copy strong {
   overflow: hidden;
   font-size: 0.9rem;
   font-weight: 850;
+  line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.transaction-merchant-copy small {
+.money-movement-copy small {
+  min-width: 0;
+  overflow: hidden;
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.transaction-mobile-row-meta {
-  display: none;
+.money-movement-meta-row {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
 }
 
 .transaction-category-chip,
@@ -935,41 +927,64 @@ h2 {
   background: var(--transaction-color);
 }
 
-.transaction-mobile-category-chip.transaction-mobile-category-chip {
-  display: none;
-}
-
 .transaction-category-chip,
-.transaction-account-chip,
-.transaction-ledger-date {
+.transaction-account-chip {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.transaction-ledger-amount {
+.money-movement-amount {
+  width: fit-content;
   min-width: 0;
-  overflow: hidden;
+  max-width: 100%;
   justify-self: end;
+  overflow: hidden;
   font-size: 0.88rem;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.transaction-ledger.grouped {
-  gap: 10px;
-  overflow: visible;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+.money-movement-value {
+  display: grid;
+  min-width: 0;
+  justify-items: end;
+  gap: 5px;
+  text-align: right;
+}
+
+.money-movement-value small {
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+  justify-self: end;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amount-expense {
+  color: var(--danger);
+}
+
+.amount-income {
+  color: var(--success);
+}
+
+.amount-static {
+  color: var(--ink);
 }
 
 .transaction-date-group {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   background: transparent;
 }
 
@@ -979,12 +994,6 @@ h2 {
   font-size: 0.88rem;
   font-weight: 850;
   line-height: 1.2;
-}
-
-.transaction-ledger.grouped .transaction-ledger-row {
-  grid-template-columns: minmax(178px, 1.8fr) minmax(112px, 0.9fr) minmax(112px, 0.84fr) minmax(82px, 0.64fr);
-  border: 1px solid var(--outline-soft);
-  border-radius: 16px;
 }
 
 .home-recent-date-group {
@@ -1449,16 +1458,6 @@ h2 {
 .settings-backup-list button.settings-backup-list-item:focus-visible {
   border-color: var(--primary-border);
   background: var(--primary-soft);
-}
-
-.settings-backup-list em {
-  border: 1px solid var(--primary-border);
-  border-radius: 999px;
-  padding: 6px 10px;
-  color: var(--accent-cream);
-  font-size: 0.74rem;
-  font-style: normal;
-  font-weight: 900;
 }
 
 .settings-backup-delete {
@@ -2840,71 +2839,20 @@ h2 {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.budget-breakdown-row {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  padding: 10px;
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
+.budget-breakdown-card {
+  min-height: 70px;
 }
 
-.budget-breakdown-row:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
+.budget-breakdown-card .money-movement-copy,
+.budget-breakdown-card .money-movement-value {
+  grid-template-rows: 1.2em 1.2em;
+  align-content: center;
 }
 
-.budget-breakdown-row:hover {
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.budget-breakdown-copy,
-.budget-breakdown-value {
-  display: grid;
-  min-width: 0;
-  gap: 5px;
-}
-
-.budget-breakdown-copy strong,
-.budget-breakdown-value strong {
-  overflow: hidden;
-  font-weight: 900;
-  line-height: 1.1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.budget-breakdown-copy strong {
-  color: var(--ink);
-  font-size: 1.05rem;
-}
-
-.budget-breakdown-copy span,
-.budget-breakdown-value span {
-  overflow: hidden;
-  color: var(--muted-2);
-  font-size: 0.9rem;
-  font-weight: 800;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.budget-breakdown-value {
-  justify-items: end;
-  text-align: right;
-}
-
-.budget-breakdown-value strong {
-  color: white;
-  font-size: 1.28rem;
-  font-variant-numeric: tabular-nums;
+.budget-breakdown-card .money-movement-copy > small,
+.budget-breakdown-card .money-movement-value small,
+.budget-breakdown-card .money-movement-amount {
+  line-height: 1.2;
 }
 
 .budget-selected-transactions {
@@ -2915,7 +2863,7 @@ h2 {
   gap: 0;
 }
 
-.budget-selected-transactions .transaction-ledger {
+.budget-selected-transactions .money-movement-card {
   border-color: var(--outline-soft);
 }
 
@@ -3453,34 +3401,17 @@ h2 {
     text-align: center;
   }
 
-  .transaction-ledger {
+  .money-movement-list {
     gap: 8px;
-    overflow: visible;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
   }
 
-  .transaction-ledger-header {
-    display: none;
-  }
-
-  .transaction-ledger-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "merchant amount"
-      "merchant amount";
-    gap: 6px 10px;
+  .money-movement-card {
+    grid-template-columns: 38px minmax(0, 1fr) max-content;
+    gap: 12px;
     min-height: 88px;
-    border: 0;
-    border-top: 1px solid var(--outline);
     border-radius: 18px;
     padding: 12px;
     background: var(--surface);
-  }
-
-  .transaction-ledger.grouped .transaction-ledger-row {
-    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .transaction-date-group-heading {
@@ -3488,48 +3419,22 @@ h2 {
     font-size: 0.94rem;
   }
 
-  .transaction-ledger-row:first-of-type {
-    border-top: 0;
-  }
-
-  .transaction-ledger-date {
-    display: none;
-  }
-
-  .transaction-ledger-merchant {
-    grid-area: merchant;
-  }
-
-  .transaction-ledger-row > .transaction-desktop-category-cell {
-    display: none;
-  }
-
-  .transaction-ledger-row .transaction-account-chip {
-    display: none;
-  }
-
-  .transaction-merchant-copy .transaction-row-status {
-    display: none;
-  }
-
-  .transaction-merchant-copy strong {
+  .money-movement-copy strong {
     font-size: 0.95rem;
     line-height: 1.2;
   }
 
-  .transaction-mobile-row-meta {
-    display: block;
+  .money-movement-meta-row {
+    gap: 6px;
+  }
+
+  .money-movement-meta-row > small {
+    flex-basis: 100%;
     font-size: 0.82rem;
     line-height: 1.25;
   }
 
-  .transaction-mobile-category-chip.transaction-mobile-category-chip {
-    display: inline-flex;
-  }
-
-  .transaction-ledger-amount {
-    grid-area: amount;
-    align-self: center;
+  .money-movement-amount {
     font-size: 1.18rem;
     font-weight: 950;
     line-height: 1;
@@ -4200,7 +4105,6 @@ body {
 }
 
 .material-card,
-.transaction-ledger,
 .card-option,
 .empty-state,
 .transaction-loading-state {
@@ -4376,7 +4280,7 @@ body {
   color: var(--primary-hover);
 }
 
-.transaction-ledger-row:active,
+.money-movement-card:active,
 .info-row:active {
   transform: scale(0.985);
 }
@@ -4385,19 +4289,6 @@ body {
   border: 0;
   background: transparent;
   padding: 0;
-}
-
-.transaction-ledger-row {
-  transition:
-    transform var(--motion-fast) var(--motion-ease),
-    background var(--motion-fast) var(--motion-ease),
-    border-color var(--motion-fast) var(--motion-ease);
-}
-
-.transaction-ledger-row:hover,
-.transaction-ledger-row:focus-visible {
-  background: var(--surface-2);
-  border-color: var(--primary-border);
 }
 
 .transaction-category-chip,
@@ -4610,22 +4501,14 @@ body {
     color: var(--accent-cream);
   }
 
-  .transaction-ledger {
+  .money-movement-list {
     gap: 8px;
-    background: transparent;
-    border: 0;
-    box-shadow: none;
   }
 
-  .transaction-ledger-row {
+  .money-movement-card {
     min-height: 76px;
-    border: 1px solid var(--outline-soft);
     border-radius: 18px;
     background: var(--surface);
-  }
-
-  .transaction-ledger-row:first-of-type {
-    border: 1px solid var(--outline-soft);
   }
 }
 
@@ -4836,8 +4719,8 @@ body {
 
   .transaction-list-layout,
   .transaction-list-panel,
-  .transaction-ledger,
-  .transaction-ledger-row {
+  .money-movement-list,
+  .money-movement-card {
     max-width: 100%;
   }
 
@@ -4951,11 +4834,11 @@ body {
     max-height: none;
   }
 
-  .transaction-ledger-row {
+  .money-movement-card {
     animation: card-in var(--motion-medium) var(--motion-ease) both;
   }
 
-  .transaction-ledger-row:nth-child(n + 16) {
+  .money-movement-card:nth-child(n + 16) {
     animation: none;
   }
 }
@@ -5324,25 +5207,18 @@ body {
     gap: 8px;
   }
 
-  .budget-breakdown-row {
-    grid-template-columns: 38px minmax(0, 1fr) minmax(90px, auto);
-    gap: 10px;
-    padding: 12px;
-  }
-
-  .budget-breakdown-copy strong {
+  .budget-breakdown-card .money-movement-copy strong {
     font-size: 1.1rem;
   }
 
-  .budget-breakdown-copy span,
-  .budget-breakdown-value span {
+  .budget-breakdown-card .money-movement-copy small {
     font-size: 0.84rem;
   }
 
-  .budget-breakdown-value strong {
+  .budget-breakdown-card .money-movement-amount {
     font-size: 1.18rem;
     font-weight: 950;
-    line-height: 1;
+    line-height: 1.2;
   }
 
 }

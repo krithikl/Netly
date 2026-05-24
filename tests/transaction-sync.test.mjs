@@ -226,7 +226,8 @@ test("Home mobile preview shows ten recent transactions and a view-all action", 
   assert.match(homeSource, /compareTransactionsNewestFirst/);
   assert.match(homeSource, /insights=\{insights\}/);
   assert.match(homeSource, /mobile-home-insight-strip/);
-  assert.match(recentSource, /formatMoney\(transaction\.amount, true\)/);
+  assert.match(recentSource, /MoneyMovementCard/);
+  assert.match(recentSource, /getTransactionAmountLabel\(transaction\)/);
   assert.match(heroSource, /hero-insight-preview/);
   assert.match(heroSource, /has-hero-insight/);
   assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.dashboard-grid > \.insights-panel,\s*\.hero-insight-preview[\s\S]*?display: none/);
@@ -305,9 +306,12 @@ test("transaction lists use date groups without chevrons for date-sorted views",
   const transactionListSource = await readFile(new URL("../features/transactions/TransactionList.tsx", import.meta.url), "utf8");
   const transactionsSource = await readFile(new URL("../features/transactions/TransactionsPage.tsx", import.meta.url), "utf8");
   const recentSource = await readFile(new URL("../features/home/RecentActivityStrip.tsx", import.meta.url), "utf8");
+  const budgetsSource = await readFile(new URL("../features/budgets/BudgetsPage.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.doesNotMatch(transactionListSource, /ChevronRight|transaction-ledger-chevron/);
+  assert.match(transactionListSource, /MoneyMovementCard/);
+  assert.doesNotMatch(transactionListSource, /meta=\{row\.statusLabel\}/);
   assert.match(transactionListSource, /groupTransactionsByDate/);
   assert.match(transactionListSource, /formatTransactionDateHeading/);
   assert.match(transactionsSource, /shouldGroupTransactionsByDate = transactionSort === "Newest" \|\| transactionSort === "Oldest"/);
@@ -315,7 +319,14 @@ test("transaction lists use date groups without chevrons for date-sorted views",
   assert.match(recentSource, /groupTransactionsByDate/);
   assert.match(recentSource, /formatTransactionDateHeading/);
   assert.doesNotMatch(recentSource, /formatRelativeDate/);
-  assert.match(css, /grid-template-columns: minmax\(0, 1fr\) auto/);
+  assert.match(budgetsSource, /MoneyMovementCard/);
+  assert.match(budgetsSource, /amountDetail=\{getTransactionCountLabel\(item\.transactionCount\)\}/);
+  assert.match(budgetsSource, /showCategoryChip=\{false\}/);
+  assert.doesNotMatch(budgetsSource, /InfoRow|budget-breakdown-copy|budget-breakdown-value/);
+  assert.match(css, /\.money-movement-card\s*{[\s\S]*?grid-template-columns: 38px minmax\(0, 1fr\) max-content/);
+  assert.match(css, /\.money-movement-card\s*{[\s\S]*?align-items: start/);
+  assert.match(css, /\.money-movement-value\s*{[\s\S]*?justify-items: end/);
+  assert.doesNotMatch(css, /transaction-ledger|budget-breakdown-copy|budget-breakdown-value/);
   assert.match(css, /\.transaction-date-group-heading/);
   assert.match(css, /\.home-recent-date-heading/);
 });
@@ -365,6 +376,7 @@ test("transaction details and Akahu client exclude pending transaction paths", a
 
 test("Drive startup restores metadata without silent auth or reconnect toast", async () => {
   const backupHookSource = await readFile(new URL("../hooks/useDriveBackup.ts", import.meta.url), "utf8");
+  const settingsSource = await readFile(new URL("../features/settings/SettingsPage.tsx", import.meta.url), "utf8");
 
   assert.match(backupHookSource, /readStoredDriveConnection/);
   assert.match(backupHookSource, /setStatus\("disconnected"\)/);
@@ -374,6 +386,7 @@ test("Drive startup restores metadata without silent auth or reconnect toast", a
   assert.match(backupHookSource, /Google Drive backup was used before/);
   assert.doesNotMatch(backupHookSource, /refreshBackupList\(\{ silent: true \}\)/);
   assert.doesNotMatch(backupHookSource, /toast\.warning\("Reconnect Google Drive backup"\)/);
+  assert.doesNotMatch(settingsSource, /<em>Restore<\/em>|settings-backup-list em/);
 });
 
 test("app icons use only the provided SVG asset", async () => {

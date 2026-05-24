@@ -649,7 +649,6 @@ function BackupList({ backups, deletingBackupId, mode, onDeleteBackup, onRestore
               <strong>{backup.metadataAvailable ? formatBackupTimestamp(backup.timestamp) : "Connect to network to see backup"}</strong>
               <small>{backup.name}</small>
             </span>
-            {mode === "restore" && <em>Restore</em>}
             {mode === "backups" && (
               <button
                 aria-label={`Delete ${backup.name}`}

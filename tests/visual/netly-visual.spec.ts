@@ -16,7 +16,7 @@ const styleProbeSelectors = [
   ".budget-desktop-grid",
   ".budget-recurring-panel",
   ".chart-layout",
-  ".transaction-ledger-row"
+  ".money-movement-card"
 ];
 
 const styleProbeProperties = [
@@ -152,23 +152,40 @@ test("budget card opens category spending breakdown with donut chart", async ({ 
   await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toContainText("1 transaction");
   await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Gifts" })).toHaveCount(0);
   await expect(foodBreakdown.locator(".budget-breakdown-chevron")).toHaveCount(0);
-  const budgetRowProbe = await foodBreakdown.locator(".budget-breakdown-row").evaluate((element) => {
-    const amount = element.querySelector(".budget-breakdown-value strong");
+  await expect(foodBreakdown.locator(".transaction-category-chip")).toHaveCount(0);
+  const budgetRowProbe = await foodBreakdown.getByTestId("budget-breakdown-row").evaluate((element) => {
+    const amount = element.querySelector(".money-movement-amount");
+    const amountDetail = element.querySelector(".money-movement-value small");
     const avatar = element.querySelector(".letter-avatar");
+    const title = element.querySelector(".money-movement-copy strong");
+    const meta = element.querySelector(".money-movement-copy > small");
     const rowStyle = getComputedStyle(element);
     const amountStyle = amount ? getComputedStyle(amount) : null;
     const avatarStyle = avatar ? getComputedStyle(avatar) : null;
+    const titleRect = title?.getBoundingClientRect();
+    const metaRect = meta?.getBoundingClientRect();
+    const amountRect = amount?.getBoundingClientRect();
+    const amountDetailRect = amountDetail?.getBoundingClientRect();
 
     return {
       amountFontSize: amountStyle?.fontSize || "",
       amountFontWeight: amountStyle?.fontWeight || "",
+      amountDetail: amountDetail?.textContent || "",
       avatarBorderRadius: avatarStyle?.borderRadius || "",
       avatarHeight: avatarStyle?.height || "",
       avatarWidth: avatarStyle?.width || "",
       paddingInlineEnd: rowStyle.paddingInlineEnd,
+      titleAmountTopDelta: titleRect && amountRect ? Math.abs(titleRect.top - amountRect.top) : -1,
+      metaDetailTopDelta: metaRect && amountDetailRect ? Math.abs(metaRect.top - amountDetailRect.top) : -1,
+      amountDetailRightDelta: amountRect && amountDetailRect ? Math.abs(amountRect.right - amountDetailRect.right) : -1,
       viewportWidth: window.innerWidth
     };
   });
+
+  expect(budgetRowProbe.amountDetail).toBe("2 transactions");
+  expect(budgetRowProbe.titleAmountTopDelta).toBeLessThanOrEqual(2);
+  expect(budgetRowProbe.metaDetailTopDelta).toBeLessThanOrEqual(2);
+  expect(budgetRowProbe.amountDetailRightDelta).toBeLessThanOrEqual(2);
 
   if (budgetRowProbe.viewportWidth <= 768) {
     expect(budgetRowProbe.paddingInlineEnd).toBe("12px");
@@ -179,26 +196,26 @@ test("budget card opens category spending breakdown with donut chart", async ({ 
     expect(budgetRowProbe.avatarBorderRadius).toBe("14px");
   }
 
-  const chartTopBeforeExpansion = await page.locator(".budget-breakdown-chart").evaluate((element) => element.getBoundingClientRect().top);
-  await foodBreakdown.locator(".budget-breakdown-row").click();
-  await expect(foodBreakdown.locator(".budget-breakdown-row")).toHaveAttribute("aria-pressed", "true");
+  const chartDocumentTopBeforeExpansion = await getDocumentTop(page.locator(".budget-breakdown-chart"));
+  await foodBreakdown.getByTestId("budget-breakdown-row").click();
+  await expect(foodBreakdown.getByTestId("budget-breakdown-row")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("budget-selected-category-indicator")).toHaveCount(0);
   await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toContainText("1 transaction");
   await expect(page.locator(".budget-breakdown-dropdown")).toHaveCount(0);
   await expect(page.locator("[data-testid='budget-category-transaction-expansion'][data-state='open']")).toBeVisible();
   await expect(page.getByTestId("budget-selected-transactions")).toContainText("food-1");
   await expect(page.getByTestId("budget-selected-transactions")).toContainText("food-2");
-  await expect(page.getByTestId("budget-selected-transactions").locator(".transaction-ledger-row")).toHaveCount(2);
-  await expect.poll(async () => page.locator(".budget-breakdown-chart").evaluate((element) => element.getBoundingClientRect().top)).toBeCloseTo(chartTopBeforeExpansion, 1);
+  await expect(page.getByTestId("budget-selected-transactions").locator(".money-movement-card")).toHaveCount(2);
+  await expect.poll(() => getDocumentTop(page.locator(".budget-breakdown-chart"))).toBeCloseTo(chartDocumentTopBeforeExpansion, 1);
 
-  await page.getByTestId("budget-selected-transactions").locator(".transaction-ledger-row").filter({ hasText: "food-1" }).click();
+  await page.getByTestId("budget-selected-transactions").locator(".money-movement-card").filter({ hasText: "food-1" }).click();
   await expect(page.getByTestId("transaction-details-drawer")).toBeVisible();
   await expect(page.getByTestId("transaction-details-drawer")).toContainText("food-1");
   await expect(page.getByLabel("Set category for food-1")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("transaction-details-drawer")).toBeHidden();
 
-  await foodBreakdown.locator(".budget-breakdown-row").click();
+  await foodBreakdown.getByTestId("budget-breakdown-row").click();
   await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toContainText("1 transaction");
 
   await page.getByRole("button", { name: /Back to budgets/ }).click();
@@ -635,4 +652,9 @@ async function getOverflowProbe(locator: import("@playwright/test").Locator) {
       scrolls: element.scrollHeight > element.clientHeight + 1
     };
   });
+}
+
+// Measures layout position independent of viewport scroll anchoring.
+async function getDocumentTop(locator: import("@playwright/test").Locator) {
+  return locator.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
 }

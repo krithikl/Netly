@@ -3,7 +3,6 @@
 import { type ChangeEvent, type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
-import { InfoRow } from "@/components/ui/info-row";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
@@ -11,6 +10,7 @@ import { DonutChart } from "@/components/ui/donut-chart";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import { TransactionList } from "@/features/transactions/TransactionList";
+import { MoneyMovementCard } from "@/components/MoneyMovementCard";
 import type { SelectOption } from "@/components/ui/select-field";
 import { useCloseOnPageScroll } from "@/hooks/useCloseOnPageScroll";
 import {
@@ -253,13 +253,16 @@ export function BudgetsPage({ categoryOptions, categoryColors, onCategoryChange,
           <div className="stack-list mt-[18px]">
             {recurring.length > 0 ? (
               recurring.map((item) => (
-                <InfoRow
-                  color={categoryColors[item.category] || "#607d8b"}
+                <MoneyMovementCard
+                  amount={formatMoney(item.average, true)}
+                  amountTone="expense"
+                  avatarLabel={item.merchant}
+                  category={item.category}
+                  categoryColor={categoryColors[item.category] || "#607d8b"}
+                  detail={getRecurringMeta(item)}
                   key={item.merchant}
-                  meta={getRecurringMeta(item)}
                   onClick={() => onRecurringClick(item.merchant)}
                   title={item.merchant}
-                  value={formatMoney(item.average, true)}
                 />
               ))
             ) : (
@@ -539,19 +542,22 @@ function BudgetBreakdownRow({
 
   return (
     <article className={cn("budget-breakdown-item", isSelected && "selected")}>
-      <button aria-expanded={isSelected} aria-pressed={isSelected} className="budget-breakdown-row" onClick={onToggle} type="button">
-        <span className="letter-avatar budget-breakdown-avatar" style={{ background: color }}>
-          {item.category.slice(0, 1)}
-        </span>
-        <span className="budget-breakdown-copy">
-          <strong>{item.category}</strong>
-          <span>{Math.round(item.percentOfSpending * 100)}% of spending</span>
-        </span>
-        <span className="budget-breakdown-value">
-          <strong>{formatMoney(item.amount, true)}</strong>
-          <span>{getTransactionCountLabel(item.transactionCount)}</span>
-        </span>
-      </button>
+      <MoneyMovementCard
+        amount={formatMoney(item.amount, true)}
+        amountDetail={getTransactionCountLabel(item.transactionCount)}
+        amountTone="expense"
+        ariaExpanded={isSelected}
+        ariaPressed={isSelected}
+        category={item.category}
+        categoryColor={color}
+        className="budget-breakdown-card"
+        meta={`${Math.round(item.percentOfSpending * 100)}% of spending`}
+        onClick={onToggle}
+        selected={isSelected}
+        showCategoryChip={false}
+        testId="budget-breakdown-row"
+        title={item.category}
+      />
     </article>
   );
 }
@@ -788,7 +794,7 @@ function useBudgetMobileEditor() {
 
 // Summarizes the recurring merchant evidence for a row.
 function getRecurringMeta(item: RecurringMerchant) {
-  return `${item.category} · ${item.count} payments detected over 90 days`;
+  return `${item.count} payments detected over 90 days`;
 }
 
 // Returns the user-created budget list without adding starter defaults.

@@ -76,7 +76,7 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
                   onClick={() => openDetails(transactionId)}
                   type="button"
                 >
-                  <span className="grid h-[42px] w-[42px] place-items-center rounded-full font-black text-white" style={avatarStyle}>
+                  <span className="letter-avatar" style={avatarStyle}>
                     {merchant.slice(0, 1)}
                   </span>
                   <span className="grid min-w-0 gap-[3px]">

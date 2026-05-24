@@ -37,7 +37,7 @@ export function InfoRow({ action, color, detail, meta, onClick, title, value, va
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      <span className="category-avatar" style={avatarStyle}>
+      <span className="letter-avatar category-avatar" style={avatarStyle}>
         {title.slice(0, 1)}
       </span>
       <div>

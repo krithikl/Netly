@@ -152,10 +152,37 @@ test("budget card opens category spending breakdown with donut chart", async ({ 
   await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toContainText("1 transaction");
   await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Gifts" })).toHaveCount(0);
   await expect(foodBreakdown.locator(".budget-breakdown-chevron")).toHaveCount(0);
+  const budgetRowProbe = await foodBreakdown.locator(".budget-breakdown-row").evaluate((element) => {
+    const amount = element.querySelector(".budget-breakdown-value strong");
+    const avatar = element.querySelector(".letter-avatar");
+    const rowStyle = getComputedStyle(element);
+    const amountStyle = amount ? getComputedStyle(amount) : null;
+    const avatarStyle = avatar ? getComputedStyle(avatar) : null;
+
+    return {
+      amountFontSize: amountStyle?.fontSize || "",
+      amountFontWeight: amountStyle?.fontWeight || "",
+      avatarBorderRadius: avatarStyle?.borderRadius || "",
+      avatarHeight: avatarStyle?.height || "",
+      avatarWidth: avatarStyle?.width || "",
+      paddingInlineEnd: rowStyle.paddingInlineEnd,
+      viewportWidth: window.innerWidth
+    };
+  });
+
+  if (budgetRowProbe.viewportWidth <= 768) {
+    expect(budgetRowProbe.paddingInlineEnd).toBe("12px");
+    expect(budgetRowProbe.amountFontSize).toBe("18.88px");
+    expect(budgetRowProbe.amountFontWeight).toBe("950");
+    expect(budgetRowProbe.avatarWidth).toBe("38px");
+    expect(budgetRowProbe.avatarHeight).toBe("38px");
+    expect(budgetRowProbe.avatarBorderRadius).toBe("14px");
+  }
 
   const chartTopBeforeExpansion = await page.locator(".budget-breakdown-chart").evaluate((element) => element.getBoundingClientRect().top);
   await foodBreakdown.locator(".budget-breakdown-row").click();
-  await expect(page.getByTestId("budget-selected-category-indicator")).toBeVisible();
+  await expect(foodBreakdown.locator(".budget-breakdown-row")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("budget-selected-category-indicator")).toHaveCount(0);
   await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Transport" })).toContainText("1 transaction");
   await expect(page.locator(".budget-breakdown-dropdown")).toHaveCount(0);
   await expect(page.locator("[data-testid='budget-category-transaction-expansion'][data-state='open']")).toBeVisible();

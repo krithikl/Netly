@@ -62,8 +62,17 @@ test("globals CSS has no stale migration section or duplicate root-level selecto
 test("budget category expansion uses matching open and close animation timing", async () => {
   const source = await readFile(globalsCssUrl, "utf8");
 
-  assert.match(source, /\.budget-category-transaction-expansion\[data-state="open"\]\s*{\s*animation: budget-category-expand 360ms var\(--motion-ease\) both;/);
-  assert.match(source, /\.budget-category-transaction-expansion\[data-state="closed"\]\s*{\s*animation: budget-category-collapse 360ms var\(--motion-ease\) both;/);
-  assert.match(source, /\.budget-category-transaction-expansion\[data-state="open"\] > div\s*{\s*animation: budget-category-content-in 360ms var\(--motion-ease\) both;/);
-  assert.match(source, /\.budget-category-transaction-expansion\[data-state="closed"\] > div\s*{\s*animation: budget-category-content-out 360ms var\(--motion-ease\) both;/);
+  assert.match(source, /\.budget-category-transaction-expansion\[data-state="open"\]\s*{\s*animation: budget-category-presence 240ms var\(--motion-ease\) both;/);
+  assert.match(source, /\.budget-category-transaction-expansion\[data-state="closed"\]\s*{\s*animation: budget-category-presence 240ms var\(--motion-ease\) both;/);
+  assert.match(source, /\.budget-category-transaction-expansion\[data-state="open"\] > div\s*{\s*animation: budget-category-content-in 240ms var\(--motion-ease\) both;/);
+  assert.match(source, /\.budget-category-transaction-expansion\[data-state="closed"\] > div\s*{\s*animation: budget-category-content-out 240ms var\(--motion-ease\) both;/);
+  assert.doesNotMatch(source, /height: var\(--radix-collapsible-content-height\)/);
+});
+
+test("letter avatars use one rounded-square visual class", async () => {
+  const source = await readFile(globalsCssUrl, "utf8");
+
+  assert.match(source, /\.letter-avatar\s*{[\s\S]*?width: 38px;[\s\S]*?height: 38px;[\s\S]*?border-radius: 14px;/);
+  assert.doesNotMatch(source, /\.transaction-merchant-avatar\s*{[\s\S]*?border-radius: 999px;/);
+  assert.doesNotMatch(source, /\.budget-breakdown-avatar\s*{[\s\S]*?border-radius: 999px;/);
 });

@@ -540,7 +540,7 @@ function BudgetBreakdownRow({
   return (
     <article className={cn("budget-breakdown-item", isSelected && "selected")}>
       <button aria-expanded={isSelected} aria-pressed={isSelected} className="budget-breakdown-row" onClick={onToggle} type="button">
-        <span className="budget-breakdown-avatar" style={{ background: color }}>
+        <span className="letter-avatar budget-breakdown-avatar" style={{ background: color }}>
           {item.category.slice(0, 1)}
         </span>
         <span className="budget-breakdown-copy">
@@ -551,7 +551,6 @@ function BudgetBreakdownRow({
           <strong>{formatMoney(item.amount, true)}</strong>
           <span>{getTransactionCountLabel(item.transactionCount)}</span>
         </span>
-        {isSelected && <span className="budget-breakdown-selection-mark" data-testid="budget-selected-category-indicator">Selected</span>}
       </button>
     </article>
   );

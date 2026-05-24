@@ -335,7 +335,7 @@ const TransactionRow = memo(function TransactionRow({
     <button className="transaction-ledger-row" data-testid="transaction-row" onClick={openDetails} role="row" type="button">
       {showDate && <span className="transaction-ledger-date" role="cell">{row.date}</span>}
       <span className="transaction-ledger-merchant" role="cell">
-        <span className="transaction-merchant-avatar" style={row.colorStyle}>{row.initial}</span>
+        <span className="letter-avatar transaction-merchant-avatar" style={row.colorStyle}>{row.initial}</span>
         <span className="transaction-merchant-copy">
           <strong>{row.merchant}</strong>
           <small className="transaction-row-status">{row.statusLabel}</small>
@@ -582,7 +582,7 @@ function TransactionDetailsContent({
   return (
     <div className="transaction-detail-content">
       <section className="transaction-detail-summary-card">
-        <span className="transaction-merchant-avatar large" style={colorStyle}>
+        <span className="letter-avatar letter-avatar-large transaction-merchant-avatar" style={colorStyle}>
           {merchant.slice(0, 1).toUpperCase()}
         </span>
         <div className="min-w-0">

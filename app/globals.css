@@ -3423,7 +3423,7 @@ button.money-movement-card {
   }
 
   .money-movement-meta-row > small {
-    flex-basis: 100%;
+    flex-basis: auto;
     font-size: 0.82rem;
     line-height: 1.25;
   }

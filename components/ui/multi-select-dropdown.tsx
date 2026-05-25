@@ -39,6 +39,7 @@ export function MultiSelectDropdown({
 }: MultiSelectDropdownProps) {
   const selectedSet = new Set(selectedValues);
   const [open, setOpen] = useState(false);
+  const triggerButtonRef = useRef<HTMLButtonElement | null>(null);
   const optionButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const touchScrollRef = useRef<{ scrollTop: number; y: number } | null>(null);
   const isOptionActive = getOptionIsActive || ((option: MultiSelectDropdownOption) => selectedSet.has(option.value));
@@ -144,17 +145,16 @@ export function MultiSelectDropdown({
     }
 
     const nextScrollTop = Math.min(maxScrollTop, Math.max(0, touchScroll.scrollTop + touchScroll.y - touch.clientY));
-    const didScroll = nextScrollTop !== element.scrollTop;
     element.scrollTop = nextScrollTop;
-
-    if (didScroll && event.cancelable) {
-      event.preventDefault();
-    }
 
     event.stopPropagation();
   };
   const clearContentTouchScroll = () => {
     touchScrollRef.current = null;
+  };
+  const focusTriggerWithoutScrolling = (event: Event) => {
+    event.preventDefault();
+    triggerButtonRef.current?.focus({ preventScroll: true });
   };
 
   return (
@@ -167,6 +167,7 @@ export function MultiSelectDropdown({
           className={cn("category-multi-select-trigger transaction-select-trigger", triggerClassName)}
           data-testid={triggerTestId}
           onKeyDown={openFromTrigger}
+          ref={triggerButtonRef}
           role="combobox"
           type="button"
         >
@@ -179,6 +180,7 @@ export function MultiSelectDropdown({
         className={cn("category-multi-select-content", contentClassName)}
         data-vaul-no-drag=""
         data-testid={contentTestId}
+        onCloseAutoFocus={focusTriggerWithoutScrolling}
         onKeyDown={handleContentKeyDown}
         onTouchCancel={clearContentTouchScroll}
         onTouchEnd={clearContentTouchScroll}

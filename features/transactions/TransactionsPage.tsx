@@ -1280,7 +1280,7 @@ function TransactionFilterDialog({
   transactionFilter
 }: TransactionFilterDialogProps) {
   const filterBody = (
-    <div className="mobile-filter-drawer-body" data-vaul-no-drag="">
+    <div className="mobile-filter-drawer-body">
       <div className="mobile-filter-section">
         <h3>Status</h3>
         <div className="mobile-filter-chips">
@@ -1361,7 +1361,7 @@ function TransactionSortDialog({
     onApply();
   };
   const sortBody = (
-    <div className="mobile-filter-drawer-body" data-vaul-no-drag="">
+    <div className="mobile-filter-drawer-body">
       <div className="mobile-sort-options">
         {transactionSortOptions.map((sort) => (
           <button key={sort} onClick={() => handleSortChange(sort)} type="button">

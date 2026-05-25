@@ -1959,8 +1959,16 @@ button.money-movement-card {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 8px;
-  scrollbar-gutter: stable;
+  -ms-overflow-style: none;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
   touch-action: pan-y;
+}
+
+.category-multi-select-content::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .category-multi-select-trigger {
@@ -2986,14 +2994,12 @@ button.money-movement-card {
 }
 
 .budget-editor-drawer {
-  display: grid;
   gap: 10px;
   max-height: min(88vh, 760px);
   overflow: hidden;
   border-color: var(--outline-soft);
   background: var(--surface);
   color: var(--ink);
-  touch-action: pan-y;
 }
 
 .budget-editor-sheet {
@@ -3001,12 +3007,12 @@ button.money-movement-card {
 }
 
 .budget-editor-drawer .budget-editor-form {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding-bottom: calc(18px + env(safe-area-inset-bottom));
-  touch-action: pan-y;
 }
 
 .budget-editor-drawer .mobile-filter-header.centered {
@@ -3607,7 +3613,6 @@ button.money-movement-card {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     padding: 6px 16px calc(16px + env(safe-area-inset-bottom));
-    touch-action: pan-y;
   }
 
   .mobile-filter-header {

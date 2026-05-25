@@ -826,7 +826,7 @@ function BudgetEditor({
   };
 
   const formContent = (
-    <form className={cn("budget-editor-form grid gap-3.5", isMobileEditor ? "px-[18px] pb-[18px]" : "p-0")} data-vaul-no-drag={isMobileEditor ? "" : undefined} onSubmit={onSubmit}>
+    <form className={cn("budget-editor-form grid gap-3.5", isMobileEditor ? "px-[18px] pb-[18px]" : "p-0")} onSubmit={onSubmit}>
       <label className={budgetEditorLabelClassName}>
         Budget name
         <input className={budgetEditorInputClassName} autoComplete="off" onChange={changeName} placeholder="Spending money" value={form.name} />

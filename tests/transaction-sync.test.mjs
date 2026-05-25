@@ -346,12 +346,15 @@ test("transaction month rail centers the active month and keeps mobile summary i
   assert.match(transactionsSource, /activeMonthSnapIndex = activeMonthIndex < 0 \? 0 : activeMonthIndex/);
   assert.match(transactionsSource, /slides: "\.transaction-month-slide"/);
   assert.match(transactionsSource, /className="transaction-month-spacer"/);
+  assert.doesNotMatch(transactionsSource, /monthCarouselDirection|monthCarouselPhase|month-carousel-/);
   assert.doesNotMatch(transactionsSource, /containScroll:\s*"trimSnaps"/);
   assert.doesNotMatch(transactionsSource, /activeMonthIndex - 1/);
   assert.doesNotMatch(transactionsSource, /optionCount - 4/);
   assert.match(css, /--transaction-month-slide-basis: 20%/);
   assert.match(css, /\.transaction-month-spacer \{[\s\S]*?flex: 0 0 var\(--transaction-month-edge-spacer\)/);
   assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-rail \{[\s\S]*?--transaction-month-slide-basis: 25%/);
+  assert.match(css, /@media \(max-width: 1024px\) and \(min-width: 769px\)[\s\S]*?\.transaction-month-rail button,\s*\.transaction-month-rail button\.active[\s\S]*?font-size: 1\.04rem/);
+  assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-rail button[\s\S]*?font-size: 0\.9rem/);
   assert.match(css, /@media \(max-width: 768px\)[\s\S]*?\.transaction-month-summary[\s\S]*?margin: 2px 22px 0;[\s\S]*?border-radius: 12px;[\s\S]*?background: var\(--surface-2\)/);
 });
 
@@ -444,10 +447,14 @@ test("development clears stale PWA caches so hot reload is not masked", async ()
 
 test("selected mobile controls use the subtle selected chip treatment", async () => {
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const multiSelectSource = await readFile(new URL("../components/ui/multi-select-dropdown.tsx", import.meta.url), "utf8");
 
   assert.match(css, /--selected-chip-bg: rgba\(168, 139, 80, 0\.14\)/);
   assert.match(css, /\.mobile-nav \.nav-item\.active[\s\S]*?background: var\(--selected-chip-bg\)/);
   assert.match(css, /\.category-multi-select-content button\.active[\s\S]*?background: var\(--selected-chip-bg\)/);
+  assert.match(css, /max-height: min\(420px, var\(--radix-popover-content-available-height, calc\(100vh - 80px\)\)\)/);
+  assert.match(multiSelectSource, /function MultiSelectDropdown/);
+  assert.match(multiSelectSource, /ArrowDown|ArrowUp|Home|End|Escape/);
   assert.match(css, /\.calendar-range-start \.calendar-day-button[\s\S]*?background: var\(--selected-chip-bg\) !important/);
 });
 

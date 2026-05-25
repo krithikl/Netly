@@ -1,18 +1,18 @@
 "use client";
 
 import { type ChangeEvent, type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, History, Pencil, Plus, Trash2 } from "lucide-react";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { PanelTitle } from "@/components/ui/panel-title";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
+import { CircularProgress } from "@/components/ui/circular-progress";
 import { DonutChart } from "@/components/ui/donut-chart";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
+import { MultiSelectDropdown, type MultiSelectDropdownOption } from "@/components/ui/multi-select-dropdown";
 import { TransactionList } from "@/features/transactions/TransactionList";
 import { MoneyMovementCard } from "@/components/MoneyMovementCard";
 import type { SelectOption } from "@/components/ui/select-field";
-import { useCloseOnPageScroll } from "@/hooks/useCloseOnPageScroll";
 import {
   Drawer,
   DrawerContent,
@@ -32,22 +32,28 @@ import { budgetsStorageKey } from "@/lib/app/constants";
 import { formatMoney, spendByCategory } from "@/lib/insights";
 import { cn } from "@/lib/utils";
 import type { CategoryEditScope } from "@/lib/category-rules";
+import type { DataMode } from "@/lib/app/types";
 import type { RecurringMerchant, Transaction } from "@/lib/types";
 import {
   getBudgetCategoryBreakdown,
   getBudgetChartCategories,
   getBudgetDaysLeft,
+  getBudgetHistoryPeriodSnapshots,
   getBudgetPeriod,
   getBudgetPeriodProgress,
   getBudgetPeriodTransactions,
   getBudgetSpendFromBreakdown,
+  getBudgetTransactionsInPeriod,
   type BudgetCadence,
-  type BudgetCategoryBreakdown
+  type BudgetCategoryBreakdown,
+  type BudgetHistoryPeriodSnapshot,
+  type BudgetPeriod
 } from "@/features/budgets/budgetLogic";
 
 type BudgetsPageProps = {
   categoryOptions: string[];
   categoryColors: Record<string, string>;
+  dataMode: DataMode;
   onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onRecurringClick: (merchant: string) => void;
   recurring: RecurringMerchant[];
@@ -57,10 +63,18 @@ type BudgetsPageProps = {
 type UserBudget = {
   categoryNames: string[];
   cadence: BudgetCadence;
+  createdAt: string;
   id: string;
   limit: number;
   name: string;
   periodAnchorDate: string;
+};
+
+type BudgetHistoryEntry = BudgetHistoryPeriodSnapshot;
+
+type BudgetStorageState = {
+  budgets: UserBudget[];
+  history: BudgetHistoryEntry[];
 };
 
 type BudgetFormState = {
@@ -74,7 +88,8 @@ const collapsedBudgetLimit = 3;
 const budgetCadenceOptions: Array<{ label: string; value: BudgetCadence }> = [
   { label: "Weekly", value: "weekly" },
   { label: "Fortnightly", value: "fortnightly" },
-  { label: "Monthly", value: "monthly" }
+  { label: "Monthly", value: "monthly" },
+  { label: "Yearly", value: "yearly" }
 ];
 const defaultBudgetCadence: BudgetCadence = "monthly";
 const budgetListToggleButtonClassName = "grid min-h-full cursor-pointer place-items-center rounded-[22px] border border-[var(--outline-soft)] bg-[var(--surface-2)] font-[inherit] text-[1.05rem] font-black text-[var(--accent-cream)] hover:border-[var(--primary-border)] hover:bg-[var(--surface-3)] max-[768px]:min-h-[60px] max-[768px]:rounded-[20px] max-[768px]:text-base";
@@ -82,14 +97,18 @@ const budgetEditorLabelClassName = "grid gap-[7px] text-[11px] font-[850] upperc
 const budgetEditorInputClassName = "min-h-11 w-full rounded-xl border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3 py-2.5 text-[0.95rem] font-bold text-[var(--ink)] outline-none focus:border-[var(--primary-border)]";
 
 // Budget screen with user-defined budgets calculated from selected categories.
-export function BudgetsPage({ categoryOptions, categoryColors, onCategoryChange, onRecurringClick, recurring, transactions }: BudgetsPageProps) {
-  const [budgets, setBudgets] = useState<UserBudget[]>([]);
+export function BudgetsPage({ categoryOptions, categoryColors, dataMode, onCategoryChange, onRecurringClick, recurring, transactions }: BudgetsPageProps) {
+  const [budgetState, setBudgetState] = useState<BudgetStorageState>(getEmptyBudgetStorageState);
   const [editingBudget, setEditingBudget] = useState<UserBudget | null>(null);
   const [budgetStorageError, setBudgetStorageError] = useState("");
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isBudgetListExpanded, setIsBudgetListExpanded] = useState(false);
   const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
+  const [historyBudgetId, setHistoryBudgetId] = useState<string | null>(null);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const [form, setForm] = useState<BudgetFormState>(getEmptyBudgetForm);
+  const budgets = budgetState.budgets;
+  const budgetHistory = budgetState.history;
   const renderedBudgets = useMemo(
     () => getRenderableBudgets(budgets),
     [budgets]
@@ -100,6 +119,11 @@ export function BudgetsPage({ categoryOptions, categoryColors, onCategoryChange,
   const availableCategoryOptions = useMemo(() => getAvailableCategoryOptions(categoryOptions, categories), [categoryOptions, categories]);
   const editableCategorySelectOptions = useMemo(() => getSelectOptions(categoryOptions.filter((category) => category !== "All categories")), [categoryOptions]);
   const selectedBudget = useMemo(() => renderedBudgets.find((budget) => budget.id === selectedBudgetId) || null, [renderedBudgets, selectedBudgetId]);
+  const historyBudget = useMemo(() => renderedBudgets.find((budget) => budget.id === historyBudgetId) || null, [historyBudgetId, renderedBudgets]);
+  const historyEntries = useMemo(() => getHistoryEntriesForBudget(budgetHistory, historyBudgetId), [budgetHistory, historyBudgetId]);
+  const selectedHistory = useMemo(() => budgetHistory.find((entry) => entry.id === selectedHistoryId) || null, [budgetHistory, selectedHistoryId]);
+  const selectedHistoryBudget = useMemo(() => selectedHistory ? getBudgetFromHistoryEntry(selectedHistory) : null, [selectedHistory]);
+  const selectedHistoryPeriod = useMemo(() => selectedHistory ? getBudgetPeriodFromHistoryEntry(selectedHistory) : null, [selectedHistory]);
   const selectedBudgetBreakdown = useMemo(
     () => selectedBudget
       ? getBudgetCategoryBreakdown(
@@ -109,19 +133,41 @@ export function BudgetsPage({ categoryOptions, categoryColors, onCategoryChange,
       : [],
     [selectedBudget, transactions]
   );
+  const selectedHistoryBreakdown = useMemo(
+    () => selectedHistoryBudget && selectedHistoryPeriod
+      ? getBudgetCategoryBreakdown(
+          getBudgetTransactionsInPeriod(transactions, selectedHistoryPeriod),
+          selectedHistoryBudget.categoryNames
+        )
+      : [],
+    [selectedHistoryBudget, selectedHistoryPeriod, transactions]
+  );
   const activeBudget = editingBudget || null;
   const formLimit = Number.parseFloat(form.limit);
   const canSaveBudget = form.name.trim().length > 0 && Number.isFinite(formLimit) && formLimit > 0 && form.categoryNames.length > 0;
 
   useEffect(() => {
-    setBudgets(readSavedBudgets());
-  }, []);
+    setBudgetState(readSavedBudgetState(dataMode));
+  }, [dataMode]);
 
   useEffect(() => {
     if (selectedBudgetId && !selectedBudget) {
       setSelectedBudgetId(null);
     }
   }, [selectedBudget, selectedBudgetId]);
+
+  useEffect(() => {
+    if (historyBudgetId && !historyBudget) {
+      setHistoryBudgetId(null);
+      setSelectedHistoryId(null);
+    }
+  }, [historyBudget, historyBudgetId]);
+
+  useEffect(() => {
+    if (selectedHistoryId && !selectedHistory) {
+      setSelectedHistoryId(null);
+    }
+  }, [selectedHistory, selectedHistoryId]);
 
   const openNewBudget = () => {
     setEditingBudget(null);
@@ -143,21 +189,23 @@ export function BudgetsPage({ categoryOptions, categoryColors, onCategoryChange,
       return;
     }
 
+    const materializedState = getBudgetStateWithMaterializedHistory(budgetState);
     const nextBudget: UserBudget = {
       categoryNames: form.categoryNames,
       cadence: form.cadence,
       id: activeBudget?.id || createBudgetId(),
       limit: formLimit,
       name: form.name.trim(),
+      createdAt: getNextBudgetHistoryStartDate(activeBudget, form.cadence),
       periodAnchorDate: getNextBudgetAnchorDate(activeBudget, form.cadence)
     };
-    const shouldReplaceBudget = activeBudget && budgets.some((budget) => budget.id === activeBudget.id);
+    const shouldReplaceBudget = activeBudget && materializedState.budgets.some((budget) => budget.id === activeBudget.id);
     const nextBudgets = shouldReplaceBudget
-      ? budgets.map((budget) => budget.id === activeBudget.id ? nextBudget : budget)
-      : [...budgets, nextBudget];
+      ? materializedState.budgets.map((budget) => budget.id === activeBudget.id ? nextBudget : budget)
+      : [...materializedState.budgets, nextBudget];
 
     setIsEditorOpen(false);
-    setBudgetsAndPersist(nextBudgets, setBudgets, setBudgetStorageError);
+    setBudgetStateAndPersist({ budgets: nextBudgets, history: materializedState.history }, setBudgetState, setBudgetStorageError);
   };
   const submitBudgetForm = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -169,10 +217,51 @@ export function BudgetsPage({ categoryOptions, categoryColors, onCategoryChange,
       return;
     }
 
-    setBudgetsAndPersist(budgets.filter((budget) => budget.id !== activeBudget.id), setBudgets, setBudgetStorageError);
+    setBudgetStateAndPersist({
+      budgets: budgets.filter((budget) => budget.id !== activeBudget.id),
+      history: budgetHistory.filter((entry) => entry.budgetId !== activeBudget.id)
+    }, setBudgetState, setBudgetStorageError);
     setSelectedBudgetId((currentId) => currentId === activeBudget.id ? null : currentId);
+    setHistoryBudgetId((currentId) => currentId === activeBudget.id ? null : currentId);
+    setSelectedHistoryId((currentId) => budgetHistory.some((entry) => entry.id === currentId && entry.budgetId === activeBudget.id) ? null : currentId);
     setIsEditorOpen(false);
   };
+
+  if (selectedHistoryBudget && selectedHistoryPeriod) {
+    return (
+      <section className="view-stack budget-page-layout" data-testid="budget-history-detail-page">
+        <BudgetDetailView
+          breakdown={selectedHistoryBreakdown}
+          budget={selectedHistoryBudget}
+          budgetPeriod={selectedHistoryPeriod}
+          categoryColors={categoryColors}
+          categorySelectOptions={editableCategorySelectOptions}
+          isHistory
+          onBack={() => setSelectedHistoryId(null)}
+          onCategoryChange={onCategoryChange}
+        />
+        {budgetStorageError && (
+          <p className="rounded-[14px] border border-[rgba(229,184,107,0.28)] bg-[rgba(229,184,107,0.1)] px-3 py-2.5 text-[13px] font-bold text-[var(--warning)]">
+            {budgetStorageError}
+          </p>
+        )}
+      </section>
+    );
+  }
+
+  if (historyBudget) {
+    return (
+      <section className="view-stack budget-page-layout" data-testid="budget-history-page">
+        <BudgetHistoryView
+          budget={historyBudget}
+          entries={historyEntries}
+          onBack={() => setHistoryBudgetId(null)}
+          onOpenHistory={setSelectedHistoryId}
+          transactions={transactions}
+        />
+      </section>
+    );
+  }
 
   if (selectedBudget) {
     return (
@@ -217,7 +306,7 @@ export function BudgetsPage({ categoryOptions, categoryColors, onCategoryChange,
               <BudgetCard
                 budget={budget}
                 key={budget.id}
-                onEdit={() => openBudgetEditor(budget)}
+                onHistory={() => setHistoryBudgetId(budget.id)}
                 onOpen={() => setSelectedBudgetId(budget.id)}
                 spent={getBudgetSpendFromBreakdown(getBudgetCategoryBreakdown(
                   getBudgetPeriodTransactions(transactions, budget.cadence, budget.periodAnchorDate),
@@ -296,12 +385,12 @@ export function BudgetsPage({ categoryOptions, categoryColors, onCategoryChange,
 // Individual user budget with category-based spend progress.
 function BudgetCard({
   budget,
-  onEdit,
+  onHistory,
   onOpen,
   spent
 }: {
   budget: UserBudget;
-  onEdit: () => void;
+  onHistory: () => void;
   onOpen: () => void;
   spent: number;
 }) {
@@ -322,9 +411,9 @@ function BudgetCard({
     event.preventDefault();
     onOpen();
   };
-  const editBudget = (event: MouseEvent<HTMLButtonElement>) => {
+  const openHistory = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    onEdit();
+    onHistory();
   };
 
   return (
@@ -336,17 +425,109 @@ function BudgetCard({
             <b>{budgetStatusLabel}</b>
           </p>
         </div>
-        <button aria-label={`Edit ${budget.name}`} onClick={editBudget} type="button">
-          <Pencil aria-hidden="true" size={20} strokeWidth={2.4} />
+        <button aria-label={`View ${budget.name} history`} onClick={openHistory} type="button">
+          <History aria-hidden="true" size={20} strokeWidth={2.4} />
         </button>
       </div>
       <div className="budget-progress-body">
         <BudgetTimelineProgress budgetName={budget.name} budgetPeriod={budgetPeriod} progress={progress} />
         <p className="budget-daily-note">
-          {remaining > 0 ? `You can spend ${formatMoney(dailyAmount, true)}/day for ${daysLeft} more days` : `${formatMoney(Math.abs(remaining), true)} over this month`}
+          {remaining > 0 ? `You can spend ${formatMoney(dailyAmount, true)}/day for ${daysLeft} more days` : `${formatMoney(Math.abs(remaining), true)} over this period`}
         </p>
       </div>
     </article>
+  );
+}
+
+// Historical budget periods are compact spend-review cards for prior periods.
+function BudgetHistoryView({
+  budget,
+  entries,
+  onBack,
+  onOpenHistory,
+  transactions
+}: {
+  budget: UserBudget;
+  entries: BudgetHistoryEntry[];
+  onBack: () => void;
+  onOpenHistory: (entryId: string) => void;
+  transactions: Transaction[];
+}) {
+  return (
+    <div className="budget-history-view">
+      <MobilePageHeader
+        leading={(
+          <Button aria-label="Back to budgets" className="budget-detail-header-action" onClick={onBack} title="Back to budgets" type="button" variant="ghost">
+            <ArrowLeft aria-hidden="true" className="h-7 w-7" />
+          </Button>
+        )}
+        title={`${budget.name} history`}
+      />
+      <div className="budget-detail-desktop-header">
+        <Button aria-label="Back to budgets" onClick={onBack} type="button" variant="ghost">
+          <ArrowLeft aria-hidden="true" className="h-5 w-5" />
+          Budgets
+        </Button>
+      </div>
+      <section className="budget-history-panel">
+        <PanelTitle title={`${budget.name} history`} subtitle="Prior budget periods and category spending" />
+        {entries.length > 0 ? (
+          <div className="budget-history-grid">
+            {entries.map((entry) => {
+              const spent = getBudgetHistorySpend(entry, transactions);
+              const progress = getBudgetHistoryProgress(spent, entry.limit);
+
+              return (
+                <button
+                  className="budget-history-card"
+                  key={entry.id}
+                  onClick={() => onOpenHistory(entry.id)}
+                  style={{
+                    alignItems: "center",
+                    borderRadius: 18,
+                    display: "grid",
+                    gap: 14,
+                    gridTemplateColumns: "minmax(0, 1fr) auto",
+                    minHeight: 86,
+                    padding: "14px 16px"
+                  }}
+                  type="button"
+                >
+                  <div className="budget-history-copy" style={{ display: "grid", gap: 6, minWidth: 0, textTransform: "none" }}>
+                    <span
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {getBudgetHistoryPeriodLabel(entry)}
+                    </span>
+                    <strong
+                      style={{
+                        fontSize: "clamp(0.92rem, 1.5vw, 1.02rem)",
+                        fontWeight: 950,
+                        lineHeight: 1.2,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        textTransform: "none",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {getBudgetHistoryStatusLabel(spent, entry.limit)}
+                    </strong>
+                  </div>
+                  <CircularProgress ariaLabel={`${entry.name} ${getBudgetHistoryPeriodLabel(entry)} budget progress`} value={progress} />
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="empty-state">No completed budget periods yet.</div>
+        )}
+      </section>
+    </div>
   );
 }
 
@@ -354,25 +535,29 @@ function BudgetCard({
 function BudgetDetailView({
   breakdown,
   budget,
+  budgetPeriod: explicitBudgetPeriod,
   categoryColors,
   categorySelectOptions,
+  isHistory = false,
   onBack,
   onCategoryChange,
   onEdit
 }: {
   breakdown: BudgetCategoryBreakdown[];
   budget: UserBudget;
+  budgetPeriod?: BudgetPeriod;
   categoryColors: Record<string, string>;
   categorySelectOptions: SelectOption[];
+  isHistory?: boolean;
   onBack: () => void;
   onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
-  onEdit: () => void;
+  onEdit?: () => void;
 }) {
   const spent = getBudgetSpendFromBreakdown(breakdown);
   const left = Math.max(0, budget.limit - spent);
   const remaining = budget.limit - spent;
   const progress = budget.limit > 0 ? (spent / budget.limit) * 100 : 0;
-  const budgetPeriod = getBudgetPeriod(budget.cadence, budget.periodAnchorDate);
+  const budgetPeriod = explicitBudgetPeriod || getBudgetPeriod(budget.cadence, budget.periodAnchorDate);
   const daysLeft = getBudgetDaysLeft(budgetPeriod);
   const dailyAmount = getDailyAmount(left, daysLeft);
   const chartCategories = getBudgetChartCategories(breakdown);
@@ -391,11 +576,11 @@ function BudgetDetailView({
   return (
     <div className="budget-detail-view">
       <MobilePageHeader
-        actions={(
+        actions={!isHistory && onEdit ? (
           <Button aria-label={`Edit ${budget.name}`} className="budget-detail-header-action" onClick={onEdit} title="Edit budget" type="button" variant="ghost">
             <Pencil aria-hidden="true" className="h-6 w-6" />
           </Button>
-        )}
+        ) : null}
         leading={(
           <Button aria-label="Back to budgets" className="budget-detail-header-action" onClick={onBack} title="Back to budgets" type="button" variant="ghost">
             <ArrowLeft aria-hidden="true" className="h-7 w-7" />
@@ -406,12 +591,14 @@ function BudgetDetailView({
       <div className="budget-detail-desktop-header">
         <Button aria-label="Back to budgets" onClick={onBack} type="button" variant="ghost">
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />
-          Budgets
+          {isHistory ? "History" : "Budgets"}
         </Button>
-        <Button aria-label={`Edit ${budget.name}`} onClick={onEdit} type="button" variant="outline">
-          <Pencil aria-hidden="true" className="h-4 w-4" />
-          Edit
-        </Button>
+        {!isHistory && onEdit && (
+          <Button aria-label={`Edit ${budget.name}`} onClick={onEdit} type="button" variant="outline">
+            <Pencil aria-hidden="true" className="h-4 w-4" />
+            Edit
+          </Button>
+        )}
       </div>
       <section className="budget-detail-hero">
         <div className="budget-detail-title-row">
@@ -420,9 +607,9 @@ function BudgetDetailView({
             <p>{getBudgetStatusLabel(remaining, budget.limit)}</p>
           </div>
         </div>
-        <BudgetTimelineProgress budgetName={budget.name} budgetPeriod={budgetPeriod} progress={progress} />
+        <BudgetTimelineProgress budgetName={budget.name} budgetPeriod={budgetPeriod} progress={progress} showTodayMarker={!isHistory} />
         <p className="budget-daily-note">
-          {remaining > 0 ? `You can spend ${formatMoney(dailyAmount, true)}/day for ${daysLeft} more days` : `${formatMoney(Math.abs(remaining), true)} over this month`}
+          {isHistory ? getBudgetStatusLabel(remaining, budget.limit) : remaining > 0 ? `You can spend ${formatMoney(dailyAmount, true)}/day for ${daysLeft} more days` : `${formatMoney(Math.abs(remaining), true)} over this period`}
         </p>
       </section>
       <section className="budget-breakdown-panel">
@@ -500,11 +687,13 @@ function BudgetCategoryTransactionExpansion({
 function BudgetTimelineProgress({
   budgetName,
   budgetPeriod,
-  progress
+  progress,
+  showTodayMarker = true
 }: {
   budgetName: string;
   budgetPeriod: ReturnType<typeof getBudgetPeriod>;
   progress: number;
+  showTodayMarker?: boolean;
 }) {
   const progressWidth = Math.min(100, Math.max(0, progress));
   const todayProgress = getBudgetPeriodProgress(budgetPeriod);
@@ -517,9 +706,11 @@ function BudgetTimelineProgress({
         <span className="budget-progress-fill-label" style={{ width: `${progressWidth}%` }}>
           <strong>{Math.round(progress)}%</strong>
         </span>
-        <span className="budget-today-marker" style={{ left: `${todayProgress}%` }}>
-          <small>Today</small>
-        </span>
+        {showTodayMarker && (
+          <span className="budget-today-marker" style={{ left: `${todayProgress}%` }}>
+            <small>Today</small>
+          </span>
+        )}
       </div>
       <span>{formatPeriodDate(budgetPeriod.endDate)}</span>
     </div>
@@ -635,7 +826,7 @@ function BudgetEditor({
   };
 
   const formContent = (
-    <form className={cn("grid gap-3.5", isMobileEditor ? "px-[18px] pb-[18px]" : "p-0")} onSubmit={onSubmit}>
+    <form className={cn("budget-editor-form grid gap-3.5", isMobileEditor ? "px-[18px] pb-[18px]" : "p-0")} data-vaul-no-drag={isMobileEditor ? "" : undefined} onSubmit={onSubmit}>
       <label className={budgetEditorLabelClassName}>
         Budget name
         <input className={budgetEditorInputClassName} autoComplete="off" onChange={changeName} placeholder="Spending money" value={form.name} />
@@ -736,40 +927,21 @@ function BudgetCategoryMultiSelectDropdown({
   options: string[];
   selectedValues: string[];
 }) {
-  const selectedSet = new Set(selectedValues);
-  const [open, setOpen] = useState(false);
   const label = getCategorySelectionLabel(selectedValues, options, "All categories");
-  useCloseOnPageScroll(open, () => setOpen(false));
+  const dropdownOptions = getMultiSelectOptions(options);
 
   return (
-    <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger asChild>
-        <button aria-haspopup="listbox" aria-label="Budget categories" className="category-multi-select-trigger transaction-select-trigger budget-category-multi-select-trigger" data-testid="budget-category-multi-select-trigger" role="combobox" type="button">
-          <span>{label}</span>
-          <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="category-multi-select-content budget-category-multi-select-content" data-testid="budget-category-multi-select-content">
-        {options.map((option) => {
-          const isActive = selectedSet.has(option);
-
-          return (
-            <button
-              aria-pressed={isActive}
-              className={isActive ? "active" : undefined}
-              key={option}
-              onClick={() => onToggle(option)}
-              type="button"
-            >
-              <span className="category-multi-select-check">
-                {isActive && <Check aria-hidden="true" className="h-4 w-4" />}
-              </span>
-              <span>{option}</span>
-            </button>
-          );
-        })}
-      </PopoverContent>
-    </Popover>
+    <MultiSelectDropdown
+      ariaLabel="Budget categories"
+      contentClassName="budget-category-multi-select-content"
+      contentTestId="budget-category-multi-select-content"
+      label={label}
+      onToggle={onToggle}
+      options={dropdownOptions}
+      selectedValues={selectedValues}
+      triggerClassName="budget-category-multi-select-trigger"
+      triggerTestId="budget-category-multi-select-trigger"
+    />
   );
 }
 
@@ -820,6 +992,14 @@ function getSelectOptions(values: string[]): SelectOption[] {
   }));
 }
 
+// Converts labels into the shared multi-select option model.
+function getMultiSelectOptions(values: string[]): MultiSelectDropdownOption[] {
+  return values.map((value) => ({
+    label: value,
+    value
+  }));
+}
+
 // Summarizes category multi-select state for compact trigger labels.
 function getCategorySelectionLabel(selectedValues: string[], options: string[], allLabel: string) {
   if (selectedValues.length === 0) {
@@ -837,7 +1017,88 @@ function getCategorySelectionLabel(selectedValues: string[], options: string[], 
   return `${selectedValues.length} selected`;
 }
 
-// Creates the form state used for a new monthly budget.
+// Narrows history entries to one budget, newest period first.
+function getHistoryEntriesForBudget(history: BudgetHistoryEntry[], budgetId: string | null) {
+  if (!budgetId) {
+    return [];
+  }
+
+  return sortBudgetHistory(history.filter((entry) => entry.budgetId === budgetId));
+}
+
+// Turns a historical snapshot into the budget model expected by the detail view.
+function getBudgetFromHistoryEntry(entry: BudgetHistoryEntry): UserBudget {
+  return {
+    categoryNames: entry.categoryNames,
+    cadence: entry.cadence,
+    createdAt: entry.periodStartDate,
+    id: entry.budgetId,
+    limit: entry.limit,
+    name: entry.name,
+    periodAnchorDate: entry.periodStartDate
+  };
+}
+
+// Converts stored date strings into a full historical budget period.
+function getBudgetPeriodFromHistoryEntry(entry: BudgetHistoryEntry): BudgetPeriod {
+  const startDate = parseBudgetDate(entry.periodStartDate, "periodStartDate");
+  const endDate = parseBudgetDate(entry.periodEndDate, "periodEndDate");
+
+  if (endDate < startDate) {
+    throw new Error(`Invalid budget history entry "${entry.id}": periodEndDate must be after periodStartDate.`);
+  }
+
+  return {
+    endDate,
+    filterEndDate: endDate,
+    startDate
+  };
+}
+
+// Calculates historical spend from the live transaction/category data.
+function getBudgetHistorySpend(entry: BudgetHistoryEntry, transactions: Transaction[]) {
+  return getBudgetSpendFromBreakdown(getBudgetCategoryBreakdown(
+    getBudgetTransactionsInPeriod(transactions, getBudgetPeriodFromHistoryEntry(entry)),
+    entry.categoryNames
+  ));
+}
+
+// Formats a historical budget period for compact cards.
+function getBudgetHistoryPeriodLabel(entry: BudgetHistoryEntry) {
+  return parseBudgetDate(entry.periodStartDate, "periodStartDate").toLocaleDateString("en-NZ", {
+    month: "long",
+    year: "numeric"
+  });
+}
+
+// Formats historical remaining or overspent status against the frozen limit.
+function getBudgetHistoryStatusLabel(spent: number, limit: number) {
+  if (limit <= 0) {
+    throw new Error("Budget history target invariant failed: limit must be greater than zero.");
+  }
+
+  const remaining = limit - spent;
+
+  return remaining >= 0
+    ? `${formatMoney(remaining, true)} left of ${formatMoney(limit, true)}`
+    : `${formatMoney(Math.abs(remaining), true)} overspent of ${formatMoney(limit, true)}`;
+}
+
+// Returns the raw historical spend ratio so overspend can render extra circle laps.
+function getBudgetHistoryProgress(spent: number, limit: number) {
+  if (limit <= 0) {
+    throw new Error("Budget history progress invariant failed: limit must be greater than zero.");
+  }
+
+  return (spent / limit) * 100;
+}
+
+// Keeps history in reverse chronological order for review screens.
+function sortBudgetHistory(history: BudgetHistoryEntry[]) {
+  return [...history].sort((first, second) => second.periodStartDate.localeCompare(first.periodStartDate));
+}
+
+// Creates the default form state used for a new budget.
 function getEmptyBudgetForm(): BudgetFormState {
   return {
     categoryNames: [],
@@ -847,27 +1108,96 @@ function getEmptyBudgetForm(): BudgetFormState {
   };
 }
 
-// Reads persisted budgets, using an empty list when no budget has been saved.
-function readSavedBudgets() {
+// Returns the empty persisted state shape for custom budgets and history.
+function getEmptyBudgetStorageState(): BudgetStorageState {
+  return {
+    budgets: [],
+    history: []
+  };
+}
+
+// Builds demo-mode budget history from the static demo transaction period.
+function getDemoBudgetState(): BudgetStorageState {
+  const demoBudget: UserBudget = {
+    categoryNames: ["Budget demo"],
+    cadence: "monthly",
+    createdAt: "2025-07-01",
+    id: "demo-spending-money",
+    limit: 800,
+    name: "Spending money",
+    periodAnchorDate: "2025-07-01"
+  };
+
+  return getBudgetStateWithMaterializedHistory({
+    budgets: [demoBudget],
+    history: []
+  }, new Date("2026-05-24T12:00:00"));
+}
+
+// Adds any completed budget periods that are missing from the persisted history.
+function getBudgetStateWithMaterializedHistory(budgetState: BudgetStorageState, referenceDate = new Date()): BudgetStorageState {
+  const knownHistoryIds = new Set(budgetState.history.map((entry) => entry.id));
+  const nextHistory = [...budgetState.history];
+
+  budgetState.budgets.forEach((budget) => {
+    getBudgetHistoryPeriodSnapshots(budget, referenceDate).forEach((entry) => {
+      if (knownHistoryIds.has(entry.id)) {
+        return;
+      }
+
+      knownHistoryIds.add(entry.id);
+      nextHistory.push(entry);
+    });
+  });
+
+  return {
+    budgets: budgetState.budgets,
+    history: sortBudgetHistory(nextHistory)
+  };
+}
+
+// Demo mode only creates starter data before a user has any saved budget.
+function getDemoReadableBudgetState(budgetState: BudgetStorageState) {
+  if (budgetState.budgets.length === 0) {
+    return getDemoBudgetState();
+  }
+
+  return budgetState;
+}
+
+// Reads persisted budgets, seeding demo history only when demo mode has no saved budgets.
+function readSavedBudgetState(dataMode: DataMode) {
   const storage = getBudgetStorage();
   const storedBudgets = storage?.getItem(budgetsStorageKey);
 
   if (!storedBudgets) {
-    return [];
+    return dataMode === "demo" ? getDemoBudgetState() : getEmptyBudgetStorageState();
   }
 
-  return parseSavedBudgets(storedBudgets);
+  const savedBudgetState = getBudgetStateWithMaterializedHistory(parseSavedBudgetState(storedBudgets));
+
+  return dataMode === "demo" ? getDemoReadableBudgetState(savedBudgetState) : savedBudgetState;
 }
 
-// Parses the persisted local budget array and fails loudly on corrupt data.
-function parseSavedBudgets(value: string): UserBudget[] {
+// Parses the persisted local budget state and fails loudly on corrupt data.
+function parseSavedBudgetState(value: string): BudgetStorageState {
   const parsedValue = JSON.parse(value) as unknown;
 
-  if (!Array.isArray(parsedValue)) {
-    throw new Error("Invalid saved budgets: expected an array.");
+  if (Array.isArray(parsedValue)) {
+    return {
+      budgets: parsedValue.map(parseSavedBudget),
+      history: []
+    };
   }
 
-  return parsedValue.map(parseSavedBudget);
+  if (!isRecord(parsedValue) || !Array.isArray(parsedValue.budgets) || !Array.isArray(parsedValue.history)) {
+    throw new Error("Invalid saved budget state: expected budgets and history arrays.");
+  }
+
+  return {
+    budgets: parsedValue.budgets.map(parseSavedBudget),
+    history: parsedValue.history.map(parseSavedBudgetHistoryEntry)
+  };
 }
 
 // Validates one persisted budget before returning it to the UI.
@@ -892,10 +1222,12 @@ function parseSavedBudget(value: unknown): UserBudget {
 
   const cadence: BudgetCadence = isPreCadenceBudget ? defaultBudgetCadence : value.cadence as BudgetCadence;
   const periodAnchorDate = isPreCadenceBudget ? getTodayInputDate() : parseBudgetAnchorDate(value.periodAnchorDate as string);
+  const createdAt = typeof value.createdAt === "string" ? parseBudgetAnchorDate(value.createdAt) : periodAnchorDate;
 
   return {
     categoryNames,
     cadence,
+    createdAt,
     id: value.id,
     limit: value.limit,
     name: value.name,
@@ -903,18 +1235,44 @@ function parseSavedBudget(value: unknown): UserBudget {
   };
 }
 
-// Stores the complete custom budget list in localStorage.
-function setBudgetsAndPersist(
-  budgets: UserBudget[],
-  setBudgets: (budgets: UserBudget[]) => void,
-  setBudgetStorageError: (message: string) => void
-) {
-  setBudgets(budgets);
-  persistBudgetStorage(budgets, setBudgetStorageError);
+// Validates one persisted history period before returning it to the UI.
+function parseSavedBudgetHistoryEntry(value: unknown): BudgetHistoryEntry {
+  if (!isRecord(value) || typeof value.budgetId !== "string" || typeof value.id !== "string" || typeof value.name !== "string" || typeof value.limit !== "number" || !Array.isArray(value.categoryNames) || !isBudgetCadence(value.cadence) || typeof value.periodStartDate !== "string" || typeof value.periodEndDate !== "string") {
+    throw new Error("Invalid saved budget history entry: expected budgetId, period dates, cadence, limit, name, and categoryNames.");
+  }
+
+  const categoryNames = value.categoryNames.map((category) => {
+    if (typeof category !== "string") {
+      throw new Error("Invalid saved budget history category: expected a string.");
+    }
+
+    return category;
+  });
+
+  return {
+    budgetId: value.budgetId,
+    categoryNames,
+    cadence: value.cadence,
+    id: value.id,
+    limit: value.limit,
+    name: value.name,
+    periodEndDate: parseBudgetAnchorDate(value.periodEndDate),
+    periodStartDate: parseBudgetAnchorDate(value.periodStartDate)
+  };
 }
 
-// Persists budgets when browser storage is available and reports when it is not.
-function persistBudgetStorage(budgets: UserBudget[], setBudgetStorageError: (message: string) => void) {
+// Stores the complete custom budget state in localStorage.
+function setBudgetStateAndPersist(
+  budgetState: BudgetStorageState,
+  setBudgetState: (budgetState: BudgetStorageState) => void,
+  setBudgetStorageError: (message: string) => void
+) {
+  setBudgetState(budgetState);
+  persistBudgetStorage(budgetState, setBudgetStorageError);
+}
+
+// Persists budgets and history when browser storage is available.
+function persistBudgetStorage(budgetState: BudgetStorageState, setBudgetStorageError: (message: string) => void) {
   const storage = getBudgetStorage();
 
   if (!storage) {
@@ -923,7 +1281,7 @@ function persistBudgetStorage(budgets: UserBudget[], setBudgetStorageError: (mes
   }
 
   try {
-    storage.setItem(budgetsStorageKey, JSON.stringify(budgets));
+    storage.setItem(budgetsStorageKey, JSON.stringify(budgetState));
     setBudgetStorageError("");
   } catch {
     setBudgetStorageError("Budget changes are saved for this session only because browser storage could not be written.");
@@ -942,6 +1300,13 @@ function getBudgetStorage() {
 // Creates a stable local id without requiring browser crypto support.
 function createBudgetId() {
   return `budget-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// Preserves an existing history start unless the budget cadence changes.
+function getNextBudgetHistoryStartDate(activeBudget: UserBudget | null, nextCadence: BudgetCadence) {
+  return activeBudget && activeBudget.cadence === nextCadence
+    ? activeBudget.createdAt
+    : getTodayInputDate();
 }
 
 // Preserves an existing anchor unless the budget cadence changes.
@@ -992,7 +1357,18 @@ function parseBudgetAnchorDate(value: string) {
   return getDateInputValue(new Date(timestamp));
 }
 
-// Returns today's date for newly anchored weekly and fortnightly budget periods.
+// Parses persisted date-only budget fields into local noon Date values.
+function parseBudgetDate(value: string, fieldName: string) {
+  const timestamp = Date.parse(`${value}T12:00:00`);
+
+  if (!Number.isFinite(timestamp)) {
+    throw new Error(`Invalid saved budget ${fieldName} "${value}". Expected YYYY-MM-DD.`);
+  }
+
+  return new Date(timestamp);
+}
+
+// Returns today's date for newly anchored budget periods.
 function getTodayInputDate() {
   return getDateInputValue(new Date());
 }

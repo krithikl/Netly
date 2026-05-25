@@ -7,7 +7,7 @@ The app connects to Akahu for account and transaction data, uses Akahu merchant/
 Main features:
 - Spending dashboard with balances, income tracking, spend rhythm, and review signals
 - Transaction feed with merchant/category enrichment
-- Weekly, fortnightly, and monthly budget tracking with category breakdowns and recurring payment detection
+- Weekly, fortnightly, monthly, and yearly budget tracking with category breakdowns, prior-period history, and recurring payment detection
 - Card comparison and rewards-fit analysis
 - Custom category overrides and colour settings
 - Demo mode for local testing without live bank connections
@@ -69,6 +69,8 @@ When a dev server is already running on `http://localhost:3000`, run targeted Pl
 ```bash
 NETLY_PLAYWRIGHT_MANAGED_SERVER=0 npx playwright test tests/visual/netly-visual.spec.ts
 ```
+
+For UI changes, also inspect the changed screens manually at `http://localhost:3000`, including desktop, tablet/mobile sizing, and open interaction states such as dropdowns, drawers, and detail panels.
 
 ---
 

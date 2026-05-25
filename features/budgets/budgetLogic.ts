@@ -1,6 +1,6 @@
 import type { Transaction } from "../../lib/types";
 
-export type BudgetCadence = "weekly" | "fortnightly" | "monthly";
+export type BudgetCadence = "weekly" | "fortnightly" | "monthly" | "yearly";
 
 export type BudgetCategoryBreakdown = {
   amount: number;
@@ -14,6 +14,27 @@ export type BudgetPeriod = {
   endDate: Date;
   filterEndDate: Date;
   startDate: Date;
+};
+
+export type BudgetHistorySource = {
+  categoryNames: string[];
+  cadence: BudgetCadence;
+  createdAt: string;
+  id: string;
+  limit: number;
+  name: string;
+  periodAnchorDate: string;
+};
+
+export type BudgetHistoryPeriodSnapshot = {
+  budgetId: string;
+  categoryNames: string[];
+  cadence: BudgetCadence;
+  id: string;
+  limit: number;
+  name: string;
+  periodEndDate: string;
+  periodStartDate: string;
 };
 
 const dayMs = 24 * 60 * 60 * 1000;
@@ -94,6 +115,17 @@ export function getBudgetPeriod(cadence: BudgetCadence, periodAnchorDate: string
     };
   }
 
+  if (cadence === "yearly") {
+    const startDate = new Date(normalizedReferenceDate.getFullYear(), 0, 1);
+    const endDate = new Date(normalizedReferenceDate.getFullYear(), 11, 31);
+
+    return {
+      endDate,
+      filterEndDate: minDate(normalizedReferenceDate, endDate),
+      startDate
+    };
+  }
+
   const periodDays = cadence === "weekly" ? 7 : 14;
   const anchorDate = parseBudgetAnchorDate(periodAnchorDate);
   const elapsedDays = Math.floor((normalizedReferenceDate.getTime() - anchorDate.getTime()) / dayMs);
@@ -111,6 +143,12 @@ export function getBudgetPeriod(cadence: BudgetCadence, periodAnchorDate: string
 // Filters transactions to the active budget reset window.
 export function getBudgetPeriodTransactions(transactions: Transaction[], cadence: BudgetCadence, periodAnchorDate: string, referenceDate = new Date()) {
   const period = getBudgetPeriod(cadence, periodAnchorDate, referenceDate);
+
+  return getBudgetTransactionsInPeriod(transactions, period);
+}
+
+// Filters transactions to the supplied budget period.
+export function getBudgetTransactionsInPeriod(transactions: Transaction[], period: BudgetPeriod) {
   const fromDate = formatDateInputValue(period.startDate);
   const toDate = formatDateInputValue(period.filterEndDate);
 
@@ -118,6 +156,33 @@ export function getBudgetPeriodTransactions(transactions: Transaction[], cadence
     const transactionDate = getBudgetTransactionDate(transaction);
     return transactionDate >= fromDate && transactionDate <= toDate;
   });
+}
+
+// Builds immutable prior-period budget snapshots up to, but not including, the active period.
+export function getBudgetHistoryPeriodSnapshots(budget: BudgetHistorySource, referenceDate = new Date()): BudgetHistoryPeriodSnapshot[] {
+  const activePeriod = getBudgetPeriod(budget.cadence, budget.periodAnchorDate, referenceDate);
+  let period = getBudgetPeriod(budget.cadence, budget.periodAnchorDate, parseBudgetAnchorDate(budget.createdAt));
+  const snapshots: BudgetHistoryPeriodSnapshot[] = [];
+
+  while (period.endDate < activePeriod.startDate) {
+    const periodStartDate = formatDateInputValue(period.startDate);
+    const periodEndDate = formatDateInputValue(period.endDate);
+
+    snapshots.push({
+      budgetId: budget.id,
+      categoryNames: [...budget.categoryNames],
+      cadence: budget.cadence,
+      id: getBudgetHistoryPeriodId(budget.id, periodStartDate, periodEndDate),
+      limit: budget.limit,
+      name: budget.name,
+      periodEndDate,
+      periodStartDate
+    });
+
+    period = getNextBudgetPeriod(budget.cadence, period);
+  }
+
+  return snapshots;
 }
 
 // Calculates where today sits in the active budget period.
@@ -194,6 +259,40 @@ function addDays(date: Date, days: number) {
   return normalizeDate(nextDate);
 }
 
+function getNextBudgetPeriod(cadence: BudgetCadence, period: BudgetPeriod): BudgetPeriod {
+  if (cadence === "monthly") {
+    const startDate = new Date(period.startDate.getFullYear(), period.startDate.getMonth() + 1, 1);
+    const endDate = new Date(period.startDate.getFullYear(), period.startDate.getMonth() + 2, 0);
+
+    return {
+      endDate,
+      filterEndDate: endDate,
+      startDate
+    };
+  }
+
+  if (cadence === "yearly") {
+    const startDate = new Date(period.startDate.getFullYear() + 1, 0, 1);
+    const endDate = new Date(period.startDate.getFullYear() + 1, 11, 31);
+
+    return {
+      endDate,
+      filterEndDate: endDate,
+      startDate
+    };
+  }
+
+  const periodDays = cadence === "weekly" ? 7 : 14;
+  const startDate = addDays(period.startDate, periodDays);
+  const endDate = addDays(startDate, periodDays - 1);
+
+  return {
+    endDate,
+    filterEndDate: endDate,
+    startDate
+  };
+}
+
 function getDateDifferenceDays(first: Date, second: Date) {
   return Math.floor((normalizeDate(second).getTime() - normalizeDate(first).getTime()) / dayMs);
 }
@@ -222,6 +321,10 @@ function compareBudgetTransactions(first: Transaction, second: Transaction) {
   }
 
   return getBudgetTransactionId(first).localeCompare(getBudgetTransactionId(second));
+}
+
+function getBudgetHistoryPeriodId(budgetId: string, periodStartDate: string, periodEndDate: string) {
+  return `${budgetId}:${periodStartDate}:${periodEndDate}`;
 }
 
 function normalizeDisplayText(value: unknown) {

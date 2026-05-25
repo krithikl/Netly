@@ -494,6 +494,19 @@ export const cardProducts: CardProduct[] = [
   }
 ];
 
+const budgetHistoryDemoTransactions: Array<{ amount: number; date: string; id: string }> = [
+  { amount: -600, date: "2026-04-15", id: "txn_demo_budget_april_2026_a" },
+  { amount: -720, date: "2026-03-15", id: "txn_demo_budget_march_2026_a" },
+  { amount: -1000, date: "2026-02-15", id: "txn_demo_budget_february_2026_a" },
+  { amount: -1400, date: "2026-01-15", id: "txn_demo_budget_january_2026_a" },
+  { amount: -1800, date: "2025-12-15", id: "txn_demo_budget_december_2025_a" },
+  { amount: -2200, date: "2025-11-15", id: "txn_demo_budget_november_2025_a" },
+  { amount: -2600, date: "2025-10-15", id: "txn_demo_budget_october_2025_a" },
+  { amount: -3000, date: "2025-09-15", id: "txn_demo_budget_september_2025_a" },
+  { amount: -3400, date: "2025-08-15", id: "txn_demo_budget_august_2025_a" },
+  { amount: -3800, date: "2025-07-15", id: "txn_demo_budget_july_2025_a" }
+];
+
 export const transactions: Transaction[] = getDemoTransactions(dummyTransactions);
 
 function getDemoTransactions(payload: unknown) {
@@ -501,9 +514,48 @@ function getDemoTransactions(payload: unknown) {
     throw new Error("Invalid demo transaction data: expected lib/akahu/dummy-transactions.json to contain an items array.");
   }
 
-  return payload.items as Transaction[];
+  return [
+    ...(payload.items as Transaction[]),
+    ...budgetHistoryDemoTransactions.map(getBudgetHistoryDemoTransaction)
+  ];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getBudgetHistoryDemoTransaction({ amount, date, id }: { amount: number; date: string; id: string }): Transaction {
+  return {
+    _account: "acc_demo_everyday",
+    _connection: "conn_demo_budget_history",
+    _id: id,
+    amount,
+    category: {
+      _id: "cat_budget_demo",
+      groups: {
+        personal_finance: {
+          _id: "group_budget_demo",
+          name: "Budget demo"
+        }
+      },
+      name: "Budget demo"
+    },
+    created_at: `${date}T02:20:00.000Z`,
+    date: `${date}T12:00:00.000Z`,
+    description: "Budget history demo spend",
+    merchant: {
+      _id: "merchant_demo_budget_history",
+      name: "Budget history demo"
+    },
+    meta: {
+      particulars: "BUDGET DEMO",
+      reference: id
+    },
+    netly: {
+      accountCurrency: "NZD",
+      accountName: "Everyday"
+    },
+    type: "EFTPOS",
+    updated_at: `${date}T05:45:00.000Z`
+  };
 }

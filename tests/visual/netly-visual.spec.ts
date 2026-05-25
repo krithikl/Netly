@@ -232,6 +232,133 @@ test("budget card opens category spending breakdown with donut chart", async ({ 
   await expect(page.getByTestId("budgets-page")).toBeVisible();
 });
 
+test("budget history opens historical period details with editable transactions", async ({ page }) => {
+  await routeBudgetBreakdownAkahu(page);
+  await page.goto("/");
+  await waitForStableApp(page);
+  await page.evaluate(() => {
+    window.localStorage.setItem("netly_user_budgets", JSON.stringify({
+      budgets: [
+        {
+          categoryNames: ["Food", "Transport", "Shopping", "Health"],
+          cadence: "monthly",
+          createdAt: "2026-05-01",
+          id: "budget-spending-money",
+          limit: 100,
+          name: "Spending money",
+          periodAnchorDate: "2026-05-01"
+        }
+      ],
+      history: [
+        {
+          budgetId: "budget-spending-money",
+          categoryNames: ["Food", "Transport", "Shopping", "Health"],
+          cadence: "monthly",
+          id: "budget-spending-money:2026-05-01:2026-05-31",
+          limit: 100,
+          name: "Spending money",
+          periodEndDate: "2026-05-31",
+          periodStartDate: "2026-05-01"
+        },
+        {
+          budgetId: "budget-spending-money",
+          categoryNames: ["Food", "Transport", "Shopping", "Health"],
+          cadence: "monthly",
+          id: "budget-spending-money:2026-04-01:2026-04-30",
+          limit: 100,
+          name: "Spending money",
+          periodEndDate: "2026-04-30",
+          periodStartDate: "2026-04-01"
+        }
+      ]
+    }));
+  });
+
+  await page.getByRole("button", { name: /Budgets/ }).first().click();
+  await expect(page.getByTestId("budgets-page")).toBeVisible();
+  await page.getByLabel("View Spending money history").click();
+  await expect(page.getByTestId("budget-history-page")).toBeVisible();
+  const mayHistoryCard = page.locator(".budget-history-card").filter({ hasText: "May 2026" });
+  const aprilHistoryCard = page.locator(".budget-history-card").filter({ hasText: "April 2026" });
+  await expect(mayHistoryCard).toContainText("$35.00 overspent of $100.00");
+  await expect(mayHistoryCard).toContainText("135%");
+  await expect(aprilHistoryCard).toContainText("$40.00 left of $100.00");
+  await expect(aprilHistoryCard).toContainText("60%");
+  await expect(page.getByRole("progressbar", { name: "Spending money May 2026 budget progress" })).toHaveAttribute("aria-valuenow", "135");
+  await expect(page.getByRole("progressbar", { name: "Spending money April 2026 budget progress" })).toHaveAttribute("aria-valuenow", "60");
+
+  await mayHistoryCard.click();
+  await expect(page.getByTestId("budget-history-detail-page")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Edit Spending money/ })).toHaveCount(0);
+  await expect(page.locator(".budget-breakdown-item").filter({ hasText: "Food" })).toContainText("2 transactions");
+
+  await page.locator(".budget-breakdown-item").filter({ hasText: "Food" }).getByTestId("budget-breakdown-row").click();
+  await page.getByTestId("budget-selected-transactions").locator(".money-movement-card").filter({ hasText: "food-1" }).click();
+  await expect(page.getByTestId("transaction-details-drawer")).toBeVisible();
+  await expect(page.getByLabel("Set category for food-1")).toBeVisible();
+});
+
+test("demo budget history stays attached to the saved budget without adding a starter duplicate", async ({ page }, testInfo) => {
+  await routeDemoBudgetHistoryAkahu(page);
+  await page.addInitScript(() => {
+    window.localStorage.setItem("netly_data_mode", "demo");
+    window.localStorage.setItem("netly_user_budgets", JSON.stringify({
+      budgets: [
+        {
+          categoryNames: ["Eating out", "Groceries", "Health", "Shopping", "Transport"],
+          cadence: "monthly",
+          createdAt: "2026-04-01",
+          id: "saved-demo-spending",
+          limit: 800,
+          name: "Spending money",
+          periodAnchorDate: "2026-04-01"
+        }
+      ],
+      history: []
+    }));
+  });
+
+  await page.goto("/budgets");
+  await waitForStableApp(page);
+
+  await expect(page.locator(".budget-progress-card")).toHaveCount(1);
+  await expect(page.locator(".budget-progress-card").filter({ hasText: "Spending money" })).toBeVisible();
+  expect(await page.evaluate(() => window.localStorage.getItem("netly_user_budgets")?.includes("demo-spending-money") || false)).toBe(false);
+
+  await page.getByLabel("View Spending money history").click();
+  await expect(page.getByTestId("budget-history-page")).toBeVisible();
+  expect(await getGridColumnCount(page.locator(".budget-history-grid"))).toBe(testInfo.project.name === "mobile" ? 1 : 2);
+  const aprilHistoryCard = page.locator(".budget-history-card").filter({ hasText: "April 2026" });
+  await expect(aprilHistoryCard).toBeVisible();
+  await expect(aprilHistoryCard).toContainText("$390.00 left of $800.00");
+  await expect(aprilHistoryCard).toContainText("51%");
+  await expect(aprilHistoryCard.getByRole("progressbar", { name: "Spending money April 2026 budget progress" })).toHaveAttribute("aria-valuenow", "51");
+});
+
+test("demo starter budget history spans every progress color band", async ({ page }) => {
+  await routeDemoBudgetHistoryAkahu(page);
+  await page.addInitScript(() => {
+    window.localStorage.setItem("netly_data_mode", "demo");
+  });
+
+  await page.goto("/budgets");
+  await waitForStableApp(page);
+
+  await page.getByLabel("View Spending money history").click();
+  await expect(page.getByTestId("budget-history-page")).toBeVisible();
+  await expect(page.locator(".budget-history-card")).toHaveCount(10);
+  await expectBudgetHistoryCard(page, "April 2026", "$200.00 left of $800.00", "75");
+  await expectBudgetHistoryCard(page, "March 2026", "$80.00 left of $800.00", "90");
+  await expectBudgetHistoryCard(page, "February 2026", "$200.00 overspent of $800.00", "125");
+  await expectBudgetHistoryCard(page, "January 2026", "$600.00 overspent of $800.00", "175");
+  await expectBudgetHistoryCard(page, "December 2025", "$1,000.00 overspent of $800.00", "225");
+  await expectBudgetHistoryCard(page, "November 2025", "$1,400.00 overspent of $800.00", "275");
+  await expectBudgetHistoryCard(page, "October 2025", "$1,800.00 overspent of $800.00", "325");
+  await expectBudgetHistoryCard(page, "September 2025", "$2,200.00 overspent of $800.00", "375");
+  await expectBudgetHistoryCard(page, "August 2025", "$2,600.00 overspent of $800.00", "425");
+  await expectBudgetHistoryCard(page, "July 2025", "$3,000.00 overspent of $800.00", "475");
+});
+
 test("mobile transaction filter multi-selects stay inside dropdown menus", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "Mobile drawer behavior is covered in the mobile project.");
 
@@ -249,11 +376,13 @@ test("mobile transaction filter multi-selects stay inside dropdown menus", async
 
   await page.getByTestId("transaction-account-filter-trigger").click();
   await expect(page.getByTestId("transaction-account-filter-options")).toBeVisible();
+  await expect(page.getByTestId("transaction-account-filter-options")).toHaveCSS("overflow-y", "auto");
   await page.getByTestId("transaction-account-filter-options").locator("button").nth(1).click();
   await expect(page.getByTestId("transaction-account-filter-trigger")).not.toContainText("All accounts");
 
   await page.getByTestId("transaction-category-filter-trigger").click();
   await expect(page.getByTestId("transaction-category-filter-options")).toBeVisible();
+  await expect(page.getByTestId("transaction-category-filter-options")).toHaveCSS("overflow-y", "auto");
   await page.getByTestId("transaction-category-filter-options").getByRole("button", { name: "Food" }).click();
   await expect(page.getByTestId("transaction-category-filter-trigger")).toContainText("Food");
 
@@ -278,6 +407,7 @@ test("mobile budget editor uses a compact category dropdown", async ({ page }, t
   await expect(page.getByTestId("budget-category-multi-select-trigger")).toContainText("No categories selected");
   await page.getByTestId("budget-category-multi-select-trigger").click();
   await expect(page.getByTestId("budget-category-multi-select-content")).toBeVisible();
+  await expect(page.getByTestId("budget-category-multi-select-content")).toHaveCSS("overflow-y", "auto");
   await page.getByTestId("budget-category-multi-select-content").getByRole("button", { name: "Food" }).click();
   await expect(page.getByTestId("budget-category-multi-select-trigger")).toContainText("Food");
 
@@ -527,7 +657,7 @@ async function routeBudgetBreakdownAkahu(page: import("@playwright/test").Page) 
       json: {
         source: "akahu",
         connected: true,
-        rawCount: 6,
+        rawCount: 8,
         nextCursor: null,
         transactions: [
           getBudgetTransaction("food-1", "Food", -40),
@@ -535,6 +665,8 @@ async function routeBudgetBreakdownAkahu(page: import("@playwright/test").Page) 
           getBudgetTransaction("transport-1", "Transport", -25),
           getBudgetTransaction("shopping-1", "Shopping", -20),
           getBudgetTransaction("health-1", "Health", -15),
+          getBudgetTransaction("april-food-1", "Food", -40, "2026-04-12"),
+          getBudgetTransaction("april-transport-1", "Transport", -20, "2026-04-18"),
           getBudgetTransaction("income-1", "Food", 100)
         ]
       }
@@ -554,8 +686,67 @@ async function routeBudgetBreakdownAkahu(page: import("@playwright/test").Page) 
   });
 }
 
+// Serves deterministic demo-mode transactions for budget seed-history checks.
+async function routeDemoBudgetHistoryAkahu(page: import("@playwright/test").Page) {
+  await page.route("**/api/akahu/accounts?source=demo", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        ...getConnectedAccountPayload({
+          balanceRefreshedAt: "2026-05-24T10:14:00.000Z",
+          isStale: false,
+          transactionsRefreshedAt: "2026-05-24T10:14:00.000Z"
+        }),
+        source: "demo"
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=demo**", async (route) => {
+    const demoTransactions = [
+      getBudgetTransaction("demo-grocery-april-1", "Groceries", -110, "2026-04-11"),
+      getBudgetTransaction("demo-grocery-april-2", "Groceries", -90, "2026-04-18"),
+      getBudgetTransaction("demo-transport-april", "Transport", -45, "2026-04-20"),
+      getBudgetTransaction("demo-eating-april", "Eating out", -70, "2026-04-23"),
+      getBudgetTransaction("demo-health-april", "Health", -35, "2026-04-24"),
+      getBudgetTransaction("demo-shopping-april", "Shopping", -60, "2026-04-28"),
+      getBudgetTransaction("demo-grocery-may", "Groceries", -80, "2026-05-11"),
+      getBudgetTransaction("demo-shopping-may", "Shopping", -45, "2026-05-13"),
+      ...getBudgetHistoryDemoTransactions()
+    ];
+
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "demo",
+        connected: true,
+        rawCount: demoTransactions.length,
+        nextCursor: null,
+        transactions: demoTransactions,
+        notice: "Showing Akahu-shaped demo transactions."
+      }
+    });
+  });
+}
+
+// Serves two demo history cards in each 100% progress band up to 500%.
+function getBudgetHistoryDemoTransactions() {
+  return [
+    getBudgetTransaction("demo-budget-april-2026", "Budget demo", -600, "2026-04-15"),
+    getBudgetTransaction("demo-budget-march-2026", "Budget demo", -720, "2026-03-15"),
+    getBudgetTransaction("demo-budget-february-2026", "Budget demo", -1000, "2026-02-15"),
+    getBudgetTransaction("demo-budget-january-2026", "Budget demo", -1400, "2026-01-15"),
+    getBudgetTransaction("demo-budget-december-2025", "Budget demo", -1800, "2025-12-15"),
+    getBudgetTransaction("demo-budget-november-2025", "Budget demo", -2200, "2025-11-15"),
+    getBudgetTransaction("demo-budget-october-2025", "Budget demo", -2600, "2025-10-15"),
+    getBudgetTransaction("demo-budget-september-2025", "Budget demo", -3000, "2025-09-15"),
+    getBudgetTransaction("demo-budget-august-2025", "Budget demo", -3400, "2025-08-15"),
+    getBudgetTransaction("demo-budget-july-2025", "Budget demo", -3800, "2025-07-15")
+  ];
+}
+
 // Creates a minimal Akahu-shaped transaction for budget UI tests.
-function getBudgetTransaction(id: string, category: string, amount: number) {
+function getBudgetTransaction(id: string, category: string, amount: number, date = "2026-05-12") {
   return {
     _id: id,
     _account: "acc-main",
@@ -568,7 +759,7 @@ function getBudgetTransaction(id: string, category: string, amount: number) {
       },
       name: category
     },
-    date: "2026-05-12",
+    date,
     description: id,
     netly: {
       accountName: "Everyday"
@@ -667,4 +858,19 @@ async function getOverflowProbe(locator: import("@playwright/test").Locator) {
 // Measures layout position independent of viewport scroll anchoring.
 async function getDocumentTop(locator: import("@playwright/test").Locator) {
   return locator.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
+}
+
+// Checks a seeded budget history card's text and accessible progress value.
+async function expectBudgetHistoryCard(page: import("@playwright/test").Page, period: string, status: string, percent: string) {
+  const historyCard = page.locator(".budget-history-card").filter({ hasText: period });
+
+  await expect(historyCard).toBeVisible();
+  await expect(historyCard).toContainText(status);
+  await expect(historyCard).toContainText(`${percent}%`);
+  await expect(historyCard.getByRole("progressbar", { name: `Spending money ${period} budget progress` })).toHaveAttribute("aria-valuenow", percent);
+}
+
+// Counts explicit CSS grid tracks for responsive layout assertions.
+async function getGridColumnCount(locator: import("@playwright/test").Locator) {
+  return locator.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").filter(Boolean).length);
 }

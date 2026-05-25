@@ -874,7 +874,7 @@ button.money-movement-card {
 .money-movement-copy {
   display: grid;
   min-width: 0;
-  gap: 5px;
+  gap: 10px;
 }
 
 .money-movement-copy strong {
@@ -1709,6 +1709,17 @@ button.money-movement-card {
   z-index: 2;
 }
 
+@media (max-width: 1024px) and (min-width: 769px) {
+  .transaction-month-rail button,
+  .transaction-month-rail button.active {
+    font-size: 1.04rem;
+  }
+
+  .transaction-month-year {
+    font-size: 0.68rem;
+  }
+}
+
 .transaction-month-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1771,26 +1782,6 @@ button.money-movement-card {
 .transaction-workspace {
   display: grid;
   gap: 18px;
-}
-
-.month-carousel-next.month-carousel-phase-a .transaction-month-summary,
-.month-carousel-next.month-carousel-phase-a .transaction-workspace {
-  animation: transaction-month-slide-next-a 620ms var(--motion-ease) both;
-}
-
-.month-carousel-next.month-carousel-phase-b .transaction-month-summary,
-.month-carousel-next.month-carousel-phase-b .transaction-workspace {
-  animation: transaction-month-slide-next-b 620ms var(--motion-ease) both;
-}
-
-.month-carousel-previous.month-carousel-phase-a .transaction-month-summary,
-.month-carousel-previous.month-carousel-phase-a .transaction-workspace {
-  animation: transaction-month-slide-previous-a 620ms var(--motion-ease) both;
-}
-
-.month-carousel-previous.month-carousel-phase-b .transaction-month-summary,
-.month-carousel-previous.month-carousel-phase-b .transaction-workspace {
-  animation: transaction-month-slide-previous-b 620ms var(--motion-ease) both;
 }
 
 .transaction-filter-panel {
@@ -1962,12 +1953,14 @@ button.money-movement-card {
   display: grid;
   min-width: var(--radix-popover-trigger-width);
   width: min(280px, calc(100vw - 32px));
-  max-height: min(420px, calc(100vh - 80px));
+  max-height: min(420px, var(--radix-popover-content-available-height, calc(100vh - 80px)));
   gap: 6px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 8px;
   scrollbar-gutter: stable;
+  touch-action: pan-y;
 }
 
 .category-multi-select-trigger {
@@ -2503,9 +2496,8 @@ button.money-movement-card {
 
 .budget-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 390px));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
-  justify-content: start;
   gap: 14px;
 }
 
@@ -2644,8 +2636,8 @@ button.money-movement-card {
 
 .budget-today-marker {
   position: absolute;
-  top: -30px;
-  bottom: -2px;
+  top: 0;
+  bottom: 0;
   width: 2px;
   background: rgba(255, 255, 255, 0.38);
   transform: translateX(-1px);
@@ -2653,7 +2645,7 @@ button.money-movement-card {
 
 .budget-today-marker small {
   position: absolute;
-  top: -4px;
+  top: -5px;
   left: 50%;
   border: 1px solid rgba(0, 0, 0, 0.14);
   border-radius: 10px;
@@ -2676,6 +2668,14 @@ button.money-movement-card {
 }
 
 .budget-detail-view {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  min-width: 0;
+}
+
+.budget-history-view {
   display: grid;
   gap: 18px;
   width: min(100%, 1040px);
@@ -2720,6 +2720,130 @@ button.money-movement-card {
   color: rgba(255, 255, 255, 0.86);
   font-size: 1rem;
   font-weight: 850;
+}
+
+.budget-history-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.budget-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 12px;
+}
+
+.budget-history-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 86px;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--outline-soft);
+  border-radius: 18px;
+  background: var(--surface-2);
+  padding: 14px 16px;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease);
+}
+
+.budget-history-card:hover,
+.budget-history-card:focus-visible {
+  border-color: var(--primary-border);
+  background: var(--surface-3);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.budget-history-copy {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.budget-history-copy > span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.budget-history-copy strong {
+  overflow: hidden;
+  font-size: clamp(0.92rem, 1.5vw, 1.02rem);
+  font-weight: 950;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.circular-progress {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  position: relative;
+  align-self: center;
+  flex: 0 0 44px;
+  justify-self: center;
+  place-items: center;
+}
+
+.circular-progress svg {
+  display: block;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.circular-progress-track,
+.circular-progress-lap,
+.circular-progress-value {
+  fill: none;
+}
+
+.circular-progress-track {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
+.circular-progress-lap {
+  stroke-linecap: round;
+}
+
+.circular-progress-value {
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--motion-medium) var(--motion-ease);
+}
+
+.circular-progress-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--accent-cream);
+  font-size: 0.76rem;
+  font-weight: 950;
+  line-height: 1;
+  text-align: center;
+}
+
+@media (min-width: 769px) {
+  .budget-history-card .circular-progress {
+    --circular-progress-size: 64px;
+  }
+
+  .budget-history-card .circular-progress-label {
+    font-size: 0.92rem;
+  }
 }
 
 .budget-breakdown-panel {
@@ -2865,14 +2989,24 @@ button.money-movement-card {
   display: grid;
   gap: 10px;
   max-height: min(88vh, 760px);
-  overflow: visible;
+  overflow: hidden;
   border-color: var(--outline-soft);
   background: var(--surface);
   color: var(--ink);
+  touch-action: pan-y;
 }
 
 .budget-editor-sheet {
   gap: 18px;
+}
+
+.budget-editor-drawer .budget-editor-form {
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  touch-action: pan-y;
 }
 
 .budget-editor-drawer .mobile-filter-header.centered {
@@ -3469,8 +3603,11 @@ button.money-movement-card {
     min-height: 0;
     display: grid;
     gap: 20px;
-    overflow-y: visible;
-    padding: 6px 16px 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 6px 16px calc(16px + env(safe-area-inset-bottom));
+    touch-action: pan-y;
   }
 
   .mobile-filter-header {
@@ -4020,50 +4157,6 @@ button.money-movement-card {
   }
 }
 
-@keyframes transaction-month-slide-next-a {
-  from {
-    opacity: 0;
-    transform: translateX(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes transaction-month-slide-next-b {
-  from {
-    opacity: 0;
-    transform: translateX(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes transaction-month-slide-previous-a {
-  from {
-    opacity: 0;
-    transform: translateX(-18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes transaction-month-slide-previous-b {
-  from {
-    opacity: 0;
-    transform: translateX(-18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 @keyframes soft-pop {
   from {
     opacity: 0;
@@ -4463,6 +4556,10 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .budget-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .budget-recurring-panel {
     position: static;
     max-height: none;
@@ -4617,7 +4714,7 @@ body {
     width: 100%;
     margin: 0;
     padding: 8px 2px 12px;
-    font-size: 0.84rem;
+    font-size: 0.9rem;
     font-weight: 850;
     white-space: nowrap;
   }
@@ -4632,7 +4729,7 @@ body {
   }
 
   .transaction-month-rail button.active {
-    font-size: 0.84rem;
+    font-size: 0.9rem;
   }
 
   .transaction-month-rail button.active::after {
@@ -4780,6 +4877,10 @@ body {
   .budget-desktop-grid {
     grid-template-columns: 1fr;
     gap: 18px;
+  }
+
+  .budget-card-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .budget-progress-card {
@@ -5143,6 +5244,10 @@ body {
 
 @media (max-width: 768px) {
   .budget-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .budget-history-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 

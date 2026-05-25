@@ -1,6 +1,6 @@
 import type { ChangeEvent, TouchEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, ArrowDownUp, ArrowLeft, CalendarDays, Check, ChevronDown, MoreVertical, ReceiptText, Search, Settings, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { AlertCircle, ArrowDownUp, ArrowLeft, CalendarDays, ChevronDown, MoreVertical, ReceiptText, Search, Settings, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
 import useEmblaCarousel from "embla-carousel-react";
@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
+import { MultiSelectDropdown, type MultiSelectDropdownOption } from "@/components/ui/multi-select-dropdown";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
-import { useCloseOnPageScroll } from "@/hooks/useCloseOnPageScroll";
 import { formatMoney } from "@/lib/insights";
 import { filterTransactionsByDateRange, formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
 import { isIncomeCategoryIncluded } from "@/lib/reporting";
@@ -157,8 +157,6 @@ export function TransactionsPage({
   const shouldShowMonthSummaryLoading = transactionRangeState.shouldShowMonthSummaryLoading;
   const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionAccounts, transactionCategory);
-  const [monthCarouselDirection, setMonthCarouselDirection] = useState<"next" | "previous">("next");
-  const [monthCarouselPhase, setMonthCarouselPhase] = useState<"a" | "b">("a");
   const [pageSwipeStart, setPageSwipeStart] = useState<{ x: number; y: number } | null>(null);
   const changeDateRange = (nextDateRange: TransactionDateRange) => {
     setDateRange(nextDateRange);
@@ -171,11 +169,6 @@ export function TransactionsPage({
       return;
     }
 
-    const currentMonth = parseInputDate(dateRange.from) || new Date();
-    const nextMonth = parseInputDate(nextDateRange.from) || currentMonth;
-
-    setMonthCarouselDirection(nextMonth.getTime() >= currentMonth.getTime() ? "next" : "previous");
-    setMonthCarouselPhase((phase) => phase === "a" ? "b" : "a");
     setDateRange(nextDateRange);
     setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
     setTransactionCategory([]);
@@ -337,7 +330,7 @@ export function TransactionsPage({
 
   return (
     <section
-      className={`transaction-page view-stack month-carousel-${monthCarouselDirection} month-carousel-phase-${monthCarouselPhase}`}
+      className="transaction-page view-stack"
       data-testid="transactions-page"
       onTouchCancel={() => setPageSwipeStart(null)}
       onTouchEnd={finishPageSwipe}
@@ -1287,7 +1280,7 @@ function TransactionFilterDialog({
   transactionFilter
 }: TransactionFilterDialogProps) {
   const filterBody = (
-    <div className="mobile-filter-drawer-body">
+    <div className="mobile-filter-drawer-body" data-vaul-no-drag="">
       <div className="mobile-filter-section">
         <h3>Status</h3>
         <div className="mobile-filter-chips">
@@ -1368,7 +1361,7 @@ function TransactionSortDialog({
     onApply();
   };
   const sortBody = (
-    <div className="mobile-filter-drawer-body">
+    <div className="mobile-filter-drawer-body" data-vaul-no-drag="">
       <div className="mobile-sort-options">
         {transactionSortOptions.map((sort) => (
           <button key={sort} onClick={() => handleSortChange(sort)} type="button">
@@ -1421,38 +1414,18 @@ function FilterMultiSelect({
   triggerTestId?: string;
 }) {
   const label = getFilterMultiSelectLabel(selectedValues, options, allLabel);
-  const [open, setOpen] = useState(false);
-  useCloseOnPageScroll(open, () => setOpen(false));
 
   return (
-    <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger asChild>
-        <button aria-haspopup="listbox" className="category-multi-select-trigger transaction-select-trigger" data-testid={triggerTestId} role="combobox" type="button">
-          <span>{label}</span>
-          <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="category-multi-select-content" data-testid={contentTestId}>
-        {options.map((option) => {
-          const isActive = getFilterOptionIsActive(option.value, allValue, selectedValues);
-
-          return (
-            <button
-              aria-pressed={isActive}
-              className={isActive ? "active" : undefined}
-              key={option.value}
-              onClick={() => onToggle(option.value)}
-              type="button"
-            >
-              <span className="category-multi-select-check">
-                {isActive && <Check aria-hidden="true" className="h-4 w-4" />}
-              </span>
-              <span>{option.label}</span>
-            </button>
-          );
-        })}
-      </PopoverContent>
-    </Popover>
+    <MultiSelectDropdown
+      ariaLabel={allLabel}
+      contentTestId={contentTestId}
+      getOptionIsActive={(option) => getFilterOptionIsActive(option.value, allValue, selectedValues)}
+      label={label}
+      onToggle={onToggle}
+      options={getMultiSelectOptions(options)}
+      selectedValues={selectedValues}
+      triggerTestId={triggerTestId}
+    />
   );
 }
 
@@ -1470,6 +1443,13 @@ function getFilterMultiSelectLabel(selectedValues: string[], options: Transactio
   }
 
   return `${selectedValues.length} selected`;
+}
+
+function getMultiSelectOptions(options: TransactionAccountOption[]): MultiSelectDropdownOption[] {
+  return options.map((option) => ({
+    label: option.label,
+    value: option.value
+  }));
 }
 
 function getCategoryFilterOptions(categoryOptions: string[]): TransactionAccountOption[] {

@@ -254,6 +254,7 @@ export function useNetlyApp() {
       budgets: {
         categoryOptions: categories.settingsCategoryOptions,
         categoryColors: categories.categoryColors,
+        dataMode: banking.dataMode,
         onCategoryChange: updateTransactionCategoryAndSync,
         onRecurringClick: openRecurringTransactions,
         recurring,

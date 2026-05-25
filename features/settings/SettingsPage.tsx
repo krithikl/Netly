@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Check, ChevronDown, ChevronRight, CloudDownload, CloudUpload, FolderClock, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, CloudDownload, CloudUpload, FolderClock, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { DisconnectButton } from "@/components/ui/disconnect-button";
@@ -33,6 +33,7 @@ import {
   DrawerTitle
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MultiSelectDropdown, type MultiSelectDropdownOption } from "@/components/ui/multi-select-dropdown";
 import {
   Sheet,
   SheetContent,
@@ -810,38 +811,16 @@ function CategoryMultiSelectDropdown({
   options: string[];
   selectedValues: string[];
 }) {
-  const selectedSet = new Set(selectedValues);
-  const [open, setOpen] = useState(false);
-
   return (
-    <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger asChild>
-        <button aria-haspopup="listbox" aria-label={ariaLabel} className="category-multi-select-trigger transaction-select-trigger" role="combobox" type="button">
-          <span>{label}</span>
-          <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="category-multi-select-content settings-category-multi-select-content" data-testid={contentTestId}>
-        {options.map((option) => {
-          const isActive = selectedSet.has(option);
-
-          return (
-            <button
-              aria-pressed={isActive}
-              className={isActive ? "active" : undefined}
-              key={option}
-              onClick={() => onToggle(option)}
-              type="button"
-            >
-              <span className="category-multi-select-check">
-                {isActive && <Check aria-hidden="true" className="h-4 w-4" />}
-              </span>
-              <span>{option}</span>
-            </button>
-          );
-        })}
-      </PopoverContent>
-    </Popover>
+    <MultiSelectDropdown
+      ariaLabel={ariaLabel}
+      contentClassName="settings-category-multi-select-content"
+      contentTestId={contentTestId}
+      label={label}
+      onToggle={onToggle}
+      options={getMultiSelectOptions(options)}
+      selectedValues={selectedValues}
+    />
   );
 }
 
@@ -863,6 +842,13 @@ function getCategorySelectionLabel(selectedValues: string[], options: string[], 
   }
 
   return `${selectedValues.length} selected`;
+}
+
+function getMultiSelectOptions(values: string[]): MultiSelectDropdownOption[] {
+  return values.map((value) => ({
+    label: value,
+    value
+  }));
 }
 
 type AkahuFreshnessCardProps = {

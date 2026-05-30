@@ -433,6 +433,71 @@ test("mobile settings category selectors use dropdown multi-selects", async ({ p
   await expect(page.getByTestId("settings-card-fit-category-options")).toBeVisible();
 });
 
+test("Akahu startup fetches transactions while account freshness is still loading", async ({ page }) => {
+  await page.unroute("**/api/akahu/accounts?source=user");
+  await page.unroute("**/api/akahu/transactions?source=user**");
+  await page.unroute("**/api/akahu/refresh");
+
+  let accountCalls = 0;
+  let releaseAccountSnapshot: (() => void) | null = null;
+  let transactionCalls = 0;
+  const recentTimestamp = new Date().toISOString();
+
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    accountCalls += 1;
+    await new Promise<void>((resolve) => {
+      releaseAccountSnapshot = resolve;
+    });
+    await route.fulfill({
+      contentType: "application/json",
+      json: getConnectedAccountPayload({
+        balanceRefreshedAt: recentTimestamp,
+        isStale: false,
+        transactionsRefreshedAt: recentTimestamp
+      })
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    transactionCalls += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 1,
+        nextCursor: null,
+        transactions: [
+          getBudgetTransaction("fast-startup-transaction", "Food", -12.34)
+        ]
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        connected: true,
+        notice: "Akahu refresh accepted.",
+        requestedAt: new Date().toISOString()
+      }
+    });
+  });
+
+  await page.goto("/transactions");
+
+  await expect.poll(() => transactionCalls, { timeout: 5000 }).toBe(1);
+  expect(accountCalls).toBe(1);
+  await expect(page.getByText("fast-startup-transaction")).toBeVisible({ timeout: 5000 });
+  const releaseSnapshot = releaseAccountSnapshot as (() => void) | null;
+  if (!releaseSnapshot) {
+    throw new Error("Blocked Akahu account snapshot request was not waiting.");
+  }
+  releaseSnapshot();
+  await page.waitForLoadState("networkidle");
+});
+
 test("Akahu freshness stays refreshing until balance and transaction timestamps advance", async ({ page }) => {
   await page.unroute("**/api/akahu/accounts?source=user");
   await page.unroute("**/api/akahu/transactions?source=user**");

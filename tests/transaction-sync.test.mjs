@@ -155,9 +155,10 @@ test("lifecycle refresh runs on launch only", async () => {
   assert.match(appSource, /banking\.refreshTransactions\(initialDataMode, transactionPageDateRange\)/);
 });
 
-test("launch sync requests Akahu refresh before incremental transaction fetch", async () => {
+test("launch sync starts account freshness and transaction fetch in parallel", async () => {
   const source = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
   const accountsRouteSource = await readFile(new URL("../app/api/akahu/accounts/route.ts", import.meta.url), "utf8");
+  const providerSource = await readFile(new URL("../lib/akahu/provider.ts", import.meta.url), "utf8");
 
   assert.match(source, /requestManualRefresh: true/);
   assert.match(source, /!accountsPayload\.isStale/);
@@ -167,8 +168,11 @@ test("launch sync requests Akahu refresh before incremental transaction fetch", 
   assert.match(source, /akahuRefreshStillProcessingNotice/);
   assert.doesNotMatch(source, /setTransactionLoadNotice\(refreshPayload\.notice|Akahu refresh requested\. Loading updated transactions/);
   assert.doesNotMatch(source, /lastAkahuManualRefreshStorageKey|canRequestManualRefresh|recordManualRefreshRequestedAt/);
-  assert.match(source, /await loadAndApplyAccountSnapshot\(mode, isCurrentRequest, accountSetters, \{ requestManualRefresh: true \}\)[\s\S]*?await syncVisibleAkahuTransactionsToArchive/);
+  assert.match(source, /void loadAndApplyAccountSnapshot\(mode, isCurrentRequest, accountSetters, \{ requestManualRefresh: true \}\)/);
+  assert.match(source, /const syncResult = shouldSyncFullHistory[\s\S]*?await syncVisibleAkahuTransactionsToArchive/);
+  assert.doesNotMatch(source, /archivedTransactions\.length === 0/);
   assert.match(source, /void pollAndResyncAfterAkahuRefresh\(/);
+  assert.match(source, /applyTransactionSyncResult\(syncResult, dateRange/);
   assert.match(source, /shouldPollForFreshness/);
   assert.doesNotMatch(source, /shouldPollForTransactionFreshness|pollAccountsUntilTransactionsRefresh|hasRefreshTimestampAdvanced|haveRefreshTimestampsAdvanced/);
   assert.match(source, /applyAccountSnapshot\(mode, refreshedAccountsPayload, refreshedAccountsPayload\.isStale \? "refreshing" : "refreshed", setters\)/);
@@ -177,6 +181,8 @@ test("launch sync requests Akahu refresh before incremental transaction fetch", 
   assert.match(accountsRouteSource, /const manualRefreshCooldownMs = getManualRefreshCooldownMs\(\)/);
   assert.match(accountsRouteSource, /isStale: hasStaleTimestamp\(accountFreshness, manualRefreshCooldownMs\)/);
   assert.doesNotMatch(accountsRouteSource, /12 \* 60 \* 60 \* 1000|staleDataThresholdMs =/);
+  assert.match(providerSource, /Promise\.all\(\[[\s\S]*?this\.getRawAccounts\(token\)[\s\S]*?this\.client\.getTransactionsPage/);
+  assert.doesNotMatch(providerSource, /getBalance\(token/);
   assert.match(source, /timedOut: true/);
 });
 

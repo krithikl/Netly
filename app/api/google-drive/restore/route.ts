@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { downloadGoogleDriveBackupForRequest } from "@/lib/google-drive/server";
+import { downloadGoogleDriveBackupForRequest, googleRefreshTokenCookieName, isGoogleDriveReauthRequiredError } from "@/lib/google-drive/server";
 
 // Downloads a Google Drive backup snapshot so the client can import it locally.
 export async function POST(request: NextRequest) {
@@ -14,6 +14,16 @@ export async function POST(request: NextRequest) {
       snapshot: await downloadGoogleDriveBackupForRequest(request, body.fileId)
     });
   } catch (error) {
+    if (isGoogleDriveReauthRequiredError(error)) {
+      const response = NextResponse.json({
+        error: error.message,
+        requiresReauth: true
+      }, { status: 401 });
+
+      response.cookies.delete(googleRefreshTokenCookieName);
+      return response;
+    }
+
     return NextResponse.json({
       error: error instanceof Error ? error.message : "Could not restore Google Drive backup."
     }, { status: 401 });

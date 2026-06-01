@@ -6,6 +6,7 @@ import {
   markArchiveDriveSynced,
   type TransactionArchiveSnapshot
 } from "@/lib/app/transaction-archive";
+import { driveBackupPendingIntentStorageKey } from "@/lib/app/constants";
 
 export type DriveBackupEntry = {
   createdTime: string;
@@ -19,17 +20,59 @@ export type DriveBackupEntry = {
 type DriveBackupListPayload = {
   backups?: DriveBackupEntry[];
   error?: string;
+  requiresReauth?: boolean;
 };
 
 type DriveBackupRestorePayload = {
   error?: string;
+  requiresReauth?: boolean;
   snapshot?: TransactionArchiveSnapshot;
 };
 
 type DriveConnectionStatusPayload = {
   connected?: boolean;
   error?: string;
+  requiresReauth?: boolean;
 };
+
+export type DriveBackupPendingIntent = "backup" | "restore" | "backups";
+
+export class DriveReauthRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DriveReauthRequiredError";
+  }
+}
+
+// Identifies Drive API responses that require a fresh Google OAuth flow.
+export function isDriveReauthRequiredError(error: unknown): error is DriveReauthRequiredError {
+  return error instanceof DriveReauthRequiredError;
+}
+
+// Stores the Drive UI action to reopen after Google OAuth returns.
+export function writePendingDriveIntent(intent: DriveBackupPendingIntent) {
+  window.localStorage.setItem(driveBackupPendingIntentStorageKey, intent);
+}
+
+// Reads and validates the pending Drive UI action left before OAuth redirect.
+export function readPendingDriveIntent() {
+  const intent = window.localStorage.getItem(driveBackupPendingIntentStorageKey);
+
+  if (!intent) {
+    return null;
+  }
+
+  if (intent !== "backup" && intent !== "restore" && intent !== "backups") {
+    throw new Error(`Invalid localStorage key "${driveBackupPendingIntentStorageKey}": expected a Drive backup intent.`);
+  }
+
+  return intent;
+}
+
+// Clears the one-shot Drive OAuth return action.
+export function clearPendingDriveIntent() {
+  window.localStorage.removeItem(driveBackupPendingIntentStorageKey);
+}
 
 // Redirects the user to the server-side Google OAuth flow.
 export function beginGoogleDriveAuthorization() {
@@ -109,9 +152,13 @@ export async function deleteGoogleDriveBackup(_clientId: string, fileId: string)
 }
 
 // Reads a JSON API response and preserves server-side Drive errors.
-async function readJsonResponse<T extends { error?: string }>(response: Response, label: string) {
+async function readJsonResponse<T extends { error?: string; requiresReauth?: boolean }>(response: Response, label: string) {
   const text = await response.text();
   const payload = text ? JSON.parse(text) as T : {} as T;
+
+  if (payload.requiresReauth) {
+    throw new DriveReauthRequiredError(payload.error || "Google Drive connection expired. Sign in again to continue.");
+  }
 
   if (!response.ok) {
     throw new Error(payload.error || `Could not load ${label}.`);

@@ -5,9 +5,12 @@ import {
   beginGoogleDriveAuthorization,
   deleteGoogleDriveBackup,
   getGoogleDriveConnectionStatus,
+  isDriveReauthRequiredError,
   listGoogleDriveBackups,
   restoreArchiveFromGoogleDrive,
   uploadArchiveToGoogleDrive,
+  writePendingDriveIntent,
+  type DriveBackupPendingIntent,
   type DriveBackupEntry
 } from "@/lib/app/drive-backup";
 import { driveBackupConnectionStorageKey } from "@/lib/app/constants";
@@ -27,6 +30,11 @@ export type DriveBackupState = {
 type StoredDriveConnection = {
   connected: boolean;
   lastSyncedAt: string;
+};
+
+type RefreshBackupListOptions = {
+  intent?: Extract<DriveBackupPendingIntent, "backups" | "restore">;
+  silent?: boolean;
 };
 
 // Owns the opt-in Google Drive backup controls and status messages.
@@ -86,25 +94,34 @@ export function useDriveBackup(onArchiveRestored: () => Promise<void>) {
     const metadata = await readArchiveMetadata();
     setLastSyncedAt(metadata.lastDriveSyncAt);
   }, []);
-  const ensureDriveAuthorized = useCallback(async (actionLabel: string) => {
+  const beginDriveAuthorization = useCallback((intent: DriveBackupPendingIntent, actionLabel: string, expiredConnection = false) => {
+    clearStoredDriveConnection();
+    writePendingDriveIntent(intent);
+    setStatus("disconnected");
+    setLastSyncedAt("");
+    setBackups([]);
+    setMessage(expiredConnection
+      ? `Google Drive connection expired. Opening Google Drive authorization to ${actionLabel}...`
+      : `Opening Google Drive authorization to ${actionLabel}...`);
+    beginGoogleDriveAuthorization();
+  }, []);
+  const ensureDriveAuthorized = useCallback(async (actionLabel: string, intent: DriveBackupPendingIntent) => {
     if (await getGoogleDriveConnectionStatus()) {
       return true;
     }
 
-    setStatus("syncing");
-    setMessage(`Opening Google Drive authorization to ${actionLabel}...`);
-    beginGoogleDriveAuthorization();
+    beginDriveAuthorization(intent, actionLabel);
     return false;
-  }, []);
+  }, [beginDriveAuthorization]);
 
-  const refreshBackupList = useCallback(async (options: { silent?: boolean } = {}) => {
+  const refreshBackupList = useCallback(async (options: RefreshBackupListOptions = {}) => {
     setStatus("syncing");
     setIsLoadingBackups(true);
     setMessage(options.silent ? "Checking Google Drive backup..." : "Connecting to Google Drive and checking backups...");
 
     try {
-      if (!await ensureDriveAuthorized("view backups")) {
-        return [];
+      if (!await ensureDriveAuthorized("view backups", options.intent || "backups")) {
+        return await new Promise<never>(() => undefined);
       }
 
       const nextBackups = await listGoogleDriveBackups();
@@ -114,20 +131,25 @@ export function useDriveBackup(onArchiveRestored: () => Promise<void>) {
       setMessage(nextBackups.length > 0 ? "Google Drive backups are available." : "No Google Drive backups were found for this Google account.");
       return nextBackups;
     } catch (error) {
+      if (isDriveReauthRequiredError(error)) {
+        beginDriveAuthorization(options.intent || "backups", "view backups", true);
+        return await new Promise<never>(() => undefined);
+      }
+
       setStatus("failed");
       setMessage(options.silent ? "Reconnect Google Drive backup." : getErrorMessage(error, "Could not load Google Drive backups."));
       return [];
     } finally {
       setIsLoadingBackups(false);
     }
-  }, [ensureDriveAuthorized, lastSyncedAt]);
+  }, [beginDriveAuthorization, ensureDriveAuthorized, lastSyncedAt]);
 
   const connectAndBackUp = useCallback(async () => {
     setStatus("syncing");
     setMessage("Connecting to Google Drive and creating a backup...");
 
     try {
-      if (!await ensureDriveAuthorized("create a backup")) {
+      if (!await ensureDriveAuthorized("create a backup", "backup")) {
         return await new Promise<never>(() => undefined);
       }
 
@@ -138,19 +160,24 @@ export function useDriveBackup(onArchiveRestored: () => Promise<void>) {
       setStatus("synced");
       setMessage("");
     } catch (error) {
+      if (isDriveReauthRequiredError(error)) {
+        beginDriveAuthorization("backup", "create a backup", true);
+        return await new Promise<never>(() => undefined);
+      }
+
       setStatus("failed");
       setMessage(error instanceof Error ? error.message : "Google Drive backup failed.");
       throw error;
     }
-  }, [ensureDriveAuthorized, restoreMetadata]);
+  }, [beginDriveAuthorization, ensureDriveAuthorized, restoreMetadata]);
 
   const restoreFromDrive = useCallback(async (fileId: string) => {
     setStatus("syncing");
     setMessage("Restoring the selected Google Drive backup...");
 
     try {
-      if (!await ensureDriveAuthorized("restore backups")) {
-        return;
+      if (!await ensureDriveAuthorized("restore backups", "restore")) {
+        return await new Promise<never>(() => undefined);
       }
 
       await restoreArchiveFromGoogleDrive("", fileId);
@@ -160,19 +187,24 @@ export function useDriveBackup(onArchiveRestored: () => Promise<void>) {
       setStatus("synced");
       setMessage("Google Drive backup restored. Transactions were merged and settings were updated.");
     } catch (error) {
+      if (isDriveReauthRequiredError(error)) {
+        beginDriveAuthorization("restore", "restore backups", true);
+        return await new Promise<never>(() => undefined);
+      }
+
       setStatus("failed");
       setMessage(error instanceof Error ? error.message : "Google Drive restore failed.");
       throw error;
     }
-  }, [ensureDriveAuthorized, onArchiveRestored, restoreMetadata]);
+  }, [beginDriveAuthorization, ensureDriveAuthorized, onArchiveRestored, restoreMetadata]);
 
   const deleteBackup = useCallback(async (fileId: string) => {
     setStatus("syncing");
     setMessage("Deleting the selected Google Drive backup...");
 
     try {
-      if (!await ensureDriveAuthorized("manage backups")) {
-        return [];
+      if (!await ensureDriveAuthorized("manage backups", "backups")) {
+        return await new Promise<never>(() => undefined);
       }
 
       const nextBackups = await deleteGoogleDriveBackup("", fileId);
@@ -181,11 +213,16 @@ export function useDriveBackup(onArchiveRestored: () => Promise<void>) {
       setMessage(nextBackups.length > 0 ? "Google Drive backup deleted." : "Google Drive backup deleted. No backups remain.");
       return nextBackups;
     } catch (error) {
+      if (isDriveReauthRequiredError(error)) {
+        beginDriveAuthorization("backups", "manage backups", true);
+        return await new Promise<never>(() => undefined);
+      }
+
       setStatus("failed");
       setMessage(error instanceof Error ? error.message : "Google Drive backup delete failed.");
       throw error;
     }
-  }, [ensureDriveAuthorized]);
+  }, [beginDriveAuthorization, ensureDriveAuthorized]);
 
   const disconnectDriveBackup = useCallback(() => {
     setStatus("disconnected");
@@ -238,6 +275,10 @@ function writeStoredDriveConnection(lastSyncedAt: string) {
     connected: true,
     lastSyncedAt
   }));
+}
+
+function clearStoredDriveConnection() {
+  window.localStorage.removeItem(driveBackupConnectionStorageKey);
 }
 
 function getErrorMessage(error: unknown, fallbackMessage: string) {

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ChevronRight, CloudDownload, CloudUpload, FolderClock, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
@@ -48,7 +48,7 @@ import { categoriesMatch } from "@/lib/category-rules";
 import { periods } from "@/lib/app/constants";
 import { cn } from "@/lib/utils";
 import type { DriveBackupState } from "@/hooks/useDriveBackup";
-import type { DriveBackupEntry } from "@/lib/app/drive-backup";
+import { clearPendingDriveIntent, readPendingDriveIntent, type DriveBackupEntry, type DriveBackupPendingIntent } from "@/lib/app/drive-backup";
 import type { AkahuDataFreshness, DataMode, TransactionAccountOption } from "@/lib/app/types";
 import type { PeriodOption } from "@/lib/types";
 
@@ -69,7 +69,7 @@ type SettingsPageProps = {
   onCreateCategory: (category: string) => void;
   onDeleteDriveBackup: (fileId: string) => Promise<DriveBackupEntry[]>;
   onDisconnectDriveBackup: () => void;
-  onRefreshDriveBackups: () => Promise<DriveBackupEntry[]>;
+  onRefreshDriveBackups: (options?: { intent?: Extract<DriveBackupPendingIntent, "backups" | "restore"> }) => Promise<DriveBackupEntry[]>;
   onRestoreDriveBackup: (fileId: string) => Promise<void>;
   setDefaultAccountId: (accountId: string) => void;
   showDashboardPeriodSetting: boolean;
@@ -321,7 +321,7 @@ type DataBackupSettingsProps = {
   onBackup: () => Promise<void>;
   onDeleteBackup: (fileId: string) => Promise<DriveBackupEntry[]>;
   onDisconnect: () => void;
-  onRefreshBackups: () => Promise<DriveBackupEntry[]>;
+  onRefreshBackups: (options?: { intent?: Extract<DriveBackupPendingIntent, "backups" | "restore"> }) => Promise<DriveBackupEntry[]>;
   onRestore: (fileId: string) => Promise<void>;
 };
 
@@ -339,13 +339,32 @@ function DataBackupSettings({ driveBackup, onBackup, onDeleteBackup, onDisconnec
   const isBusy = driveBackup.status === "syncing" || driveBackup.isLoadingBackups;
   const canDisconnectDriveBackup = driveBackup.status === "ready"
     || driveBackup.status === "synced"
-    || driveBackup.lastSyncedAt.length > 0
+    || (driveBackup.status === "failed" && driveBackup.lastSyncedAt.length > 0)
     || driveBackup.backups.length > 0;
   const isRestoringBackup = restoringBackupId.length > 0;
   const selectedBackup = driveBackup.backups.find((backup) => backup.id === selectedBackupId) || driveBackup.backups[0] || null;
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("drive_connected") !== "1") {
+      return;
+    }
+
+    const pendingIntent = readPendingDriveIntent();
+    clearPendingDriveIntent();
+
+    params.delete("drive_connected");
+    const nextQuery = params.toString();
+    window.history.replaceState(null, "", nextQuery ? `${window.location.pathname}?${nextQuery}` : window.location.pathname);
+
+    if (pendingIntent === "restore" || pendingIntent === "backups") {
+      setBackupPanelMode(pendingIntent);
+      void onRefreshBackups({ intent: pendingIntent });
+    }
+  }, [onRefreshBackups]);
   const openBackupPanel = (mode: "backups" | "restore") => {
     setBackupPanelMode(mode);
-    void onRefreshBackups();
+    void onRefreshBackups({ intent: mode });
   };
   const createBackup = async () => {
     try {

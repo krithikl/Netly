@@ -81,6 +81,122 @@ test("high-risk CSS selectors keep expected computed styles", async ({ page }, t
   expect(JSON.stringify(probe, null, 2)).toMatchSnapshot(`computed-styles-${testInfo.project.name}.json`);
 });
 
+test("expired Google Drive backup list redirects to OAuth and clears stale local connection", async ({ page }) => {
+  let startCalls = 0;
+  let pendingIntentWrite = "";
+  let removedStoredConnection = false;
+  let releaseStartRequest = () => {};
+  const startRequestGate = new Promise<void>((resolve) => {
+    releaseStartRequest = resolve;
+  });
+
+  await page.exposeFunction("recordDrivePendingIntentWrite", (value: string) => {
+    pendingIntentWrite = value;
+  });
+  await page.exposeFunction("recordDriveConnectionRemoval", () => {
+    removedStoredConnection = true;
+  });
+  await page.addInitScript(() => {
+    const recorders = window as unknown as {
+      recordDriveConnectionRemoval: () => void;
+      recordDrivePendingIntentWrite: (value: string) => void;
+    };
+    const originalRemoveItem = Storage.prototype.removeItem;
+    const originalSetItem = Storage.prototype.setItem;
+
+    Storage.prototype.setItem = function setItemAndRecordDriveIntent(key, value) {
+      if (this === window.localStorage && key === "netly_drive_backup_pending_intent") {
+        recorders.recordDrivePendingIntentWrite(value);
+      }
+
+      return originalSetItem.call(this, key, value);
+    };
+
+    Storage.prototype.removeItem = function removeItemAndRecordDriveConnection(key) {
+      if (this === window.localStorage && key === "netly_drive_backup_connection") {
+        recorders.recordDriveConnectionRemoval();
+      }
+
+      return originalRemoveItem.call(this, key);
+    };
+  });
+  await page.route("**/api/google-drive/status", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: { connected: true }
+    });
+  });
+  await page.route("**/api/google-drive/backups", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 401,
+      json: {
+        error: "Google Drive connection expired. Sign in again to continue.",
+        requiresReauth: true
+      }
+    });
+  });
+  await page.route("**/api/google-drive/start", async (route) => {
+    startCalls += 1;
+    await startRequestGate;
+    await route.fulfill({
+      contentType: "text/html",
+      body: "<!doctype html><title>Google OAuth</title>"
+    });
+  });
+
+  await page.goto("/settings");
+  await waitForStableApp(page);
+  await page.evaluate(() => {
+    window.localStorage.setItem("netly_drive_backup_connection", JSON.stringify({
+      connected: true,
+      lastSyncedAt: "2026-05-18T01:49:00.000Z"
+    }));
+  });
+
+  await page.getByRole("button", { name: "Backups" }).click();
+
+  await expect.poll(() => startCalls).toBe(1);
+  await expect.poll(() => pendingIntentWrite).toBe("backups");
+  await expect.poll(() => removedStoredConnection).toBe(true);
+  releaseStartRequest();
+});
+
+test("Google Drive OAuth return reopens the backups panel without auto-uploading", async ({ page }) => {
+  let backupListCalls = 0;
+
+  await routeConnectedGoogleDrive(page, () => {
+    backupListCalls += 1;
+  });
+  await addPendingDriveIntent(page, "backups");
+
+  await page.goto("/settings?drive_connected=1");
+  await waitForStableApp(page);
+
+  await expect(page.getByRole("heading", { name: "Backups" })).toBeVisible();
+  await expect(page.getByText("netly-backup-v2-20260518T014900Z.json")).toBeVisible();
+  await expect.poll(() => backupListCalls).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("netly_drive_backup_pending_intent"))).toBeNull();
+});
+
+test("Google Drive OAuth return reopens the restore panel without auto-restoring", async ({ page }) => {
+  let backupListCalls = 0;
+
+  await routeConnectedGoogleDrive(page, () => {
+    backupListCalls += 1;
+  });
+  await addPendingDriveIntent(page, "restore");
+
+  await page.goto("/settings?drive_connected=1");
+  await waitForStableApp(page);
+
+  await expect(page.getByRole("heading", { name: "Restore a backup" })).toBeVisible();
+  await expect(page.getByText("netly-backup-v2-20260518T014900Z.json")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Restore 18 May 2026/ })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Restore selected backup?" })).toHaveCount(0);
+  await expect.poll(() => backupListCalls).toBe(1);
+});
+
 test("budget card opens category spending breakdown with donut chart", async ({ page }) => {
   await routeBudgetBreakdownAkahu(page);
   await page.goto("/");
@@ -1043,6 +1159,52 @@ async function mockDisconnectedAkahu(page: import("@playwright/test").Page) {
       }
     });
   });
+}
+
+// Serves a connected Drive backup list without contacting Google.
+async function routeConnectedGoogleDrive(page: import("@playwright/test").Page, onBackupList?: () => void) {
+  await page.route("**/api/google-drive/status", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: { connected: true }
+    });
+  });
+
+  await page.route("**/api/google-drive/backups", async (route) => {
+    onBackupList?.();
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        backups: [
+          {
+            createdTime: "2026-05-18T01:49:00.000Z",
+            id: "drive-backup-1",
+            metadataAvailable: true,
+            modifiedTime: "2026-05-18T01:49:00.000Z",
+            name: "netly-backup-v2-20260518T014900Z.json",
+            timestamp: "2026-05-18T01:49:00.000Z"
+          }
+        ]
+      }
+    });
+  });
+}
+
+// Preserves the one-shot Drive intent despite the suite-level storage clear.
+async function addPendingDriveIntent(page: import("@playwright/test").Page, intent: "backups" | "restore") {
+  await page.addInitScript((pendingIntent) => {
+    const originalClear = Storage.prototype.clear;
+
+    Storage.prototype.clear = function clearAndRestoreDriveIntent() {
+      originalClear.call(this);
+
+      if (this === window.localStorage) {
+        window.localStorage.setItem("netly_drive_backup_pending_intent", pendingIntent);
+      }
+    };
+
+    window.localStorage.setItem("netly_drive_backup_pending_intent", pendingIntent);
+  }, intent);
 }
 
 // Serves deterministic user-mode transactions so the budget detail can show real counts.

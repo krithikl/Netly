@@ -5,7 +5,7 @@ import type { NextRequest, NextResponse } from "next/server";
 const googleAuthorizationUrl = "https://accounts.google.com/o/oauth2/v2/auth";
 const googleTokenUrl = "https://oauth2.googleapis.com/token";
 const googleDriveScope = "https://www.googleapis.com/auth/drive.appdata";
-const googleRefreshTokenCookieName = "netly_google_drive_refresh_token";
+export const googleRefreshTokenCookieName = "netly_google_drive_refresh_token";
 export const googleDriveStateCookieName = "netly_google_drive_state";
 const encryptedCookieVersion = "v1";
 const requiredSecretLength = 32;
@@ -23,6 +23,13 @@ const joseHeader = {
 
 let cachedAccessToken = "";
 let cachedAccessTokenExpiresAt = 0;
+
+export class GoogleDriveReauthRequiredError extends Error {
+  constructor() {
+    super("Google Drive connection expired. Sign in again to continue.");
+    this.name = "GoogleDriveReauthRequiredError";
+  }
+}
 
 type GoogleTokenResponse = {
   access_token?: string;
@@ -51,6 +58,11 @@ export type DriveBackupEntry = {
   name: string;
   timestamp: string;
 };
+
+// Narrows token-refresh failures that require a new Google OAuth consent flow.
+export function isGoogleDriveReauthRequiredError(error: unknown): error is GoogleDriveReauthRequiredError {
+  return error instanceof GoogleDriveReauthRequiredError;
+}
 
 // Builds the Google OAuth URL for the server-side offline-access flow.
 export function getGoogleDriveAuthorizationUrl(state: string) {
@@ -166,7 +178,7 @@ async function getGoogleDriveAccessToken(request: NextRequest) {
       refresh_token: refreshToken
     })
   });
-  const payload = await readGoogleJson<GoogleTokenResponse>(response);
+  const payload = await readGoogleJson<GoogleTokenResponse>(response, { reauthOnInvalidGrant: true });
 
   if (!payload.access_token) {
     throw new Error("Google did not return an access token from the stored refresh token.");
@@ -461,15 +473,29 @@ function getDriveHeaders(accessToken: string) {
   };
 }
 
-async function readGoogleJson<T = unknown>(response: Response) {
+async function readGoogleJson<T = unknown>(response: Response, options: { reauthOnInvalidGrant?: boolean } = {}) {
   const text = await response.text();
   const payload = text ? JSON.parse(text) as unknown : {};
 
   if (!response.ok) {
+    if (options.reauthOnInvalidGrant && isInvalidGrantPayload(payload)) {
+      clearCachedGoogleAccessToken();
+      throw new GoogleDriveReauthRequiredError();
+    }
+
     throw new Error(`Google request failed: ${response.status} ${JSON.stringify(payload)}`);
   }
 
   return payload as T;
+}
+
+function clearCachedGoogleAccessToken() {
+  cachedAccessToken = "";
+  cachedAccessTokenExpiresAt = 0;
+}
+
+function isInvalidGrantPayload(payload: unknown) {
+  return isRecord(payload) && payload.error === "invalid_grant";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

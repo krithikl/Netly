@@ -273,6 +273,8 @@ test("Drive access token remains memory-only", async () => {
   assert.doesNotMatch(driveSource, /accounts\.oauth2|initTokenClient|googleIdentityScriptUrl/);
   assert.match(driveSource, /\/api\/google-drive\/upload/);
   assert.match(driveSource, /\/api\/google-drive\/backups/);
+  assert.match(driveSource, /requiresReauth/);
+  assert.match(driveSource, /DriveReauthRequiredError/);
   assert.doesNotMatch(backupHookSource, /access_token|cachedDriveAccessToken/);
   assert.match(backupHookSource, /driveBackupConnectionStorageKey/);
 });
@@ -281,10 +283,18 @@ test("Google Drive backup uses server OAuth refresh-token routes", async () => {
   const serverSource = await readFile(new URL("../lib/google-drive/server.ts", import.meta.url), "utf8");
   const startSource = await readFile(new URL("../app/api/google-drive/start/route.ts", import.meta.url), "utf8");
   const callbackSource = await readFile(new URL("../app/api/google-drive/callback/route.ts", import.meta.url), "utf8");
+  const backupRouteSources = await Promise.all([
+    "../app/api/google-drive/upload/route.ts",
+    "../app/api/google-drive/backups/route.ts",
+    "../app/api/google-drive/restore/route.ts",
+    "../app/api/google-drive/delete/route.ts"
+  ].map((path) => readFile(new URL(path, import.meta.url), "utf8")));
 
   assert.match(serverSource, /access_type", "offline"/);
   assert.match(serverSource, /prompt", "consent"/);
   assert.match(serverSource, /refresh_token/);
+  assert.match(serverSource, /error === "invalid_grant"/);
+  assert.match(serverSource, /GoogleDriveReauthRequiredError/);
   assert.match(serverSource, /NEXT_PUBLIC_GOOGLE_CLIENT_ID/);
   assert.match(serverSource, /GOOGLE_CLIENT_SECRET/);
   assert.match(serverSource, /GOOGLE_REDIRECT_URI/);
@@ -292,6 +302,12 @@ test("Google Drive backup uses server OAuth refresh-token routes", async () => {
   assert.match(serverSource, /thirtyDayCookieMaxAgeSeconds/);
   assert.match(startSource, /getGoogleDriveAuthorizationUrl/);
   assert.match(callbackSource, /saveGoogleDriveRefreshToken/);
+
+  for (const routeSource of backupRouteSources) {
+    assert.match(routeSource, /isGoogleDriveReauthRequiredError/);
+    assert.match(routeSource, /requiresReauth: true/);
+    assert.match(routeSource, /cookies\.delete\(googleRefreshTokenCookieName\)/);
+  }
 });
 
 test("Home mobile preview shows ten recent transactions and a view-all action", async () => {
@@ -472,9 +488,12 @@ test("Drive startup restores metadata without silent auth or reconnect toast", a
   assert.match(backupHookSource, /ensureDriveAuthorized/);
   assert.match(backupHookSource, /Opening Google Drive authorization/);
   assert.match(backupHookSource, /Google Drive backup was used before/);
+  assert.match(backupHookSource, /driveBackupPendingIntentStorageKey|writePendingDriveIntent/);
+  assert.match(backupHookSource, /clearStoredDriveConnection/);
   assert.doesNotMatch(backupHookSource, /refreshBackupList\(\{ silent: true \}\)/);
   assert.doesNotMatch(backupHookSource, /toast\.warning\("Reconnect Google Drive backup"\)/);
   assert.doesNotMatch(settingsSource, /<em>Restore<\/em>|settings-backup-list em/);
+  assert.doesNotMatch(settingsSource, /driveBackup\.status === "disconnected"[\s\S]{0,200}driveBackup\.lastSyncedAt\.length > 0/);
 });
 
 test("app icons use only the provided SVG asset", async () => {

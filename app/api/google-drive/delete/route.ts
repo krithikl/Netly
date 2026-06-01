@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteGoogleDriveBackupForRequest } from "@/lib/google-drive/server";
+import { deleteGoogleDriveBackupForRequest, googleRefreshTokenCookieName, isGoogleDriveReauthRequiredError } from "@/lib/google-drive/server";
 
 // Deletes a Google Drive appDataFolder backup through the stored refresh token.
 export async function POST(request: NextRequest) {
@@ -14,6 +14,16 @@ export async function POST(request: NextRequest) {
       backups: await deleteGoogleDriveBackupForRequest(request, body.fileId)
     });
   } catch (error) {
+    if (isGoogleDriveReauthRequiredError(error)) {
+      const response = NextResponse.json({
+        error: error.message,
+        requiresReauth: true
+      }, { status: 401 });
+
+      response.cookies.delete(googleRefreshTokenCookieName);
+      return response;
+    }
+
     return NextResponse.json({
       error: error instanceof Error ? error.message : "Could not delete Google Drive backup."
     }, { status: 401 });

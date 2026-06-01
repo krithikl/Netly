@@ -43,3 +43,5 @@ export const paydayStorageKey = "netly_payday";
 export const budgetsStorageKey = "netly_user_budgets";
 
 export const driveBackupConnectionStorageKey = "netly_drive_backup_connection";
+
+export const driveBackupPendingIntentStorageKey = "netly_drive_backup_pending_intent";

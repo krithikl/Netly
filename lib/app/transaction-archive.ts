@@ -84,7 +84,7 @@ export async function archiveAndMergeTransactions(freshTransactions: Transaction
   }
 
   const archivedTransactions = await readArchivedTransactions(dateRange);
-  return mergeTransactions(archivedTransactions, freshTransactions);
+  return mergeTransactions(archivedTransactions, getFreshTransactionsInOptionalRange(freshTransactions, dateRange));
 }
 
 // Stores normalized transactions as encrypted IndexedDB records.
@@ -395,6 +395,11 @@ function getArchiveTransactionId(transaction: Transaction) {
 
 function getTransactionSourceUpdatedAt(transaction: Transaction) {
   return transaction.updated_at || transaction.created_at || new Date().toISOString();
+}
+
+// Narrows freshly fetched overlap rows before returning a visible page range.
+function getFreshTransactionsInOptionalRange(transactions: Transaction[], dateRange?: TransactionDateRange) {
+  return dateRange ? transactions.filter((transaction) => isTransactionInOptionalRange(transaction, dateRange)) : transactions;
 }
 
 function isTransactionInOptionalRange(transaction: Transaction, dateRange?: TransactionDateRange) {

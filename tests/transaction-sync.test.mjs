@@ -243,6 +243,13 @@ test("transaction refreshes clear stale empty notices before loading", async () 
   assert.match(refreshTransactionPageSource, /setIsLoadingTransactionPageRange\(true\);[\s\S]*?setTransactionLoadError\(""\);[\s\S]*?setTransactionLoadNotice\(""\);/);
 });
 
+test("archive merge returns only fresh transactions inside the visible page range", async () => {
+  const source = await readFile(new URL("../lib/app/transaction-archive.ts", import.meta.url), "utf8");
+
+  assert.match(source, /mergeTransactions\(archivedTransactions, getFreshTransactionsInOptionalRange\(freshTransactions, dateRange\)\)/);
+  assert.match(source, /function getFreshTransactionsInOptionalRange\(transactions: Transaction\[\], dateRange\?: TransactionDateRange\)[\s\S]*?transactions\.filter\(\(transaction\) => isTransactionInOptionalRange\(transaction, dateRange\)\)/);
+});
+
 test("direct credit titles use the raw bank description", async () => {
   const displaySource = await readFile(new URL("../lib/transaction-display.ts", import.meta.url), "utf8");
 

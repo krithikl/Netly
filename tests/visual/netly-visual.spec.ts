@@ -678,6 +678,79 @@ test("Transactions refresh keeps loading when archive rows are outside the activ
   await expect(page.getByRole("status").filter({ hasText: "Loading transactions and encrypted archive" })).toHaveCount(0);
 });
 
+test("Transactions refresh excludes previous-month overlap rows on the first of the month", async ({ page }) => {
+  await page.unroute("**/api/akahu/accounts?source=user");
+  await page.unroute("**/api/akahu/transactions?source=user**");
+  await page.unroute("**/api/akahu/refresh");
+  await clearTransactionArchive(page);
+  await freezeBrowserDate(page, "2026-06-01T12:00:00");
+
+  const recentTimestamp = new Date().toISOString();
+  const accountSnapshot = getConnectedAccountPayload({
+    balanceRefreshedAt: recentTimestamp,
+    isStale: false,
+    transactionsRefreshedAt: recentTimestamp
+  });
+
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: accountSnapshot
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 1,
+        nextCursor: null,
+        transactions: [
+          getBudgetTransaction("may-31-overlap-transaction", "Food", -31, "2026-05-31")
+        ]
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        connected: true,
+        requestedAt: recentTimestamp
+      }
+    });
+  });
+
+  await page.goto("/transactions");
+  await expect(page.getByRole("status").filter({ hasText: "Loading transactions and encrypted archive" })).toHaveCount(0, { timeout: 10000 });
+  await expect(page.getByText("may-31-overlap-transaction")).toHaveCount(0);
+  await preserveArchiveKeyOnFutureNavigations(page);
+  await page.unroute("**/api/akahu/transactions?source=user**");
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 2,
+        nextCursor: null,
+        transactions: [
+          getBudgetTransaction("may-31-overlap-transaction", "Food", -31, "2026-05-31"),
+          getBudgetTransaction("june-1-transaction", "Food", -10, "2026-06-01")
+        ]
+      }
+    });
+  });
+
+  await page.reload();
+  await expect(page.getByText("june-1-transaction")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText("may-31-overlap-transaction")).toHaveCount(0);
+});
+
 test("Akahu freshness stays refreshing until balance and transaction timestamps advance", async ({ page }) => {
   await page.unroute("**/api/akahu/accounts?source=user");
   await page.unroute("**/api/akahu/transactions?source=user**");

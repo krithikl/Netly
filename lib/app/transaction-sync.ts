@@ -20,6 +20,15 @@ export function getIncrementalTransactionSyncRange(
   };
 }
 
+// Checks whether archive hydration has enough local rows to render the requested visible range.
+export function hasVisibleArchiveHydration(
+  archivedTransactions: Transaction[],
+  visibleArchivedTransactions: Transaction[],
+  visibleDateRange: TransactionDateRange | undefined
+) {
+  return visibleDateRange ? visibleArchivedTransactions.length > 0 : archivedTransactions.length > 0;
+}
+
 // Finds the newest local transaction date and fails loudly on malformed dates.
 export function getNewestTransactionDate(transactions: Transaction[]) {
   let newestDate: Date | null = null;

@@ -4,6 +4,7 @@ import { test } from "node:test";
 import {
   getIncrementalTransactionSyncRange,
   getNewestTransactionDate,
+  hasVisibleArchiveHydration,
   incrementalTransactionOverlapDays
 } from "../lib/app/transaction-sync.ts";
 import {
@@ -34,6 +35,25 @@ test("incremental sync overlaps seven days from the newest archived transaction"
     from: "2026-05-07",
     to: "2026-05-21"
   });
+});
+
+test("archive hydration is visible only when it covers the requested range", () => {
+  assert.equal(
+    hasVisibleArchiveHydration([getTransaction("txn-april", "2026-04-18")], [], visibleRange),
+    false
+  );
+  assert.equal(
+    hasVisibleArchiveHydration(
+      [getTransaction("txn-april", "2026-04-18")],
+      [getTransaction("txn-may", "2026-05-18")],
+      visibleRange
+    ),
+    true
+  );
+  assert.equal(
+    hasVisibleArchiveHydration([getTransaction("txn-any", "2026-04-18")], [], undefined),
+    true
+  );
 });
 
 test("newest archived transaction date fails loud on malformed dates", () => {
@@ -205,6 +225,22 @@ test("launch sync starts account freshness and transaction fetch in parallel", a
   assert.match(providerSource, /Promise\.all\(\[[\s\S]*?this\.getRawAccounts\(token\)[\s\S]*?this\.client\.getTransactionsPage/);
   assert.doesNotMatch(providerSource, /getBalance\(token/);
   assert.match(source, /timedOut: true/);
+});
+
+test("launch sync keeps the transaction spinner when only account archive is available", async () => {
+  const source = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+
+  assert.match(source, /if \(hasVisibleArchiveHydration\(archivedTransactions, archivedTransactionPageTransactions, dateRange\)\) \{\s*setIsLoadingTransactions\(false\);/);
+  assert.doesNotMatch(source, /archivedTransactions\.length > 0 \|\| archivedTransactionPageTransactions\.length > 0 \|\| archivedAccountSnapshot/);
+});
+
+test("transaction refreshes clear stale empty notices before loading", async () => {
+  const source = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+  const refreshTransactionsSource = source.match(/const refreshTransactions[\s\S]*?\n    try \{/)?.[0] || "";
+  const refreshTransactionPageSource = source.match(/const refreshTransactionPage[\s\S]*?\n    try \{/)?.[0] || "";
+
+  assert.match(refreshTransactionsSource, /setIsLoadingTransactions\(true\);[\s\S]*?setTransactionLoadError\(""\);[\s\S]*?setTransactionLoadNotice\(""\);/);
+  assert.match(refreshTransactionPageSource, /setIsLoadingTransactionPageRange\(true\);[\s\S]*?setTransactionLoadError\(""\);[\s\S]*?setTransactionLoadNotice\(""\);/);
 });
 
 test("direct credit titles use the raw bank description", async () => {

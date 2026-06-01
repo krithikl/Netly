@@ -393,8 +393,9 @@ test("mobile transaction filter multi-selects stay inside dropdown menus", async
   await page.getByLabel("Transaction actions").click();
   await page.getByRole("button", { name: /^Filters/ }).click();
   await expect(page.locator(".mobile-filter-drawer")).toBeVisible();
+  await expect(page.locator(".transaction-mobile-menu")).toHaveCount(0);
   expect(await getOverflowProbe(page.locator(".mobile-filter-drawer-body"))).toEqual({
-    overflowY: "visible",
+    overflowY: "auto",
     scrolls: false
   });
 
@@ -520,6 +521,161 @@ test("Akahu startup fetches transactions while account freshness is still loadin
   }
   releaseSnapshot();
   await page.waitForLoadState("networkidle");
+});
+
+test("Transactions refresh shows loading instead of empty state until rows arrive", async ({ page }) => {
+  await page.unroute("**/api/akahu/accounts?source=user");
+  await page.unroute("**/api/akahu/transactions?source=user**");
+  await page.unroute("**/api/akahu/refresh");
+
+  const recentTimestamp = new Date().toISOString();
+  const accountSnapshot = getConnectedAccountPayload({
+    balanceRefreshedAt: recentTimestamp,
+    isStale: false,
+    transactionsRefreshedAt: recentTimestamp
+  });
+  let releaseTransactions: (() => void) | null = null;
+  const transactionGate = new Promise<void>((resolve) => {
+    releaseTransactions = resolve;
+  });
+
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: accountSnapshot
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    await transactionGate;
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 1,
+        nextCursor: null,
+        transactions: [
+          getBudgetTransaction("delayed-refresh-transaction", "Food", -12.34, "2026-06-01")
+        ]
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        connected: true,
+        requestedAt: recentTimestamp
+      }
+    });
+  });
+
+  await seedArchivedAccountSnapshot(page, accountSnapshot);
+  await page.goto("/transactions");
+
+  await expect(page.getByTestId("transactions-page")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("status").filter({ hasText: "Loading transactions and encrypted archive" })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("No transactions found for this period.")).toHaveCount(0);
+  await expect(page.getByText("No transactions match the current filters.")).toHaveCount(0);
+
+  const releaseDelayedTransactions = releaseTransactions as (() => void) | null;
+  if (!releaseDelayedTransactions) {
+    throw new Error("Blocked transaction request was not waiting.");
+  }
+
+  releaseDelayedTransactions();
+  await expect(page.getByText("delayed-refresh-transaction")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("status").filter({ hasText: "Loading transactions and encrypted archive" })).toHaveCount(0);
+});
+
+test("Transactions refresh keeps loading when archive rows are outside the active range", async ({ page }) => {
+  await page.unroute("**/api/akahu/accounts?source=user");
+  await page.unroute("**/api/akahu/transactions?source=user**");
+  await page.unroute("**/api/akahu/refresh");
+  await clearTransactionArchive(page);
+  await freezeBrowserDate(page, "2026-06-01T12:00:00");
+
+  const recentTimestamp = new Date().toISOString();
+  const accountSnapshot = getConnectedAccountPayload({
+    balanceRefreshedAt: recentTimestamp,
+    isStale: false,
+    transactionsRefreshedAt: recentTimestamp
+  });
+
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: accountSnapshot
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 1,
+        nextCursor: null,
+        transactions: [
+          getBudgetTransaction("archived-april-transaction", "Food", -12.34, "2026-04-01")
+        ]
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        connected: true,
+        requestedAt: recentTimestamp
+      }
+    });
+  });
+
+  await page.goto("/transactions");
+  await expect(page.getByRole("status").filter({ hasText: "Loading transactions and encrypted archive" })).toHaveCount(0, { timeout: 10000 });
+  await expect(page.getByText("archived-april-transaction")).toHaveCount(0);
+  await preserveArchiveKeyOnFutureNavigations(page);
+  await page.unroute("**/api/akahu/transactions?source=user**");
+
+  let releaseTransactions: (() => void) | null = null;
+  const transactionGate = new Promise<void>((resolve) => {
+    releaseTransactions = resolve;
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    await transactionGate;
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 1,
+        nextCursor: null,
+        transactions: [
+          getBudgetTransaction("delayed-june-transaction", "Food", -23.45, "2026-06-01")
+        ]
+      }
+    });
+  });
+
+  await page.reload();
+  await expect(page.getByRole("status").filter({ hasText: "Loading transactions and encrypted archive" })).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("No transactions found for this period.")).toHaveCount(0);
+  await expect(page.getByText("No transactions match the current filters.")).toHaveCount(0);
+
+  const releaseDelayedTransactions = releaseTransactions as (() => void) | null;
+  if (!releaseDelayedTransactions) {
+    throw new Error("Blocked transaction request was not waiting.");
+  }
+
+  releaseDelayedTransactions();
+  await expect(page.getByText("delayed-june-transaction")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("status").filter({ hasText: "Loading transactions and encrypted archive" })).toHaveCount(0);
 });
 
 test("Akahu freshness stays refreshing until balance and transaction timestamps advance", async ({ page }) => {
@@ -666,6 +822,99 @@ test("Akahu freshness skips refresh when timestamps are still fresh", async ({ p
   expect(refreshCalls).toBe(0);
   expect(transactionCalls).toBe(1);
 });
+
+// Seeds only account metadata so the page proves it does not treat balance hydration as transaction hydration.
+async function seedArchivedAccountSnapshot(page: import("@playwright/test").Page, accountPayload: ReturnType<typeof getConnectedAccountPayload>) {
+  await page.goto("/robots.txt");
+  await page.evaluate(async (accountSnapshot) => {
+    window.localStorage.setItem("netly_data_mode", "user");
+
+    await new Promise<void>((resolve, reject) => {
+      const request = window.indexedDB.open("netly-transaction-archive", 1);
+
+      request.onupgradeneeded = () => {
+        const database = request.result;
+
+        if (!database.objectStoreNames.contains("transaction-records")) {
+          database.createObjectStore("transaction-records", { keyPath: "id" });
+        }
+
+        if (!database.objectStoreNames.contains("archive-metadata")) {
+          database.createObjectStore("archive-metadata");
+        }
+      };
+      request.onerror = () => reject(request.error || new Error("Could not open transaction archive."));
+      request.onsuccess = () => {
+        const database = request.result;
+        const transaction = database.transaction(["archive-metadata"], "readwrite");
+
+        transaction.objectStore("archive-metadata").put({
+          accountSnapshot,
+          deviceId: "visual-refresh-device",
+          lastDriveSyncAt: "",
+          lastIncrementalTransactionSyncAt: "",
+          lastLocalUpdateAt: accountSnapshot.retrievedAt || "",
+          schemaVersion: 1
+        }, "metadata");
+        transaction.oncomplete = () => {
+          database.close();
+          resolve();
+        };
+        transaction.onerror = () => reject(transaction.error || new Error("Could not seed account archive."));
+        transaction.onabort = () => reject(transaction.error || new Error("Account archive seed aborted."));
+      };
+    });
+  }, {
+    accountFreshness: accountPayload.accountFreshness,
+    accounts: accountPayload.accounts,
+    availableBalance: accountPayload.availableBalance,
+    balanceRefreshedAt: accountPayload.balanceRefreshedAt,
+    isStale: accountPayload.isStale,
+    primaryAccount: accountPayload.primaryAccount,
+    retrievedAt: accountPayload.retrievedAt,
+    transactionsRefreshedAt: accountPayload.transactionsRefreshedAt
+  });
+}
+
+// Clears encrypted archive state so tests can seed deterministic local history.
+async function clearTransactionArchive(page: import("@playwright/test").Page) {
+  await page.goto("/robots.txt");
+  await page.evaluate(async () => {
+    window.localStorage.removeItem("netly_transaction_archive_key_v1");
+    window.localStorage.removeItem("netly_transaction_archive_device_id");
+
+    await new Promise<void>((resolve, reject) => {
+      const request = window.indexedDB.deleteDatabase("netly-transaction-archive");
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error || new Error("Could not clear transaction archive."));
+      request.onblocked = () => reject(new Error("Could not clear transaction archive because it is blocked."));
+    });
+  });
+}
+
+// Keeps the test archive decryptable across reloads despite the suite storage-clear init script.
+async function preserveArchiveKeyOnFutureNavigations(page: import("@playwright/test").Page) {
+  const archiveKey = await page.evaluate(() => window.localStorage.getItem("netly_transaction_archive_key_v1"));
+
+  if (!archiveKey) {
+    throw new Error("Expected seeded transaction archive key to exist before reload.");
+  }
+
+  await page.addInitScript((key) => {
+    const originalClear = Storage.prototype.clear;
+
+    Storage.prototype.clear = function clearAndRestoreArchiveKey() {
+      originalClear.call(this);
+
+      if (this === window.localStorage) {
+        this.setItem("netly_transaction_archive_key_v1", key);
+      }
+    };
+
+    window.localStorage.setItem("netly_transaction_archive_key_v1", key);
+  }, archiveKey);
+}
 
 // Waits for the app shell to finish rendering before screenshots or probes run.
 async function waitForStableApp(page: import("@playwright/test").Page) {

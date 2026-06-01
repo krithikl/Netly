@@ -1226,23 +1226,29 @@ function TransactionMobileMenu({
   onOpenSettings: () => void;
   onSortOpen: () => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const runMenuAction = (action: () => void) => {
+    setOpen(false);
+    action();
+  };
+
   return (
-    <Popover>
+    <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <Button aria-label="Transaction actions" className="transaction-icon-action" type="button" variant="secondary">
           <MoreVertical aria-hidden="true" className="h-5 w-5" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="transaction-mobile-menu">
-        <button onClick={onFilterOpen} type="button">
+        <button onClick={() => runMenuAction(onFilterOpen)} type="button">
           <SlidersHorizontal aria-hidden="true" className="h-5 w-5" />
           <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</span>
         </button>
-        <button onClick={onSortOpen} type="button">
+        <button onClick={() => runMenuAction(onSortOpen)} type="button">
           <ArrowDownUp aria-hidden="true" className="h-5 w-5" />
           <span>Sort</span>
         </button>
-        <button onClick={onOpenSettings} type="button">
+        <button onClick={() => runMenuAction(onOpenSettings)} type="button">
           <Settings aria-hidden="true" className="h-5 w-5" />
           <span>Settings</span>
         </button>

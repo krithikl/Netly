@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { archiveAndMergeTransactions, markArchiveIncrementalTransactionSynced, readArchivedAccountSnapshot, readArchivedTransactions, writeArchivedAccountSnapshot } from "@/lib/app/transaction-archive";
-import { getIncrementalTransactionSyncRange } from "@/lib/app/transaction-sync";
+import { getIncrementalTransactionSyncRange, hasVisibleArchiveHydration } from "@/lib/app/transaction-sync";
 import { currentBalance as fallbackBalance, transactions as fallbackTransactions } from "@/lib/mock-data";
 import { readInitialDataMode } from "@/lib/app/browser-state";
 import type { AccountDataFreshness, AkahuDataFreshness, DataMode, LinkedAccount } from "@/lib/app/types";
@@ -128,6 +128,8 @@ export function useAkahuData() {
     setIsLoadingTransactions(true);
     setIsLoadingTransactionPageRange(false);
     setIsInitializingTransactionHistory(false);
+    setTransactionLoadError("");
+    setTransactionLoadNotice("");
 
     // Keep the existing screen populated during same-mode refreshes. Clearing here
     // caused the app to flash empty rows/cards during startup refreshes.
@@ -169,9 +171,8 @@ export function useAkahuData() {
           });
         }
 
-        if (archivedTransactions.length > 0 || archivedTransactionPageTransactions.length > 0 || archivedAccountSnapshot) {
+        if (hasVisibleArchiveHydration(archivedTransactions, archivedTransactionPageTransactions, dateRange)) {
           setIsLoadingTransactions(false);
-          // setTransactionLoadNotice("Showing encrypted archived data while checking Akahu for fresh data.");
         }
       }
 
@@ -274,6 +275,8 @@ export function useAkahuData() {
 
     setIsLoadingTransactionPageRange(true);
     setTransactionPageNextCursor(null);
+    setTransactionLoadError("");
+    setTransactionLoadNotice("");
 
     try {
       if (mode === "user") {

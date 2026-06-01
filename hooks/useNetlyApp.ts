@@ -14,7 +14,7 @@ import { applyCategoryPreferences } from "@/lib/category-rules";
 import type { DataMode } from "@/lib/app/types";
 import { cardProducts, payday as defaultPayday } from "@/lib/mock-data";
 import { calculateCardFit, debitTransactions, detectRecurring, generateInsights, getDefaultCardFitIncludedCategories, spendByCategory, sum } from "@/lib/insights";
-import { filterTransactionsByDateRange, filterTransactionsByPeriod, getThisMonthDateRange, getTransactionPeriodDateRange } from "@/lib/periods";
+import { filterTransactionsByPeriod, getThisMonthDateRange } from "@/lib/periods";
 import { isIncomeCategoryIncluded } from "@/lib/reporting";
 import { getTransactionCategory, getTransactionDate, getTransactionId, transactionNeedsReview } from "@/lib/transaction-display";
 import { defaultAccountStorageKey, hideBalancesStorageKey, incomeIncludedCategoriesStorageKey, periods } from "@/lib/app/constants";

@@ -1,28 +1,17 @@
 import type { PeriodOption, Transaction, TransactionDateRange } from "./types";
-import { getTransactionDate } from "@/lib/transaction-display";
 
-const fallbackReferenceDate = new Date("2026-05-04T12:00:00+12:00");
-
-// Filters transactions for Home/Budgets topbar periods.
-export function filterTransactionsByPeriod(transactions: Transaction[], period: PeriodOption) {
+// Filters transactions for dashboard period tabs using today's local calendar window.
+export function filterTransactionsByPeriod(transactions: Transaction[], period: PeriodOption, referenceDate = new Date()) {
   if (period === "All") {
     return transactions;
   }
 
-  const referenceDate = getReferenceDate(transactions);
+  const normalizedReferenceDate = normalizeDate(referenceDate);
+  const startDate = getPeriodStartDate(period, normalizedReferenceDate);
 
   return transactions.filter((txn) => {
-    const txnDate = new Date(`${getTransactionDate(txn)}T12:00:00+12:00`);
-
-    if (period === "This month") {
-      return txnDate.getFullYear() === referenceDate.getFullYear() && txnDate.getMonth() === referenceDate.getMonth();
-    }
-
-    const days = period === "30 days" ? 30 : 90;
-    const start = new Date(referenceDate);
-    start.setDate(referenceDate.getDate() - days);
-
-    return txnDate >= start && txnDate <= referenceDate;
+    const txnDate = parseTransactionDate(txn);
+    return txnDate >= startDate && txnDate <= normalizedReferenceDate;
   });
 }
 
@@ -30,24 +19,6 @@ export function filterTransactionsByDateRange(transactions: Transaction[], dateR
   return transactions.filter((txn) => {
     return isTransactionInDateRange(txn, dateRange.from, dateRange.to);
   });
-}
-
-// Converts a period label into a concrete date range for transaction queries.
-export function getTransactionPeriodDateRange(transactions: Transaction[], period: Exclude<PeriodOption, "All">): TransactionDateRange {
-  const referenceDate = getReferenceDate(transactions);
-
-  if (period === "This month") {
-    return getThisMonthDateRange(referenceDate);
-  }
-
-  const days = period === "30 days" ? 30 : 90;
-  const from = new Date(referenceDate);
-  from.setDate(referenceDate.getDate() - days);
-
-  return {
-    from: formatDateInputValue(from),
-    to: formatDateInputValue(referenceDate)
-  };
 }
 
 export function isTransactionInDateRange(transaction: Transaction, fromDate?: string, toDate?: string) {
@@ -72,11 +43,39 @@ export function formatDateInputValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function getReferenceDate(transactions: Transaction[]) {
-  const latestTimestamp = transactions
-    .map((txn) => new Date(`${getTransactionDate(txn)}T12:00:00+12:00`).getTime())
-    .filter(Number.isFinite)
-    .sort((a, b) => b - a)[0];
+// Converts a dashboard period option into its inclusive local start date.
+function getPeriodStartDate(period: Exclude<PeriodOption, "All">, referenceDate: Date) {
+  if (period === "This month") {
+    return new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1, 12);
+  }
 
-  return latestTimestamp ? new Date(latestTimestamp) : fallbackReferenceDate;
+  const days = period === "30 days" ? 30 : 90;
+  const startDate = new Date(referenceDate);
+  startDate.setDate(referenceDate.getDate() - days);
+  return normalizeDate(startDate);
+}
+
+// Parses a transaction's date-only value at local noon to avoid midnight edge cases.
+function parseTransactionDate(transaction: Transaction) {
+  const transactionDate = new Date(`${getTransactionDate(transaction)}T12:00:00`);
+
+  if (Number.isNaN(transactionDate.getTime())) {
+    throw new Error(`Invalid transaction date "${getTransactionDate(transaction)}".`);
+  }
+
+  return transactionDate;
+}
+
+// Extracts the YYYY-MM-DD transaction date used for period comparisons.
+function getTransactionDate(transaction: Transaction) {
+  if (typeof transaction.date !== "string") {
+    throw new Error("Transaction period invariant failed: transaction date must be a string.");
+  }
+
+  return transaction.date.slice(0, 10);
+}
+
+// Normalizes dates to local noon so calendar comparisons do not drift at midnight.
+function normalizeDate(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
 }

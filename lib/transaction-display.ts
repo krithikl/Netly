@@ -1,19 +1,20 @@
-import type { Transaction } from "@/lib/types";
+import type { Transaction } from "./types";
 import {
   getRawAkahuCategory,
   getRawAkahuPersonalFinanceCategory,
   getTransactionCategory as getEffectiveTransactionCategory,
   transactionNeedsReview as getEffectiveTransactionNeedsReview
-} from "@/lib/category-rules";
+} from "./category-rules";
 export {
   formatTransactionDateHeading,
   groupTransactionsByDate,
   type TransactionDateGroup
-} from "@/lib/transaction-date-groups";
+} from "./transaction-date-groups";
 
 export type TransactionStatus = "Booked";
 
 const currencyFormatters = new Map<string, Intl.NumberFormat>();
+const directCreditTypes = new Set(["direct credit"]);
 
 // Returns a stable transaction ID, even when Akahu does not send one
 export function getTransactionId(transaction: Transaction) {
@@ -94,6 +95,12 @@ export function getTransactionStatus(transaction: Transaction): TransactionStatu
 // Picks the best merchant name available for display
 // Chooses the best merchant label for transaction rows and search.
 export function getTransactionMerchant(transaction: Transaction) {
+  const paymentTitle = getBankPaymentTitle(transaction);
+
+  if (paymentTitle) {
+    return paymentTitle;
+  }
+
   return firstUsefulText([
     transaction.merchant?.name,
     transaction.meta?.particulars,
@@ -222,6 +229,17 @@ export function transactionNeedsReview(transaction: Transaction) {
 function firstUsefulText(values: Array<unknown>, fallback = "Unknown transaction") {
   const value = values.find(isUsefulText);
   return String(value || fallback).trim();
+}
+
+// Uses raw bank text for direct credits because Akahu merchant enrichment is often generic.
+function getBankPaymentTitle(transaction: Transaction) {
+  return directCreditTypes.has(normalizeDisplayText(transaction.type)) && typeof transaction.description === "string"
+    ? transaction.description.trim()
+    : "";
+}
+
+function normalizeDisplayText(value: unknown) {
+  return isUsefulText(value) ? value.trim().replace(/\s+/g, " ").toLowerCase() : "";
 }
 
 function isUsefulText(value: unknown): value is string {

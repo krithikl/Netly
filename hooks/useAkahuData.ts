@@ -123,6 +123,7 @@ export function useAkahuData() {
     refreshRequestIdRef.current = requestId;
     const isCurrentRequest = () => refreshRequestIdRef.current === requestId;
     let incrementalDateRange = dateRange;
+    let shouldSyncFullHistory = Boolean(options.forceFullSync);
 
     setIsLoadingTransactions(true);
     setIsLoadingTransactionPageRange(false);
@@ -145,7 +146,9 @@ export function useAkahuData() {
           return;
         }
 
-        setIsInitializingTransactionHistory(Boolean(options.forceFullSync));
+        shouldSyncFullHistory = archivedTransactions.length === 0 || Boolean(options.forceFullSync);
+
+        setIsInitializingTransactionHistory(shouldSyncFullHistory);
 
         setTransactions(archivedTransactions);
         setTransactionPageTransactions(archivedTransactionPageTransactions);
@@ -182,7 +185,6 @@ export function useAkahuData() {
       };
 
       if (mode === "user") {
-        const shouldSyncFullHistory = Boolean(options.forceFullSync);
         void loadAndApplyAccountSnapshot(mode, isCurrentRequest, accountSetters, { requestManualRefresh: true })
           .then((manualRefreshResult) => {
             if (!manualRefreshResult || !isCurrentRequest() || !manualRefreshResult.shouldPollForFreshness) {

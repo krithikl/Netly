@@ -232,6 +232,30 @@ test("budget card opens category spending breakdown with donut chart", async ({ 
   await expect(page.getByTestId("budgets-page")).toBeVisible();
 });
 
+test("home dashboard period reset uses the current calendar month", async ({ page }, testInfo) => {
+  await freezeBrowserDate(page, "2026-06-01T12:00:00");
+  await routeHomePeriodResetAkahu(page);
+  await page.goto("/");
+  await waitForStableApp(page);
+
+  const categoryCard = page.getByTestId("category-donut-card");
+  const spentMetric = page.locator(".metric-grid > .material-card").filter({ hasText: "Spent" });
+  await expect(categoryCard).toContainText("Groceries");
+  await expect(categoryCard).not.toContainText("Food");
+  await expect(spentMetric).toContainText("$12");
+  await expect(spentMetric).toContainText("1 outgoing transaction");
+
+  if (testInfo.project.name === "desktop") {
+    const thirtyDaysTab = page.getByRole("tab", { name: "30 days" });
+    await expect(thirtyDaysTab).toHaveCount(1);
+    await thirtyDaysTab.click();
+
+    await expect(categoryCard).toContainText("Food");
+    await expect(spentMetric).toContainText("$52");
+    await expect(spentMetric).toContainText("2 outgoing transactions");
+  }
+});
+
 test("budget history opens historical period details with editable transactions", async ({ page }) => {
   await routeBudgetBreakdownAkahu(page);
   await page.goto("/");
@@ -467,8 +491,8 @@ test("Akahu startup fetches transactions while account freshness is still loadin
         connected: true,
         rawCount: 1,
         nextCursor: null,
-        transactions: [
-          getBudgetTransaction("fast-startup-transaction", "Food", -12.34)
+          transactions: [
+          getBudgetTransaction("fast-startup-transaction", "Food", -12.34, "2026-06-01")
         ]
       }
     });
@@ -701,6 +725,7 @@ async function mockDisconnectedAkahu(page: import("@playwright/test").Page) {
 
 // Serves deterministic user-mode transactions so the budget detail can show real counts.
 async function routeBudgetBreakdownAkahu(page: import("@playwright/test").Page) {
+  await freezeBrowserDate(page, "2026-05-24T12:00:00");
   await page.unroute("**/api/akahu/accounts?source=user");
   await page.unroute("**/api/akahu/transactions?source=user**");
   await page.unroute("**/api/akahu/refresh");
@@ -751,8 +776,57 @@ async function routeBudgetBreakdownAkahu(page: import("@playwright/test").Page) 
   });
 }
 
+// Serves transactions around a month boundary so Home proves it resets against today's date.
+async function routeHomePeriodResetAkahu(page: import("@playwright/test").Page) {
+  await page.unroute("**/api/akahu/accounts?source=user");
+  await page.unroute("**/api/akahu/transactions?source=user**");
+  await page.unroute("**/api/akahu/refresh");
+
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: getConnectedAccountPayload({
+        balanceRefreshedAt: "2026-06-01T10:14:00.000Z",
+        isStale: false,
+        transactionsRefreshedAt: "2026-06-01T10:14:00.000Z"
+      })
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: 4,
+        nextCursor: null,
+        transactions: [
+          getBudgetTransaction("may-food", "Food", -40, "2026-05-31"),
+          getBudgetTransaction("old-transport", "Transport", -25, "2026-05-01"),
+          getBudgetTransaction("june-groceries", "Groceries", -12, "2026-06-01"),
+          getBudgetTransaction("june-income", "Salary", 100, "2026-06-01")
+        ]
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      status: 200,
+      json: {
+        connected: true,
+        notice: "Akahu refresh accepted.",
+        requestedAt: "2026-06-01T10:14:05.000Z"
+      }
+    });
+  });
+}
+
 // Serves deterministic demo-mode transactions for budget seed-history checks.
 async function routeDemoBudgetHistoryAkahu(page: import("@playwright/test").Page) {
+  await freezeBrowserDate(page, "2026-05-24T12:00:00");
   await page.route("**/api/akahu/accounts?source=demo", async (route) => {
     await route.fulfill({
       contentType: "application/json",
@@ -938,4 +1012,34 @@ async function expectBudgetHistoryCard(page: import("@playwright/test").Page, pe
 // Counts explicit CSS grid tracks for responsive layout assertions.
 async function getGridColumnCount(locator: import("@playwright/test").Locator) {
   return locator.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").filter(Boolean).length);
+}
+
+// Freezes browser time for period-window tests that would otherwise depend on the runner date.
+async function freezeBrowserDate(page: import("@playwright/test").Page, isoDate: string) {
+  await page.addInitScript((fixedIsoDate: string) => {
+    const RealDate = Date;
+    const fixedTime = new RealDate(fixedIsoDate).getTime();
+
+    class MockDate extends RealDate {
+      constructor(...args: any[]) {
+        if (args.length === 0) {
+          super(fixedTime);
+          return;
+        }
+
+        if (args.length === 1) {
+          super(args[0]);
+          return;
+        }
+
+        super(args[0], args[1], args[2] ?? 1, args[3] ?? 0, args[4] ?? 0, args[5] ?? 0, args[6] ?? 0);
+      }
+
+      static now() {
+        return fixedTime;
+      }
+    }
+
+    globalThis.Date = MockDate as unknown as DateConstructor;
+  }, isoDate);
 }

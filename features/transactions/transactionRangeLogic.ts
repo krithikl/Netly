@@ -27,15 +27,16 @@ export function getTransactionRangeState({
   sourceTransactions: Transaction[];
 }): TransactionRangeState {
   const hasLoadedActiveDateRange = getDateRangesMatch(activeDateRange, loadedDateRange);
-  const activeTransactions = hasLoadedActiveDateRange
-    ? pageTransactions
-    : filterTransactionsByDateRange(sourceTransactions, activeDateRange);
-  const isActiveRangeLoading = !hasLoadedActiveDateRange && (isLoadingTransactions || isLoadingTransactionPageRange);
+  const sourceRangeTransactions = filterTransactionsByDateRange(sourceTransactions, activeDateRange);
+  const shouldUseExactPageTransactions = hasLoadedActiveDateRange && pageTransactions.length > 0;
+  const activeTransactions = shouldUseExactPageTransactions ? pageTransactions : sourceRangeTransactions;
+  const isRangeRefreshRunning = isLoadingTransactions || isLoadingTransactionPageRange;
+  const isActiveRangeLoading = isRangeRefreshRunning && (!hasLoadedActiveDateRange || pageTransactions.length === 0);
   const shouldShowLoading = isActiveRangeLoading && activeTransactions.length === 0;
 
   return {
     hasLoadedActiveDateRange,
-    hasMoreTransactions: hasLoadedActiveDateRange && hasMoreTransactions,
+    hasMoreTransactions: shouldUseExactPageTransactions && hasMoreTransactions,
     shouldShowListLoading: shouldShowLoading,
     shouldShowMonthSummaryLoading: shouldShowLoading,
     transactions: activeTransactions

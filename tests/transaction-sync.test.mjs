@@ -117,6 +117,27 @@ test("transaction range state falls back to local source transactions while rang
   assert.deepEqual(state.transactions.map((transaction) => transaction._id), ["txn-may"]);
 });
 
+test("transaction range state keeps archived rows visible when the exact page is still empty", () => {
+  const state = getTransactionRangeState({
+    activeDateRange: visibleRange,
+    hasMoreTransactions: true,
+    isLoadingTransactionPageRange: false,
+    isLoadingTransactions: true,
+    loadedDateRange: visibleRange,
+    pageTransactions: [],
+    sourceTransactions: [
+      getTransaction("txn-archived-range", "2026-05-14"),
+      getTransaction("txn-archived-outside", "2026-04-14")
+    ]
+  });
+
+  assert.equal(state.hasLoadedActiveDateRange, true);
+  assert.equal(state.hasMoreTransactions, false);
+  assert.equal(state.shouldShowListLoading, false);
+  assert.equal(state.shouldShowMonthSummaryLoading, false);
+  assert.deepEqual(state.transactions.map((transaction) => transaction._id), ["txn-archived-range"]);
+});
+
 test("transaction range state only shows loading when no local rows can cover the selected range", () => {
   const loadingWithRows = getTransactionRangeState({
     activeDateRange: visibleRange,
@@ -170,7 +191,7 @@ test("launch sync starts account freshness and transaction fetch in parallel", a
   assert.doesNotMatch(source, /lastAkahuManualRefreshStorageKey|canRequestManualRefresh|recordManualRefreshRequestedAt/);
   assert.match(source, /void loadAndApplyAccountSnapshot\(mode, isCurrentRequest, accountSetters, \{ requestManualRefresh: true \}\)/);
   assert.match(source, /const syncResult = shouldSyncFullHistory[\s\S]*?await syncVisibleAkahuTransactionsToArchive/);
-  assert.doesNotMatch(source, /archivedTransactions\.length === 0/);
+  assert.match(source, /archivedTransactions\.length === 0 \|\| Boolean\(options\.forceFullSync\)/);
   assert.match(source, /void pollAndResyncAfterAkahuRefresh\(/);
   assert.match(source, /applyTransactionSyncResult\(syncResult, dateRange/);
   assert.match(source, /shouldPollForFreshness/);
@@ -184,6 +205,14 @@ test("launch sync starts account freshness and transaction fetch in parallel", a
   assert.match(providerSource, /Promise\.all\(\[[\s\S]*?this\.getRawAccounts\(token\)[\s\S]*?this\.client\.getTransactionsPage/);
   assert.doesNotMatch(providerSource, /getBalance\(token/);
   assert.match(source, /timedOut: true/);
+});
+
+test("direct credit titles use the raw bank description", async () => {
+  const displaySource = await readFile(new URL("../lib/transaction-display.ts", import.meta.url), "utf8");
+
+  assert.match(displaySource, /function getBankPaymentTitle\(transaction: Transaction\)/);
+  assert.match(displaySource, /directCreditTypes\.has\(normalizeDisplayText\(transaction\.type\)\)[\s\S]*?transaction\.description\.trim\(\)/);
+  assert.doesNotMatch(displaySource, /Transfer from|Transfer to|getTransferCounterparty|genericCounterpartyLabels|transferTypes/);
 });
 
 test("Akahu refresh polling keeps bounded timing constants", async () => {

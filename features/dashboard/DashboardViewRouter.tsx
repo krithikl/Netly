@@ -19,11 +19,7 @@ type DashboardViewRouterProps = {
 
 // Chooses the active dashboard page and passes only that page's props.
 export function DashboardViewRouter(props: DashboardViewRouterProps) {
-  return (
-    <div className="route-transition" data-active-view={props.activeView} key={props.activeView}>
-      {renderView(props)}
-    </div>
-  );
+  return renderView(props);
 }
 
 function renderView(props: DashboardViewRouterProps) {

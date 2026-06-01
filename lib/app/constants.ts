@@ -34,8 +34,14 @@ export const hideBalancesStorageKey = "netly_hide_balances";
 
 export const defaultAccountStorageKey = "netly_default_account_id";
 
+export const incomeIncludedCategoriesStorageKey = "netly_income_included_categories";
+
 export const incomeExcludedCategoriesStorageKey = "netly_income_excluded_categories";
 
 export const paydayStorageKey = "netly_payday";
 
 export const budgetsStorageKey = "netly_user_budgets";
+
+export const driveBackupConnectionStorageKey = "netly_drive_backup_connection";
+
+export const driveBackupPendingIntentStorageKey = "netly_drive_backup_pending_intent";

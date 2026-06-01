@@ -1,16 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { TransactionDetailsOverlay } from "@/features/transactions/TransactionList";
-import { formatMoney } from "@/lib/insights";
+import { MoneyMovementCard } from "@/components/MoneyMovementCard";
 import {
+  formatTransactionDateHeading,
+  getTransactionAmountLabel,
   getTransactionCategory,
-  getTransactionDate,
   getTransactionId,
-  getTransactionMerchant
+  getTransactionMerchant,
+  groupTransactionsByDate
 } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 
@@ -24,6 +24,7 @@ type RecentActivityStripProps = {
 export function RecentActivityStrip({ categoryColors, onViewAll, transactions }: RecentActivityStripProps) {
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [detailsTransaction, setDetailsTransaction] = useState<Transaction | null>(null);
+  const transactionGroups = useMemo(() => groupTransactionsByDate(transactions), [transactions]);
   const selectedTransaction = useMemo(
     () => transactions.find((transaction) => getTransactionId(transaction) === selectedTransactionId) || null,
     [selectedTransactionId, transactions]
@@ -46,39 +47,41 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
 
   if (transactions.length === 0) {
     return (
-      <Card className="recent-activity-card">
-        <RecentActivityHeader onViewAll={onViewAll} />
-        <div className="empty-state">No transactions found.</div>
-      </Card>
+      <section className="transaction-list-layout">
+        <div className="empty-state home-recent-empty">No transactions found.</div>
+        <ViewAllTransactionsButton onViewAll={onViewAll} />
+      </section>
     );
   }
 
   return (
-    <Card className="recent-activity-card">
-      <RecentActivityHeader onViewAll={onViewAll} />
-      <div className="recent-strip">
-        {transactions.map((transaction) => {
-          const category = getTransactionCategory(transaction);
-          const merchant = getTransactionMerchant(transaction);
-          const transactionId = getTransactionId(transaction);
-          const amountTone = transaction.amount < 0 ? "negative" : "positive";
-          const avatarStyle = { background: getCategoryColor(category, categoryColors) };
+    <section className="transaction-list-layout">
+      <div className="money-movement-list home-recent-transactions" data-testid="home-recent-transactions">
+        {transactionGroups.map((group) => (
+          <div className="transaction-date-group" key={group.date}>
+            <h3 className="transaction-date-group-heading">{formatTransactionDateHeading(group.date)}</h3>
+            {group.transactions.map((transaction) => {
+              const category = getTransactionCategory(transaction);
+              const merchant = getTransactionMerchant(transaction);
+              const transactionId = getTransactionId(transaction);
 
-          return (
-            <button className="recent-item" key={transactionId} onClick={() => openDetails(transactionId)} type="button">
-              <span className="recent-avatar" style={avatarStyle}>
-                {merchant.slice(0, 1)}
-              </span>
-              <span className="recent-copy">
-                <strong>{merchant}</strong>
-                <span>{category}</span>
-                <b className={amountTone}>{formatMoney(transaction.amount)}</b>
-                <small>{formatRelativeDate(getTransactionDate(transaction))}</small>
-              </span>
-            </button>
-          );
-        })}
+              return (
+                <MoneyMovementCard
+                  amount={getTransactionAmountLabel(transaction)}
+                  amountTone={transaction.amount < 0 ? "expense" : "income"}
+                  avatarLabel={merchant}
+                  category={category}
+                  categoryColor={getCategoryColor(category, categoryColors)}
+                  key={transactionId}
+                  onClick={() => openDetails(transactionId)}
+                  title={merchant}
+                />
+              );
+            })}
+          </div>
+        ))}
       </div>
+      <ViewAllTransactionsButton onViewAll={onViewAll} />
       {detailsTransaction && (
         <TransactionDetailsOverlay
           categoryColors={categoryColors}
@@ -87,48 +90,20 @@ export function RecentActivityStrip({ categoryColors, onViewAll, transactions }:
           transaction={detailsTransaction}
         />
       )}
-    </Card>
+    </section>
   );
 }
 
-function RecentActivityHeader({ onViewAll }: { onViewAll: () => void }) {
+function ViewAllTransactionsButton({ onViewAll }: { onViewAll: () => void }) {
   return (
-    <CardHeader>
-      <CardTitle>Recent activity</CardTitle>
-      <Button className="text-link" onClick={onViewAll} type="button" variant="ghost">
-        View all transactions
-        <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
+    <div className="flex justify-center px-0 pt-0.5 pb-1">
+      <Button className="min-h-[38px] rounded-full px-[26px]" onClick={onViewAll} type="button" variant="secondary">
+        View All Transactions
       </Button>
-    </CardHeader>
+    </div>
   );
 }
 
 function getCategoryColor(category: string, categoryColors: Record<string, string>) {
   return categoryColors[category] || "#667085";
-}
-
-function formatRelativeDate(value: string) {
-  const transactionDate = new Date(`${value}T12:00:00`);
-
-  if (Number.isNaN(transactionDate.getTime())) {
-    return value;
-  }
-
-  const today = new Date();
-  const todayMidday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
-  const millisecondsInDay = 24 * 60 * 60 * 1000;
-  const dayDifference = Math.round((todayMidday.getTime() - transactionDate.getTime()) / millisecondsInDay);
-
-  if (dayDifference === 0) {
-    return "Today";
-  }
-
-  if (dayDifference === 1) {
-    return "Yesterday";
-  }
-
-  return new Intl.DateTimeFormat("en-NZ", {
-    day: "numeric",
-    month: "short"
-  }).format(transactionDate);
 }

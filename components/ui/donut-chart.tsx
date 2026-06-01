@@ -10,15 +10,18 @@ import { formatMoney, sum } from "@/lib/insights";
 ChartJS.register(ArcElement, Tooltip);
 
 type ChartCategory = {
-  category: string;
   amount: number;
+  category: string;
 };
 
 type DonutChartProps = {
+  ariaLabel?: string;
   categories: ChartCategory[];
   categoryColors: Record<string, string>;
-  hoveredCategory: string | null;
-  onHover: (category: string | null) => void;
+  centerLabel?: string;
+  hoveredCategory?: string | null;
+  onHover?: (category: string | null) => void;
+  tooltipShareLabel?: string;
 };
 
 type TooltipState = {
@@ -59,9 +62,15 @@ const initialTooltipState: TooltipState = {
 };
 const mobileChartQuery = "(max-width: 768px)";
 
-// Shows the category donut chart with hover tooltips and mobile sizing
 // Reusable Chart.js doughnut chart used for category spend visualisation.
-export function DonutChart({ categories, categoryColors, hoveredCategory, onHover }: DonutChartProps) {
+export function DonutChart({
+  ariaLabel = "Expense categories donut chart",
+  categories,
+  categoryColors,
+  centerLabel = "Expenses",
+  onHover,
+  tooltipShareLabel = "of shown expenses"
+}: DonutChartProps) {
   const [tooltipState, setTooltipState] = useState<TooltipState>(initialTooltipState);
   const [isMobileChart, setIsMobileChart] = useState(false);
   const total = sum(categories.map((item) => item.amount));
@@ -70,13 +79,11 @@ export function DonutChart({ categories, categoryColors, hoveredCategory, onHove
 
   const handleChartHover = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
     const category = getCategoryFromElements(categories, elements);
-    onHover(category);
+    onHover?.(category);
   }, [categories, onHover]);
 
-
-
   const handleChartLeave = useCallback(() => {
-    onHover(null);
+    onHover?.(null);
     setTooltipState((currentTooltip) => ({ ...currentTooltip, opacity: 0 }));
   }, [onHover]);
 
@@ -110,17 +117,17 @@ export function DonutChart({ categories, categoryColors, hoveredCategory, onHove
   return (
     <div className="donut-wrap">
       <div className="donut" onMouseLeave={handleChartLeave}>
-        <Doughnut aria-label="Expense categories donut chart" data={chartData} options={chartOptions} role="img" />
+        <Doughnut aria-label={ariaLabel} data={chartData} options={chartOptions} role="img" />
       </div>
       {tooltipState.category && total > 0 && (
         <div className="chart-tooltip" role="status" style={tooltipStyle}>
           <strong>{tooltipState.category}</strong>
           <span>{formatMoney(tooltipState.amount)}</span>
-          <small>{Math.round((tooltipState.amount / total) * 100)}% of shown expenses</small>
+          <small>{Math.round((tooltipState.amount / total) * 100)}% {tooltipShareLabel}</small>
         </div>
       )}
       <div className="donut-center">
-        <span>Expenses</span>
+        <span>{centerLabel}</span>
         <strong>{formatMoney(total)}</strong>
       </div>
     </div>
@@ -143,7 +150,7 @@ function getChartData(categories: ChartCategory[], categoryColors: Record<string
   };
 }
 
-// Keeps the chart settings in one place
+// Keeps the chart settings in one place.
 function getChartOptions(
   onHover: (event: ChartEvent, elements: ActiveElement[]) => void,
   onExternalTooltip: (context: ExternalTooltipContext) => void,
@@ -159,7 +166,6 @@ function getChartOptions(
       padding: 12
     },
     maintainAspectRatio: false,
-
     onHover,
     plugins: {
       legend: {
@@ -189,9 +195,7 @@ function getCategoryFromElements(categories: ChartCategory[], elements: ActiveEl
   return categories[index]?.category || null;
 }
 
-
-
-// Turns Chart.js tooltip data into React state
+// Turns Chart.js tooltip data into React state.
 function getExternalTooltipState(tooltip: TooltipModel<"doughnut">, currentTooltip: TooltipState): TooltipState {
   const item = tooltip.dataPoints?.[0];
 
@@ -221,7 +225,7 @@ function getTooltipItemElement(item: unknown) {
   return item.element;
 }
 
-// Puts the tooltip near the middle of the hovered slice
+// Puts the tooltip near the middle of the hovered slice.
 function getTooltipPoint(element: unknown, tooltip: TooltipModel<"doughnut">): TooltipPoint {
   if (!isDoughnutArcGeometry(element)) {
     return {
@@ -253,7 +257,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-// Skips state updates when the tooltip has not changed
+// Skips state updates when the tooltip has not changed.
 function getNextTooltipState(currentTooltip: TooltipState, nextTooltip: TooltipState) {
   if (
     currentTooltip.amount === nextTooltip.amount &&

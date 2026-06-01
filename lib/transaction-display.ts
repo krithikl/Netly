@@ -1,14 +1,20 @@
-import type { Transaction } from "@/lib/types";
+import type { Transaction } from "./types";
 import {
   getRawAkahuCategory,
   getRawAkahuPersonalFinanceCategory,
   getTransactionCategory as getEffectiveTransactionCategory,
   transactionNeedsReview as getEffectiveTransactionNeedsReview
-} from "@/lib/category-rules";
+} from "./category-rules";
+export {
+  formatTransactionDateHeading,
+  groupTransactionsByDate,
+  type TransactionDateGroup
+} from "./transaction-date-groups";
 
-export type TransactionStatus = "Booked" | "Pending";
+export type TransactionStatus = "Booked";
 
 const currencyFormatters = new Map<string, Intl.NumberFormat>();
+const directCreditTypes = new Set(["direct credit"]);
 
 // Returns a stable transaction ID, even when Akahu does not send one
 export function getTransactionId(transaction: Transaction) {
@@ -17,7 +23,7 @@ export function getTransactionId(transaction: Transaction) {
   }
 
   return [
-    "pending",
+    "transaction",
     transaction._account || "account",
     transaction.date,
     transaction.description,
@@ -56,6 +62,23 @@ export function getTransactionFallbackSortTimestamp(transaction: Transaction) {
   return 0;
 }
 
+// Matches the Transactions page default order: newest transaction date first, then source timing.
+export function compareTransactionsNewestFirst(first: Transaction, second: Transaction) {
+  const dateDifference = getTransactionTimestamp(second) - getTransactionTimestamp(first);
+
+  if (dateDifference !== 0) {
+    return dateDifference;
+  }
+
+  const fallbackDifference = getTransactionFallbackSortTimestamp(second) - getTransactionFallbackSortTimestamp(first);
+
+  if (fallbackDifference !== 0) {
+    return fallbackDifference;
+  }
+
+  return getTransactionId(second).localeCompare(getTransactionId(first));
+}
+
 function getUsableTransactionTimestamp(value: string | undefined) {
   if (!value) {
     return Number.NaN;
@@ -66,16 +89,18 @@ function getUsableTransactionTimestamp(value: string | undefined) {
 }
 
 export function getTransactionStatus(transaction: Transaction): TransactionStatus {
-  if (transaction.pending) {
-    return "Pending";
-  }
-
   return "Booked";
 }
 
 // Picks the best merchant name available for display
 // Chooses the best merchant label for transaction rows and search.
 export function getTransactionMerchant(transaction: Transaction) {
+  const paymentTitle = getBankPaymentTitle(transaction);
+
+  if (paymentTitle) {
+    return paymentTitle;
+  }
+
   return firstUsefulText([
     transaction.merchant?.name,
     transaction.meta?.particulars,
@@ -131,6 +156,9 @@ export function getTransactionSummaryMeta(transaction: Transaction) {
 // Builds transaction detail rows and skips empty fields
 export function getTransactionDetailRows(transaction: Transaction) {
   return [
+    { label: "Status", value: getTransactionStatus(transaction) },
+    { label: "Made", value: getLifecycleDateValue(getTransactionDate(transaction)) },
+    { label: "Booked / resolved", value: getLifecycleDateValue(transaction.updated_at || transaction.created_at) },
     { label: "Account", value: getTransactionAccountLabel(transaction) },
     { label: "Currency", value: getTransactionCurrency(transaction) },
     { label: "Type", value: transaction.type },
@@ -201,6 +229,17 @@ export function transactionNeedsReview(transaction: Transaction) {
 function firstUsefulText(values: Array<unknown>, fallback = "Unknown transaction") {
   const value = values.find(isUsefulText);
   return String(value || fallback).trim();
+}
+
+// Uses raw bank text for direct credits because Akahu merchant enrichment is often generic.
+function getBankPaymentTitle(transaction: Transaction) {
+  return directCreditTypes.has(normalizeDisplayText(transaction.type)) && typeof transaction.description === "string"
+    ? transaction.description.trim()
+    : "";
+}
+
+function normalizeDisplayText(value: unknown) {
+  return isUsefulText(value) ? value.trim().replace(/\s+/g, " ").toLowerCase() : "";
 }
 
 function isUsefulText(value: unknown): value is string {
@@ -294,6 +333,27 @@ function getPaymentReferenceValue(transaction: Transaction) {
   ]
     .filter(isUsefulText)
     .join(" ");
+}
+
+function getLifecycleDateValue(value: string | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const hasTime = value.includes("T");
+  const timestamp = Date.parse(hasTime ? value : `${value}T12:00:00`);
+
+  if (!Number.isFinite(timestamp)) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-NZ", {
+    day: "numeric",
+    hour: hasTime ? "numeric" : undefined,
+    minute: hasTime ? "2-digit" : undefined,
+    month: "short",
+    year: "numeric"
+  }).format(new Date(timestamp));
 }
 
 function hasDetailValue(row: { label: string; value?: unknown }): row is { label: string; value: string } {

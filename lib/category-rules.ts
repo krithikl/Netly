@@ -1,5 +1,5 @@
-import { needsReviewCategory } from "@/lib/categories";
-import type { Transaction } from "@/lib/types";
+import { needsReviewCategory } from "./categories";
+import type { Transaction } from "./types";
 
 export type CategoryEditScope = "transaction" | "similar";
 export type CategoryRuleMap = Record<string, string>;
@@ -128,7 +128,7 @@ function getCategoryTransactionId(transaction: Transaction) {
   }
 
   return [
-    "pending",
+    "transaction",
     transaction._account || "account",
     transaction.date,
     transaction.description,

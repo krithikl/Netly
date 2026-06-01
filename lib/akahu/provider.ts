@@ -1,6 +1,6 @@
-import { getAkahuAccounts, getAvailableBalance, type AkahuAccount } from "@/lib/akahu/accounts";
+import { getAkahuAccounts, type AkahuAccount } from "@/lib/akahu/accounts";
 import { createAkahuClientFromEnv, type AkahuTransactionQuery as AkahuClientTransactionQuery } from "@/lib/akahu/client";
-import { dedupeAkahuTransactions, getAkahuTransactions } from "@/lib/akahu/normalize";
+import { dedupeAkahuTransactions, getAkahuTransactions, type AkahuTransactionsResponse } from "@/lib/akahu/normalize";
 import { isTransactionInDateRange } from "@/lib/periods";
 import type { Transaction } from "@/lib/types";
 
@@ -15,11 +15,6 @@ export type AkahuAccountResult = {
   accounts: AkahuAccount[];
   notice: string;
   primaryAccount: AkahuAccount | null;
-};
-
-export type AkahuBalanceResult = {
-  availableBalance: number | null;
-  notice: string;
 };
 
 export type AkahuTransactionRequest = {
@@ -51,7 +46,6 @@ export interface AkahuProvider {
   getAuthorizationUrl(state: string, email?: string): string;
   exchangeAuthorizationCode(code: string): Promise<string>;
   getAccounts(token: AkahuAccessToken): Promise<AkahuAccountResult>;
-  getBalance(token: AkahuAccessToken): Promise<AkahuBalanceResult>;
   getTransactions(token: AkahuAccessToken, query?: AkahuTransactionRequest): Promise<AkahuTransactionResult>;
   getTransactionsForAccounts(token: AkahuAccessToken, query: AkahuTransactionsForAccountsRequest): Promise<AkahuTransactionResult>;
   requestRefresh(token: AkahuAccessToken): Promise<AkahuRefreshResult>;
@@ -88,22 +82,16 @@ class DefaultAkahuProvider implements AkahuProvider {
     };
   }
 
-  async getBalance(token: AkahuAccessToken): Promise<AkahuBalanceResult> {
-    const rawAccounts = await this.getRawAccounts(token);
-    const availableBalance = getAvailableBalance(rawAccounts);
-
-    return {
-      availableBalance,
-      notice: availableBalance === null ? "Akahu connected, but no account balances were returned." : ""
-    };
-  }
-
   async getTransactions(token: AkahuAccessToken, query: AkahuTransactionRequest = {}): Promise<AkahuTransactionResult> {
-    const rawAccounts = await this.getRawAccounts(token);
-    return this.getTransactionsForAccounts(token, {
-      ...query,
-      accounts: rawAccounts
-    });
+    const [rawAccounts, transactionsResponse] = await Promise.all([
+      this.getRawAccounts(token),
+      this.client.getTransactionsPage(
+        { appToken: token.appToken, userToken: token.accessToken },
+        toAkahuTransactionQuery(query)
+      )
+    ]);
+
+    return this.toTransactionResult(transactionsResponse, rawAccounts, query);
   }
 
   async getTransactionsForAccounts(token: AkahuAccessToken, query: AkahuTransactionsForAccountsRequest): Promise<AkahuTransactionResult> {
@@ -112,19 +100,7 @@ class DefaultAkahuProvider implements AkahuProvider {
       query.accounts,
       toAkahuTransactionQuery(query)
     );
-    const transactions = filterTransactionsByDateRange(
-      dedupeAkahuTransactions(getAkahuTransactions(transactionsResponse, query.accounts)),
-      query.fromDate,
-      query.toDate
-    );
-
-    return {
-      accountCount: query.accounts.length,
-      rawCount: transactionsResponse.items?.length || 0,
-      nextCursor: transactionsResponse.cursor?.next || null,
-      transactions,
-      notice: transactions.length === 0 ? getEmptyAkahuTransactionsNotice(query.accounts) : ""
-    };
+    return this.toTransactionResult(transactionsResponse, query.accounts, query);
   }
 
   async requestRefresh(token: AkahuAccessToken): Promise<AkahuRefreshResult> {
@@ -138,6 +114,23 @@ class DefaultAkahuProvider implements AkahuProvider {
   private async getRawAccounts(token: AkahuAccessToken) {
     const response = await this.client.getAccounts({ appToken: token.appToken, userToken: token.accessToken });
     return getAkahuAccounts(response);
+  }
+
+  // Builds transaction payloads after Akahu account metadata and transactions finish loading.
+  private toTransactionResult(transactionsResponse: AkahuTransactionsResponse, accounts: AkahuAccount[], query: AkahuTransactionRequest): AkahuTransactionResult {
+    const transactions = filterTransactionsByDateRange(
+      dedupeAkahuTransactions(getAkahuTransactions(transactionsResponse, accounts)),
+      query.fromDate,
+      query.toDate
+    );
+
+    return {
+      accountCount: accounts.length,
+      rawCount: transactionsResponse.items?.length || 0,
+      nextCursor: transactionsResponse.cursor?.next || null,
+      transactions,
+      notice: transactions.length === 0 ? getEmptyAkahuTransactionsNotice(accounts) : ""
+    };
   }
 }
 

@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { DonutChart } from "@/features/home/DonutChart";
+import { DonutChart } from "@/components/ui/donut-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/insights";
@@ -60,9 +60,11 @@ function CategoryLegend({ categories, categoryColors, chartTotal }: CategoryLege
     return <div className="empty-state">No spending categories found for this period.</div>;
   }
 
+  const visibleCategories = categories.slice(0, 3);
+
   return (
     <div className="legend-list">
-      {categories.map((item) => (
+      {visibleCategories.map((item) => (
         <div className="legend-row" key={item.category}>
           <span className="legend-dot" style={{ background: getCategoryColor(item.category, categoryColors) }} />
           <span className="legend-content">

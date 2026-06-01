@@ -1,12 +1,12 @@
-import clsx from "clsx";
 import { CalendarDays, Sparkles, TrendingUp, WalletCards } from "lucide-react";
+import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { CategoryDonutCard } from "@/features/home/CategoryDonutCard";
 import { HeroBalanceCard } from "@/features/home/HeroBalanceCard";
 import { InsightsPanel } from "@/features/home/InsightsPanel";
 import { MetricCard } from "@/features/home/MetricCard";
 import { RecentActivityStrip } from "@/features/home/RecentActivityStrip";
 import { formatMoney } from "@/lib/insights";
-import { getTransactionTimestamp } from "@/lib/transaction-display";
+import { compareTransactionsNewestFirst } from "@/lib/transaction-display";
 import type { Transaction } from "@/lib/types";
 import type { View } from "@/lib/app/types";
 
@@ -61,30 +61,38 @@ export function HomePage({
   setPayday,
   transactionPreview
 }: HomePageProps) {
-  const hasVisibleHomeData = transactionPreview.length > 0 || chartCategories.length > 0;
-  const shouldHideHomeSections = isLoadingTransactions && !hasVisibleHomeData;
-  const metricGridClassName = getLoadingClassName("metric-grid", shouldHideHomeSections);
-  const dashboardGridClassName = getLoadingClassName("dashboard-grid", shouldHideHomeSections);
   const recentTransactions = [...transactionPreview]
-    .sort((first, second) => getTransactionTimestamp(second) - getTransactionTimestamp(first))
-    .slice(0, 5);
+    .sort(compareTransactionsNewestFirst)
+    .slice(0, 10);
   const openTransactionsView = () => setActiveView("transactions");
   const openBudgetsView = () => setActiveView("budgets");
+  const heroInsight = insights.find((insight) => insight.trim().length > 0);
 
   return (
     <section className="view-stack" data-testid="home-page">
+      <MobilePageHeader title="Netly" />
       <HeroBalanceCard
         availableBalance={availableBalance}
         hideBalances={hideBalances}
+        insights={insights}
         isConnected={isConnected}
-        onReviewSpend={openTransactionsView}
         payday={payday}
         paydayPatternDate={paydayPatternDate}
         setHideBalances={setHideBalances}
         setPayday={setPayday}
       />
 
-      <div className={dashboardGridClassName} aria-busy={shouldHideHomeSections}>
+      {heroInsight ? (
+        <button className="mobile-home-insight-strip" onClick={openTransactionsView} type="button" aria-label="Open spend insights">
+          <span className="mobile-home-insight-label">
+            <Sparkles aria-hidden="true" size={15} strokeWidth={2.4} />
+            Insight
+          </span>
+          <strong>{heroInsight}</strong>
+        </button>
+      ) : null}
+
+      <div className="dashboard-grid" aria-busy={isLoadingTransactions}>
         <CategoryDonutCard
           categories={chartCategories}
           categoryColors={categoryColors}
@@ -97,7 +105,7 @@ export function HomePage({
         <InsightsPanel insights={insights} onViewInsights={openTransactionsView} />
       </div>
 
-      <div className={metricGridClassName} aria-busy={shouldHideHomeSections}>
+      <div className="metric-grid" aria-busy={isLoadingTransactions}>
         <MetricCard icon={TrendingUp} label="Spent" note={`${expensesCount} outgoing transactions`} tone="blue" value={formatMoney(monthlySpend)} />
         <MetricCard icon={CalendarDays} label="Average per day" note="Estimated daily spend" tone="orange" value={formatMoney(averageDailySpend, true)} />
         <MetricCard icon={WalletCards} label="Income" note="Credits in this period" tone="green" value={formatMoney(income)} />
@@ -111,8 +119,4 @@ export function HomePage({
       />
     </section>
   );
-}
-
-function getLoadingClassName(baseClassName: string, isLoading: boolean) {
-  return clsx(baseClassName, isLoading && "is-loading");
 }

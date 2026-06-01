@@ -33,7 +33,7 @@ export function SelectField<T extends string = string>({
       <SelectTrigger aria-label={ariaLabel} className={className}>
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent position="popper">
         {options.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             {option.label}

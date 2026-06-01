@@ -13,7 +13,7 @@ import {
   defaultAccountStorageKey,
   deletedCategoriesStorageKey,
   hideBalancesStorageKey,
-  incomeExcludedCategoriesStorageKey,
+  incomeIncludedCategoriesStorageKey,
   paydayStorageKey
 } from "@/lib/app/constants";
 import { getTransactionDate, getTransactionFallbackSortTimestamp, getTransactionId, getTransactionTimestamp } from "@/lib/transaction-display";
@@ -48,6 +48,7 @@ export type TransactionArchiveMetadata = {
   backupTransactionCount?: number;
   deviceId: string;
   lastDriveSyncAt: string;
+  lastIncrementalTransactionSyncAt: string;
   lastLocalUpdateAt: string;
   schemaVersion: number;
 };
@@ -83,7 +84,7 @@ export async function archiveAndMergeTransactions(freshTransactions: Transaction
   }
 
   const archivedTransactions = await readArchivedTransactions(dateRange);
-  return mergeTransactions(archivedTransactions, freshTransactions);
+  return mergeTransactions(archivedTransactions, getFreshTransactionsInOptionalRange(freshTransactions, dateRange));
 }
 
 // Stores normalized transactions as encrypted IndexedDB records.
@@ -194,6 +195,13 @@ export async function importTransactionArchiveSnapshot(snapshot: TransactionArch
 export async function markArchiveDriveSynced() {
   await updateArchiveMetadata({
     lastDriveSyncAt: new Date().toISOString()
+  });
+}
+
+// Records that the launch/foreground incremental transaction sync completed.
+export async function markArchiveIncrementalTransactionSynced() {
+  await updateArchiveMetadata({
+    lastIncrementalTransactionSyncAt: new Date().toISOString()
   });
 }
 
@@ -389,6 +397,11 @@ function getTransactionSourceUpdatedAt(transaction: Transaction) {
   return transaction.updated_at || transaction.created_at || new Date().toISOString();
 }
 
+// Narrows freshly fetched overlap rows before returning a visible page range.
+function getFreshTransactionsInOptionalRange(transactions: Transaction[], dateRange?: TransactionDateRange) {
+  return dateRange ? transactions.filter((transaction) => isTransactionInOptionalRange(transaction, dateRange)) : transactions;
+}
+
 function isTransactionInOptionalRange(transaction: Transaction, dateRange?: TransactionDateRange) {
   const transactionDate = getTransactionDate(transaction);
 
@@ -441,6 +454,7 @@ function normalizeArchiveMetadata(metadata: StoredArchiveMetadata | undefined): 
     accountSnapshot: metadata?.accountSnapshot,
     deviceId: metadata?.deviceId || getArchiveDeviceId(),
     lastDriveSyncAt: metadata?.lastDriveSyncAt || "",
+    lastIncrementalTransactionSyncAt: metadata?.lastIncrementalTransactionSyncAt || "",
     lastLocalUpdateAt: metadata?.lastLocalUpdateAt || "",
     schemaVersion
   };
@@ -472,7 +486,7 @@ function readPortableSettings() {
     defaultAccountStorageKey,
     deletedCategoriesStorageKey,
     hideBalancesStorageKey,
-    incomeExcludedCategoriesStorageKey,
+    incomeIncludedCategoriesStorageKey,
     paydayStorageKey
   ];
 
@@ -511,7 +525,7 @@ function isPortableSettingsKey(key: string) {
     defaultAccountStorageKey,
     deletedCategoriesStorageKey,
     hideBalancesStorageKey,
-    incomeExcludedCategoriesStorageKey,
+    incomeIncludedCategoriesStorageKey,
     paydayStorageKey
   ].includes(key);
 }

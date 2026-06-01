@@ -46,9 +46,7 @@ export function useAkahuConnection({
     setSyncResult(completionMessage);
 
     if (response.ok) {
-      toast.success("Akahu connected", {
-        description: completionMessage
-      });
+      toast.success("Akahu connected");
       setManualTokens({
         appToken: "",
         userToken: ""
@@ -60,25 +58,52 @@ export function useAkahuConnection({
         await refreshTransactions("user", transactionDateRange, { forceFullSync: true });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Akahu connected, but transactions could not be loaded.";
+        console.error("Akahu connected, but transactions could not be loaded.", error);
         setSyncResult(message);
-        toast.error("Akahu connected, but loading failed", {
-          description: message
-        });
+        toast.error("Could not load transactions");
       }
       return;
     }
 
-    toast.error("Akahu connection failed", {
-      description: completionMessage
-    });
+    console.error("Akahu connection failed.", completionMessage);
+    toast.error("Akahu connection failed");
   }, [manualTokens, refreshTransactions, setDataMode, transactionDateRange]);
 
   const updateManualTokens = useCallback((tokens: AkahuManualTokens) => {
     setManualTokens(tokens);
   }, []);
 
+  const disconnectAkahuConnection = useCallback(async () => {
+    try {
+      const response = await fetch("/api/akahu/disconnect", {
+        method: "POST"
+      });
+      const payload = (await response.json()) as { error?: string; message?: string };
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Could not disconnect Akahu.");
+      }
+
+      setManualTokens({
+        appToken: "",
+        userToken: ""
+      });
+      setSyncResult(payload.message || "Akahu disconnected.");
+      setDataMode("demo");
+      window.localStorage.setItem("netly_data_mode", "demo");
+      await refreshTransactions("demo", transactionDateRange);
+      toast.success("Akahu disconnected");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not disconnect Akahu.";
+      console.error("Akahu disconnect failed.", error);
+      setSyncResult(message);
+      toast.error(message);
+    }
+  }, [refreshTransactions, setDataMode, transactionDateRange]);
+
   return {
     completeAkahuConnection,
+    disconnectAkahuConnection,
     manualTokens,
     setSyncResult,
     syncResult,

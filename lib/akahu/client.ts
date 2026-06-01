@@ -82,38 +82,18 @@ export class AkahuClient {
     return this.getJson<AkahuTransactionsResponse>(addTransactionQueryToPath("/transactions", query), token);
   }
 
-  async getPendingTransactions(token: AkahuToken) {
-    return markPendingTransactions(await this.getAllItems<AkahuTransactionsResponse>("/transactions/pending", token));
-  }
-
   async getAccountTransactions(token: AkahuToken, accountId: string) {
     return this.getAllItems<AkahuTransactionsResponse>(`/accounts/${encodeURIComponent(accountId)}/transactions`, token);
   }
 
-  async getAccountPendingTransactions(token: AkahuToken, accountId: string) {
-    return markPendingTransactions(await this.getAllItems<AkahuTransactionsResponse>(`/accounts/${encodeURIComponent(accountId)}/transactions/pending`, token));
-  }
-
-  // Loads booked and pending transactions together
+  // Loads settled transactions from Akahu's booked transaction feed.
   async getTransactionsForAccounts(token: AkahuToken, accounts: AkahuAccount[]): Promise<AkahuTransactionsResponse> {
-
-    const transactionGroups: AkahuTransactionsResponse[] = await Promise.all([
-      this.getTransactions(token),
-      this.getPendingTransactions(token)
-    ]);
-
-    return combineItems(transactionGroups);
+    return this.getTransactions(token);
   }
 
-  // Loads one booked page, plus pending transactions on the first page only
+  // Loads one settled transaction page without mixing in volatile rows.
   async getTransactionsPageForAccounts(token: AkahuToken, accounts: AkahuAccount[], query: AkahuTransactionQuery = {}): Promise<AkahuTransactionsResponse> {
-    const transactionGroups: AkahuTransactionsResponse[] = [await this.getTransactionsPage(token, query)];
-
-    if (!query.cursor) {
-      transactionGroups.push(await this.getPendingTransactions(token));
-    }
-
-    return combineItems(transactionGroups, transactionGroups[0].cursor);
+    return this.getTransactionsPage(token, query);
   }
 
   private async getJson<T>(path: string, token: AkahuToken) {
@@ -231,15 +211,6 @@ export function createAkahuClientFromEnv() {
   });
 }
 
-// Combines several Akahu item lists into one list
-function combineItems<T extends { success?: boolean; items?: unknown[]; cursor?: { next?: string } }>(responses: T[], cursor?: { next?: string }) {
-  return {
-    success: responses.every((response) => response.success !== false),
-    items: responses.flatMap((response) => response.items || []),
-    cursor
-  } as T;
-}
-
 function addCursorToPath(path: string, cursor?: string | null) {
   if (!cursor) {
     return path;
@@ -266,14 +237,6 @@ function addTransactionQueryToPath(path: string, query: AkahuTransactionQuery) {
 
   const queryString = params.toString();
   return queryString ? `${path}?${queryString}` : path;
-}
-
-function markPendingTransactions(response: AkahuTransactionsResponse): AkahuTransactionsResponse {
-  return {
-    ...response,
-    item: response.item ? { ...response.item, pending: true } : undefined,
-    items: response.items?.map((transaction) => ({ ...transaction, pending: true }))
-  };
 }
 
 async function readJsonBody(response: Response) {

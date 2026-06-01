@@ -32,7 +32,6 @@
         "reference": "NETLY-FIXTURE-0001",
         "card_suffix": "1000"
       },
-      "pending": true,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -69,7 +68,6 @@
         "reference": "NETLY-FIXTURE-0002",
         "card_suffix": "1001"
       },
-      "pending": true,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -106,7 +104,6 @@
         "reference": "NETLY-FIXTURE-0003",
         "card_suffix": "1002"
       },
-      "pending": true,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -143,7 +140,6 @@
         "reference": "NETLY-FIXTURE-0004",
         "card_suffix": "1003"
       },
-      "pending": true,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -180,7 +176,6 @@
         "reference": "NETLY-FIXTURE-0005",
         "card_suffix": "1004"
       },
-      "pending": true,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -218,7 +213,6 @@
         "reference": "NETLY-FIXTURE-0006",
         "card_suffix": "1005"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -256,7 +250,6 @@
         "reference": "NETLY-FIXTURE-0007",
         "card_suffix": "1006"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -294,7 +287,6 @@
         "reference": "NETLY-FIXTURE-0008",
         "card_suffix": "1007"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -332,7 +324,6 @@
         "reference": "NETLY-FIXTURE-0009",
         "card_suffix": "1008"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -370,7 +361,6 @@
         "reference": "NETLY-FIXTURE-0010",
         "card_suffix": "1009"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -408,7 +398,6 @@
         "reference": "NETLY-FIXTURE-0011",
         "card_suffix": "1010"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -446,7 +435,6 @@
         "reference": "NETLY-FIXTURE-0012",
         "card_suffix": "1011"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -484,7 +472,6 @@
         "reference": "NETLY-FIXTURE-0013",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -522,7 +509,6 @@
         "reference": "NETLY-FIXTURE-0014",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -559,7 +545,6 @@
         "code": "TRAN14",
         "reference": "NETLY-FIXTURE-0015"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -597,7 +582,6 @@
         "reference": "NETLY-FIXTURE-0016",
         "card_suffix": "1015"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -635,7 +619,6 @@
         "reference": "NETLY-FIXTURE-0017",
         "card_suffix": "1016"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -673,7 +656,6 @@
         "reference": "NETLY-FIXTURE-0018",
         "card_suffix": "1017"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -711,7 +693,6 @@
         "reference": "NETLY-FIXTURE-0019",
         "card_suffix": "1018"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -749,7 +730,6 @@
         "reference": "NETLY-FIXTURE-0020",
         "card_suffix": "1019"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -787,7 +767,6 @@
         "reference": "NETLY-FIXTURE-0021",
         "card_suffix": "1020"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -825,7 +804,6 @@
         "reference": "NETLY-FIXTURE-0022",
         "card_suffix": "1021"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -863,7 +841,6 @@
         "reference": "NETLY-FIXTURE-0023",
         "card_suffix": "1022"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -901,7 +878,6 @@
         "reference": "NETLY-FIXTURE-0024",
         "card_suffix": "1023"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -939,7 +915,6 @@
         "reference": "NETLY-FIXTURE-0025",
         "card_suffix": "1024"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -977,7 +952,6 @@
         "reference": "NETLY-FIXTURE-0026",
         "card_suffix": "1025"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -1015,7 +989,6 @@
         "reference": "NETLY-FIXTURE-0027",
         "card_suffix": "1026"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -1053,7 +1026,6 @@
         "reference": "NETLY-FIXTURE-0028",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -1091,7 +1063,6 @@
         "reference": "NETLY-FIXTURE-0029",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -1128,7 +1099,6 @@
         "code": "TRAN29",
         "reference": "NETLY-FIXTURE-0030"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -1166,7 +1136,6 @@
         "reference": "NETLY-FIXTURE-0031",
         "card_suffix": "1030"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -1204,7 +1173,6 @@
         "reference": "NETLY-FIXTURE-0032",
         "card_suffix": "1031"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -1242,7 +1210,6 @@
         "reference": "NETLY-FIXTURE-0033",
         "card_suffix": "1032"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -1280,7 +1247,6 @@
         "reference": "NETLY-FIXTURE-0034",
         "card_suffix": "1033"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -1318,7 +1284,6 @@
         "reference": "NETLY-FIXTURE-0035",
         "card_suffix": "1034"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -1356,7 +1321,6 @@
         "reference": "NETLY-FIXTURE-0036",
         "card_suffix": "1035"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -1394,7 +1358,6 @@
         "reference": "NETLY-FIXTURE-0037",
         "card_suffix": "1036"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -1432,7 +1395,6 @@
         "reference": "NETLY-FIXTURE-0038",
         "card_suffix": "1037"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -1470,7 +1432,6 @@
         "reference": "NETLY-FIXTURE-0039",
         "card_suffix": "1038"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -1508,7 +1469,6 @@
         "reference": "NETLY-FIXTURE-0040",
         "card_suffix": "1039"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -1546,7 +1506,6 @@
         "reference": "NETLY-FIXTURE-0041",
         "card_suffix": "1040"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -1584,7 +1543,6 @@
         "reference": "NETLY-FIXTURE-0042",
         "card_suffix": "1041"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -1622,7 +1580,6 @@
         "reference": "NETLY-FIXTURE-0043",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -1660,7 +1617,6 @@
         "reference": "NETLY-FIXTURE-0044",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -1697,7 +1653,6 @@
         "code": "TRAN44",
         "reference": "NETLY-FIXTURE-0045"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -1735,7 +1690,6 @@
         "reference": "NETLY-FIXTURE-0046",
         "card_suffix": "1045"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -1773,7 +1727,6 @@
         "reference": "NETLY-FIXTURE-0047",
         "card_suffix": "1046"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -1811,7 +1764,6 @@
         "reference": "NETLY-FIXTURE-0048",
         "card_suffix": "1047"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -1849,7 +1801,6 @@
         "reference": "NETLY-FIXTURE-0049",
         "card_suffix": "1048"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -1887,7 +1838,6 @@
         "reference": "NETLY-FIXTURE-0050",
         "card_suffix": "1049"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -1925,7 +1875,6 @@
         "reference": "NETLY-FIXTURE-0051",
         "card_suffix": "1050"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -1963,7 +1912,6 @@
         "reference": "NETLY-FIXTURE-0052",
         "card_suffix": "1051"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -2001,7 +1949,6 @@
         "reference": "NETLY-FIXTURE-0053",
         "card_suffix": "1052"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -2039,7 +1986,6 @@
         "reference": "NETLY-FIXTURE-0054",
         "card_suffix": "1053"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -2077,7 +2023,6 @@
         "reference": "NETLY-FIXTURE-0055",
         "card_suffix": "1054"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -2115,7 +2060,6 @@
         "reference": "NETLY-FIXTURE-0056",
         "card_suffix": "1055"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -2153,7 +2097,6 @@
         "reference": "NETLY-FIXTURE-0057",
         "card_suffix": "1056"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -2191,7 +2134,6 @@
         "reference": "NETLY-FIXTURE-0058",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -2229,7 +2171,6 @@
         "reference": "NETLY-FIXTURE-0059",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -2266,7 +2207,6 @@
         "code": "TRAN59",
         "reference": "NETLY-FIXTURE-0060"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -2304,7 +2244,6 @@
         "reference": "NETLY-FIXTURE-0061",
         "card_suffix": "1060"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -2342,7 +2281,6 @@
         "reference": "NETLY-FIXTURE-0062",
         "card_suffix": "1061"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -2380,7 +2318,6 @@
         "reference": "NETLY-FIXTURE-0063",
         "card_suffix": "1062"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -2418,7 +2355,6 @@
         "reference": "NETLY-FIXTURE-0064",
         "card_suffix": "1063"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -2456,7 +2392,6 @@
         "reference": "NETLY-FIXTURE-0065",
         "card_suffix": "1064"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -2494,7 +2429,6 @@
         "reference": "NETLY-FIXTURE-0066",
         "card_suffix": "1065"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -2532,7 +2466,6 @@
         "reference": "NETLY-FIXTURE-0067",
         "card_suffix": "1066"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -2570,7 +2503,6 @@
         "reference": "NETLY-FIXTURE-0068",
         "card_suffix": "1067"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -2608,7 +2540,6 @@
         "reference": "NETLY-FIXTURE-0069",
         "card_suffix": "1068"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -2646,7 +2577,6 @@
         "reference": "NETLY-FIXTURE-0070",
         "card_suffix": "1069"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -2684,7 +2614,6 @@
         "reference": "NETLY-FIXTURE-0071",
         "card_suffix": "1070"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -2722,7 +2651,6 @@
         "reference": "NETLY-FIXTURE-0072",
         "card_suffix": "1071"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -2760,7 +2688,6 @@
         "reference": "NETLY-FIXTURE-0073",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -2798,7 +2725,6 @@
         "reference": "NETLY-FIXTURE-0074",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -2835,7 +2761,6 @@
         "code": "TRAN74",
         "reference": "NETLY-FIXTURE-0075"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -2873,7 +2798,6 @@
         "reference": "NETLY-FIXTURE-0076",
         "card_suffix": "1075"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -2911,7 +2835,6 @@
         "reference": "NETLY-FIXTURE-0077",
         "card_suffix": "1076"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -2949,7 +2872,6 @@
         "reference": "NETLY-FIXTURE-0078",
         "card_suffix": "1077"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -2987,7 +2909,6 @@
         "reference": "NETLY-FIXTURE-0079",
         "card_suffix": "1078"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -3025,7 +2946,6 @@
         "reference": "NETLY-FIXTURE-0080",
         "card_suffix": "1079"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -3063,7 +2983,6 @@
         "reference": "NETLY-FIXTURE-0081",
         "card_suffix": "1080"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -3101,7 +3020,6 @@
         "reference": "NETLY-FIXTURE-0082",
         "card_suffix": "1081"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -3139,7 +3057,6 @@
         "reference": "NETLY-FIXTURE-0083",
         "card_suffix": "1082"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -3177,7 +3094,6 @@
         "reference": "NETLY-FIXTURE-0084",
         "card_suffix": "1083"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -3215,7 +3131,6 @@
         "reference": "NETLY-FIXTURE-0085",
         "card_suffix": "1084"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -3253,7 +3168,6 @@
         "reference": "NETLY-FIXTURE-0086",
         "card_suffix": "1085"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -3291,7 +3205,6 @@
         "reference": "NETLY-FIXTURE-0087",
         "card_suffix": "1086"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -3329,7 +3242,6 @@
         "reference": "NETLY-FIXTURE-0088",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -3367,7 +3279,6 @@
         "reference": "NETLY-FIXTURE-0089",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -3404,7 +3315,6 @@
         "code": "TRAN89",
         "reference": "NETLY-FIXTURE-0090"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -3442,7 +3352,6 @@
         "reference": "NETLY-FIXTURE-0091",
         "card_suffix": "1090"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -3480,7 +3389,6 @@
         "reference": "NETLY-FIXTURE-0092",
         "card_suffix": "1091"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -3518,7 +3426,6 @@
         "reference": "NETLY-FIXTURE-0093",
         "card_suffix": "1092"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -3556,7 +3463,6 @@
         "reference": "NETLY-FIXTURE-0094",
         "card_suffix": "1093"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -3594,7 +3500,6 @@
         "reference": "NETLY-FIXTURE-0095",
         "card_suffix": "1094"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -3632,7 +3537,6 @@
         "reference": "NETLY-FIXTURE-0096",
         "card_suffix": "1095"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -3670,7 +3574,6 @@
         "reference": "NETLY-FIXTURE-0097",
         "card_suffix": "1096"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -3708,7 +3611,6 @@
         "reference": "NETLY-FIXTURE-0098",
         "card_suffix": "1097"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -3746,7 +3648,6 @@
         "reference": "NETLY-FIXTURE-0099",
         "card_suffix": "1098"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -3784,7 +3685,6 @@
         "reference": "NETLY-FIXTURE-0100",
         "card_suffix": "1099"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -3822,7 +3722,6 @@
         "reference": "NETLY-FIXTURE-0101",
         "card_suffix": "1100"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -3860,7 +3759,6 @@
         "reference": "NETLY-FIXTURE-0102",
         "card_suffix": "1101"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -3898,7 +3796,6 @@
         "reference": "NETLY-FIXTURE-0103",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -3936,7 +3833,6 @@
         "reference": "NETLY-FIXTURE-0104",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -3973,7 +3869,6 @@
         "code": "TRAN04",
         "reference": "NETLY-FIXTURE-0105"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -4011,7 +3906,6 @@
         "reference": "NETLY-FIXTURE-0106",
         "card_suffix": "1105"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -4049,7 +3943,6 @@
         "reference": "NETLY-FIXTURE-0107",
         "card_suffix": "1106"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -4087,7 +3980,6 @@
         "reference": "NETLY-FIXTURE-0108",
         "card_suffix": "1107"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -4125,7 +4017,6 @@
         "reference": "NETLY-FIXTURE-0109",
         "card_suffix": "1108"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -4163,7 +4054,6 @@
         "reference": "NETLY-FIXTURE-0110",
         "card_suffix": "1109"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -4201,7 +4091,6 @@
         "reference": "NETLY-FIXTURE-0111",
         "card_suffix": "1110"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -4239,7 +4128,6 @@
         "reference": "NETLY-FIXTURE-0112",
         "card_suffix": "1111"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -4277,7 +4165,6 @@
         "reference": "NETLY-FIXTURE-0113",
         "card_suffix": "1112"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -4315,7 +4202,6 @@
         "reference": "NETLY-FIXTURE-0114",
         "card_suffix": "1113"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -4353,7 +4239,6 @@
         "reference": "NETLY-FIXTURE-0115",
         "card_suffix": "1114"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -4391,7 +4276,6 @@
         "reference": "NETLY-FIXTURE-0116",
         "card_suffix": "1115"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -4429,7 +4313,6 @@
         "reference": "NETLY-FIXTURE-0117",
         "card_suffix": "1116"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -4467,7 +4350,6 @@
         "reference": "NETLY-FIXTURE-0118",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -4505,7 +4387,6 @@
         "reference": "NETLY-FIXTURE-0119",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -4542,7 +4423,6 @@
         "code": "TRAN19",
         "reference": "NETLY-FIXTURE-0120"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -4580,7 +4460,6 @@
         "reference": "NETLY-FIXTURE-0121",
         "card_suffix": "1120"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -4618,7 +4497,6 @@
         "reference": "NETLY-FIXTURE-0122",
         "card_suffix": "1121"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -4656,7 +4534,6 @@
         "reference": "NETLY-FIXTURE-0123",
         "card_suffix": "1122"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -4694,7 +4571,6 @@
         "reference": "NETLY-FIXTURE-0124",
         "card_suffix": "1123"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -4732,7 +4608,6 @@
         "reference": "NETLY-FIXTURE-0125",
         "card_suffix": "1124"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -4770,7 +4645,6 @@
         "reference": "NETLY-FIXTURE-0126",
         "card_suffix": "1125"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -4808,7 +4682,6 @@
         "reference": "NETLY-FIXTURE-0127",
         "card_suffix": "1126"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -4846,7 +4719,6 @@
         "reference": "NETLY-FIXTURE-0128",
         "card_suffix": "1127"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -4884,7 +4756,6 @@
         "reference": "NETLY-FIXTURE-0129",
         "card_suffix": "1128"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -4922,7 +4793,6 @@
         "reference": "NETLY-FIXTURE-0130",
         "card_suffix": "1129"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -4960,7 +4830,6 @@
         "reference": "NETLY-FIXTURE-0131",
         "card_suffix": "1130"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -4998,7 +4867,6 @@
         "reference": "NETLY-FIXTURE-0132",
         "card_suffix": "1131"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -5036,7 +4904,6 @@
         "reference": "NETLY-FIXTURE-0133",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -5074,7 +4941,6 @@
         "reference": "NETLY-FIXTURE-0134",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -5111,7 +4977,6 @@
         "code": "TRAN34",
         "reference": "NETLY-FIXTURE-0135"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -5149,7 +5014,6 @@
         "reference": "NETLY-FIXTURE-0136",
         "card_suffix": "1135"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -5187,7 +5051,6 @@
         "reference": "NETLY-FIXTURE-0137",
         "card_suffix": "1136"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -5225,7 +5088,6 @@
         "reference": "NETLY-FIXTURE-0138",
         "card_suffix": "1137"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -5263,7 +5125,6 @@
         "reference": "NETLY-FIXTURE-0139",
         "card_suffix": "1138"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -5301,7 +5162,6 @@
         "reference": "NETLY-FIXTURE-0140",
         "card_suffix": "1139"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -5339,7 +5199,6 @@
         "reference": "NETLY-FIXTURE-0141",
         "card_suffix": "1140"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -5377,7 +5236,6 @@
         "reference": "NETLY-FIXTURE-0142",
         "card_suffix": "1141"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -5415,7 +5273,6 @@
         "reference": "NETLY-FIXTURE-0143",
         "card_suffix": "1142"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -5453,7 +5310,6 @@
         "reference": "NETLY-FIXTURE-0144",
         "card_suffix": "1143"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -5491,7 +5347,6 @@
         "reference": "NETLY-FIXTURE-0145",
         "card_suffix": "1144"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -5529,7 +5384,6 @@
         "reference": "NETLY-FIXTURE-0146",
         "card_suffix": "1145"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -5567,7 +5421,6 @@
         "reference": "NETLY-FIXTURE-0147",
         "card_suffix": "1146"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -5605,7 +5458,6 @@
         "reference": "NETLY-FIXTURE-0148",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -5643,7 +5495,6 @@
         "reference": "NETLY-FIXTURE-0149",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -5680,7 +5531,6 @@
         "code": "TRAN49",
         "reference": "NETLY-FIXTURE-0150"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -5718,7 +5568,6 @@
         "reference": "NETLY-FIXTURE-0151",
         "card_suffix": "1150"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -5756,7 +5605,6 @@
         "reference": "NETLY-FIXTURE-0152",
         "card_suffix": "1151"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -5794,7 +5642,6 @@
         "reference": "NETLY-FIXTURE-0153",
         "card_suffix": "1152"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -5832,7 +5679,6 @@
         "reference": "NETLY-FIXTURE-0154",
         "card_suffix": "1153"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -5870,7 +5716,6 @@
         "reference": "NETLY-FIXTURE-0155",
         "card_suffix": "1154"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -5908,7 +5753,6 @@
         "reference": "NETLY-FIXTURE-0156",
         "card_suffix": "1155"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -5946,7 +5790,6 @@
         "reference": "NETLY-FIXTURE-0157",
         "card_suffix": "1156"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -5984,7 +5827,6 @@
         "reference": "NETLY-FIXTURE-0158",
         "card_suffix": "1157"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -6022,7 +5864,6 @@
         "reference": "NETLY-FIXTURE-0159",
         "card_suffix": "1158"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -6060,7 +5901,6 @@
         "reference": "NETLY-FIXTURE-0160",
         "card_suffix": "1159"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -6098,7 +5938,6 @@
         "reference": "NETLY-FIXTURE-0161",
         "card_suffix": "1160"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -6136,7 +5975,6 @@
         "reference": "NETLY-FIXTURE-0162",
         "card_suffix": "1161"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -6174,7 +6012,6 @@
         "reference": "NETLY-FIXTURE-0163",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -6212,7 +6049,6 @@
         "reference": "NETLY-FIXTURE-0164",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -6249,7 +6085,6 @@
         "code": "TRAN64",
         "reference": "NETLY-FIXTURE-0165"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -6287,7 +6122,6 @@
         "reference": "NETLY-FIXTURE-0166",
         "card_suffix": "1165"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -6325,7 +6159,6 @@
         "reference": "NETLY-FIXTURE-0167",
         "card_suffix": "1166"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -6363,7 +6196,6 @@
         "reference": "NETLY-FIXTURE-0168",
         "card_suffix": "1167"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -6401,7 +6233,6 @@
         "reference": "NETLY-FIXTURE-0169",
         "card_suffix": "1168"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -6439,7 +6270,6 @@
         "reference": "NETLY-FIXTURE-0170",
         "card_suffix": "1169"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -6477,7 +6307,6 @@
         "reference": "NETLY-FIXTURE-0171",
         "card_suffix": "1170"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -6515,7 +6344,6 @@
         "reference": "NETLY-FIXTURE-0172",
         "card_suffix": "1171"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -6553,7 +6381,6 @@
         "reference": "NETLY-FIXTURE-0173",
         "card_suffix": "1172"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -6591,7 +6418,6 @@
         "reference": "NETLY-FIXTURE-0174",
         "card_suffix": "1173"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -6629,7 +6455,6 @@
         "reference": "NETLY-FIXTURE-0175",
         "card_suffix": "1174"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -6667,7 +6492,6 @@
         "reference": "NETLY-FIXTURE-0176",
         "card_suffix": "1175"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -6705,7 +6529,6 @@
         "reference": "NETLY-FIXTURE-0177",
         "card_suffix": "1176"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -6743,7 +6566,6 @@
         "reference": "NETLY-FIXTURE-0178",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -6781,7 +6603,6 @@
         "reference": "NETLY-FIXTURE-0179",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -6818,7 +6639,6 @@
         "code": "TRAN79",
         "reference": "NETLY-FIXTURE-0180"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -6856,7 +6676,6 @@
         "reference": "NETLY-FIXTURE-0181",
         "card_suffix": "1180"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -6894,7 +6713,6 @@
         "reference": "NETLY-FIXTURE-0182",
         "card_suffix": "1181"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -6932,7 +6750,6 @@
         "reference": "NETLY-FIXTURE-0183",
         "card_suffix": "1182"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -6970,7 +6787,6 @@
         "reference": "NETLY-FIXTURE-0184",
         "card_suffix": "1183"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -7008,7 +6824,6 @@
         "reference": "NETLY-FIXTURE-0185",
         "card_suffix": "1184"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -7046,7 +6861,6 @@
         "reference": "NETLY-FIXTURE-0186",
         "card_suffix": "1185"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -7084,7 +6898,6 @@
         "reference": "NETLY-FIXTURE-0187",
         "card_suffix": "1186"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -7122,7 +6935,6 @@
         "reference": "NETLY-FIXTURE-0188",
         "card_suffix": "1187"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -7160,7 +6972,6 @@
         "reference": "NETLY-FIXTURE-0189",
         "card_suffix": "1188"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -7198,7 +7009,6 @@
         "reference": "NETLY-FIXTURE-0190",
         "card_suffix": "1189"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -7236,7 +7046,6 @@
         "reference": "NETLY-FIXTURE-0191",
         "card_suffix": "1190"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -7274,7 +7083,6 @@
         "reference": "NETLY-FIXTURE-0192",
         "card_suffix": "1191"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -7312,7 +7120,6 @@
         "reference": "NETLY-FIXTURE-0193",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -7350,7 +7157,6 @@
         "reference": "NETLY-FIXTURE-0194",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -7387,7 +7193,6 @@
         "code": "TRAN94",
         "reference": "NETLY-FIXTURE-0195"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -7425,7 +7230,6 @@
         "reference": "NETLY-FIXTURE-0196",
         "card_suffix": "1195"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -7463,7 +7267,6 @@
         "reference": "NETLY-FIXTURE-0197",
         "card_suffix": "1196"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -7501,7 +7304,6 @@
         "reference": "NETLY-FIXTURE-0198",
         "card_suffix": "1197"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -7539,7 +7341,6 @@
         "reference": "NETLY-FIXTURE-0199",
         "card_suffix": "1198"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -7577,7 +7378,6 @@
         "reference": "NETLY-FIXTURE-0200",
         "card_suffix": "1199"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -7615,7 +7415,6 @@
         "reference": "NETLY-FIXTURE-0201",
         "card_suffix": "1200"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -7653,7 +7452,6 @@
         "reference": "NETLY-FIXTURE-0202",
         "card_suffix": "1201"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -7691,7 +7489,6 @@
         "reference": "NETLY-FIXTURE-0203",
         "card_suffix": "1202"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -7729,7 +7526,6 @@
         "reference": "NETLY-FIXTURE-0204",
         "card_suffix": "1203"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -7767,7 +7563,6 @@
         "reference": "NETLY-FIXTURE-0205",
         "card_suffix": "1204"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -7805,7 +7600,6 @@
         "reference": "NETLY-FIXTURE-0206",
         "card_suffix": "1205"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -7843,7 +7637,6 @@
         "reference": "NETLY-FIXTURE-0207",
         "card_suffix": "1206"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -7881,7 +7674,6 @@
         "reference": "NETLY-FIXTURE-0208",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -7919,7 +7711,6 @@
         "reference": "NETLY-FIXTURE-0209",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -7956,7 +7747,6 @@
         "code": "TRAN09",
         "reference": "NETLY-FIXTURE-0210"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -7994,7 +7784,6 @@
         "reference": "NETLY-FIXTURE-0211",
         "card_suffix": "1210"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -8032,7 +7821,6 @@
         "reference": "NETLY-FIXTURE-0212",
         "card_suffix": "1211"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -8070,7 +7858,6 @@
         "reference": "NETLY-FIXTURE-0213",
         "card_suffix": "1212"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -8108,7 +7895,6 @@
         "reference": "NETLY-FIXTURE-0214",
         "card_suffix": "1213"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -8146,7 +7932,6 @@
         "reference": "NETLY-FIXTURE-0215",
         "card_suffix": "1214"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -8184,7 +7969,6 @@
         "reference": "NETLY-FIXTURE-0216",
         "card_suffix": "1215"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -8222,7 +8006,6 @@
         "reference": "NETLY-FIXTURE-0217",
         "card_suffix": "1216"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -8260,7 +8043,6 @@
         "reference": "NETLY-FIXTURE-0218",
         "card_suffix": "1217"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -8298,7 +8080,6 @@
         "reference": "NETLY-FIXTURE-0219",
         "card_suffix": "1218"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -8336,7 +8117,6 @@
         "reference": "NETLY-FIXTURE-0220",
         "card_suffix": "1219"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -8374,7 +8154,6 @@
         "reference": "NETLY-FIXTURE-0221",
         "card_suffix": "1220"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -8412,7 +8191,6 @@
         "reference": "NETLY-FIXTURE-0222",
         "card_suffix": "1221"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -8450,7 +8228,6 @@
         "reference": "NETLY-FIXTURE-0223",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -8488,7 +8265,6 @@
         "reference": "NETLY-FIXTURE-0224",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -8525,7 +8301,6 @@
         "code": "TRAN24",
         "reference": "NETLY-FIXTURE-0225"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -8563,7 +8338,6 @@
         "reference": "NETLY-FIXTURE-0226",
         "card_suffix": "1225"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -8601,7 +8375,6 @@
         "reference": "NETLY-FIXTURE-0227",
         "card_suffix": "1226"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -8639,7 +8412,6 @@
         "reference": "NETLY-FIXTURE-0228",
         "card_suffix": "1227"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -8677,7 +8449,6 @@
         "reference": "NETLY-FIXTURE-0229",
         "card_suffix": "1228"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -8715,7 +8486,6 @@
         "reference": "NETLY-FIXTURE-0230",
         "card_suffix": "1229"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -8753,7 +8523,6 @@
         "reference": "NETLY-FIXTURE-0231",
         "card_suffix": "1230"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -8791,7 +8560,6 @@
         "reference": "NETLY-FIXTURE-0232",
         "card_suffix": "1231"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -8829,7 +8597,6 @@
         "reference": "NETLY-FIXTURE-0233",
         "card_suffix": "1232"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -8867,7 +8634,6 @@
         "reference": "NETLY-FIXTURE-0234",
         "card_suffix": "1233"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -8905,7 +8671,6 @@
         "reference": "NETLY-FIXTURE-0235",
         "card_suffix": "1234"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -8943,7 +8708,6 @@
         "reference": "NETLY-FIXTURE-0236",
         "card_suffix": "1235"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -8981,7 +8745,6 @@
         "reference": "NETLY-FIXTURE-0237",
         "card_suffix": "1236"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -9019,7 +8782,6 @@
         "reference": "NETLY-FIXTURE-0238",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -9057,7 +8819,6 @@
         "reference": "NETLY-FIXTURE-0239",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -9094,7 +8855,6 @@
         "code": "TRAN39",
         "reference": "NETLY-FIXTURE-0240"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -9132,7 +8892,6 @@
         "reference": "NETLY-FIXTURE-0241",
         "card_suffix": "1240"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -9170,7 +8929,6 @@
         "reference": "NETLY-FIXTURE-0242",
         "card_suffix": "1241"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -9208,7 +8966,6 @@
         "reference": "NETLY-FIXTURE-0243",
         "card_suffix": "1242"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -9246,7 +9003,6 @@
         "reference": "NETLY-FIXTURE-0244",
         "card_suffix": "1243"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -9284,7 +9040,6 @@
         "reference": "NETLY-FIXTURE-0245",
         "card_suffix": "1244"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -9322,7 +9077,6 @@
         "reference": "NETLY-FIXTURE-0246",
         "card_suffix": "1245"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -9360,7 +9114,6 @@
         "reference": "NETLY-FIXTURE-0247",
         "card_suffix": "1246"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -9398,7 +9151,6 @@
         "reference": "NETLY-FIXTURE-0248",
         "card_suffix": "1247"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -9436,7 +9188,6 @@
         "reference": "NETLY-FIXTURE-0249",
         "card_suffix": "1248"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -9474,7 +9225,6 @@
         "reference": "NETLY-FIXTURE-0250",
         "card_suffix": "1249"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -9512,7 +9262,6 @@
         "reference": "NETLY-FIXTURE-0251",
         "card_suffix": "1250"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -9550,7 +9299,6 @@
         "reference": "NETLY-FIXTURE-0252",
         "card_suffix": "1251"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -9588,7 +9336,6 @@
         "reference": "NETLY-FIXTURE-0253",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -9626,7 +9373,6 @@
         "reference": "NETLY-FIXTURE-0254",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -9663,7 +9409,6 @@
         "code": "TRAN54",
         "reference": "NETLY-FIXTURE-0255"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -9701,7 +9446,6 @@
         "reference": "NETLY-FIXTURE-0256",
         "card_suffix": "1255"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -9739,7 +9483,6 @@
         "reference": "NETLY-FIXTURE-0257",
         "card_suffix": "1256"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -9777,7 +9520,6 @@
         "reference": "NETLY-FIXTURE-0258",
         "card_suffix": "1257"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -9815,7 +9557,6 @@
         "reference": "NETLY-FIXTURE-0259",
         "card_suffix": "1258"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -9853,7 +9594,6 @@
         "reference": "NETLY-FIXTURE-0260",
         "card_suffix": "1259"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -9891,7 +9631,6 @@
         "reference": "NETLY-FIXTURE-0261",
         "card_suffix": "1260"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -9929,7 +9668,6 @@
         "reference": "NETLY-FIXTURE-0262",
         "card_suffix": "1261"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -9967,7 +9705,6 @@
         "reference": "NETLY-FIXTURE-0263",
         "card_suffix": "1262"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -10005,7 +9742,6 @@
         "reference": "NETLY-FIXTURE-0264",
         "card_suffix": "1263"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -10043,7 +9779,6 @@
         "reference": "NETLY-FIXTURE-0265",
         "card_suffix": "1264"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -10081,7 +9816,6 @@
         "reference": "NETLY-FIXTURE-0266",
         "card_suffix": "1265"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -10119,7 +9853,6 @@
         "reference": "NETLY-FIXTURE-0267",
         "card_suffix": "1266"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -10157,7 +9890,6 @@
         "reference": "NETLY-FIXTURE-0268",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -10195,7 +9927,6 @@
         "reference": "NETLY-FIXTURE-0269",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -10232,7 +9963,6 @@
         "code": "TRAN69",
         "reference": "NETLY-FIXTURE-0270"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -10270,7 +10000,6 @@
         "reference": "NETLY-FIXTURE-0271",
         "card_suffix": "1270"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -10308,7 +10037,6 @@
         "reference": "NETLY-FIXTURE-0272",
         "card_suffix": "1271"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -10346,7 +10074,6 @@
         "reference": "NETLY-FIXTURE-0273",
         "card_suffix": "1272"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -10384,7 +10111,6 @@
         "reference": "NETLY-FIXTURE-0274",
         "card_suffix": "1273"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -10422,7 +10148,6 @@
         "reference": "NETLY-FIXTURE-0275",
         "card_suffix": "1274"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -10460,7 +10185,6 @@
         "reference": "NETLY-FIXTURE-0276",
         "card_suffix": "1275"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -10498,7 +10222,6 @@
         "reference": "NETLY-FIXTURE-0277",
         "card_suffix": "1276"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -10536,7 +10259,6 @@
         "reference": "NETLY-FIXTURE-0278",
         "card_suffix": "1277"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -10574,7 +10296,6 @@
         "reference": "NETLY-FIXTURE-0279",
         "card_suffix": "1278"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -10612,7 +10333,6 @@
         "reference": "NETLY-FIXTURE-0280",
         "card_suffix": "1279"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -10650,7 +10370,6 @@
         "reference": "NETLY-FIXTURE-0281",
         "card_suffix": "1280"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -10688,7 +10407,6 @@
         "reference": "NETLY-FIXTURE-0282",
         "card_suffix": "1281"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -10726,7 +10444,6 @@
         "reference": "NETLY-FIXTURE-0283",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -10764,7 +10481,6 @@
         "reference": "NETLY-FIXTURE-0284",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -10801,7 +10517,6 @@
         "code": "TRAN84",
         "reference": "NETLY-FIXTURE-0285"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -10839,7 +10554,6 @@
         "reference": "NETLY-FIXTURE-0286",
         "card_suffix": "1285"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -10877,7 +10591,6 @@
         "reference": "NETLY-FIXTURE-0287",
         "card_suffix": "1286"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -10915,7 +10628,6 @@
         "reference": "NETLY-FIXTURE-0288",
         "card_suffix": "1287"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -10953,7 +10665,6 @@
         "reference": "NETLY-FIXTURE-0289",
         "card_suffix": "1288"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -10991,7 +10702,6 @@
         "reference": "NETLY-FIXTURE-0290",
         "card_suffix": "1289"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -11029,7 +10739,6 @@
         "reference": "NETLY-FIXTURE-0291",
         "card_suffix": "1290"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -11067,7 +10776,6 @@
         "reference": "NETLY-FIXTURE-0292",
         "card_suffix": "1291"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -11105,7 +10813,6 @@
         "reference": "NETLY-FIXTURE-0293",
         "card_suffix": "1292"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -11143,7 +10850,6 @@
         "reference": "NETLY-FIXTURE-0294",
         "card_suffix": "1293"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -11181,7 +10887,6 @@
         "reference": "NETLY-FIXTURE-0295",
         "card_suffix": "1294"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -11219,7 +10924,6 @@
         "reference": "NETLY-FIXTURE-0296",
         "card_suffix": "1295"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -11257,7 +10961,6 @@
         "reference": "NETLY-FIXTURE-0297",
         "card_suffix": "1296"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -11295,7 +10998,6 @@
         "reference": "NETLY-FIXTURE-0298",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -11333,7 +11035,6 @@
         "reference": "NETLY-FIXTURE-0299",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -11370,7 +11071,6 @@
         "code": "TRAN99",
         "reference": "NETLY-FIXTURE-0300"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -11408,7 +11108,6 @@
         "reference": "NETLY-FIXTURE-0301",
         "card_suffix": "1300"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -11446,7 +11145,6 @@
         "reference": "NETLY-FIXTURE-0302",
         "card_suffix": "1301"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -11484,7 +11182,6 @@
         "reference": "NETLY-FIXTURE-0303",
         "card_suffix": "1302"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -11522,7 +11219,6 @@
         "reference": "NETLY-FIXTURE-0304",
         "card_suffix": "1303"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -11560,7 +11256,6 @@
         "reference": "NETLY-FIXTURE-0305",
         "card_suffix": "1304"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -11598,7 +11293,6 @@
         "reference": "NETLY-FIXTURE-0306",
         "card_suffix": "1305"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -11636,7 +11330,6 @@
         "reference": "NETLY-FIXTURE-0307",
         "card_suffix": "1306"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -11674,7 +11367,6 @@
         "reference": "NETLY-FIXTURE-0308",
         "card_suffix": "1307"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -11712,7 +11404,6 @@
         "reference": "NETLY-FIXTURE-0309",
         "card_suffix": "1308"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -11750,7 +11441,6 @@
         "reference": "NETLY-FIXTURE-0310",
         "card_suffix": "1309"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -11788,7 +11478,6 @@
         "reference": "NETLY-FIXTURE-0311",
         "card_suffix": "1310"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -11826,7 +11515,6 @@
         "reference": "NETLY-FIXTURE-0312",
         "card_suffix": "1311"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -11864,7 +11552,6 @@
         "reference": "NETLY-FIXTURE-0313",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -11902,7 +11589,6 @@
         "reference": "NETLY-FIXTURE-0314",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -11939,7 +11625,6 @@
         "code": "TRAN14",
         "reference": "NETLY-FIXTURE-0315"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -11977,7 +11662,6 @@
         "reference": "NETLY-FIXTURE-0316",
         "card_suffix": "1315"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -12015,7 +11699,6 @@
         "reference": "NETLY-FIXTURE-0317",
         "card_suffix": "1316"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -12053,7 +11736,6 @@
         "reference": "NETLY-FIXTURE-0318",
         "card_suffix": "1317"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -12091,7 +11773,6 @@
         "reference": "NETLY-FIXTURE-0319",
         "card_suffix": "1318"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -12129,7 +11810,6 @@
         "reference": "NETLY-FIXTURE-0320",
         "card_suffix": "1319"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -12167,7 +11847,6 @@
         "reference": "NETLY-FIXTURE-0321",
         "card_suffix": "1320"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -12205,7 +11884,6 @@
         "reference": "NETLY-FIXTURE-0322",
         "card_suffix": "1321"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -12243,7 +11921,6 @@
         "reference": "NETLY-FIXTURE-0323",
         "card_suffix": "1322"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -12281,7 +11958,6 @@
         "reference": "NETLY-FIXTURE-0324",
         "card_suffix": "1323"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -12319,7 +11995,6 @@
         "reference": "NETLY-FIXTURE-0325",
         "card_suffix": "1324"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -12357,7 +12032,6 @@
         "reference": "NETLY-FIXTURE-0326",
         "card_suffix": "1325"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -12395,7 +12069,6 @@
         "reference": "NETLY-FIXTURE-0327",
         "card_suffix": "1326"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -12433,7 +12106,6 @@
         "reference": "NETLY-FIXTURE-0328",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -12471,7 +12143,6 @@
         "reference": "NETLY-FIXTURE-0329",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -12508,7 +12179,6 @@
         "code": "TRAN29",
         "reference": "NETLY-FIXTURE-0330"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -12546,7 +12216,6 @@
         "reference": "NETLY-FIXTURE-0331",
         "card_suffix": "1330"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -12584,7 +12253,6 @@
         "reference": "NETLY-FIXTURE-0332",
         "card_suffix": "1331"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -12622,7 +12290,6 @@
         "reference": "NETLY-FIXTURE-0333",
         "card_suffix": "1332"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -12660,7 +12327,6 @@
         "reference": "NETLY-FIXTURE-0334",
         "card_suffix": "1333"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -12698,7 +12364,6 @@
         "reference": "NETLY-FIXTURE-0335",
         "card_suffix": "1334"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -12736,7 +12401,6 @@
         "reference": "NETLY-FIXTURE-0336",
         "card_suffix": "1335"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -12774,7 +12438,6 @@
         "reference": "NETLY-FIXTURE-0337",
         "card_suffix": "1336"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -12812,7 +12475,6 @@
         "reference": "NETLY-FIXTURE-0338",
         "card_suffix": "1337"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -12850,7 +12512,6 @@
         "reference": "NETLY-FIXTURE-0339",
         "card_suffix": "1338"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -12888,7 +12549,6 @@
         "reference": "NETLY-FIXTURE-0340",
         "card_suffix": "1339"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -12926,7 +12586,6 @@
         "reference": "NETLY-FIXTURE-0341",
         "card_suffix": "1340"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -12964,7 +12623,6 @@
         "reference": "NETLY-FIXTURE-0342",
         "card_suffix": "1341"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -13002,7 +12660,6 @@
         "reference": "NETLY-FIXTURE-0343",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -13040,7 +12697,6 @@
         "reference": "NETLY-FIXTURE-0344",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -13077,7 +12733,6 @@
         "code": "TRAN44",
         "reference": "NETLY-FIXTURE-0345"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -13115,7 +12770,6 @@
         "reference": "NETLY-FIXTURE-0346",
         "card_suffix": "1345"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -13153,7 +12807,6 @@
         "reference": "NETLY-FIXTURE-0347",
         "card_suffix": "1346"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -13191,7 +12844,6 @@
         "reference": "NETLY-FIXTURE-0348",
         "card_suffix": "1347"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -13229,7 +12881,6 @@
         "reference": "NETLY-FIXTURE-0349",
         "card_suffix": "1348"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -13267,7 +12918,6 @@
         "reference": "NETLY-FIXTURE-0350",
         "card_suffix": "1349"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -13305,7 +12955,6 @@
         "reference": "NETLY-FIXTURE-0351",
         "card_suffix": "1350"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -13343,7 +12992,6 @@
         "reference": "NETLY-FIXTURE-0352",
         "card_suffix": "1351"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -13381,7 +13029,6 @@
         "reference": "NETLY-FIXTURE-0353",
         "card_suffix": "1352"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -13419,7 +13066,6 @@
         "reference": "NETLY-FIXTURE-0354",
         "card_suffix": "1353"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -13457,7 +13103,6 @@
         "reference": "NETLY-FIXTURE-0355",
         "card_suffix": "1354"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -13495,7 +13140,6 @@
         "reference": "NETLY-FIXTURE-0356",
         "card_suffix": "1355"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -13533,7 +13177,6 @@
         "reference": "NETLY-FIXTURE-0357",
         "card_suffix": "1356"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -13571,7 +13214,6 @@
         "reference": "NETLY-FIXTURE-0358",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -13609,7 +13251,6 @@
         "reference": "NETLY-FIXTURE-0359",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -13646,7 +13287,6 @@
         "code": "TRAN59",
         "reference": "NETLY-FIXTURE-0360"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -13684,7 +13324,6 @@
         "reference": "NETLY-FIXTURE-0361",
         "card_suffix": "1360"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -13722,7 +13361,6 @@
         "reference": "NETLY-FIXTURE-0362",
         "card_suffix": "1361"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -13760,7 +13398,6 @@
         "reference": "NETLY-FIXTURE-0363",
         "card_suffix": "1362"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -13798,7 +13435,6 @@
         "reference": "NETLY-FIXTURE-0364",
         "card_suffix": "1363"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -13836,7 +13472,6 @@
         "reference": "NETLY-FIXTURE-0365",
         "card_suffix": "1364"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -13874,7 +13509,6 @@
         "reference": "NETLY-FIXTURE-0366",
         "card_suffix": "1365"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -13912,7 +13546,6 @@
         "reference": "NETLY-FIXTURE-0367",
         "card_suffix": "1366"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -13950,7 +13583,6 @@
         "reference": "NETLY-FIXTURE-0368",
         "card_suffix": "1367"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -13988,7 +13620,6 @@
         "reference": "NETLY-FIXTURE-0369",
         "card_suffix": "1368"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -14026,7 +13657,6 @@
         "reference": "NETLY-FIXTURE-0370",
         "card_suffix": "1369"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -14064,7 +13694,6 @@
         "reference": "NETLY-FIXTURE-0371",
         "card_suffix": "1370"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -14102,7 +13731,6 @@
         "reference": "NETLY-FIXTURE-0372",
         "card_suffix": "1371"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -14140,7 +13768,6 @@
         "reference": "NETLY-FIXTURE-0373",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -14178,7 +13805,6 @@
         "reference": "NETLY-FIXTURE-0374",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -14215,7 +13841,6 @@
         "code": "TRAN74",
         "reference": "NETLY-FIXTURE-0375"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -14253,7 +13878,6 @@
         "reference": "NETLY-FIXTURE-0376",
         "card_suffix": "1375"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -14291,7 +13915,6 @@
         "reference": "NETLY-FIXTURE-0377",
         "card_suffix": "1376"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -14329,7 +13952,6 @@
         "reference": "NETLY-FIXTURE-0378",
         "card_suffix": "1377"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -14367,7 +13989,6 @@
         "reference": "NETLY-FIXTURE-0379",
         "card_suffix": "1378"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -14405,7 +14026,6 @@
         "reference": "NETLY-FIXTURE-0380",
         "card_suffix": "1379"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -14443,7 +14063,6 @@
         "reference": "NETLY-FIXTURE-0381",
         "card_suffix": "1380"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -14481,7 +14100,6 @@
         "reference": "NETLY-FIXTURE-0382",
         "card_suffix": "1381"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -14519,7 +14137,6 @@
         "reference": "NETLY-FIXTURE-0383",
         "card_suffix": "1382"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -14557,7 +14174,6 @@
         "reference": "NETLY-FIXTURE-0384",
         "card_suffix": "1383"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -14595,7 +14211,6 @@
         "reference": "NETLY-FIXTURE-0385",
         "card_suffix": "1384"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -14633,7 +14248,6 @@
         "reference": "NETLY-FIXTURE-0386",
         "card_suffix": "1385"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -14671,7 +14285,6 @@
         "reference": "NETLY-FIXTURE-0387",
         "card_suffix": "1386"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -14709,7 +14322,6 @@
         "reference": "NETLY-FIXTURE-0388",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -14747,7 +14359,6 @@
         "reference": "NETLY-FIXTURE-0389",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -14784,7 +14395,6 @@
         "code": "TRAN89",
         "reference": "NETLY-FIXTURE-0390"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -14822,7 +14432,6 @@
         "reference": "NETLY-FIXTURE-0391",
         "card_suffix": "1390"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -14860,7 +14469,6 @@
         "reference": "NETLY-FIXTURE-0392",
         "card_suffix": "1391"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -14898,7 +14506,6 @@
         "reference": "NETLY-FIXTURE-0393",
         "card_suffix": "1392"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -14936,7 +14543,6 @@
         "reference": "NETLY-FIXTURE-0394",
         "card_suffix": "1393"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -14974,7 +14580,6 @@
         "reference": "NETLY-FIXTURE-0395",
         "card_suffix": "1394"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -15012,7 +14617,6 @@
         "reference": "NETLY-FIXTURE-0396",
         "card_suffix": "1395"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -15050,7 +14654,6 @@
         "reference": "NETLY-FIXTURE-0397",
         "card_suffix": "1396"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -15088,7 +14691,6 @@
         "reference": "NETLY-FIXTURE-0398",
         "card_suffix": "1397"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -15126,7 +14728,6 @@
         "reference": "NETLY-FIXTURE-0399",
         "card_suffix": "1398"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -15164,7 +14765,6 @@
         "reference": "NETLY-FIXTURE-0400",
         "card_suffix": "1399"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -15202,7 +14802,6 @@
         "reference": "NETLY-FIXTURE-0401",
         "card_suffix": "1400"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -15240,7 +14839,6 @@
         "reference": "NETLY-FIXTURE-0402",
         "card_suffix": "1401"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -15278,7 +14876,6 @@
         "reference": "NETLY-FIXTURE-0403",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -15316,7 +14913,6 @@
         "reference": "NETLY-FIXTURE-0404",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -15353,7 +14949,6 @@
         "code": "TRAN04",
         "reference": "NETLY-FIXTURE-0405"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -15391,7 +14986,6 @@
         "reference": "NETLY-FIXTURE-0406",
         "card_suffix": "1405"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -15429,7 +15023,6 @@
         "reference": "NETLY-FIXTURE-0407",
         "card_suffix": "1406"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -15467,7 +15060,6 @@
         "reference": "NETLY-FIXTURE-0408",
         "card_suffix": "1407"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -15505,7 +15097,6 @@
         "reference": "NETLY-FIXTURE-0409",
         "card_suffix": "1408"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -15543,7 +15134,6 @@
         "reference": "NETLY-FIXTURE-0410",
         "card_suffix": "1409"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -15581,7 +15171,6 @@
         "reference": "NETLY-FIXTURE-0411",
         "card_suffix": "1410"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -15619,7 +15208,6 @@
         "reference": "NETLY-FIXTURE-0412",
         "card_suffix": "1411"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -15657,7 +15245,6 @@
         "reference": "NETLY-FIXTURE-0413",
         "card_suffix": "1412"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -15695,7 +15282,6 @@
         "reference": "NETLY-FIXTURE-0414",
         "card_suffix": "1413"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -15733,7 +15319,6 @@
         "reference": "NETLY-FIXTURE-0415",
         "card_suffix": "1414"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -15771,7 +15356,6 @@
         "reference": "NETLY-FIXTURE-0416",
         "card_suffix": "1415"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -15809,7 +15393,6 @@
         "reference": "NETLY-FIXTURE-0417",
         "card_suffix": "1416"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -15847,7 +15430,6 @@
         "reference": "NETLY-FIXTURE-0418",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -15885,7 +15467,6 @@
         "reference": "NETLY-FIXTURE-0419",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -15922,7 +15503,6 @@
         "code": "TRAN19",
         "reference": "NETLY-FIXTURE-0420"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -15960,7 +15540,6 @@
         "reference": "NETLY-FIXTURE-0421",
         "card_suffix": "1420"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -15998,7 +15577,6 @@
         "reference": "NETLY-FIXTURE-0422",
         "card_suffix": "1421"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -16036,7 +15614,6 @@
         "reference": "NETLY-FIXTURE-0423",
         "card_suffix": "1422"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -16074,7 +15651,6 @@
         "reference": "NETLY-FIXTURE-0424",
         "card_suffix": "1423"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -16112,7 +15688,6 @@
         "reference": "NETLY-FIXTURE-0425",
         "card_suffix": "1424"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -16150,7 +15725,6 @@
         "reference": "NETLY-FIXTURE-0426",
         "card_suffix": "1425"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -16188,7 +15762,6 @@
         "reference": "NETLY-FIXTURE-0427",
         "card_suffix": "1426"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -16226,7 +15799,6 @@
         "reference": "NETLY-FIXTURE-0428",
         "card_suffix": "1427"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -16264,7 +15836,6 @@
         "reference": "NETLY-FIXTURE-0429",
         "card_suffix": "1428"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -16302,7 +15873,6 @@
         "reference": "NETLY-FIXTURE-0430",
         "card_suffix": "1429"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -16340,7 +15910,6 @@
         "reference": "NETLY-FIXTURE-0431",
         "card_suffix": "1430"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -16378,7 +15947,6 @@
         "reference": "NETLY-FIXTURE-0432",
         "card_suffix": "1431"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -16416,7 +15984,6 @@
         "reference": "NETLY-FIXTURE-0433",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -16454,7 +16021,6 @@
         "reference": "NETLY-FIXTURE-0434",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -16491,7 +16057,6 @@
         "code": "TRAN34",
         "reference": "NETLY-FIXTURE-0435"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -16529,7 +16094,6 @@
         "reference": "NETLY-FIXTURE-0436",
         "card_suffix": "1435"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -16567,7 +16131,6 @@
         "reference": "NETLY-FIXTURE-0437",
         "card_suffix": "1436"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -16605,7 +16168,6 @@
         "reference": "NETLY-FIXTURE-0438",
         "card_suffix": "1437"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -16643,7 +16205,6 @@
         "reference": "NETLY-FIXTURE-0439",
         "card_suffix": "1438"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -16681,7 +16242,6 @@
         "reference": "NETLY-FIXTURE-0440",
         "card_suffix": "1439"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -16719,7 +16279,6 @@
         "reference": "NETLY-FIXTURE-0441",
         "card_suffix": "1440"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -16757,7 +16316,6 @@
         "reference": "NETLY-FIXTURE-0442",
         "card_suffix": "1441"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -16795,7 +16353,6 @@
         "reference": "NETLY-FIXTURE-0443",
         "card_suffix": "1442"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -16833,7 +16390,6 @@
         "reference": "NETLY-FIXTURE-0444",
         "card_suffix": "1443"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -16871,7 +16427,6 @@
         "reference": "NETLY-FIXTURE-0445",
         "card_suffix": "1444"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -16909,7 +16464,6 @@
         "reference": "NETLY-FIXTURE-0446",
         "card_suffix": "1445"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -16947,7 +16501,6 @@
         "reference": "NETLY-FIXTURE-0447",
         "card_suffix": "1446"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -16985,7 +16538,6 @@
         "reference": "NETLY-FIXTURE-0448",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -17023,7 +16575,6 @@
         "reference": "NETLY-FIXTURE-0449",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -17060,7 +16611,6 @@
         "code": "TRAN49",
         "reference": "NETLY-FIXTURE-0450"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -17098,7 +16648,6 @@
         "reference": "NETLY-FIXTURE-0451",
         "card_suffix": "1450"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -17136,7 +16685,6 @@
         "reference": "NETLY-FIXTURE-0452",
         "card_suffix": "1451"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -17174,7 +16722,6 @@
         "reference": "NETLY-FIXTURE-0453",
         "card_suffix": "1452"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -17212,7 +16759,6 @@
         "reference": "NETLY-FIXTURE-0454",
         "card_suffix": "1453"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -17250,7 +16796,6 @@
         "reference": "NETLY-FIXTURE-0455",
         "card_suffix": "1454"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -17288,7 +16833,6 @@
         "reference": "NETLY-FIXTURE-0456",
         "card_suffix": "1455"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -17326,7 +16870,6 @@
         "reference": "NETLY-FIXTURE-0457",
         "card_suffix": "1456"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -17364,7 +16907,6 @@
         "reference": "NETLY-FIXTURE-0458",
         "card_suffix": "1457"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -17402,7 +16944,6 @@
         "reference": "NETLY-FIXTURE-0459",
         "card_suffix": "1458"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -17440,7 +16981,6 @@
         "reference": "NETLY-FIXTURE-0460",
         "card_suffix": "1459"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -17478,7 +17018,6 @@
         "reference": "NETLY-FIXTURE-0461",
         "card_suffix": "1460"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -17516,7 +17055,6 @@
         "reference": "NETLY-FIXTURE-0462",
         "card_suffix": "1461"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -17554,7 +17092,6 @@
         "reference": "NETLY-FIXTURE-0463",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -17592,7 +17129,6 @@
         "reference": "NETLY-FIXTURE-0464",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -17629,7 +17165,6 @@
         "code": "TRAN64",
         "reference": "NETLY-FIXTURE-0465"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -17667,7 +17202,6 @@
         "reference": "NETLY-FIXTURE-0466",
         "card_suffix": "1465"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -17705,7 +17239,6 @@
         "reference": "NETLY-FIXTURE-0467",
         "card_suffix": "1466"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -17743,7 +17276,6 @@
         "reference": "NETLY-FIXTURE-0468",
         "card_suffix": "1467"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -17781,7 +17313,6 @@
         "reference": "NETLY-FIXTURE-0469",
         "card_suffix": "1468"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -17819,7 +17350,6 @@
         "reference": "NETLY-FIXTURE-0470",
         "card_suffix": "1469"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -17857,7 +17387,6 @@
         "reference": "NETLY-FIXTURE-0471",
         "card_suffix": "1470"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -17895,7 +17424,6 @@
         "reference": "NETLY-FIXTURE-0472",
         "card_suffix": "1471"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -17933,7 +17461,6 @@
         "reference": "NETLY-FIXTURE-0473",
         "card_suffix": "1472"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -17971,7 +17498,6 @@
         "reference": "NETLY-FIXTURE-0474",
         "card_suffix": "1473"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -18009,7 +17535,6 @@
         "reference": "NETLY-FIXTURE-0475",
         "card_suffix": "1474"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -18047,7 +17572,6 @@
         "reference": "NETLY-FIXTURE-0476",
         "card_suffix": "1475"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -18085,7 +17609,6 @@
         "reference": "NETLY-FIXTURE-0477",
         "card_suffix": "1476"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -18123,7 +17646,6 @@
         "reference": "NETLY-FIXTURE-0478",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -18161,7 +17683,6 @@
         "reference": "NETLY-FIXTURE-0479",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -18198,7 +17719,6 @@
         "code": "TRAN79",
         "reference": "NETLY-FIXTURE-0480"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -18236,7 +17756,6 @@
         "reference": "NETLY-FIXTURE-0481",
         "card_suffix": "1480"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -18274,7 +17793,6 @@
         "reference": "NETLY-FIXTURE-0482",
         "card_suffix": "1481"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -18312,7 +17830,6 @@
         "reference": "NETLY-FIXTURE-0483",
         "card_suffix": "1482"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -18350,7 +17867,6 @@
         "reference": "NETLY-FIXTURE-0484",
         "card_suffix": "1483"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -18388,7 +17904,6 @@
         "reference": "NETLY-FIXTURE-0485",
         "card_suffix": "1484"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -18426,7 +17941,6 @@
         "reference": "NETLY-FIXTURE-0486",
         "card_suffix": "1485"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -18464,7 +17978,6 @@
         "reference": "NETLY-FIXTURE-0487",
         "card_suffix": "1486"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -18502,7 +18015,6 @@
         "reference": "NETLY-FIXTURE-0488",
         "card_suffix": "1487"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -18540,7 +18052,6 @@
         "reference": "NETLY-FIXTURE-0489",
         "card_suffix": "1488"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -18578,7 +18089,6 @@
         "reference": "NETLY-FIXTURE-0490",
         "card_suffix": "1489"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -18616,7 +18126,6 @@
         "reference": "NETLY-FIXTURE-0491",
         "card_suffix": "1490"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -18654,7 +18163,6 @@
         "reference": "NETLY-FIXTURE-0492",
         "card_suffix": "1491"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -18692,7 +18200,6 @@
         "reference": "NETLY-FIXTURE-0493",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -18730,7 +18237,6 @@
         "reference": "NETLY-FIXTURE-0494",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -18767,7 +18273,6 @@
         "code": "TRAN94",
         "reference": "NETLY-FIXTURE-0495"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -18805,7 +18310,6 @@
         "reference": "NETLY-FIXTURE-0496",
         "card_suffix": "1495"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -18843,7 +18347,6 @@
         "reference": "NETLY-FIXTURE-0497",
         "card_suffix": "1496"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -18881,7 +18384,6 @@
         "reference": "NETLY-FIXTURE-0498",
         "card_suffix": "1497"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -18919,7 +18421,6 @@
         "reference": "NETLY-FIXTURE-0499",
         "card_suffix": "1498"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -18957,7 +18458,6 @@
         "reference": "NETLY-FIXTURE-0500",
         "card_suffix": "1499"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -18995,7 +18495,6 @@
         "reference": "NETLY-FIXTURE-0501",
         "card_suffix": "1500"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -19033,7 +18532,6 @@
         "reference": "NETLY-FIXTURE-0502",
         "card_suffix": "1501"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -19071,7 +18569,6 @@
         "reference": "NETLY-FIXTURE-0503",
         "card_suffix": "1502"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -19109,7 +18606,6 @@
         "reference": "NETLY-FIXTURE-0504",
         "card_suffix": "1503"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -19147,7 +18643,6 @@
         "reference": "NETLY-FIXTURE-0505",
         "card_suffix": "1504"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -19185,7 +18680,6 @@
         "reference": "NETLY-FIXTURE-0506",
         "card_suffix": "1505"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -19223,7 +18717,6 @@
         "reference": "NETLY-FIXTURE-0507",
         "card_suffix": "1506"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -19261,7 +18754,6 @@
         "reference": "NETLY-FIXTURE-0508",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -19299,7 +18791,6 @@
         "reference": "NETLY-FIXTURE-0509",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -19336,7 +18827,6 @@
         "code": "TRAN09",
         "reference": "NETLY-FIXTURE-0510"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -19374,7 +18864,6 @@
         "reference": "NETLY-FIXTURE-0511",
         "card_suffix": "1510"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -19412,7 +18901,6 @@
         "reference": "NETLY-FIXTURE-0512",
         "card_suffix": "1511"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -19450,7 +18938,6 @@
         "reference": "NETLY-FIXTURE-0513",
         "card_suffix": "1512"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -19488,7 +18975,6 @@
         "reference": "NETLY-FIXTURE-0514",
         "card_suffix": "1513"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -19526,7 +19012,6 @@
         "reference": "NETLY-FIXTURE-0515",
         "card_suffix": "1514"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -19564,7 +19049,6 @@
         "reference": "NETLY-FIXTURE-0516",
         "card_suffix": "1515"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -19602,7 +19086,6 @@
         "reference": "NETLY-FIXTURE-0517",
         "card_suffix": "1516"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -19640,7 +19123,6 @@
         "reference": "NETLY-FIXTURE-0518",
         "card_suffix": "1517"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -19678,7 +19160,6 @@
         "reference": "NETLY-FIXTURE-0519",
         "card_suffix": "1518"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -19716,7 +19197,6 @@
         "reference": "NETLY-FIXTURE-0520",
         "card_suffix": "1519"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -19754,7 +19234,6 @@
         "reference": "NETLY-FIXTURE-0521",
         "card_suffix": "1520"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -19792,7 +19271,6 @@
         "reference": "NETLY-FIXTURE-0522",
         "card_suffix": "1521"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -19830,7 +19308,6 @@
         "reference": "NETLY-FIXTURE-0523",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -19868,7 +19345,6 @@
         "reference": "NETLY-FIXTURE-0524",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -19905,7 +19381,6 @@
         "code": "TRAN24",
         "reference": "NETLY-FIXTURE-0525"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -19943,7 +19418,6 @@
         "reference": "NETLY-FIXTURE-0526",
         "card_suffix": "1525"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -19981,7 +19455,6 @@
         "reference": "NETLY-FIXTURE-0527",
         "card_suffix": "1526"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -20019,7 +19492,6 @@
         "reference": "NETLY-FIXTURE-0528",
         "card_suffix": "1527"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -20057,7 +19529,6 @@
         "reference": "NETLY-FIXTURE-0529",
         "card_suffix": "1528"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -20095,7 +19566,6 @@
         "reference": "NETLY-FIXTURE-0530",
         "card_suffix": "1529"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -20133,7 +19603,6 @@
         "reference": "NETLY-FIXTURE-0531",
         "card_suffix": "1530"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -20171,7 +19640,6 @@
         "reference": "NETLY-FIXTURE-0532",
         "card_suffix": "1531"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -20209,7 +19677,6 @@
         "reference": "NETLY-FIXTURE-0533",
         "card_suffix": "1532"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -20247,7 +19714,6 @@
         "reference": "NETLY-FIXTURE-0534",
         "card_suffix": "1533"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -20285,7 +19751,6 @@
         "reference": "NETLY-FIXTURE-0535",
         "card_suffix": "1534"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -20323,7 +19788,6 @@
         "reference": "NETLY-FIXTURE-0536",
         "card_suffix": "1535"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -20361,7 +19825,6 @@
         "reference": "NETLY-FIXTURE-0537",
         "card_suffix": "1536"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -20399,7 +19862,6 @@
         "reference": "NETLY-FIXTURE-0538",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -20437,7 +19899,6 @@
         "reference": "NETLY-FIXTURE-0539",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -20474,7 +19935,6 @@
         "code": "TRAN39",
         "reference": "NETLY-FIXTURE-0540"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -20512,7 +19972,6 @@
         "reference": "NETLY-FIXTURE-0541",
         "card_suffix": "1540"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -20550,7 +20009,6 @@
         "reference": "NETLY-FIXTURE-0542",
         "card_suffix": "1541"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -20588,7 +20046,6 @@
         "reference": "NETLY-FIXTURE-0543",
         "card_suffix": "1542"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -20626,7 +20083,6 @@
         "reference": "NETLY-FIXTURE-0544",
         "card_suffix": "1543"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -20664,7 +20120,6 @@
         "reference": "NETLY-FIXTURE-0545",
         "card_suffix": "1544"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -20702,7 +20157,6 @@
         "reference": "NETLY-FIXTURE-0546",
         "card_suffix": "1545"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -20740,7 +20194,6 @@
         "reference": "NETLY-FIXTURE-0547",
         "card_suffix": "1546"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -20778,7 +20231,6 @@
         "reference": "NETLY-FIXTURE-0548",
         "card_suffix": "1547"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -20816,7 +20268,6 @@
         "reference": "NETLY-FIXTURE-0549",
         "card_suffix": "1548"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -20854,7 +20305,6 @@
         "reference": "NETLY-FIXTURE-0550",
         "card_suffix": "1549"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -20892,7 +20342,6 @@
         "reference": "NETLY-FIXTURE-0551",
         "card_suffix": "1550"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -20930,7 +20379,6 @@
         "reference": "NETLY-FIXTURE-0552",
         "card_suffix": "1551"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -20968,7 +20416,6 @@
         "reference": "NETLY-FIXTURE-0553",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -21006,7 +20453,6 @@
         "reference": "NETLY-FIXTURE-0554",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -21043,7 +20489,6 @@
         "code": "TRAN54",
         "reference": "NETLY-FIXTURE-0555"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -21081,7 +20526,6 @@
         "reference": "NETLY-FIXTURE-0556",
         "card_suffix": "1555"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -21119,7 +20563,6 @@
         "reference": "NETLY-FIXTURE-0557",
         "card_suffix": "1556"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -21157,7 +20600,6 @@
         "reference": "NETLY-FIXTURE-0558",
         "card_suffix": "1557"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -21195,7 +20637,6 @@
         "reference": "NETLY-FIXTURE-0559",
         "card_suffix": "1558"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -21233,7 +20674,6 @@
         "reference": "NETLY-FIXTURE-0560",
         "card_suffix": "1559"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -21271,7 +20711,6 @@
         "reference": "NETLY-FIXTURE-0561",
         "card_suffix": "1560"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -21309,7 +20748,6 @@
         "reference": "NETLY-FIXTURE-0562",
         "card_suffix": "1561"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -21347,7 +20785,6 @@
         "reference": "NETLY-FIXTURE-0563",
         "card_suffix": "1562"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -21385,7 +20822,6 @@
         "reference": "NETLY-FIXTURE-0564",
         "card_suffix": "1563"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -21423,7 +20859,6 @@
         "reference": "NETLY-FIXTURE-0565",
         "card_suffix": "1564"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -21461,7 +20896,6 @@
         "reference": "NETLY-FIXTURE-0566",
         "card_suffix": "1565"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -21499,7 +20933,6 @@
         "reference": "NETLY-FIXTURE-0567",
         "card_suffix": "1566"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -21537,7 +20970,6 @@
         "reference": "NETLY-FIXTURE-0568",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -21575,7 +21007,6 @@
         "reference": "NETLY-FIXTURE-0569",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -21612,7 +21043,6 @@
         "code": "TRAN69",
         "reference": "NETLY-FIXTURE-0570"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -21650,7 +21080,6 @@
         "reference": "NETLY-FIXTURE-0571",
         "card_suffix": "1570"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -21688,7 +21117,6 @@
         "reference": "NETLY-FIXTURE-0572",
         "card_suffix": "1571"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -21726,7 +21154,6 @@
         "reference": "NETLY-FIXTURE-0573",
         "card_suffix": "1572"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -21764,7 +21191,6 @@
         "reference": "NETLY-FIXTURE-0574",
         "card_suffix": "1573"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -21802,7 +21228,6 @@
         "reference": "NETLY-FIXTURE-0575",
         "card_suffix": "1574"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -21840,7 +21265,6 @@
         "reference": "NETLY-FIXTURE-0576",
         "card_suffix": "1575"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -21878,7 +21302,6 @@
         "reference": "NETLY-FIXTURE-0577",
         "card_suffix": "1576"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -21916,7 +21339,6 @@
         "reference": "NETLY-FIXTURE-0578",
         "card_suffix": "1577"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -21954,7 +21376,6 @@
         "reference": "NETLY-FIXTURE-0579",
         "card_suffix": "1578"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -21992,7 +21413,6 @@
         "reference": "NETLY-FIXTURE-0580",
         "card_suffix": "1579"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -22030,7 +21450,6 @@
         "reference": "NETLY-FIXTURE-0581",
         "card_suffix": "1580"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -22068,7 +21487,6 @@
         "reference": "NETLY-FIXTURE-0582",
         "card_suffix": "1581"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -22106,7 +21524,6 @@
         "reference": "NETLY-FIXTURE-0583",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -22144,7 +21561,6 @@
         "reference": "NETLY-FIXTURE-0584",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -22181,7 +21597,6 @@
         "code": "TRAN84",
         "reference": "NETLY-FIXTURE-0585"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -22219,7 +21634,6 @@
         "reference": "NETLY-FIXTURE-0586",
         "card_suffix": "1585"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -22257,7 +21671,6 @@
         "reference": "NETLY-FIXTURE-0587",
         "card_suffix": "1586"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -22295,7 +21708,6 @@
         "reference": "NETLY-FIXTURE-0588",
         "card_suffix": "1587"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -22333,7 +21745,6 @@
         "reference": "NETLY-FIXTURE-0589",
         "card_suffix": "1588"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -22371,7 +21782,6 @@
         "reference": "NETLY-FIXTURE-0590",
         "card_suffix": "1589"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -22409,7 +21819,6 @@
         "reference": "NETLY-FIXTURE-0591",
         "card_suffix": "1590"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -22447,7 +21856,6 @@
         "reference": "NETLY-FIXTURE-0592",
         "card_suffix": "1591"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -22485,7 +21893,6 @@
         "reference": "NETLY-FIXTURE-0593",
         "card_suffix": "1592"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -22523,7 +21930,6 @@
         "reference": "NETLY-FIXTURE-0594",
         "card_suffix": "1593"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -22561,7 +21967,6 @@
         "reference": "NETLY-FIXTURE-0595",
         "card_suffix": "1594"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -22599,7 +22004,6 @@
         "reference": "NETLY-FIXTURE-0596",
         "card_suffix": "1595"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -22637,7 +22041,6 @@
         "reference": "NETLY-FIXTURE-0597",
         "card_suffix": "1596"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -22675,7 +22078,6 @@
         "reference": "NETLY-FIXTURE-0598",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -22713,7 +22115,6 @@
         "reference": "NETLY-FIXTURE-0599",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -22750,7 +22151,6 @@
         "code": "TRAN99",
         "reference": "NETLY-FIXTURE-0600"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -22788,7 +22188,6 @@
         "reference": "NETLY-FIXTURE-0601",
         "card_suffix": "1600"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -22826,7 +22225,6 @@
         "reference": "NETLY-FIXTURE-0602",
         "card_suffix": "1601"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -22864,7 +22262,6 @@
         "reference": "NETLY-FIXTURE-0603",
         "card_suffix": "1602"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -22902,7 +22299,6 @@
         "reference": "NETLY-FIXTURE-0604",
         "card_suffix": "1603"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -22940,7 +22336,6 @@
         "reference": "NETLY-FIXTURE-0605",
         "card_suffix": "1604"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -22978,7 +22373,6 @@
         "reference": "NETLY-FIXTURE-0606",
         "card_suffix": "1605"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -23016,7 +22410,6 @@
         "reference": "NETLY-FIXTURE-0607",
         "card_suffix": "1606"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -23054,7 +22447,6 @@
         "reference": "NETLY-FIXTURE-0608",
         "card_suffix": "1607"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -23092,7 +22484,6 @@
         "reference": "NETLY-FIXTURE-0609",
         "card_suffix": "1608"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -23130,7 +22521,6 @@
         "reference": "NETLY-FIXTURE-0610",
         "card_suffix": "1609"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -23168,7 +22558,6 @@
         "reference": "NETLY-FIXTURE-0611",
         "card_suffix": "1610"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -23206,7 +22595,6 @@
         "reference": "NETLY-FIXTURE-0612",
         "card_suffix": "1611"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -23244,7 +22632,6 @@
         "reference": "NETLY-FIXTURE-0613",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -23282,7 +22669,6 @@
         "reference": "NETLY-FIXTURE-0614",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -23319,7 +22705,6 @@
         "code": "TRAN14",
         "reference": "NETLY-FIXTURE-0615"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -23357,7 +22742,6 @@
         "reference": "NETLY-FIXTURE-0616",
         "card_suffix": "1615"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -23395,7 +22779,6 @@
         "reference": "NETLY-FIXTURE-0617",
         "card_suffix": "1616"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -23433,7 +22816,6 @@
         "reference": "NETLY-FIXTURE-0618",
         "card_suffix": "1617"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -23471,7 +22853,6 @@
         "reference": "NETLY-FIXTURE-0619",
         "card_suffix": "1618"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -23509,7 +22890,6 @@
         "reference": "NETLY-FIXTURE-0620",
         "card_suffix": "1619"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -23547,7 +22927,6 @@
         "reference": "NETLY-FIXTURE-0621",
         "card_suffix": "1620"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -23585,7 +22964,6 @@
         "reference": "NETLY-FIXTURE-0622",
         "card_suffix": "1621"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -23623,7 +23001,6 @@
         "reference": "NETLY-FIXTURE-0623",
         "card_suffix": "1622"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -23661,7 +23038,6 @@
         "reference": "NETLY-FIXTURE-0624",
         "card_suffix": "1623"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -23699,7 +23075,6 @@
         "reference": "NETLY-FIXTURE-0625",
         "card_suffix": "1624"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -23737,7 +23112,6 @@
         "reference": "NETLY-FIXTURE-0626",
         "card_suffix": "1625"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -23775,7 +23149,6 @@
         "reference": "NETLY-FIXTURE-0627",
         "card_suffix": "1626"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -23813,7 +23186,6 @@
         "reference": "NETLY-FIXTURE-0628",
         "other_account": "12-3000-1234567-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -23851,7 +23223,6 @@
         "reference": "NETLY-FIXTURE-0629",
         "other_account": "06-0411-9876543-00"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -23888,7 +23259,6 @@
         "code": "TRAN29",
         "reference": "NETLY-FIXTURE-0630"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -23926,7 +23296,6 @@
         "reference": "NETLY-FIXTURE-0631",
         "card_suffix": "1630"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -23964,7 +23333,6 @@
         "reference": "NETLY-FIXTURE-0632",
         "card_suffix": "1631"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -24002,7 +23370,6 @@
         "reference": "NETLY-FIXTURE-0633",
         "card_suffix": "1632"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -24040,7 +23407,6 @@
         "reference": "NETLY-FIXTURE-0634",
         "card_suffix": "1633"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -24078,7 +23444,6 @@
         "reference": "NETLY-FIXTURE-0635",
         "card_suffix": "1634"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -24116,7 +23481,6 @@
         "reference": "NETLY-FIXTURE-0636",
         "card_suffix": "1635"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -24154,7 +23518,6 @@
         "reference": "NETLY-FIXTURE-0637",
         "card_suffix": "1636"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"
@@ -24192,7 +23555,6 @@
         "reference": "NETLY-FIXTURE-0638",
         "card_suffix": "1637"
       },
-      "pending": false,
       "netly": {
         "accountName": "Credit card",
         "accountCurrency": "NZD"
@@ -24230,7 +23592,6 @@
         "reference": "NETLY-FIXTURE-0639",
         "card_suffix": "1638"
       },
-      "pending": false,
       "netly": {
         "accountName": "Bills",
         "accountCurrency": "NZD"
@@ -24268,7 +23629,6 @@
         "reference": "NETLY-FIXTURE-0640",
         "card_suffix": "1639"
       },
-      "pending": false,
       "netly": {
         "accountName": "Everyday",
         "accountCurrency": "NZD"

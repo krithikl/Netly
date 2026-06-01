@@ -9,8 +9,7 @@ import type { View } from "@/lib/app/types";
 export function useRoutedView() {
   const pathname = usePathname();
   const router = useRouter();
-  const pathnameView = getViewForPathname(pathname);
-  const [activeView, setLocalActiveView] = useState<View>(pathnameView);
+  const [activeView, setLocalActiveView] = useState(() => getViewForPathname(pathname));
 
   const setActiveView = useCallback((view: View) => {
     setLocalActiveView(view);
@@ -20,8 +19,8 @@ export function useRoutedView() {
   }, [router]);
 
   useEffect(() => {
-    setLocalActiveView(pathnameView);
-  }, [pathnameView]);
+    setLocalActiveView(getViewForPathname(pathname));
+  }, [pathname]);
 
   return {
     activeView,

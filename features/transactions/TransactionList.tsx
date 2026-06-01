@@ -1,9 +1,10 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ChevronDown, ChevronRight, CreditCard, LoaderCircle } from "lucide-react";
+import { ChevronDown, CreditCard, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SelectField, type SelectOption } from "@/components/ui/select-field";
+import { MoneyMovementCard, type MoneyMovementAmountTone } from "@/components/MoneyMovementCard";
 import {
   Drawer,
   DrawerContent,
@@ -36,8 +37,9 @@ import {
   getTransactionId,
   getTransactionMerchant,
   getTransactionRawBankText,
-  getTransactionSearchText,
-  getTransactionStatus
+  getTransactionStatus,
+  groupTransactionsByDate,
+  formatTransactionDateHeading
 } from "@/lib/transaction-display";
 import type { CategoryEditScope } from "@/lib/category-rules";
 import type { Transaction } from "@/lib/types";
@@ -47,6 +49,7 @@ type TransactionListProps = {
   categorySelectOptions?: SelectOption[];
   editable?: boolean;
   emptyMessage?: string;
+  groupByDate?: boolean;
   hasMore?: boolean;
   isLoading?: boolean;
   isLoadingAll?: boolean;
@@ -73,6 +76,7 @@ export function TransactionList({
   categorySelectOptions = [],
   editable = false,
   emptyMessage = "No transactions to show.",
+  groupByDate = false,
   hasMore = false,
   isLoading = false,
   isLoadingAll = false,
@@ -91,6 +95,7 @@ export function TransactionList({
   const hasTriggeredFullLoadRef = useRef(false);
   const previousTransactionSignatureRef = useRef("");
   const visibleTransactions = useMemo(() => transactions.slice(0, visibleCount), [transactions, visibleCount]);
+  const visibleTransactionGroups = useMemo(() => groupTransactionsByDate(visibleTransactions), [visibleTransactions]);
   const remainingTransactionCount = Math.max(0, transactions.length - visibleTransactions.length);
   const selectedTransaction = useMemo(
     () => transactions.find((transaction) => getTransactionId(transaction) === selectedTransactionId) || null,
@@ -103,23 +108,30 @@ export function TransactionList({
       return;
     }
 
+    const canRevealLocalRows = remainingTransactionCount > 0;
+    const canRunFullLoad = hasMore && !hasTriggeredFullLoadRef.current && Boolean(onLoadAll);
+
+    if (!canRevealLocalRows && !canRunFullLoad) {
+      return;
+    }
+
     isAutoLoadingRef.current = true;
     setIsAutoLoading(true);
 
     try {
-      if (hasMore && !hasTriggeredFullLoadRef.current && onLoadAll) {
+      if (canRunFullLoad && onLoadAll) {
         hasTriggeredFullLoadRef.current = true;
         await onLoadAll();
-      } else if (remainingTransactionCount === 0 && hasMore && onLoadMore) {
-        await onLoadMore();
       }
 
-      setVisibleCount((currentCount) => currentCount + visibleTransactionIncrement);
+      if (canRevealLocalRows) {
+        setVisibleCount((currentCount) => currentCount + visibleTransactionIncrement);
+      }
     } finally {
       isAutoLoadingRef.current = false;
       setIsAutoLoading(false);
     }
-  }, [hasMore, isLoadingAll, isLoadingMore, onLoadAll, onLoadMore, remainingTransactionCount]);
+  }, [hasMore, isLoadingAll, isLoadingMore, onLoadAll, remainingTransactionCount]);
 
   useEffect(() => {
     const firstTransactionId = transactions[0] ? getTransactionId(transactions[0]) : "";
@@ -141,7 +153,7 @@ export function TransactionList({
   useEffect(() => {
     const sentinel = loadSentinelRef.current;
 
-    if (!sentinel || (!hasMore && remainingTransactionCount === 0)) {
+    if (!sentinel || (remainingTransactionCount === 0 && (!hasMore || hasTriggeredFullLoadRef.current))) {
       return undefined;
     }
 
@@ -185,27 +197,38 @@ export function TransactionList({
   return (
     <div className="transaction-list-layout">
       <div className="transaction-list-panel">
-        <div className="transaction-ledger" role="table" aria-label="Transactions">
-          <div className="transaction-ledger-header" role="row">
-            <span role="columnheader">Date</span>
-            <span role="columnheader">Merchant</span>
-            <span role="columnheader">Category</span>
-            <span role="columnheader">Account</span>
-            <span role="columnheader">Amount</span>
-            <span aria-hidden="true" />
-          </div>
-          {visibleTransactions.map((transaction) => {
-            const transactionId = getTransactionId(transaction);
+        <div className={`money-movement-list ${groupByDate ? "grouped" : ""}`} role="list" aria-label="Transactions">
+          {groupByDate
+            ? visibleTransactionGroups.map((group) => (
+              <div className="transaction-date-group" key={group.date}>
+                <h3 className="transaction-date-group-heading">{formatTransactionDateHeading(group.date)}</h3>
+                {group.transactions.map((transaction) => {
+                  const transactionId = getTransactionId(transaction);
 
-            return (
-              <TransactionRow
-                categoryColors={categoryColors}
-                key={transactionId}
-                onOpenDetails={openDetails}
-                transaction={transaction}
-              />
-            );
-          })}
+                  return (
+                    <TransactionRow
+                      categoryColors={categoryColors}
+                      key={transactionId}
+                      onOpenDetails={openDetails}
+                      showDate={false}
+                      transaction={transaction}
+                    />
+                  );
+                })}
+              </div>
+            ))
+            : visibleTransactions.map((transaction) => {
+              const transactionId = getTransactionId(transaction);
+
+              return (
+                <TransactionRow
+                  categoryColors={categoryColors}
+                  key={transactionId}
+                  onOpenDetails={openDetails}
+                  transaction={transaction}
+                />
+              );
+            })}
         </div>
         {(remainingTransactionCount > 0 || hasMore) && (
           <div className="transaction-load-actions" ref={loadSentinelRef}>
@@ -284,12 +307,14 @@ export function TransactionDetailsOverlay({
 type TransactionRowProps = {
   categoryColors: Record<string, string>;
   onOpenDetails: (transactionId: string) => void;
+  showDate?: boolean;
   transaction: Transaction;
 };
 
 const TransactionRow = memo(function TransactionRow({
   categoryColors,
   onOpenDetails,
+  showDate = true,
   transaction
 }: TransactionRowProps) {
   const transactionId = getTransactionId(transaction);
@@ -297,31 +322,17 @@ const TransactionRow = memo(function TransactionRow({
   const openDetails = useCallback(() => onOpenDetails(transactionId), [onOpenDetails, transactionId]);
 
   return (
-    <button className="transaction-ledger-row" data-testid="transaction-row" onClick={openDetails} role="row" type="button">
-      <span className="transaction-ledger-date" role="cell">{row.date}</span>
-      <span className="transaction-ledger-merchant" role="cell">
-        <span className="transaction-merchant-avatar" style={row.colorStyle}>{row.initial}</span>
-        <span className="transaction-merchant-copy">
-          <strong>{row.merchant}</strong>
-          <small className="transaction-row-status">{row.statusLabel}</small>
-          <span className="transaction-category-chip transaction-mobile-category-chip" style={row.colorStyle}>
-            <span aria-hidden="true" />
-            {row.category}
-          </span>
-          <small className="transaction-mobile-row-meta">{row.date} · {row.account}</small>
-        </span>
-      </span>
-      <span className="transaction-category-chip transaction-desktop-category-cell" role="cell" style={row.colorStyle}>
-        <span aria-hidden="true" />
-        {row.category}
-      </span>
-      <span className="transaction-account-chip" role="cell">
-        <CreditCard aria-hidden="true" className="h-3.5 w-3.5" />
-        {row.account}
-      </span>
-      <strong className={`transaction-ledger-amount ${row.valueTone}`} role="cell">{row.amount}</strong>
-      <ChevronRight aria-hidden="true" className="transaction-ledger-chevron h-4 w-4" />
-    </button>
+    <MoneyMovementCard
+      amount={row.amount}
+      amountTone={row.valueTone}
+      avatarLabel={row.initial}
+      category={row.category}
+      categoryColor={row.color}
+      detail={showDate ? `${row.date} · ${row.account}` : row.account}
+      onClick={openDetails}
+      testId="transaction-row"
+      title={row.merchant}
+    />
   );
 });
 
@@ -334,12 +345,11 @@ function getTransactionRowModel(transaction: Transaction, categoryColors: Record
     account: getTransactionAccountLabel(transaction),
     amount: getTransactionAmountLabel(transaction),
     category,
-    colorStyle: { "--transaction-color": color } as CSSProperties,
+    color,
     date: formatTransactionDate(getTransactionDate(transaction)),
     initial: merchant.slice(0, 1).toUpperCase(),
     merchant,
-    statusLabel: getTransactionRowStatusLabel(transaction),
-    valueTone: transaction.amount < 0 ? "negative" : "positive"
+    valueTone: (transaction.amount < 0 ? "expense" : "income") as MoneyMovementAmountTone
   };
 }
 
@@ -378,20 +388,20 @@ function CategorySelect({
   onClose: () => void;
   transaction: Transaction;
 }) {
-  const [pendingCategory, setPendingCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
   const handleCategoryChange = (category: string) => {
-    setPendingCategory(category);
+    setSelectedCategory(category);
     setScopeDialogOpen(true);
   };
   const applyCategoryChange = (scope: CategoryEditScope) => {
-    if (!pendingCategory) {
+    if (!selectedCategory) {
       return;
     }
 
-    onCategoryChange?.(transaction, pendingCategory, scope);
+    onCategoryChange?.(transaction, selectedCategory, scope);
     setScopeDialogOpen(false);
-    setPendingCategory("");
+    setSelectedCategory("");
     onClose();
   };
 
@@ -504,7 +514,7 @@ function TransactionDetailsDrawer({
           <DrawerDescription className="sr-only">Selected transaction details.</DrawerDescription>
           <DrawerHeaderClose className="mobile-filter-close" />
         </DrawerHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 overscroll-y-none [touch-action:pan-y] pb-[calc(20px+env(safe-area-inset-bottom))]">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(20px+env(safe-area-inset-bottom))]">
           <TransactionDetailsContent
             categorySelectOptions={categorySelectOptions}
             categoryColors={categoryColors}
@@ -548,7 +558,7 @@ function TransactionDetailsContent({
   return (
     <div className="transaction-detail-content">
       <section className="transaction-detail-summary-card">
-        <span className="transaction-merchant-avatar large" style={colorStyle}>
+        <span className="letter-avatar letter-avatar-large transaction-merchant-avatar" style={colorStyle}>
           {merchant.slice(0, 1).toUpperCase()}
         </span>
         <div className="min-w-0">

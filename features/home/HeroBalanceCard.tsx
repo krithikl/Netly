@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Eye, EyeOff, Pencil } from "lucide-react";
+import { CalendarDays, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -9,8 +9,8 @@ import { formatMoney } from "@/lib/insights";
 type HeroBalanceCardProps = {
   availableBalance: number | null;
   hideBalances: boolean;
+  insights: string[];
   isConnected: boolean;
-  onReviewSpend: () => void;
   payday: string;
   paydayPatternDate: string;
   setHideBalances: (hidden: boolean) => void;
@@ -21,7 +21,7 @@ type HeroBalanceCardProps = {
 export function HeroBalanceCard({
   availableBalance,
   hideBalances,
-  onReviewSpend,
+  insights,
   payday,
   paydayPatternDate,
   setHideBalances,
@@ -34,6 +34,7 @@ export function HeroBalanceCard({
   const daysToPayday = getDaysUntil(payday);
   const nextPaydayDate = parsePaydayDate(payday);
   const paydayPattern = parsePaydayDate(paydayPatternDate);
+  const heroInsight = insights.find((insight) => insight.trim().length > 0);
   const selectPayday = (nextPayday: Date | undefined) => {
     if (nextPayday) {
       setPayday(formatPaydayValue(nextPayday));
@@ -42,7 +43,7 @@ export function HeroBalanceCard({
   };
 
   return (
-    <Card className="hero-card" aria-label="Balance overview" role="region">
+    <Card className={`hero-card${heroInsight ? " has-hero-insight" : ""}`} aria-label="Balance overview" role="region">
       <div className="hero-card-section hero-balance">
         <span className="balance-heading">
           <span className="eyebrow">Available balance</span>
@@ -59,51 +60,45 @@ export function HeroBalanceCard({
           </Button>
         </span>
         <strong>{balanceLabel}</strong>
-      </div>
-
-      <div className="hero-card-divider" aria-hidden="true" />
-
-      <div className="hero-card-section hero-payday">
-        <span className="payday-heading">
-          <span className="eyebrow">Payday in</span>
-          <Popover open={paydayPopoverOpen} onOpenChange={setPaydayPopoverOpen}>
-            <PopoverTrigger asChild>
-              <button className="payday-edit-button" type="button" aria-label="Edit payday">
-                <Pencil aria-hidden="true" size={14} strokeWidth={2.4} />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="payday-popover">
-              <div className="payday-popover-heading">
-                <CalendarDays aria-hidden="true" size={16} strokeWidth={2.4} />
-                <div>
-                  <strong>Payday pattern</strong>
-                  <span>{getPaydayPatternLabel(paydayPattern)}</span>
-                </div>
+        <Popover open={paydayPopoverOpen} onOpenChange={setPaydayPopoverOpen}>
+          <PopoverTrigger asChild>
+            <button className="hero-payday-pill" type="button" aria-label="Edit payday">
+              <span className="hero-payday-icon" aria-hidden="true">
+                <CalendarDays size={18} strokeWidth={2.4} />
+              </span>
+              <span>
+                <b>Payday in {daysToPayday} days</b>
+                <small>{paydayLabel}</small>
+              </span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="payday-popover">
+            <div className="payday-popover-heading">
+              <CalendarDays aria-hidden="true" size={16} strokeWidth={2.4} />
+              <div>
+                <strong>Payday pattern</strong>
+                <span>{getPaydayPatternLabel(paydayPattern)}</span>
               </div>
-              <Calendar
-                defaultMonth={paydayPattern}
-                fixedWeeks
-                mode="single"
-                navLayout="after"
-                numberOfMonths={1}
-                onSelect={selectPayday}
-                required
-                selected={nextPaydayDate}
-              />
-            </PopoverContent>
-          </Popover>
-        </span>
-        <strong>{daysToPayday}</strong>
-        <span className="payday-unit">days</span>
-        <p>{paydayLabel}</p>
+            </div>
+            <Calendar
+              defaultMonth={paydayPattern}
+              fixedWeeks
+              mode="single"
+              navLayout="after"
+              numberOfMonths={1}
+              onSelect={selectPayday}
+              required
+              selected={nextPaydayDate}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
-
-      <div className="hero-actions">
-        <Button onClick={onReviewSpend} type="button">
-          Review spend
-          <ArrowRight aria-hidden="true" size={16} strokeWidth={2.4} />
-        </Button>
-      </div>
+      {heroInsight ? (
+        <div className="hero-insight-preview" aria-label="Spend insight">
+          <span>Insight</span>
+          <p>{heroInsight}</p>
+        </div>
+      ) : null}
     </Card>
   );
 }

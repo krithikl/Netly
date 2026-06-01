@@ -9,9 +9,11 @@ import {
   defaultAccountStorageKey,
   deletedCategoriesStorageKey,
   hideBalancesStorageKey,
+  incomeIncludedCategoriesStorageKey,
   incomeExcludedCategoriesStorageKey
 } from "@/lib/app/constants";
 import { defaultCategoryColors, defaultTransactionCategories, categoryRollupCategory, netlyPalette } from "@/lib/categories";
+import { categoriesMatch } from "@/lib/category-rules";
 import { parseStoredJson } from "@/lib/app/storage";
 import type { DataMode } from "@/lib/app/types";
 
@@ -127,14 +129,28 @@ export function readDefaultAccountId() {
   return window.localStorage.getItem(defaultAccountStorageKey) || "";
 }
 
-export function readIncomeExcludedCategories() {
-  const storedValue = window.localStorage.getItem(incomeExcludedCategoriesStorageKey);
+export function readIncomeIncludedCategories(categoryOptions: string[]) {
+  const selectableCategories = categoryOptions.filter((category) => category !== "All categories");
+  const storedValue = window.localStorage.getItem(incomeIncludedCategoriesStorageKey);
 
-  if (storedValue === null) {
-    return [];
+  if (storedValue !== null) {
+    return assertStringArray(incomeIncludedCategoriesStorageKey, parseStoredJson<unknown>(incomeIncludedCategoriesStorageKey, storedValue));
   }
 
-  return assertStringArray(incomeExcludedCategoriesStorageKey, parseStoredJson<unknown>(incomeExcludedCategoriesStorageKey, storedValue));
+  const excludedValue = window.localStorage.getItem(incomeExcludedCategoriesStorageKey);
+
+  if (excludedValue === null) {
+    return selectableCategories;
+  }
+
+  const excludedCategories = assertStringArray(incomeExcludedCategoriesStorageKey, parseStoredJson<unknown>(incomeExcludedCategoriesStorageKey, excludedValue));
+  const includedCategories = selectableCategories.filter(
+    (category) => !excludedCategories.some((excludedCategory) => categoriesMatch(excludedCategory, category))
+  );
+
+  window.localStorage.setItem(incomeIncludedCategoriesStorageKey, JSON.stringify(includedCategories));
+  window.localStorage.removeItem(incomeExcludedCategoriesStorageKey);
+  return includedCategories;
 }
 
 // Reads Akahu callback URL params, shows a status message, then cleans the URL

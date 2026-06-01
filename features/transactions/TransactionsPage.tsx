@@ -1,8 +1,9 @@
 import type { ChangeEvent, TouchEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, ArrowDownUp, CalendarDays, Check, ChevronDown, ReceiptText, Search, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AlertCircle, ArrowDownUp, ArrowLeft, CalendarDays, ChevronDown, MoreVertical, ReceiptText, Search, Settings, Shapes, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { DateRange } from "react-day-picker";
+import useEmblaCarousel from "embla-carousel-react";
 import { TransactionList } from "@/features/transactions/TransactionList";
 import { MobilePageHeader } from "@/components/layout/MobilePageHeader";
 import { Button } from "@/components/ui/button";
@@ -16,13 +17,15 @@ import {
   DrawerTitle
 } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SelectField } from "@/components/ui/select-field";
+import { SelectField, type SelectOption } from "@/components/ui/select-field";
+import { MultiSelectDropdown, type MultiSelectDropdownOption } from "@/components/ui/multi-select-dropdown";
 import { useIsBottomNavigation } from "@/hooks/useIsBottomNavigation";
 import { formatMoney } from "@/lib/insights";
 import { filterTransactionsByDateRange, formatDateInputValue, getThisMonthDateRange } from "@/lib/periods";
-import { isIncomeCategoryExcluded } from "@/lib/reporting";
+import { isIncomeCategoryIncluded } from "@/lib/reporting";
 import { type CategoryEditScope } from "@/lib/category-rules";
-import { getTransactionCategory } from "@/lib/transaction-display";
+import { getTransactionCategory, getTransactionDate } from "@/lib/transaction-display";
+import { cn } from "@/lib/utils";
 import type { Transaction, TransactionDateRange } from "@/lib/types";
 import type { TransactionAccountOption, TransactionFilter, TransactionSort } from "@/lib/app/types";
 import {
@@ -32,10 +35,12 @@ import {
   toggleFilterSelection,
   type TransactionAnalytics
 } from "@/features/transactions/transactionLogic";
+import { getTransactionRangeState } from "@/features/transactions/transactionRangeLogic";
 
 export type TransactionOpenPreset = {
   dateRange?: TransactionDateRange;
   id: number;
+  openSearch?: boolean;
   query?: string;
   transactionCategory?: string[];
   transactionFilter?: TransactionFilter;
@@ -48,21 +53,34 @@ type TransactionsPageProps = {
   defaultAccountId: string;
   hasMoreTransactions: boolean;
   initialDateRange: TransactionDateRange;
-  incomeExcludedCategories: string[];
+  incomeIncludedCategories: string[];
   isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
+  isLoadingTransactionPageRange: boolean;
   isLoadingTransactions: boolean;
   onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onDateRangeChange: (dateRange: TransactionDateRange) => void;
   onMonthRangeChange: (dateRange: TransactionDateRange) => void;
   onLoadAllTransactions: (dateRange: TransactionDateRange) => void;
   onLoadMoreTransactions: (dateRange: TransactionDateRange) => void;
+  onOpenPresetConsumed: () => void;
+  onOpenSettings: () => void;
   openPreset: TransactionOpenPreset | null;
+  transactionLoadError: string;
+  transactionLoadNotice: string;
+  transactionMonthSourceTransactions: Transaction[];
+  transactionPageLoadedDateRange: TransactionDateRange | null;
+  transactionSearchSourceTransactions: Transaction[];
   transactions: Transaction[];
 };
 
 const transactionFilters: TransactionFilter[] = ["All", "Expenses", "Income"];
 const transactionSortOptions: TransactionSort[] = ["Newest", "Oldest", "Amount high", "Amount low"];
+const transactionAnalyticsToneClassNames: Record<"green" | "purple" | "red", string> = {
+  green: "bg-[rgba(117,208,141,0.13)] text-[var(--success)]",
+  purple: "bg-[rgba(137,168,255,0.12)] text-[var(--info)]",
+  red: "bg-[rgba(255,125,145,0.12)] text-[var(--danger)]"
+};
 
 // Handles transaction search, filters, sorting, and category creation
 // Full transactions screen: search, filters, date range, category editing, and pagination.
@@ -73,16 +91,24 @@ export function TransactionsPage({
   defaultAccountId,
   hasMoreTransactions,
   initialDateRange,
-  incomeExcludedCategories,
+  incomeIncludedCategories,
   isLoadingAllTransactions,
   isLoadingMoreTransactions,
+  isLoadingTransactionPageRange,
   isLoadingTransactions,
   onCategoryChange,
   onDateRangeChange,
   onMonthRangeChange,
   onLoadAllTransactions,
   onLoadMoreTransactions,
+  onOpenPresetConsumed,
+  onOpenSettings,
   openPreset,
+  transactionLoadError,
+  transactionLoadNotice,
+  transactionMonthSourceTransactions,
+  transactionPageLoadedDateRange,
+  transactionSearchSourceTransactions,
   transactions
 }: TransactionsPageProps) {
   const [query, setQuery] = useState("");
@@ -93,26 +119,44 @@ export function TransactionsPage({
   const [dateRange, setDateRange] = useState(initialDateRange);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchDateRange, setSearchDateRange] = useState<TransactionDateRange | null>(null);
   const [sortOpen, setSortOpen] = useState(false);
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value);
   const editableCategoryOptions = useMemo(() => categoryOptions.filter((category) => category !== "All categories"), [categoryOptions]);
   const editableCategorySelectOptions = useMemo(() => getStringOptions(editableCategoryOptions), [editableCategoryOptions]);
   const filterSelectOptions = useMemo(() => getStringOptions(transactionFilters), []);
   const sortSelectOptions = useMemo(() => getStringOptions(transactionSortOptions), []);
-  const dateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactions, dateRange), [dateRange, transactions]);
-  const monthOptions = useMemo(() => getTransactionMonthOptions(dateRange), [dateRange]);
+  const isBottomNavigation = useIsBottomNavigation();
+  const transactionRangeState = useMemo(() => getTransactionRangeState({
+    activeDateRange: dateRange,
+    hasMoreTransactions,
+    isLoadingTransactionPageRange,
+    isLoadingTransactions,
+    loadedDateRange: transactionPageLoadedDateRange,
+    pageTransactions: transactions,
+    sourceTransactions: transactionSearchSourceTransactions
+  }), [dateRange, hasMoreTransactions, isLoadingTransactionPageRange, isLoadingTransactions, transactionPageLoadedDateRange, transactionSearchSourceTransactions, transactions]);
+  const dateRangeTransactions = transactionRangeState.transactions;
+  const hasMoreActiveRangeTransactions = transactionRangeState.hasMoreTransactions;
+  const allLoadedDateRange = useMemo(() => getLoadedTransactionDateRange(dateRangeTransactions) || dateRange, [dateRangeTransactions, dateRange]);
+  const activeSearchDateRange = searchDateRange || allLoadedDateRange;
+  const searchDateRangeTransactions = useMemo(() => filterTransactionsByDateRange(transactionSearchSourceTransactions, activeSearchDateRange), [activeSearchDateRange, transactionSearchSourceTransactions]);
+  const monthOptions = useMemo(() => getTransactionMonthOptions(dateRange, transactionMonthSourceTransactions), [dateRange, transactionMonthSourceTransactions]);
   const monthSummaryTransactions = useMemo(() => filterTransactionsByAccount(dateRangeTransactions, transactionAccounts), [dateRangeTransactions, transactionAccounts]);
-  const monthSummary = useMemo(() => getTransactionMonthSummary(monthSummaryTransactions, incomeExcludedCategories), [incomeExcludedCategories, monthSummaryTransactions]);
+  const monthSummary = useMemo(() => getTransactionMonthSummary(monthSummaryTransactions, incomeIncludedCategories), [incomeIncludedCategories, monthSummaryTransactions]);
   const shownTransactions = useMemo(
-    () => getVisibleTransactions(dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
-    [dateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
+    () => getVisibleTransactions(dateRangeTransactions, isBottomNavigation ? "" : query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
+    [dateRangeTransactions, isBottomNavigation, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
   );
-  const shouldShowListLoading = isLoadingTransactions && transactions.length === 0;
+  const searchShownTransactions = useMemo(
+    () => getVisibleTransactions(searchDateRangeTransactions, query, transactionAccounts, transactionCategory, transactionFilter, transactionSort),
+    [query, searchDateRangeTransactions, transactionAccounts, transactionCategory, transactionFilter, transactionSort]
+  );
+  const shouldGroupTransactionsByDate = transactionSort === "Newest" || transactionSort === "Oldest";
+  const shouldShowListLoading = transactionRangeState.shouldShowListLoading;
+  const shouldShowMonthSummaryLoading = transactionRangeState.shouldShowMonthSummaryLoading;
   const analytics = useMemo(() => getTransactionAnalytics(shownTransactions, dateRange), [shownTransactions, dateRange]);
   const activeFilterCount = getActiveFilterCount(transactionFilter, transactionAccounts, transactionCategory);
-  const isBottomNavigation = useIsBottomNavigation();
-  const [monthCarouselDirection, setMonthCarouselDirection] = useState<"next" | "previous">("next");
-  const [monthCarouselPhase, setMonthCarouselPhase] = useState<"a" | "b">("a");
   const [pageSwipeStart, setPageSwipeStart] = useState<{ x: number; y: number } | null>(null);
   const changeDateRange = (nextDateRange: TransactionDateRange) => {
     setDateRange(nextDateRange);
@@ -125,11 +169,6 @@ export function TransactionsPage({
       return;
     }
 
-    const currentMonth = parseInputDate(dateRange.from) || new Date();
-    const nextMonth = parseInputDate(nextDateRange.from) || currentMonth;
-
-    setMonthCarouselDirection(nextMonth.getTime() >= currentMonth.getTime() ? "next" : "previous");
-    setMonthCarouselPhase((phase) => phase === "a" ? "b" : "a");
     setDateRange(nextDateRange);
     setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
     setTransactionCategory([]);
@@ -141,8 +180,13 @@ export function TransactionsPage({
     setTransactionCategory([]);
   };
   const selectMonth = (monthDate: Date) => changeMonthRange(getMonthDateRange(monthDate));
-  const selectPreviousMonth = () => changeMonthRange(getMonthDateRange(addMonths(parseInputDate(dateRange.from) || new Date(), -1)));
-  const selectNextMonth = () => changeMonthRange(getMonthDateRange(addMonths(parseInputDate(dateRange.from) || new Date(), 1)));
+  const selectPreviousMonth = () => selectBoundedAdjacentMonth(dateRange, monthOptions, -1, changeMonthRange);
+  const selectNextMonth = () => selectBoundedAdjacentMonth(dateRange, monthOptions, 1, changeMonthRange);
+  const openSearch = () => {
+    setSearchDateRange(getLoadedTransactionDateRange(transactionSearchSourceTransactions) || dateRange);
+    setSearchOpen(true);
+  };
+  const closeSearch = () => setSearchOpen(false);
   const startPageSwipe = (event: TouchEvent<HTMLElement>) => {
     const touch = event.touches[0];
 
@@ -221,23 +265,97 @@ export function TransactionsPage({
       setDateRange(openPreset.dateRange);
       onDateRangeChange(openPreset.dateRange);
     }
-  }, [defaultAccountId, openPreset, onDateRangeChange]);
+
+    if (openPreset.openSearch && openPreset.query) {
+      setSearchDateRange(getLoadedTransactionDateRange(transactionSearchSourceTransactions) || openPreset.dateRange || dateRange);
+      setSearchOpen(true);
+    }
+
+    onOpenPresetConsumed();
+  }, [dateRange, defaultAccountId, onDateRangeChange, onOpenPresetConsumed, openPreset, transactionSearchSourceTransactions]);
 
   useEffect(() => {
     setTransactionAccounts(getDefaultAccountFilter(defaultAccountId));
   }, [defaultAccountId]);
 
+  if (searchOpen) {
+    return (
+      <section className="transaction-search-page view-stack" data-testid="transaction-search-page">
+        <MobileTransactionSearchView
+          activeFilterCount={activeFilterCount}
+          categoryColors={categoryColors}
+          categorySelectOptions={editableCategorySelectOptions}
+          dateRange={activeSearchDateRange}
+          emptyMessage="No transactions match the current search."
+          hasMoreTransactions={hasMoreActiveRangeTransactions}
+          groupByDate={shouldGroupTransactionsByDate}
+          isLoadingAllTransactions={isLoadingAllTransactions}
+          isLoadingMoreTransactions={isLoadingMoreTransactions}
+          isLoadingTransactions={shouldShowListLoading}
+          onBack={closeSearch}
+          onCategoryChange={onCategoryChange}
+          onDateRangeChange={setSearchDateRange}
+          onFilterOpen={() => setFiltersOpen(true)}
+          onLoadAllTransactions={() => onLoadAllTransactions(activeSearchDateRange)}
+          onLoadMoreTransactions={() => onLoadMoreTransactions(activeSearchDateRange)}
+          onOpenSettings={onOpenSettings}
+          onSearchChange={handleSearchChange}
+          onSortOpen={() => setSortOpen(true)}
+          query={query}
+          transactions={searchShownTransactions}
+        />
+        <TransactionFilterDialog
+          accountOptions={accountOptions}
+          categoryOptions={categoryOptions}
+          onAccountToggle={toggleTransactionAccount}
+          onCategoryToggle={toggleTransactionCategory}
+          onOpenChange={setFiltersOpen}
+          onReset={resetFilters}
+          onStatusChange={setTransactionFilter}
+          open={filtersOpen}
+          transactionAccounts={transactionAccounts}
+          transactionCategory={transactionCategory}
+          transactionFilter={transactionFilter}
+        />
+        <TransactionSortDialog
+          onApply={closeSort}
+          onOpenChange={setSortOpen}
+          onSortChange={setTransactionSort}
+          open={sortOpen}
+          transactionSort={transactionSort}
+        />
+      </section>
+    );
+  }
+
   return (
     <section
-      className={`transaction-page view-stack month-carousel-${monthCarouselDirection} month-carousel-phase-${monthCarouselPhase}`}
+      className="transaction-page view-stack"
       data-testid="transactions-page"
       onTouchCancel={() => setPageSwipeStart(null)}
       onTouchEnd={finishPageSwipe}
       onTouchStart={startPageSwipe}
+      suppressHydrationWarning
     >
-      <MobilePageHeader title="Transactions" />
+      <MobilePageHeader
+        actions={(
+          <div className="flex items-center justify-end gap-2">
+            <Button aria-label="Search transactions" className="transaction-icon-action" onClick={openSearch} title="Search" type="button" variant="secondary">
+              <Search aria-hidden="true" className="h-5 w-5" />
+            </Button>
+            <TransactionMobileMenu
+              activeFilterCount={activeFilterCount}
+              onFilterOpen={() => setFiltersOpen(true)}
+              onOpenSettings={onOpenSettings}
+              onSortOpen={() => setSortOpen(true)}
+            />
+          </div>
+        )}
+        title="Transactions"
+      />
       <TransactionMonthOverview
         activeDateRange={dateRange}
+        isLoading={shouldShowMonthSummaryLoading}
         monthOptions={monthOptions}
         monthSummary={monthSummary}
         onMonthSelect={selectMonth}
@@ -245,39 +363,11 @@ export function TransactionsPage({
 
       <section className="transaction-workspace">
         <div className="transaction-filter-panel" suppressHydrationWarning>
-          <div className="transaction-mobile-controls">
-            <div className={`transaction-mobile-action-row ${analytics.needsReviewCount > 0 ? "has-review" : "no-review"}`} suppressHydrationWarning>
-              {isBottomNavigation && analytics.needsReviewCount > 0 && (
-                <button className="transaction-review-shortcut" onClick={reviewNeedsReview} type="button">
-                  {analytics.needsReviewCount} need review
-                </button>
-              )}
-              <Button aria-label="Search transactions" className="transaction-icon-action" onClick={() => setSearchOpen(true)} title="Search" type="button" variant="secondary">
-                <Search aria-hidden="true" className="h-5 w-5" />
-              </Button>
-              <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={changeDateRange} />
-              {isBottomNavigation && (
-                <>
-                  <Button aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`} className="transaction-icon-action" data-testid="transaction-filter-button" onClick={() => setFiltersOpen(true)} title="Filters" type="button" variant="secondary">
-                    <SlidersHorizontal aria-hidden="true" className="h-5 w-5" />
-                  </Button>
-                  <Button aria-label="Sort transactions" className="transaction-icon-action" data-testid="transaction-sort-button" onClick={() => setSortOpen(true)} title="Sort" type="button" variant="secondary">
-                    <ArrowDownUp aria-hidden="true" className="h-5 w-5" />
-                  </Button>
-                </>
-              )}
-            </div>
-            {query && (
-              <button className="transaction-active-query" onClick={() => setSearchOpen(true)} type="button">
-                Search: {query}
-              </button>
-            )}
-          </div>
           <div className="transaction-controls transaction-desktop-controls">
             <label className="transaction-search-label">
               Search
-              <span className="transaction-search-field">
-                <Search aria-hidden="true" className="h-4 w-4" />
+              <span className="relative block min-w-0">
+                <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
                 <input
                   className="search"
                   onChange={handleSearchChange}
@@ -322,12 +412,6 @@ export function TransactionsPage({
           transactionCategory={transactionCategory}
           transactionFilter={transactionFilter}
         />
-        <TransactionSearchDialog
-          onOpenChange={setSearchOpen}
-          onSearchChange={handleSearchChange}
-          open={searchOpen}
-          query={query}
-        />
         <TransactionSortDialog
           onApply={closeSort}
           onOpenChange={setSortOpen}
@@ -335,13 +419,20 @@ export function TransactionsPage({
           open={sortOpen}
           transactionSort={transactionSort}
         />
+        <TransactionLoadMessage error={transactionLoadError} notice={transactionLoadNotice} />
+        {analytics.needsReviewCount > 0 && (
+          <button className="transaction-review-shortcut transaction-list-review-shortcut" onClick={reviewNeedsReview} type="button">
+            {analytics.needsReviewCount} need review
+          </button>
+        )}
         <TransactionList
           categoryColors={categoryColors}
           editable
           categorySelectOptions={editableCategorySelectOptions}
-          emptyMessage="No transactions match the current filters."
+          emptyMessage={transactionLoadNotice ? "No transactions found for this period." : "No transactions match the current filters."}
+          groupByDate={shouldGroupTransactionsByDate}
           onCategoryChange={onCategoryChange}
-          hasMore={hasMoreTransactions}
+          hasMore={hasMoreActiveRangeTransactions}
           isLoading={shouldShowListLoading}
           isLoadingAll={isLoadingAllTransactions}
           isLoadingMore={isLoadingMoreTransactions}
@@ -354,11 +445,32 @@ export function TransactionsPage({
   );
 }
 
+function TransactionLoadMessage({ error, notice }: { error: string; notice: string }) {
+  const message = error || notice;
+
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div
+      className={cn(
+        "transaction-load-message rounded-2xl border border-[var(--outline-soft)] bg-[var(--surface-2)] px-3.5 py-3 text-[0.86rem] font-[760] leading-[1.35] text-[var(--muted)]",
+        error && "border-[rgba(255,125,145,0.38)] text-[var(--danger)]"
+      )}
+      role={error ? "alert" : "status"}
+    >
+      {message}
+    </div>
+  );
+}
+
 type TransactionMonthOption = {
   date: Date;
   label: string;
   monthKey: string;
   shortLabel: string;
+  yearLabel: string;
 };
 
 type TransactionMonthSummary = {
@@ -370,53 +482,105 @@ type TransactionMonthSummary = {
 // Month-first navigation and totals for the active transaction period.
 function TransactionMonthOverview({
   activeDateRange,
+  isLoading,
   monthOptions,
   monthSummary,
   onMonthSelect
 }: {
   activeDateRange: TransactionDateRange;
+  isLoading: boolean;
   monthOptions: TransactionMonthOption[];
   monthSummary: TransactionMonthSummary;
   onMonthSelect: (monthDate: Date) => void;
 }) {
   const activeDate = parseInputDate(activeDateRange.from) || new Date();
   const activeMonthKey = getMonthKey(activeDate);
+  const activeMonthIndex = monthOptions.findIndex((option) => option.monthKey === activeMonthKey);
+  const activeMonthSnapIndex = activeMonthIndex < 0 ? 0 : activeMonthIndex;
+  const [monthEmblaRef, monthEmblaApi] = useEmblaCarousel({
+    align: "center",
+    dragFree: true,
+    slides: ".transaction-month-slide",
+    slidesToScroll: 1,
+    startIndex: activeMonthSnapIndex
+  });
+  const shouldCenterSelectedMonthImmediatelyRef = useRef(false);
+
+  useEffect(() => {
+    if (monthEmblaApi && activeMonthSnapIndex >= 0) {
+      monthEmblaApi.scrollTo(activeMonthSnapIndex, shouldCenterSelectedMonthImmediatelyRef.current);
+    }
+
+    shouldCenterSelectedMonthImmediatelyRef.current = false;
+  }, [activeMonthSnapIndex, monthEmblaApi]);
+  const selectCarouselMonth = (monthDate: Date) => {
+    shouldCenterSelectedMonthImmediatelyRef.current = true;
+    onMonthSelect(monthDate);
+  };
 
   return (
     <section className="transaction-month-overview">
-      <div className="transaction-month-carousel" aria-label="Transaction month carousel">
-        <div className="transaction-month-rail" aria-label="Transaction month">
-          {monthOptions.map((option) => (
-            <button
-              aria-current={option.monthKey === activeMonthKey ? "date" : undefined}
-              className={option.monthKey === activeMonthKey ? "active" : undefined}
-              key={option.monthKey}
-              onClick={() => onMonthSelect(option.date)}
-              type="button"
-            >
-              <span className="transaction-month-label-full">{option.label}</span>
-              <span className="transaction-month-label-short">{option.shortLabel}</span>
-            </button>
-          ))}
+      <div
+        className="transaction-month-carousel"
+        aria-label="Transaction month carousel"
+        onTouchCancel={(event) => event.stopPropagation()}
+        onTouchEnd={(event) => event.stopPropagation()}
+        onTouchStart={(event) => event.stopPropagation()}
+      >
+        <div className="transaction-month-rail" ref={monthEmblaRef}>
+          <div className="transaction-month-track" aria-label="Transaction month">
+            <div aria-hidden="true" className="transaction-month-spacer" />
+            {monthOptions.map((option) => (
+              <div className="transaction-month-slide" key={option.monthKey}>
+                <button
+                  aria-current={option.monthKey === activeMonthKey ? "date" : undefined}
+                  className={option.monthKey === activeMonthKey ? "active" : undefined}
+                  onClick={() => selectCarouselMonth(option.date)}
+                  type="button"
+                >
+                  <span className="transaction-month-label">
+                    <span className="transaction-month-label-full">{option.label}</span>
+                    <span className="transaction-month-label-short">{option.shortLabel}</span>
+                    {option.yearLabel && <span className="transaction-month-year">{option.yearLabel}</span>}
+                  </span>
+                </button>
+              </div>
+            ))}
+            <div aria-hidden="true" className="transaction-month-spacer" />
+          </div>
         </div>
       </div>
       <div className="transaction-month-summary" aria-label="Monthly transaction summary">
-        <TransactionMonthMetric label="Money out" tone="expense" value={formatMoney(monthSummary.expenses, true)} />
-        <TransactionMonthMetric label="Money in" tone="income" value={formatMoney(monthSummary.income, true)} />
-        <TransactionMonthMetric label="Net movement" tone={monthSummary.net < 0 ? "expense" : "income"} value={formatMoney(monthSummary.net, true)} />
+        <TransactionMonthMetric kind="out" label="Money out" tone="expense" value={isLoading ? "Loading" : formatMoney(monthSummary.expenses, true)} />
+        <TransactionMonthMetric kind="in" label="Money in" tone="income" value={isLoading ? "Loading" : formatMoney(monthSummary.income, true)} />
+        <TransactionMonthMetric kind="net" label="Net movement" tone={monthSummary.net < 0 ? "expense" : "income"} value={isLoading ? "Loading" : formatMoney(monthSummary.net, true)} />
       </div>
     </section>
   );
 }
 
 // One desktop/mobile monthly cashflow metric.
-function TransactionMonthMetric({ label, tone, value }: { label: string; tone: "expense" | "income"; value: string }) {
+function TransactionMonthMetric({ kind, label, tone, value }: { kind: "in" | "net" | "out"; label: string; tone: "expense" | "income"; value: string }) {
   return (
-    <article className={`transaction-month-metric ${tone}`}>
-      <span>{label}</span>
+    <article aria-label={`${label}: ${value}`} className={`transaction-month-metric ${tone} ${kind}`}>
+      <span className="transaction-month-metric-label">{label}</span>
+      <span aria-hidden="true" className="transaction-month-metric-symbol">{getTransactionMonthMetricSymbol(kind)}</span>
       <strong>{value}</strong>
     </article>
   );
+}
+
+// Compact mobile symbols keep the summary dense while labels remain accessible.
+function getTransactionMonthMetricSymbol(kind: "in" | "net" | "out") {
+  if (kind === "in") {
+    return "+";
+  }
+
+  if (kind === "out") {
+    return "-";
+  }
+
+  return "=";
 }
 
 // Compact KPI strip shown above the transaction table/list.
@@ -428,7 +592,7 @@ function TransactionAnalyticsSummary({
   onReviewNeedsReview: () => void;
 }) {
   return (
-    <div className="transaction-analytics-grid">
+    <div className="grid grid-cols-4 gap-3.5 max-[768px]:grid-cols-2 max-[768px]:gap-2.5">
       <TransactionAnalyticsCard
         icon={ReceiptText}
         label="Total spending"
@@ -478,19 +642,19 @@ function TransactionAnalyticsCard({
   value: string;
 }) {
   return (
-    <article className="transaction-analytics-card">
-      <span className={`transaction-analytics-icon transaction-analytics-icon-${tone}`}>
+    <article className="grid min-h-28 grid-cols-[46px_minmax(0,1fr)] items-center gap-3.5 rounded-[18px] border border-[var(--outline-soft)] bg-[var(--surface)] p-5 shadow-none max-[768px]:min-h-[116px] max-[768px]:grid-cols-[40px_minmax(0,1fr)] max-[768px]:gap-3 max-[768px]:p-3.5">
+      <span className={cn("grid h-11 w-11 place-items-center rounded-full max-[768px]:h-10 max-[768px]:w-10", transactionAnalyticsToneClassNames[tone])}>
         <Icon aria-hidden="true" className="h-5 w-5" />
       </span>
-      <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
+      <div className="grid min-w-0 gap-1">
+        <span className="text-[0.78rem] font-[850] text-[var(--muted)]">{label}</span>
+        <strong className="truncate text-xl font-black text-[var(--ink)] tabular-nums max-[768px]:text-[1.08rem]">{value}</strong>
         {actionLabel && onAction ? (
-          <button className="metric-action transaction-analytics-action" onClick={onAction} type="button">
+          <button className="mt-1 text-left text-[0.78rem] font-bold text-[var(--muted)]" onClick={onAction} type="button">
             {actionLabel}
           </button>
         ) : (
-          <small>{note}</small>
+          <small className="text-[0.78rem] font-bold text-[var(--muted)]">{note}</small>
         )}
       </div>
     </article>
@@ -786,21 +950,84 @@ function getDraftRangeLabel(dateRange: DateRange | undefined) {
   return `${format(dateRange.from, "d MMM yyyy")} - ${format(dateRange.to, "d MMM yyyy")}`;
 }
 
-// Builds a five-month rail centered on the selected month.
-function getTransactionMonthOptions(dateRange: TransactionDateRange): TransactionMonthOption[] {
+// Builds a bounded month carousel from the first available transaction month.
+function getTransactionMonthOptions(dateRange: TransactionDateRange, sourceTransactions: Transaction[]): TransactionMonthOption[] {
   const activeDate = parseInputDate(dateRange.from) || new Date();
-  const startDate = new Date(activeDate.getFullYear(), activeDate.getMonth() - 2, 1);
+  const { endDate, startDate } = getTransactionMonthOptionBounds(activeDate, sourceTransactions);
+  const currentYear = new Date().getFullYear();
+  const monthCount = getMonthDifference(startDate, endDate) + 1;
 
-  return Array.from({ length: 5 }, (_, index) => {
+  return Array.from({ length: monthCount }, (_, index) => {
     const date = new Date(startDate.getFullYear(), startDate.getMonth() + index, 1);
+    const includeYear = date.getFullYear() !== currentYear;
 
     return {
       date,
       label: format(date, "MMMM"),
       monthKey: getMonthKey(date),
-      shortLabel: format(date, "MMM")
+      shortLabel: format(date, "MMM"),
+      yearLabel: includeYear ? format(date, "yyyy") : ""
     };
   });
+}
+
+// Uses known transaction history as the lower month bound, with a centered fallback for empty data.
+function getTransactionMonthOptionBounds(activeDate: Date, sourceTransactions: Transaction[]) {
+  const activeMonth = getMonthStart(activeDate);
+  const earliestTransactionMonth = getEarliestTransactionMonth(sourceTransactions);
+
+  if (!earliestTransactionMonth) {
+    return {
+      endDate: addMonths(activeMonth, 6),
+      startDate: addMonths(activeMonth, -6)
+    };
+  }
+
+  const currentMonth = getMonthStart(new Date());
+
+  return {
+    endDate: activeMonth > currentMonth ? activeMonth : currentMonth,
+    startDate: activeMonth < earliestTransactionMonth ? activeMonth : earliestTransactionMonth
+  };
+}
+
+// Finds the first calendar month represented by loaded or archived transactions.
+function getEarliestTransactionMonth(transactions: Transaction[]): Date | null {
+  let earliestMonth: Date | null = null;
+
+  transactions.forEach((transaction) => {
+    const date = parseInputDate(getTransactionDate(transaction));
+
+    if (!date) {
+      return;
+    }
+
+    const month = getMonthStart(date);
+
+    if (!earliestMonth || month < earliestMonth) {
+      earliestMonth = month;
+    }
+  });
+
+  return earliestMonth;
+}
+
+// Selects adjacent months only when they are represented in the carousel bounds.
+function selectBoundedAdjacentMonth(
+  dateRange: TransactionDateRange,
+  monthOptions: TransactionMonthOption[],
+  offset: -1 | 1,
+  onMonthSelect: (dateRange: TransactionDateRange) => void
+) {
+  const activeMonthKey = getMonthKey(parseInputDate(dateRange.from) || new Date());
+  const activeIndex = monthOptions.findIndex((option) => option.monthKey === activeMonthKey);
+  const nextOption = activeIndex >= 0 ? monthOptions[activeIndex + offset] : null;
+
+  if (!nextOption) {
+    return;
+  }
+
+  onMonthSelect(getMonthDateRange(nextOption.date));
 }
 
 // Converts a month selection into the complete calendar month range.
@@ -816,12 +1043,22 @@ function addMonths(date: Date, offset: number) {
   return new Date(date.getFullYear(), date.getMonth() + offset, 1);
 }
 
+// Normalizes any date to the first day of its calendar month.
+function getMonthStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+// Counts whole calendar months between two month-start dates.
+function getMonthDifference(startDate: Date, endDate: Date) {
+  return (endDate.getFullYear() - startDate.getFullYear()) * 12 + endDate.getMonth() - startDate.getMonth();
+}
+
 // Totals money movement for the active month before search/filter narrowing.
-function getTransactionMonthSummary(transactions: Transaction[], incomeExcludedCategories: string[]): TransactionMonthSummary {
+function getTransactionMonthSummary(transactions: Transaction[], incomeIncludedCategories: string[]): TransactionMonthSummary {
   return transactions.reduce<TransactionMonthSummary>((summary, transaction) => {
     if (transaction.amount < 0) {
       summary.expenses += Math.abs(transaction.amount);
-    } else if (!isIncomeCategoryExcluded(getTransactionCategory(transaction), incomeExcludedCategories)) {
+    } else if (isIncomeCategoryIncluded(getTransactionCategory(transaction), incomeIncludedCategories)) {
       summary.income += transaction.amount;
       summary.net += transaction.amount;
       return summary;
@@ -852,45 +1089,171 @@ function getMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
-type TransactionSearchDialogProps = {
-  onOpenChange: (open: boolean) => void;
+function getLoadedTransactionDateRange(transactions: Transaction[]) {
+  const timestamps = transactions
+    .map((transaction) => parseInputDate(getTransactionDateValue(transaction)))
+    .filter((date): date is Date => Boolean(date));
+
+  if (timestamps.length === 0) {
+    return null;
+  }
+
+  const firstDate = new Date(Math.min(...timestamps.map((date) => date.getTime())));
+  const lastDate = new Date(Math.max(...timestamps.map((date) => date.getTime())));
+
+  return {
+    from: formatDateInputValue(firstDate),
+    to: formatDateInputValue(lastDate)
+  };
+}
+
+function getTransactionDateValue(transaction: Transaction) {
+  return typeof transaction.date === "string" ? transaction.date.slice(0, 10) : "";
+}
+
+type MobileTransactionSearchViewProps = {
+  activeFilterCount: number;
+  categoryColors: Record<string, string>;
+  categorySelectOptions: SelectOption[];
+  dateRange: TransactionDateRange;
+  emptyMessage: string;
+  groupByDate: boolean;
+  hasMoreTransactions: boolean;
+  isLoadingAllTransactions: boolean;
+  isLoadingMoreTransactions: boolean;
+  isLoadingTransactions: boolean;
+  onBack: () => void;
+  onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
+  onDateRangeChange: (dateRange: TransactionDateRange) => void;
+  onFilterOpen: () => void;
+  onLoadAllTransactions: () => void;
+  onLoadMoreTransactions: () => void;
+  onOpenSettings: () => void;
   onSearchChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  open: boolean;
+  onSortOpen: () => void;
   query: string;
+  transactions: Transaction[];
 };
 
-// Shows search as a focused mobile drawer instead of a full-width always-on control.
-function TransactionSearchDialog({
-  onOpenChange,
+// Full-screen mobile search surface with controls above all loaded transactions.
+function MobileTransactionSearchView({
+  activeFilterCount,
+  categoryColors,
+  categorySelectOptions,
+  dateRange,
+  emptyMessage,
+  groupByDate,
+  hasMoreTransactions,
+  isLoadingAllTransactions,
+  isLoadingMoreTransactions,
+  isLoadingTransactions,
+  onBack,
+  onCategoryChange,
+  onDateRangeChange,
+  onFilterOpen,
+  onLoadAllTransactions,
+  onLoadMoreTransactions,
+  onOpenSettings,
   onSearchChange,
-  open,
-  query
-}: TransactionSearchDialogProps) {
+  onSortOpen,
+  query,
+  transactions
+}: MobileTransactionSearchViewProps) {
   return (
-    <Drawer onOpenChange={onOpenChange} open={open}>
-      <DrawerContent className="mobile-filter-drawer transaction-search-drawer">
-        <DrawerHeader className="mobile-filter-header centered">
-          <DrawerTitle>Search</DrawerTitle>
-          <DrawerDescription className="sr-only">Search transactions by merchant, bank text, or category.</DrawerDescription>
-          <DrawerHeaderClose className="mobile-filter-close" />
-        </DrawerHeader>
-        <div className="transaction-search-drawer-body">
-          <label className="transaction-search-drawer-field">
-            Search
-            <span className="transaction-search-field">
-              <Search aria-hidden="true" className="h-5 w-5" />
-              <input
-                className="search"
-                data-testid="transaction-search"
-                onChange={onSearchChange}
-                placeholder="Search..."
-                value={query}
-              />
-            </span>
+    <>
+      <MobilePageHeader
+        actions={(
+          <TransactionMobileMenu
+            activeFilterCount={activeFilterCount}
+            onFilterOpen={onFilterOpen}
+            onOpenSettings={onOpenSettings}
+            onSortOpen={onSortOpen}
+          />
+        )}
+        leading={(
+          <Button aria-label="Back to transactions" className="transaction-search-back" onClick={onBack} type="button" variant="ghost">
+            <ArrowLeft aria-hidden="true" className="h-6 w-6" />
+          </Button>
+        )}
+        title="Search"
+      >
+        <div className="transaction-mobile-search-controls">
+          <label className="relative min-w-0">
+            <span className="sr-only">Search transactions</span>
+            <input
+              autoFocus
+              className="min-h-14 w-full rounded-[20px] border-0 bg-[var(--surface-2)] py-0 pr-[52px] pl-[18px] font-[inherit] text-base font-extrabold text-[var(--ink)] outline-none placeholder:text-[var(--muted-2)]"
+              data-testid="transaction-search"
+              onChange={onSearchChange}
+              placeholder="Search..."
+              value={query}
+            />
+            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 right-[17px] h-5 w-5 -translate-y-1/2 text-[var(--accent-cream)]" />
           </label>
+          <TransactionDateRangePicker dateRange={dateRange} mode="compact" onChange={onDateRangeChange} />
+          <Button aria-label={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`} className="transaction-icon-action" data-testid="transaction-filter-button" onClick={onFilterOpen} title="Filters" type="button" variant="secondary">
+            <SlidersHorizontal aria-hidden="true" className="h-5 w-5" />
+          </Button>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </MobilePageHeader>
+      <TransactionList
+        categoryColors={categoryColors}
+        categorySelectOptions={categorySelectOptions}
+        editable
+        emptyMessage={emptyMessage}
+        groupByDate={groupByDate}
+        hasMore={hasMoreTransactions}
+        isLoading={isLoadingTransactions}
+        isLoadingAll={isLoadingAllTransactions}
+        isLoadingMore={isLoadingMoreTransactions}
+        onCategoryChange={onCategoryChange}
+        onLoadAll={onLoadAllTransactions}
+        onLoadMore={onLoadMoreTransactions}
+        transactions={transactions}
+      />
+    </>
+  );
+}
+
+function TransactionMobileMenu({
+  activeFilterCount,
+  onFilterOpen,
+  onOpenSettings,
+  onSortOpen
+}: {
+  activeFilterCount: number;
+  onFilterOpen: () => void;
+  onOpenSettings: () => void;
+  onSortOpen: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const runMenuAction = (action: () => void) => {
+    setOpen(false);
+    action();
+  };
+
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger asChild>
+        <Button aria-label="Transaction actions" className="transaction-icon-action" type="button" variant="secondary">
+          <MoreVertical aria-hidden="true" className="h-5 w-5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="transaction-mobile-menu">
+        <button onClick={() => runMenuAction(onFilterOpen)} type="button">
+          <SlidersHorizontal aria-hidden="true" className="h-5 w-5" />
+          <span>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</span>
+        </button>
+        <button onClick={() => runMenuAction(onSortOpen)} type="button">
+          <ArrowDownUp aria-hidden="true" className="h-5 w-5" />
+          <span>Sort</span>
+        </button>
+        <button onClick={() => runMenuAction(onOpenSettings)} type="button">
+          <Settings aria-hidden="true" className="h-5 w-5" />
+          <span>Settings</span>
+        </button>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -941,33 +1304,27 @@ function TransactionFilterDialog({
       </div>
       <div className="mobile-filter-section">
         <h3>Account</h3>
-        <div className="mobile-filter-chips category">
-          {getAccountFilterOptions(accountOptions).map((account) => (
-            <button
-              className={getFilterOptionIsActive(account.value, allAccountsValue, transactionAccounts) ? "active" : undefined}
-              key={account.value}
-              onClick={() => onAccountToggle(account.value)}
-              type="button"
-            >
-              {account.label}
-            </button>
-          ))}
-        </div>
+        <FilterMultiSelect
+          allLabel="All accounts"
+          allValue={allAccountsValue}
+          contentTestId="transaction-account-filter-options"
+          onToggle={onAccountToggle}
+          options={getAccountFilterOptions(accountOptions)}
+          selectedValues={transactionAccounts}
+          triggerTestId="transaction-account-filter-trigger"
+        />
       </div>
       <div className="mobile-filter-section">
         <h3>Category</h3>
-        <div className="mobile-filter-chips category">
-          {categoryOptions.map((category) => (
-            <button
-              className={getFilterOptionIsActive(category, "All categories", transactionCategory) ? "active" : undefined}
-              key={category}
-              onClick={() => onCategoryToggle(category)}
-              type="button"
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        <FilterMultiSelect
+          allLabel="All categories"
+          allValue="All categories"
+          contentTestId="transaction-category-filter-options"
+          onToggle={onCategoryToggle}
+          options={getCategoryFilterOptions(categoryOptions)}
+          selectedValues={transactionCategory}
+          triggerTestId="transaction-category-filter-trigger"
+        />
       </div>
     </div>
   );
@@ -1048,47 +1405,33 @@ const allAccountsValue = "__all_accounts__";
 function FilterMultiSelect({
   allLabel,
   allValue,
+  contentTestId,
   onToggle,
   options,
-  selectedValues
+  selectedValues,
+  triggerTestId
 }: {
   allLabel: string;
   allValue: string;
+  contentTestId?: string;
   onToggle: (value: string) => void;
   options: TransactionAccountOption[];
   selectedValues: string[];
+  triggerTestId?: string;
 }) {
   const label = getFilterMultiSelectLabel(selectedValues, options, allLabel);
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button aria-haspopup="listbox" className="category-multi-select-trigger transaction-select-trigger" role="combobox" type="button">
-          <span>{label}</span>
-          <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="category-multi-select-content">
-        {options.map((option) => {
-          const isActive = getFilterOptionIsActive(option.value, allValue, selectedValues);
-
-          return (
-            <button
-              aria-pressed={isActive}
-              className={isActive ? "active" : undefined}
-              key={option.value}
-              onClick={() => onToggle(option.value)}
-              type="button"
-            >
-              <span className="category-multi-select-check">
-                {isActive && <Check aria-hidden="true" className="h-4 w-4" />}
-              </span>
-              <span>{option.label}</span>
-            </button>
-          );
-        })}
-      </PopoverContent>
-    </Popover>
+    <MultiSelectDropdown
+      ariaLabel={allLabel}
+      contentTestId={contentTestId}
+      getOptionIsActive={(option) => getFilterOptionIsActive(option.value, allValue, selectedValues)}
+      label={label}
+      onToggle={onToggle}
+      options={getMultiSelectOptions(options)}
+      selectedValues={selectedValues}
+      triggerTestId={triggerTestId}
+    />
   );
 }
 
@@ -1106,6 +1449,13 @@ function getFilterMultiSelectLabel(selectedValues: string[], options: Transactio
   }
 
   return `${selectedValues.length} selected`;
+}
+
+function getMultiSelectOptions(options: TransactionAccountOption[]): MultiSelectDropdownOption[] {
+  return options.map((option) => ({
+    label: option.label,
+    value: option.value
+  }));
 }
 
 function getCategoryFilterOptions(categoryOptions: string[]): TransactionAccountOption[] {

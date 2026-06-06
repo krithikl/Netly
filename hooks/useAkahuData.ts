@@ -74,7 +74,6 @@ export function useAkahuData() {
   const [isInitializingTransactionHistory, setIsInitializingTransactionHistory] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [isLoadingTransactionPageRange, setIsLoadingTransactionPageRange] = useState(false);
-  const [isLoadingAllTransactions, setIsLoadingAllTransactions] = useState(false);
   const [isLoadingMoreTransactions, setIsLoadingMoreTransactions] = useState(false);
   const [akahuDataFreshness, setAkahuDataFreshness] = useState<AkahuDataFreshness>(emptyAkahuDataFreshness);
   const [transactionPageNextCursor, setTransactionPageNextCursor] = useState<string | null>(null);
@@ -348,19 +347,34 @@ export function useAkahuData() {
   }, [dataMode]);
 
   const loadMoreTransactions = useCallback(async (dateRange?: TransactionDateRange) => {
-    if (dataMode === "user") {
-      setTransactionPageNextCursor(null);
-      setTransactionLoadNotice("All matching archived transactions are already loaded for this range.");
-      return;
-    }
-
     if (!transactionPageNextCursor) {
       return;
     }
 
     setIsLoadingMoreTransactions(true);
+    setTransactionLoadError("");
+    setTransactionLoadNotice("");
 
     try {
+      if (dataMode === "user") {
+        const response = await fetch(getTransactionsUrl("user", dateRange, transactionPageNextCursor));
+        const payload = await readJsonResponse<TransactionsPayload>(response, "more transactions");
+
+        assertAkahuResponse(response, payload.error, "Could not load more transactions.");
+
+        const archivedTransactionPageTransactions = await archiveAndMergeTransactions(payload.transactions, dateRange);
+        const archivedTransactions = await readArchivedTransactions();
+
+        setTransactions(archivedTransactions);
+        setTransactionPageTransactions(archivedTransactionPageTransactions);
+        setTransactionPageLoadedDateRange(dateRange || null);
+        setTransactionPageNextCursor(payload.nextCursor || null);
+        setIsConnected(Boolean(payload.connected));
+        setTransactionLoadError(payload.error || "");
+        setTransactionLoadNotice(payload.notice || "");
+        return;
+      }
+
       const response = await fetch(getTransactionsUrl(dataMode, dateRange, transactionPageNextCursor));
       const payload = await readJsonResponse<TransactionsPayload>(response, "more transactions");
 
@@ -369,40 +383,17 @@ export function useAkahuData() {
       setTransactionPageNextCursor(payload.nextCursor || null);
       setTransactionLoadError(payload.error || "");
       setTransactionLoadNotice(payload.notice || "");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not load more transactions.";
+
+      console.error("Could not load more transactions.", error);
+      setTransactionLoadError(message);
+      setTransactionLoadNotice("");
+      toast.error(message);
     } finally {
       setIsLoadingMoreTransactions(false);
     }
   }, [dataMode, transactionPageNextCursor]);
-
-  const loadAllTransactions = useCallback(async (dateRange?: TransactionDateRange) => {
-    setIsLoadingAllTransactions(true);
-
-    try {
-      if (dataMode === "user") {
-        const { archivedTransactions, archivedTransactionPageTransactions, connected } = await syncAllAkahuTransactionsToArchive(dateRange);
-        setTransactions(archivedTransactions);
-        setTransactionPageTransactions(archivedTransactionPageTransactions);
-        setTransactionPageNextCursor(null);
-        setTransactionLoadError("");
-        setTransactionLoadNotice("");
-        if (connected) {
-          toast.success("Transactions synced");
-        }
-        return;
-      }
-
-      const response = await fetch(getTransactionsUrl(dataMode, dateRange, undefined, true));
-      const payload = await readJsonResponse<TransactionsPayload>(response, "all transactions");
-
-      assertAkahuResponse(response, payload.error, "Could not load all transactions for this range.");
-      setTransactionPageTransactions(payload.transactions);
-      setTransactionPageNextCursor(null);
-      setTransactionLoadError(payload.error || "");
-      setTransactionLoadNotice(payload.notice || "");
-    } finally {
-      setIsLoadingAllTransactions(false);
-    }
-  }, [dataMode]);
 
   const restoreArchivedTransactions = useCallback(async (dateRange?: TransactionDateRange) => {
     if (dataMode === "demo") {
@@ -447,13 +438,11 @@ export function useAkahuData() {
     dataMode,
     isInitializingTransactionHistory,
     isConnected,
-    isLoadingAllTransactions,
     isLoadingTransactionPageRange,
     isLoadingTransactions,
     isLoadingMoreTransactions,
     linkedAccounts,
     loadMoreTransactions,
-    loadAllTransactions,
     primaryLinkedAccount,
     refreshTransactionPage,
     refreshTransactions,

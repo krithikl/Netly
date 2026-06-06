@@ -52,10 +52,8 @@ type TransactionListProps = {
   groupByDate?: boolean;
   hasMore?: boolean;
   isLoading?: boolean;
-  isLoadingAll?: boolean;
   isLoadingMore?: boolean;
   onCategoryChange?: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
-  onLoadAll?: () => Promise<void> | void;
   onLoadMore?: () => Promise<void> | void;
   transactions: Transaction[];
 };
@@ -79,10 +77,8 @@ export function TransactionList({
   groupByDate = false,
   hasMore = false,
   isLoading = false,
-  isLoadingAll = false,
   isLoadingMore = false,
   onCategoryChange,
-  onLoadAll,
   onLoadMore,
   transactions
 }: TransactionListProps) {
@@ -92,7 +88,6 @@ export function TransactionList({
   const [isAutoLoading, setIsAutoLoading] = useState(false);
   const loadSentinelRef = useRef<HTMLDivElement | null>(null);
   const isAutoLoadingRef = useRef(false);
-  const hasTriggeredFullLoadRef = useRef(false);
   const previousTransactionSignatureRef = useRef("");
   const visibleTransactions = useMemo(() => transactions.slice(0, visibleCount), [transactions, visibleCount]);
   const visibleTransactionGroups = useMemo(() => groupTransactionsByDate(visibleTransactions), [visibleTransactions]);
@@ -104,14 +99,14 @@ export function TransactionList({
   const closeDetails = useCallback(() => setSelectedTransactionId(null), []);
   const openDetails = useCallback((transactionId: string) => setSelectedTransactionId(transactionId), []);
   const showMoreTransactions = useCallback(async () => {
-    if (isAutoLoadingRef.current || isLoadingAll || isLoadingMore) {
+    if (isAutoLoadingRef.current || isLoadingMore) {
       return;
     }
 
     const canRevealLocalRows = remainingTransactionCount > 0;
-    const canRunFullLoad = hasMore && !hasTriggeredFullLoadRef.current && Boolean(onLoadAll);
+    const canLoadMoreRows = !canRevealLocalRows && hasMore && Boolean(onLoadMore);
 
-    if (!canRevealLocalRows && !canRunFullLoad) {
+    if (!canRevealLocalRows && !canLoadMoreRows) {
       return;
     }
 
@@ -119,19 +114,17 @@ export function TransactionList({
     setIsAutoLoading(true);
 
     try {
-      if (canRunFullLoad && onLoadAll) {
-        hasTriggeredFullLoadRef.current = true;
-        await onLoadAll();
-      }
-
       if (canRevealLocalRows) {
         setVisibleCount((currentCount) => currentCount + visibleTransactionIncrement);
+        return;
       }
+
+      await onLoadMore?.();
     } finally {
       isAutoLoadingRef.current = false;
       setIsAutoLoading(false);
     }
-  }, [hasMore, isLoadingAll, isLoadingMore, onLoadAll, remainingTransactionCount]);
+  }, [hasMore, isLoadingMore, onLoadMore, remainingTransactionCount]);
 
   useEffect(() => {
     const firstTransactionId = transactions[0] ? getTransactionId(transactions[0]) : "";
@@ -142,7 +135,6 @@ export function TransactionList({
 
     if (!isAppendedPage) {
       setVisibleCount(initialVisibleTransactionCount);
-      hasTriggeredFullLoadRef.current = false;
     }
 
     previousTransactionSignatureRef.current = transactionSignature;
@@ -153,7 +145,7 @@ export function TransactionList({
   useEffect(() => {
     const sentinel = loadSentinelRef.current;
 
-    if (!sentinel || (remainingTransactionCount === 0 && (!hasMore || hasTriggeredFullLoadRef.current))) {
+    if (!sentinel || (remainingTransactionCount === 0 && !hasMore)) {
       return undefined;
     }
 
@@ -232,7 +224,7 @@ export function TransactionList({
         </div>
         {(remainingTransactionCount > 0 || hasMore) && (
           <div className="transaction-load-actions" ref={loadSentinelRef}>
-            {(isAutoLoading || isLoadingAll || isLoadingMore) && (
+            {(isAutoLoading || isLoadingMore) && (
               <div className="transaction-loading-more" role="status">
                 <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
                 Loading more transactions...

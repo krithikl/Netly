@@ -101,7 +101,7 @@ You don't need any real bank credentials to get started. The app falls back to d
 
 ## Environment Variables
 
-All variables go in `.env.local`.
+All variables go in `.env.local`. Never commit this file.
 
 ### Core
 
@@ -115,14 +115,16 @@ All variables go in `.env.local`.
 |---|---|---|
 | `AKAHU_BASE_URL` | Yes | `https://api.akahu.io/v1` |
 | `AKAHU_OAUTH_URL` | Yes | `https://oauth.akahu.nz` |
-| `AKAHU_APP_TOKEN` | Only for real data | Your Akahu app token |
-| `AKAHU_APP_SECRET` | Only for OAuth | Akahu app secret, keep private |
-| `AKAHU_REDIRECT_URI` | Only for OAuth | Must match what's registered in Akahu, e.g. `http://localhost:3000/api/akahu/callback` |
-| `AKAHU_COOKIE_SECRET` | Only for real data | Random string, at least 32 characters |
+| `AKAHU_APP_TOKEN` | Yes for real data | Akahu dashboard calls this the **App ID Token** |
+| `AKAHU_USER_TOKEN` | Yes for real data with a Personal App | Akahu dashboard calls this the **User Access Token**. Personal Apps don't support the OAuth Connect flow, so this is how you link your bank |
+| `AKAHU_COOKIE_SECRET` | Yes for real data | Random string, at least 32 characters. Not from Akahu, you generate this yourself |
+| `AKAHU_APP_SECRET` | Only for OAuth (full apps) | Akahu dashboard calls this the **App Secret** |
+| `AKAHU_REDIRECT_URI` | Only for OAuth (full apps) | Must match what's registered in Akahu, e.g. `http://localhost:3000/api/akahu/callback` |
 | `AKAHU_REQUEST_TIMEOUT_MS` | No | Defaults to `12000` |
 | `AKAHU_MANUAL_REFRESH_COOLDOWN_MINUTES` | No | Defaults to 15 minutes |
 | `AKAHU_OAUTH_SCOPE` | No | Use `ENDURING_CONSENT` for normal connections |
-| `AKAHU_USER_TOKEN` | No | Personal app token, useful for local testing instead of pasting one in the UI |
+
+For real bank data with a Personal App, sign into Akahu, go to the Developers page, and create a Personal App. It will show you an **App ID Token** and a **User Access Token** together. Copy those into `AKAHU_APP_TOKEN` and `AKAHU_USER_TOKEN`, then generate your own random string for `AKAHU_COOKIE_SECRET`. The `AKAHU_APP_SECRET` and `AKAHU_REDIRECT_URI` rows only apply if you've set up a full OAuth app instead.
 
 Note: by default, Akahu only returns transactions from the past 12 months onwards. Anything older than that won't appear in the transaction feed or budget history.
 

@@ -101,7 +101,7 @@ You don't need any real bank credentials to get started. The app falls back to d
 
 ## Environment Variables
 
-All variables go in `.env.local`. Never commit this file.
+All variables go in `.env.local`.
 
 ### Core
 

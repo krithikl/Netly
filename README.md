@@ -2,13 +2,21 @@
 
 A personal finance app for tracking spending, budgets, and card comparisons using NZ bank data via Akahu's open banking API. Built with a modern UI inspired by Cashew for mobile/desktop, and support for being installed as a PWA.
 
+## Privacy
+
+All transaction and account data is stored locally on your device. Nothing is sent to or stored on a server, except for two cases: the optional encrypted Google Drive backup, and the Akahu/Google OAuth steps required to connect your bank or backup account, which pass through the app's hosting only as part of the authentication flow.
+
+Bank connections go through Akahu's open banking integration. You never enter your bank username or password into Netly, Akahu handles the connection directly with your bank through their secure consent flow.
+
 ## Features
 
+- **Local-first** - all transaction and account data stays on your device, nothing is sent to a server except optional Google Drive backups
+- **Open banking via Akahu** - connect your bank securely through Akahu, no need to share your online banking login
 - **Spending dashboard** - balances, income tracking, spend rhythm, and review signals at a glance
 - **Transaction feed** - search and filter transactions, with merchant and category enrichment from Akahu
 - **Budget tracking** - weekly, fortnightly, monthly, and yearly budgets with category breakdowns, prior-period history, and recurring payment detection
 - **Card Fit** - compares your real spending against different cards to see which one would give you the best rewards or fees outcome
-- **Custom categories** - override categories and set your own colours
+- **Custom categories** - override categories and set your own colours, with the change remembered so future transactions from the same merchant are categorised automatically
 - **Demo mode** - explore the full app with sample data, no bank connection required
 - **Backups** - encrypted backups to Google Drive
 - **PWA support** - install on desktop or mobile like a native app

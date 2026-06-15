@@ -706,6 +706,104 @@ test("Transactions refresh shows loading instead of empty state until rows arriv
   await expect(page.getByRole("status").filter({ hasText: "Loading transactions and encrypted archive" })).toHaveCount(0);
 });
 
+test("Transactions month scroll loads every cursor page for the selected month", async ({ page }) => {
+  await page.unroute("**/api/akahu/accounts?source=user");
+  await page.unroute("**/api/akahu/transactions?source=user**");
+  await page.unroute("**/api/akahu/refresh");
+  await clearTransactionArchive(page);
+  await freezeBrowserDate(page, "2026-06-24T12:00:00");
+
+  const recentTimestamp = new Date().toISOString();
+  const mayFirstPage = getTransactionScrollPage("month-scroll-page-1", 100);
+  const maySecondPage = getTransactionScrollPage("month-scroll-page-2", 80);
+  const mayFinalPage = getTransactionScrollPage("month-scroll-page-3", 20);
+  const requestedCursors: string[] = [];
+
+  await page.route("**/api/akahu/accounts?source=user", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: getConnectedAccountPayload({
+        balanceRefreshedAt: recentTimestamp,
+        isStale: false,
+        transactionsRefreshedAt: recentTimestamp
+      })
+    });
+  });
+
+  await page.route("**/api/akahu/transactions?source=user**", async (route) => {
+    const url = new URL(route.request().url());
+    const cursor = url.searchParams.get("cursor") || "";
+    const isMayRangeRequest = url.searchParams.get("from") === "2026-05-01" && url.searchParams.get("to") === "2026-05-31";
+
+    if (cursor) {
+      requestedCursors.push(cursor);
+      expect(isMayRangeRequest).toBe(true);
+    }
+
+    if (url.searchParams.get("load") === "all") {
+      await route.fulfill({
+        contentType: "application/json",
+        json: {
+          source: "akahu",
+          connected: true,
+          rawCount: 2,
+          nextCursor: null,
+          transactions: [
+            getBudgetTransaction("startup-june-transaction", "Food", -10, "2026-06-12"),
+            getBudgetTransaction("startup-may-anchor", "Food", -10, "2026-05-12")
+          ]
+        }
+      });
+      return;
+    }
+
+    const pagePayload = cursor === "may-cursor-2"
+      ? { nextCursor: "may-cursor-3", transactions: maySecondPage }
+      : cursor === "may-cursor-3"
+        ? { nextCursor: null, transactions: mayFinalPage }
+        : { nextCursor: "may-cursor-2", transactions: mayFirstPage };
+
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        source: "akahu",
+        connected: true,
+        rawCount: pagePayload.transactions.length,
+        nextCursor: pagePayload.nextCursor,
+        transactions: pagePayload.transactions
+      }
+    });
+  });
+
+  await page.route("**/api/akahu/refresh", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        connected: true,
+        requestedAt: recentTimestamp
+      }
+    });
+  });
+
+  await page.goto("/transactions");
+  await waitForStableApp(page);
+  await page.locator(".transaction-month-rail button").filter({ hasText: "May" }).click();
+  await expect(page.getByText("month-scroll-page-1-001")).toBeVisible({ timeout: 10000 });
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    if (await page.getByText("month-scroll-page-3-020").isVisible().catch(() => false)) {
+      break;
+    }
+
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(300);
+  }
+
+  await expect(page.getByText("month-scroll-page-3-020")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByRole("status").filter({ hasText: "Loading more transactions" })).toHaveCount(0);
+  await expect.poll(() => requestedCursors).toEqual(["may-cursor-2", "may-cursor-3"]);
+});
+
 test("Transactions refresh keeps loading when archive rows are outside the active range", async ({ page }) => {
   await page.unroute("**/api/akahu/accounts?source=user");
   await page.unroute("**/api/akahu/transactions?source=user**");
@@ -1388,6 +1486,21 @@ function getBudgetTransaction(id: string, category: string, amount: number, date
       accountName: "Everyday"
     }
   };
+}
+
+// Creates deterministic May transaction pages large enough to exercise local reveal and remote cursor loading.
+function getTransactionScrollPage(prefix: string, count: number) {
+  return Array.from({ length: count }, (_, index) => {
+    const transactionNumber = index + 1;
+    const day = String((index % 28) + 1).padStart(2, "0");
+
+    return getBudgetTransaction(
+      `${prefix}-${String(transactionNumber).padStart(3, "0")}`,
+      "Food",
+      -transactionNumber,
+      `2026-05-${day}`
+    );
+  });
 }
 
 // Builds a connected Akahu account payload with explicit freshness timestamps.

@@ -54,14 +54,12 @@ type TransactionsPageProps = {
   hasMoreTransactions: boolean;
   initialDateRange: TransactionDateRange;
   incomeIncludedCategories: string[];
-  isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
   isLoadingTransactionPageRange: boolean;
   isLoadingTransactions: boolean;
   onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onDateRangeChange: (dateRange: TransactionDateRange) => void;
   onMonthRangeChange: (dateRange: TransactionDateRange) => void;
-  onLoadAllTransactions: (dateRange: TransactionDateRange) => void;
   onLoadMoreTransactions: (dateRange: TransactionDateRange) => void;
   onOpenPresetConsumed: () => void;
   onOpenSettings: () => void;
@@ -92,14 +90,12 @@ export function TransactionsPage({
   hasMoreTransactions,
   initialDateRange,
   incomeIncludedCategories,
-  isLoadingAllTransactions,
   isLoadingMoreTransactions,
   isLoadingTransactionPageRange,
   isLoadingTransactions,
   onCategoryChange,
   onDateRangeChange,
   onMonthRangeChange,
-  onLoadAllTransactions,
   onLoadMoreTransactions,
   onOpenPresetConsumed,
   onOpenSettings,
@@ -289,14 +285,12 @@ export function TransactionsPage({
           emptyMessage="No transactions match the current search."
           hasMoreTransactions={hasMoreActiveRangeTransactions}
           groupByDate={shouldGroupTransactionsByDate}
-          isLoadingAllTransactions={isLoadingAllTransactions}
           isLoadingMoreTransactions={isLoadingMoreTransactions}
           isLoadingTransactions={shouldShowListLoading}
           onBack={closeSearch}
           onCategoryChange={onCategoryChange}
           onDateRangeChange={setSearchDateRange}
           onFilterOpen={() => setFiltersOpen(true)}
-          onLoadAllTransactions={() => onLoadAllTransactions(activeSearchDateRange)}
           onLoadMoreTransactions={() => onLoadMoreTransactions(activeSearchDateRange)}
           onOpenSettings={onOpenSettings}
           onSearchChange={handleSearchChange}
@@ -434,9 +428,7 @@ export function TransactionsPage({
           onCategoryChange={onCategoryChange}
           hasMore={hasMoreActiveRangeTransactions}
           isLoading={shouldShowListLoading}
-          isLoadingAll={isLoadingAllTransactions}
           isLoadingMore={isLoadingMoreTransactions}
-          onLoadAll={() => onLoadAllTransactions(dateRange)}
           onLoadMore={() => onLoadMoreTransactions(dateRange)}
           transactions={shownTransactions}
         />
@@ -1119,14 +1111,12 @@ type MobileTransactionSearchViewProps = {
   emptyMessage: string;
   groupByDate: boolean;
   hasMoreTransactions: boolean;
-  isLoadingAllTransactions: boolean;
   isLoadingMoreTransactions: boolean;
   isLoadingTransactions: boolean;
   onBack: () => void;
   onCategoryChange: (transaction: Transaction, category: string, scope: CategoryEditScope) => void;
   onDateRangeChange: (dateRange: TransactionDateRange) => void;
   onFilterOpen: () => void;
-  onLoadAllTransactions: () => void;
   onLoadMoreTransactions: () => void;
   onOpenSettings: () => void;
   onSearchChange: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -1144,14 +1134,12 @@ function MobileTransactionSearchView({
   emptyMessage,
   groupByDate,
   hasMoreTransactions,
-  isLoadingAllTransactions,
   isLoadingMoreTransactions,
   isLoadingTransactions,
   onBack,
   onCategoryChange,
   onDateRangeChange,
   onFilterOpen,
-  onLoadAllTransactions,
   onLoadMoreTransactions,
   onOpenSettings,
   onSearchChange,
@@ -1204,10 +1192,8 @@ function MobileTransactionSearchView({
         groupByDate={groupByDate}
         hasMore={hasMoreTransactions}
         isLoading={isLoadingTransactions}
-        isLoadingAll={isLoadingAllTransactions}
         isLoadingMore={isLoadingMoreTransactions}
         onCategoryChange={onCategoryChange}
-        onLoadAll={onLoadAllTransactions}
         onLoadMore={onLoadMoreTransactions}
         transactions={transactions}
       />

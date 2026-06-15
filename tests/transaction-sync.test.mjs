@@ -400,6 +400,22 @@ test("Transactions page receives the dedicated date-range transaction set", asyn
   assert.match(transactionsSource, /transaction-list-review-shortcut/);
 });
 
+test("transaction infinite scroll follows active-range cursors instead of full-history loading", async () => {
+  const dataHookSource = await readFile(new URL("../hooks/useAkahuData.ts", import.meta.url), "utf8");
+  const transactionListSource = await readFile(new URL("../features/transactions/TransactionList.tsx", import.meta.url), "utf8");
+  const transactionsSource = await readFile(new URL("../features/transactions/TransactionsPage.tsx", import.meta.url), "utf8");
+  const loadMoreSource = dataHookSource.match(/const loadMoreTransactions[\s\S]*?\n  \}, \[dataMode, transactionPageNextCursor\]\);/)?.[0] || "";
+
+  assert.match(transactionListSource, /await onLoadMore\?\.\(\)/);
+  assert.doesNotMatch(transactionListSource, /onLoadAll|hasTriggeredFullLoad|All matching archived/);
+  assert.doesNotMatch(transactionsSource, /onLoadAllTransactions|isLoadingAllTransactions|onLoadAll=/);
+  assert.match(loadMoreSource, /getTransactionsUrl\("user", dateRange, transactionPageNextCursor\)/);
+  assert.match(loadMoreSource, /archiveAndMergeTransactions\(payload\.transactions, dateRange\)/);
+  assert.match(loadMoreSource, /setTransactionPageLoadedDateRange\(dateRange \|\| null\)/);
+  assert.match(loadMoreSource, /setTransactionPageNextCursor\(payload\.nextCursor \|\| null\)/);
+  assert.doesNotMatch(loadMoreSource, /All matching archived transactions are already loaded|syncAllAkahuTransactionsToArchive/);
+});
+
 test("transaction lists use date groups without chevrons for date-sorted views", async () => {
   const transactionListSource = await readFile(new URL("../features/transactions/TransactionList.tsx", import.meta.url), "utf8");
   const transactionsSource = await readFile(new URL("../features/transactions/TransactionsPage.tsx", import.meta.url), "utf8");

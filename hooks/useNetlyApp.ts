@@ -155,12 +155,6 @@ export function useNetlyApp() {
   const chartCategories = useMemo(() => groupCategoriesForChart(categoryTotals, topCategoryLimit), [categoryTotals]);
   const chartTotal = useMemo(() => sum(chartCategories.map((item) => item.amount)), [chartCategories]);
   const loadMoreUserTransactions = useCallback((dateRange: Parameters<typeof banking.loadMoreTransactions>[0]) => banking.loadMoreTransactions(dateRange), [banking.loadMoreTransactions]);
-  const loadAllUserTransactions = useCallback(async (dateRange: Parameters<typeof banking.loadAllTransactions>[0]) => {
-    await banking.loadAllTransactions(dateRange);
-    if (banking.dataMode === "user") {
-      await driveBackup.syncAfterArchiveChange();
-    }
-  }, [banking.dataMode, banking.loadAllTransactions, driveBackup.syncAfterArchiveChange]);
   const loadMoreAndSyncUserTransactions = useCallback(async (dateRange: Parameters<typeof banking.loadMoreTransactions>[0]) => {
     await loadMoreUserTransactions(dateRange);
     if (banking.dataMode === "user") {
@@ -339,14 +333,12 @@ export function useNetlyApp() {
         hasMoreTransactions: Boolean(banking.transactionPageNextCursor),
         initialDateRange: transactionPageDateRange,
         incomeIncludedCategories,
-        isLoadingAllTransactions: banking.isLoadingAllTransactions,
         isLoadingMoreTransactions: banking.isLoadingMoreTransactions,
         isLoadingTransactionPageRange: banking.isLoadingTransactionPageRange,
         isLoadingTransactions: banking.isLoadingTransactions,
         onCategoryChange: updateTransactionCategoryAndSync,
         onDateRangeChange: refreshTransactionPageRange,
         onMonthRangeChange: selectTransactionMonthRange,
-        onLoadAllTransactions: loadAllUserTransactions,
         onLoadMoreTransactions: loadMoreAndSyncUserTransactions,
         onOpenPresetConsumed: clearTransactionOpenPreset,
         onOpenSettings: () => setActiveView("settings"),

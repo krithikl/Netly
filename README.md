@@ -1,6 +1,8 @@
 # Netly
 
-A personal finance app for tracking spending, budgets, and card comparisons using NZ bank data via Akahu's open banking API. Built with a modern UI and support for being installed as a PWA.
+A personal finance app for tracking spending, budgets, and card comparisons using NZ bank data via Akahu's open banking API. Built with a modern UI inspired by Cashew for mobile/desktop, and support for being installed as a PWA.
+
+<img width="320" height="640" alt="image" src="https://github.com/user-attachments/assets/b47cdac8-9e14-4a8e-90bf-04e0afb1aff0" />
 
 ## Requirements
 

@@ -1,18 +1,14 @@
 # Akahu Open Banking Flow
 
-## Development Flow
+For getting your App ID Token and User Access Token, see the Environment Variables section in the README.
 
-1. Create an Akahu Personal App.
-2. Add `AKAHU_APP_TOKEN` to `.env.local`.
-3. Paste the Personal App User Access Token into Netly's Connect page, or set `AKAHU_USER_TOKEN` locally.
-4. Netly stores the token in an httpOnly cookie for local development.
-5. Netly fetches Akahu accounts and account transactions.
+## Personal App flow
 
-Personal Apps cannot use Akahu OAuth. Akahu authorizes them when they are created and exposes the User Access Token in the developer dashboard.
+Personal Apps cannot use Akahu OAuth, Akahu authorizes them when they are created and exposes the User Access Token directly in the developer dashboard. Once `AKAHU_APP_TOKEN` and `AKAHU_USER_TOKEN` (or a pasted token on the Connect page) are set, Netly stores the token in an encrypted httpOnly cookie and fetches accounts and transactions directly.
 
 Note: Akahu Demo Bank enduring connections support account data, but they do not currently return transaction data. Use Netly demo mode for local transaction UI testing, or connect a transaction-capable real institution when testing Akahu transactions.
 
-## OAuth Flow
+## OAuth flow (full apps)
 
 OAuth requires a full Akahu app, `AKAHU_APP_SECRET`, and a redirect URI registered with Akahu that exactly matches `AKAHU_REDIRECT_URI`.
 
@@ -20,9 +16,9 @@ OAuth requires a full Akahu app, `AKAHU_APP_SECRET`, and a redirect URI register
 2. Netly redirects to `https://oauth.akahu.nz`.
 3. Akahu returns to `/api/akahu/callback` with an authorization code.
 4. Netly exchanges the code at Akahu's `/token` endpoint.
-5. The returned User Access Token is stored server-side.
+5. The returned User Access Token is stored in an encrypted httpOnly cookie.
 
-## API Calls
+## API calls
 
 Netly currently uses:
 
@@ -34,12 +30,3 @@ Requests use:
 
 - `Authorization: Bearer <Akahu User Access Token>`
 - `X-Akahu-Id: <Akahu App ID Token>`
-
-## Enrichment
-
-Use Akahu fields directly where possible:
-
-- `merchant.name` for merchant display
-- `category.groups.personal_finance.name` for dashboard categories
-- `category.name` for the more detailed Akahu category
-- `meta.particulars`, `meta.code`, and `meta.reference` for payment details

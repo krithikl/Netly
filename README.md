@@ -1,6 +1,63 @@
 # Netly
 
 A personal finance app for tracking spending, budgets, and card comparisons using NZ bank data via Akahu's open banking API. Built with a modern UI inspired by Cashew for mobile/desktop, and support for being installed as a PWA.
+
+## Features
+
+- **Spending dashboard** - balances, income tracking, spend rhythm, and review signals at a glance
+- **Transaction feed** - search and filter transactions, with merchant and category enrichment from Akahu
+- **Budget tracking** - weekly, fortnightly, monthly, and yearly budgets with category breakdowns, prior-period history, and recurring payment detection
+- **Card Fit** - compares your real spending against different cards to see which one would give you the best rewards or fees outcome
+- **Custom categories** - override categories and set your own colours
+- **Demo mode** - explore the full app with sample data, no bank connection required
+- **Backups** - encrypted backups to Google Drive
+- **PWA support** - install on desktop or mobile like a native app
+
+## Screenshots
+
+### Home
+
+<table width="100%">
+<tr>
+<td valign="top"><img width="700" alt="Home dashboard desktop" src="https://github.com/user-attachments/assets/8e485b90-92cd-440b-b5f3-68e90d98262e" /></td>
+<td valign="top"><img width="240" alt="Home dashboard mobile" src="https://github.com/user-attachments/assets/1b564dc0-f222-4d4e-9f70-d189048e7d42" /></td>
+</tr>
+</table>
+
+### Transactions & Budgets
+
+<table width="100%">
+<tr>
+<td valign="top"><img width="700" alt="Transactions desktop" src="https://github.com/user-attachments/assets/c2adaa16-8e95-4541-9da1-5bc0c5c8b93e" /></td>
+<td valign="top"><img width="240" alt="Transactions mobile" src="https://github.com/user-attachments/assets/3243280b-f603-4162-a01a-bb23702af919" /></td>
+</tr>
+<tr>
+<td valign="top"><img width="700" alt="Transaction detail desktop" src="https://github.com/user-attachments/assets/bba8a953-53d7-426e-a73e-ed9e7a0e16fa" /></td>
+<td valign="top"><img width="240" alt="Transaction detail mobile" src="https://github.com/user-attachments/assets/4bc6d6dd-2db6-43e7-9dee-e3c100102194" /></td>
+</tr>
+<tr>
+<td valign="top"><img width="700" alt="Budgets desktop" src="https://github.com/user-attachments/assets/29e308fc-d0b7-45ab-a87d-9870a1194032" /></td>
+<td valign="top"><img width="240" alt="Budgets mobile" src="https://github.com/user-attachments/assets/f363535d-5a51-4266-8e73-1f0753fc504c" /></td>
+</tr>
+</table>
+
+### Card Fit
+
+<table width="100%">
+<tr>
+<td valign="top"><img width="700" alt="Card Fit overview desktop" src="https://github.com/user-attachments/assets/95ba9acd-06d2-4b2a-a87c-49d18d886453" /></td>
+<td valign="top"><img width="240" alt="Card Fit overview mobile" src="https://github.com/user-attachments/assets/61a96e46-23c2-468e-87b9-ad18540d8355" /></td>
+</tr>
+<tr>
+<td valign="top"><img width="700" alt="Card Fit comparison desktop" src="https://github.com/user-attachments/assets/0f2cd7d2-2e06-4f80-aa2d-242a884b1c05" /></td>
+<td valign="top"><img width="240" alt="Card Fit mobile" src="https://github.com/user-attachments/assets/5be25c07-4d0f-463c-bb28-9b0c42d51d0e" /></td>
+</tr>
+<tr>
+<td valign="top"><img width="700" alt="Card Fit detail desktop" src="https://github.com/user-attachments/assets/1f9b4769-7aba-4f88-89cd-a3c5d3a4afa6" /></td>
+<td valign="top"><img width="240" alt="Settings mobile" src="https://github.com/user-attachments/assets/c069415e-0166-4bbe-b7f6-4dd882558e17" /></td>
+</tr>
+</table>
+
 ## Requirements
 
 - Node.js 20 or later
@@ -58,6 +115,8 @@ All variables go in `.env.local`. Never commit this file.
 | `AKAHU_MANUAL_REFRESH_COOLDOWN_MINUTES` | No | Defaults to 15 minutes |
 | `AKAHU_OAUTH_SCOPE` | No | Use `ENDURING_CONSENT` for normal connections |
 | `AKAHU_USER_TOKEN` | No | Personal app token, useful for local testing instead of pasting one in the UI |
+
+Note: by default, Akahu only returns transactions from the past 12 months onwards. Anything older than that won't appear in the transaction feed or budget history.
 
 ### Google Drive (backups)
 
